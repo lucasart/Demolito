@@ -41,9 +41,13 @@ enum {
 bool rank_ok(int r);
 bool file_ok(int f);
 bool square_ok(int sq);
-int rank(int sq);
-int file(int sq);
+int rank_of(int sq);
+int file_of(int sq);
 int square(int r, int f);
+
+/* Directions */
+
+int push_inc(int color);	// pawn push increment
 
 /* Display */
 

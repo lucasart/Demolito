@@ -121,8 +121,9 @@ void Position::set_pos(const std::string& fen)
 	// En passant square
 	std::string s;
 	is >> s;
-	if (s != "-")
-		epSquare = square(s[1] - '1', s[0] - 'a');
+	epSquare = s != "-"
+		? epSquare = square(s[1] - '1', s[0] - 'a')
+		: NB_SQUARE;
 
 	// 50-move counter
 	is >> std::skipws >> rule50;
@@ -166,6 +167,76 @@ int Position::piece_on(int sq) const
 			return piece;
 
 	assert(false);
+}
+
+void Position::play(const Position& before, Move m)
+{
+	*this = before;
+	rule50++;
+
+	const int us = turn, them = opp_color(us);
+	const int piece = piece_on(m.fsq);
+	const int capture = bb::test(occupied(), m.tsq) ? piece_on(m.tsq) : NB_PIECE;
+
+	// Capture piece on to square (if any)
+	if (capture != NB_PIECE) {
+		rule50 = 0;
+		// Use color_on() instead of them, because we could be playing a KxR castling here
+		clear(color_on(m.tsq), capture, m.tsq);
+
+		// Capturing a rook alters corresponding castling right
+		if (capture == ROOK)
+			castlableRooks &= ~(1ULL << m.tsq);
+	}
+
+	// Move our piece
+	clear(us, piece, m.fsq);
+	set(us, piece, m.tsq);
+
+	if (piece == PAWN) {
+		// reset rule50, and set epsq
+		const int push = push_inc(us);
+		rule50 = 0;
+		epSquare = m.tsq == m.fsq + 2 * push ? m.fsq + push : NB_SQUARE;
+
+		// handle ep-capture and promotion
+		if (m.tsq == before.get_epsq())
+			clear(them, piece, m.tsq - push);
+		else if (rank_of(m.tsq) == RANK_8 || rank_of(m.tsq) == RANK_1) {
+			clear(us, piece, m.tsq);
+			set(us, m.prom, m.tsq);
+		}
+	} else {
+		epSquare = NB_SQUARE;
+
+		if (piece == ROOK)
+			// remove corresponding castling right
+			castlableRooks &= ~(1ULL << m.fsq);
+		else if (piece == KING) {
+			// Lose all castling rights
+			castlableRooks &= ~bb::rank(us * RANK_8);
+
+			// Castling
+			if (bb::test(before.byColor[us], m.tsq)) {
+				// Capturing our own piece can only be a castling move, encoded KxR
+				assert(before.piece_on(m.tsq) == ROOK);
+
+				const int r = rank_of(m.fsq);
+				const int ksq = m.tsq > m.fsq ? square(r, FILE_G) : square(r, FILE_C);
+				const int rsq = m.tsq > m.fsq ? square(r, FILE_F) : square(r, FILE_D);
+
+				clear(us, KING, m.tsq);
+				set(us, KING, ksq);
+				set(us, ROOK, rsq);
+			}
+		}
+	}
+
+	turn = them;
+	key ^= zobrist::turn();
+	key ^= zobrist::ep(before.get_epsq()) ^ zobrist::ep(epSquare);
+	key ^= zobrist::castling(before.castlableRooks ^ castlableRooks);
+	assert(key_ok());
 }
 
 void Position::print() const

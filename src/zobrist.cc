@@ -54,15 +54,15 @@ uint64_t key(int color, int piece, int sq)
 	return Zobrist[color][piece][sq];
 }
 
-uint64_t castling(bitboard_t castlable_rooks)
+uint64_t castling(bitboard_t castlableRooks)
 {
-	assert(bb::count(castlable_rooks & bb::rank_bb(RANK_1)) <= 2);
-	assert(bb::count(castlable_rooks & bb::rank_bb(RANK_8)) <= 2);
-	assert(!(castlable_rooks & ~bb::rank_bb(RANK_1) & ~bb::rank_bb(RANK_8)));
+	assert(bb::count(castlableRooks & bb::rank(RANK_1)) <= 2);
+	assert(bb::count(castlableRooks & bb::rank(RANK_8)) <= 2);
+	assert(!(castlableRooks & ~bb::rank(RANK_1) & ~bb::rank(RANK_8)));
 
 	bitboard_t result = 0;
-	while (castlable_rooks)
-		result ^= ZobristCastling[bb::pop_lsb(castlable_rooks)];
+	while (castlableRooks)
+		result ^= ZobristCastling[bb::pop_lsb(castlableRooks)];
 
 	return result;
 }

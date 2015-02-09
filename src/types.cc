@@ -75,13 +75,13 @@ bool square_ok(int sq)
 	return 0 <= sq && sq < NB_SQUARE;
 }
 
-int rank(int sq)
+int rank_of(int sq)
 {
 	assert(square_ok(sq));
 	return sq / NB_FILE;
 }
 
-int file(int sq)
+int file_of(int sq)
 {
 	assert(square_ok(sq));
 	return sq % NB_FILE;
@@ -91,6 +91,14 @@ int square(int r, int f)
 {
 	assert(rank_ok(r) && file_ok(f));
 	return NB_FILE * r + f;
+}
+
+/* Directions */
+
+int push_inc(int color)
+{
+	assert(color_ok(color));
+	return color == WHITE ? +8 : -8;
 }
 
 /* Display */

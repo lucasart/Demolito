@@ -43,7 +43,7 @@ void safe_set_bit(bitboard_t& b, int r, int f)
 void init_KNP_attacks()
 {
 	for (int sq = 0; sq < NB_SQUARE; sq++) {
-		const int r = rank(sq), f = file(sq);
+		const int r = rank_of(sq), f = file_of(sq);
 
 		for (int d = 0; d < 8; d++) {
 			safe_set_bit(NAttacks[sq], r + NDir[d][0], f + NDir[d][1]);
@@ -60,7 +60,7 @@ void init_KNP_attacks()
 void init_rays()
 {
 	for (int sq1 = 0; sq1 < NB_SQUARE; sq1++) {
-		const int r1 = rank(sq1), f1 = file(sq1);
+		const int r1 = rank_of(sq1), f1 = file_of(sq1);
 		for (int d = 0; d < 8; d++) {
 			bitboard_t mask = 0;
 			for (int r2 = r1, f2 = f1; rank_ok(r2) && file_ok(f2); r2 += KDir[d][0], f2 += KDir[d][1]) {
@@ -102,13 +102,13 @@ void init()
 
 /* Bitboard Accessors */
 
-bitboard_t rank_bb(int r)
+bitboard_t rank(int r)
 {
 	assert(rank_ok(r));
 	return 0xFFULL << (8 * r);
 }
 
-bitboard_t file_bb(int f)
+bitboard_t file(int f)
 {
 	assert(file_ok(f));
 	return 0x0101010101010101ULL << f;

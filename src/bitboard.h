@@ -7,8 +7,8 @@ void init();
 
 /* Bitboard Accessors */
 
-bitboard_t rank_bb(int r);
-bitboard_t file_bb(int f);
+bitboard_t rank(int r);
+bitboard_t file(int f);
 
 // Leaper attacks
 bitboard_t pattacks(int color, int sq);
