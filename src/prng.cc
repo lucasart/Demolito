@@ -14,11 +14,31 @@
  * You should have received a copy of the GNU General Public License along with
  * this program. If not, see <http://www.gnu.org/licenses/>.
 */
-#include "bitboard.h"
-#include "zobrist.h"
+#include "prng.h"
 
-int main()
+namespace {
+
+uint64_t rotate(uint64_t x, int k)
 {
-	bb::init();
-	zobrist::init();
+	return (x << k) | (x >> (64 - k));
+}
+
+}	// namespace
+
+void PRNG::init(uint64_t seed)
+{
+	a = 0xf1ea5eed;
+	b = c = d = seed;
+
+	for (int i = 0; i < 20; ++i)
+		rand();
+}
+
+uint64_t PRNG::rand()
+{
+	const uint64_t e = a - rotate(b,  7);
+	a = b ^ rotate(c, 13);
+	b = c + rotate(d, 37);
+	c = d + e;
+	return d = e + a;
 }

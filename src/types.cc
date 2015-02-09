@@ -17,9 +17,16 @@
 #include <cassert>
 #include "types.h"
 
+/* Color, Piece */
+
 bool color_ok(int c)
 {
 	return 0 <= c && c < NB_COLOR;
+}
+
+bool piece_ok(int p)
+{
+	return 0 <= p && p < NB_PIECE;
 }
 
 int opp_color(int c)
@@ -27,6 +34,8 @@ int opp_color(int c)
 	assert(color_ok(c));
 	return c ^ BLACK;
 }
+
+/* Rank, File, Square */
 
 bool rank_ok(int r)
 {
@@ -60,3 +69,7 @@ int square(int r, int f)
 	assert(rank_ok(r) && file_ok(f));
 	return NB_FILE * r + f;
 }
+
+/* Display */
+
+const std::string PieceLabel[NB_COLOR] = {"NBRQKP.", "nbrqkp."};

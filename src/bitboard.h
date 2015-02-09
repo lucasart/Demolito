@@ -7,6 +7,9 @@ void init();
 
 /* Bitboard Accessors */
 
+bitboard_t rank_bb(int r);
+bitboard_t file_bb(int f);
+
 // Leaper attacks
 bitboard_t pattacks(int color, int sq);
 bitboard_t nattacks(int sq);
@@ -33,6 +36,7 @@ void set(bitboard_t& b, int sq);
 int lsb(bitboard_t b);
 int msb(bitboard_t b);
 int pop_lsb(bitboard_t& b);
+int count(bitboard_t b);
 
 /* Debug print */
 void print(bitboard_t b);

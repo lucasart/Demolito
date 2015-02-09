@@ -1,12 +1,17 @@
 #pragma once
+#include <string>
 #include <cstdint>
 
 typedef uint64_t bitboard_t;
 
-enum {WHITE, BLACK, NB_COLOR};
+/* Color, Piece */
 
-bool color_ok(int c);
-int opp_color(int c);
+enum {WHITE, BLACK, NB_COLOR};
+enum {KNIGHT, BISHOP, ROOK, QUEEN, KING, PAWN, NB_PIECE};
+
+bool color_ok(int color);
+bool piece_ok(int piece);
+int opp_color(int color);
 
 /* Rank, File, Square */
 
@@ -30,3 +35,7 @@ bool square_ok(int sq);
 int rank(int sq);
 int file(int sq);
 int square(int r, int f);
+
+/* Display */
+
+extern const std::string PieceLabel[NB_COLOR];

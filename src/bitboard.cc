@@ -103,6 +103,18 @@ void init()
 
 /* Bitboard Accessors */
 
+bitboard_t rank_bb(int r)
+{
+	assert(rank_ok(r));
+	return 0xFFULL << (8 * r);
+}
+
+bitboard_t file_bb(int f)
+{
+	assert(file_ok(f));
+	return 0x0101010101010101ULL << f;
+}
+
 bitboard_t pattacks(int color, int sq)
 {
 	assert(color_ok(color) && square_ok(sq));
