@@ -1,16 +1,16 @@
 #include "types.h"
 
 class Board {
-	bitboard_t occ;
 	bitboard_t byColor[NB_COLOR];
 	bitboard_t byPiece[NB_PIECE];
 	uint64_t key;
 	int turn;
 
+	bitbord_t occupied() const;
+	bool key_ok() const;
+
 	void set(int color, int piece, int sq);
 	void clear(int color, int piece, int sq);
-
-	bool key_ok() const;
 
 public:
 	bitboard_t get(int color, int piece) const;

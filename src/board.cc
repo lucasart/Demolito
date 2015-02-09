@@ -19,6 +19,11 @@
 #include "board.h"
 #include "bitboard.h"
 
+bitboard_t Board::occupied() const
+{
+	return byColor[WHITE] | byColor[BLACK];
+}
+
 bool Board::key_ok() const
 {
 	uint64_t k = 0;
@@ -42,22 +47,16 @@ bool Board::key_ok() const
 void Board::clear(int color, int piece, int sq)
 {
 	assert(color_ok(color) && piece_ok(piece) && square_ok(sq));
-
-	bb::clear(occ, sq);
 	bb::clear(byColor[color], sq);
 	bb::clear(byPiece[piece], sq);
-
 	key ^= zobrist::key(color, piece, square);
 }
 
 void Board::set(int color, int piece, int sq)
 {
 	assert(color_ok(color) && piece_ok(piece) && square_ok(sq));
-
-	bb::set(occ, sq);
 	bb::set(byColor[color], sq);
 	bb::set(byPiece[piece], sq);
-
 	key ^= zobrist::key(color, piece, square);
 }
 
