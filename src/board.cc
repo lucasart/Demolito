@@ -49,7 +49,7 @@ bool Board::key_ok() const
 
 void Board::clear()
 {
-	std::memset(this, 0, sizeof(this));
+	std::memset(this, 0, sizeof(*this));
 }
 
 void Board::clear(int color, int piece, int sq)
@@ -72,6 +72,7 @@ void Board::set_pos(const std::string& fen)
 {
 	clear();
 	std::istringstream is(fen);
+	is >> std::noskipws;
 	char c;
 	int sq;
 
@@ -86,7 +87,7 @@ void Board::set_pos(const std::string& fen)
 			for (int color = 0; color < NB_COLOR; color++) {
 				const int piece = PieceLabel[color].find(c);
 				if (piece != std::string::npos)
-					set(color, piece, sq);
+					set(color, piece, sq++);
 			}
 		}
 	}
@@ -116,6 +117,12 @@ void Board::set_pos(const std::string& fen)
 
 		bb::set(castlableRooks, sq);
 	}
+
+	// En passant square
+	std::string s;
+	is >> s;
+	if (s != "-")
+		epSquare = square(s[1] - '1', s[0] - 'a');
 }
 
 std::string Board::get_pos() const

@@ -6,6 +6,7 @@ class Board {
 	bitboard_t castlableRooks;
 	uint64_t key;
 	int turn;
+	int epSquare;
 
 	bitboard_t occupied() const;
 	bool key_ok() const;

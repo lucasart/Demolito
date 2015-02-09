@@ -83,7 +83,6 @@ void init_pseudo_attacks()
 	for (int sq = 0; sq < NB_SQUARE; sq++) {
 		BPseudoAttacks[sq] = bb::battacks(sq, 0);
 		RPseudoAttacks[sq] = bb::rattacks(sq, 0);
-bb::print(BPseudoAttacks[sq]);
 	}
 }
 
