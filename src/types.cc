@@ -23,7 +23,7 @@ bool Move::ok() const
 // Test if fsq, tsq, prom are within acceptable bounds. No (pseudo)legality checking performed here
 {
 	return square_ok(fsq) && square_ok(tsq)
-		&& ((KNIGHT <= piece && piece <= QUEEN) || piece == NB_PIECE);
+		&& ((KNIGHT <= prom && prom <= QUEEN) || prom == NB_PIECE);
 }
 
 move_t Move::encode() const

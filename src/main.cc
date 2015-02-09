@@ -16,9 +16,14 @@
 */
 #include "bitboard.h"
 #include "zobrist.h"
+#include "position.h"
 
 int main()
 {
 	bb::init();
 	zobrist::init();
+
+	Position pos;
+	pos.set_pos("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+	pos.print();
 }

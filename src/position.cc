@@ -123,6 +123,9 @@ void Position::set_pos(const std::string& fen)
 	is >> s;
 	if (s != "-")
 		epSquare = square(s[1] - '1', s[0] - 'a');
+
+	// 50-move counter
+	is >> std::skipws >> rule50;
 }
 
 bitboard_t Position::get(int color, int piece) const
@@ -171,11 +174,11 @@ void Position::print() const
 		char line[] = ". . . . . . . .";
 		for (int f = FILE_A; f <= FILE_H; f++) {
 			const int sq = square(r, f);
-			if (bb::test(occupied(), sq))
-				line[2 * f] = PieceLabel[color_on(sq)][piece_on(sq)];
-			else
-				line[2 * f] = '.';
+			line[2 * f] = bb::test(occupied(), sq)
+				? PieceLabel[color_on(sq)][piece_on(sq)]
+				: sq == epSquare ? '*' : '.';
 		}
-		std::cout << line << std::endl;
+		std::cout << line << '\n';
 	}
+	std::cout << "\nrule50 = " << rule50 << std::endl;
 }

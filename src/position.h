@@ -7,6 +7,7 @@ class Position {
 	uint64_t key;			// zobrist key of the position
 	int turn;			// turn of play (WHITE or BLACK)
 	int epSquare;			// en-passant square (0 if none)
+	int rule50;			// half-move counter for the 50 move rule
 
 	bitboard_t occupied() const;
 	bool key_ok() const;
