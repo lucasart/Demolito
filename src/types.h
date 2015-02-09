@@ -3,6 +3,15 @@
 #include <cstdint>
 
 typedef uint64_t bitboard_t;
+typedef uint16_t move_t;	// encoded move: fsq:6, tsq:6, prom: 3 (NB_PIECE if none)
+
+struct Move {			// decoded move
+	int fsq, tsq, prom;
+
+	bool ok() const;
+	move_t encode() const;
+	void decode(move_t em);
+};
 
 /* Color, Piece */
 
