@@ -162,12 +162,12 @@ bitboard_t calc_sliding_attacks(int sq, bitboard_t occ, const int dir[4][2])
 	return result;
 }
 
-bitboard_t init_magic_occ(const int* sq, int sq_cnt, bitboard_t linocc)
+bitboard_t init_magic_occ(const int* sq, int sq_cnt, bitboard_t lineOcc)
 {
 	bitboard_t result = 0;
 
 	for (int i = 0; i < sq_cnt; ++i)
-		if (bb::test(linocc, i))
+		if (bb::test(lineOcc, i))
 			bb::set(result, sq[i]);
 
 	return result;

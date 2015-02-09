@@ -18,16 +18,16 @@
 #include <iostream>
 #include <sstream>
 #include <cstring>	// std::memset
-#include "board.h"
+#include "position.h"
 #include "bitboard.h"
 #include "zobrist.h"
 
-bitboard_t Board::occupied() const
+bitboard_t Position::occupied() const
 {
 	return byColor[WHITE] | byColor[BLACK];
 }
 
-bool Board::key_ok() const
+bool Position::key_ok() const
 {
 	uint64_t k = 0;
 
@@ -47,12 +47,12 @@ bool Board::key_ok() const
 	return k == key;
 }
 
-void Board::clear()
+void Position::clear()
 {
 	std::memset(this, 0, sizeof(*this));
 }
 
-void Board::clear(int color, int piece, int sq)
+void Position::clear(int color, int piece, int sq)
 {
 	assert(color_ok(color) && piece_ok(piece) && square_ok(sq));
 	bb::clear(byColor[color], sq);
@@ -60,7 +60,7 @@ void Board::clear(int color, int piece, int sq)
 	key ^= zobrist::key(color, piece, sq);
 }
 
-void Board::set(int color, int piece, int sq)
+void Position::set(int color, int piece, int sq)
 {
 	assert(color_ok(color) && piece_ok(piece) && square_ok(sq));
 	bb::set(byColor[color], sq);
@@ -68,7 +68,7 @@ void Board::set(int color, int piece, int sq)
 	key ^= zobrist::key(color, piece, sq);
 }
 
-void Board::set_pos(const std::string& fen)
+void Position::set_pos(const std::string& fen)
 {
 	clear();
 	std::istringstream is(fen);
@@ -125,34 +125,31 @@ void Board::set_pos(const std::string& fen)
 		epSquare = square(s[1] - '1', s[0] - 'a');
 }
 
-std::string Board::get_pos() const
-{}
-
-bitboard_t Board::get(int color, int piece) const
+bitboard_t Position::get(int color, int piece) const
 {
 	assert(color_ok(color) && piece_ok(piece));
 	return byColor[color] & byPiece[piece];
 }
 
-bitboard_t Board::get_RQ(int color) const
+bitboard_t Position::get_RQ(int color) const
 {
 	assert(color_ok(color));
 	return byColor[color] & (byPiece[ROOK] | byPiece[QUEEN]);
 }
 
-bitboard_t Board::get_BQ(int color) const
+bitboard_t Position::get_BQ(int color) const
 {
 	assert(color_ok(color));
 	return byColor[color] & (byPiece[BISHOP] | byPiece[QUEEN]);
 }
 
-int Board::color_on(int sq) const
+int Position::color_on(int sq) const
 {
 	assert(bb::test(occupied(), sq));
 	return bb::test(byColor[WHITE], sq) ? WHITE : BLACK;
 }
 
-int Board::piece_on(int sq) const
+int Position::piece_on(int sq) const
 {
 	assert(bb::test(occupied(), sq));
 
@@ -168,7 +165,7 @@ int Board::piece_on(int sq) const
 	assert(false);
 }
 
-void Board::print() const
+void Position::print() const
 {
 	for (int r = RANK_8; r >= RANK_1; r--) {
 		char line[] = ". . . . . . . .";
