@@ -31,15 +31,12 @@ bool Position::key_ok() const
 {
 	uint64_t k = 0;
 
-	for (int color = 0; color < NB_COLOR; color++) {
+	for (int color = 0; color < NB_COLOR; color++)
 		for (int piece = 0; piece < NB_PIECE; piece++) {
 			bitboard_t b = get(color, piece);
-			while (b) {
-				const int sq = bb::pop_lsb(b);
-				k ^= zobrist::key(color, piece, sq);
-			}
+			while (b)
+				k ^= zobrist::key(color, piece, bb::pop_lsb(b));
 		}
-	}
 
 	if (turn == BLACK)
 		k ^= zobrist::turn();
@@ -72,13 +69,12 @@ void Position::set_pos(const std::string& fen)
 {
 	clear();
 	std::istringstream is(fen);
-	is >> std::noskipws;
-	char c;
-	int sq;
+	std::string s;
 
 	// Piece placement
-	sq = A8;
-	while ((is >> c) && !isspace(c)) {
+	is >> s;
+	int sq = A8;
+	for (char c : s) {
 		if (isdigit(c))
 			sq += c - '0';
 		else if (c == '/')
@@ -86,24 +82,24 @@ void Position::set_pos(const std::string& fen)
 		else {
 			for (int color = 0; color < NB_COLOR; color++) {
 				const int piece = PieceLabel[color].find(c);
-				if (piece != std::string::npos)
+				if (piece_ok(piece))
 					set(color, piece, sq++);
 			}
 		}
 	}
 
 	// Turn of play
-	is >> c;
-	if (c == 'w')
+	is >> s;
+	if (s == "w")
 		turn = WHITE;
 	else {
 		turn = BLACK;
 		key ^= zobrist::turn();
 	}
-	is >> c;
 
 	// Castling rights
-	while ((is >> c) && !isspace(c)) {
+	is >> s;
+	for (char c : s) {
 		const int color = isupper(c) ? WHITE : BLACK;
 		const int r = RANK_8 * color;
 		c = toupper(c);
@@ -119,14 +115,13 @@ void Position::set_pos(const std::string& fen)
 	}
 
 	// En passant square
-	std::string s;
 	is >> s;
 	epSquare = s != "-"
-		? epSquare = square(s[1] - '1', s[0] - 'a')
+		? square(s[1] - '1', s[0] - 'a')
 		: NB_SQUARE;
 
 	// 50-move counter
-	is >> std::skipws >> rule50;
+	is >> rule50;
 }
 
 bitboard_t Position::get(int color, int piece) const

@@ -24,6 +24,6 @@ int main()
 	zobrist::init();
 
 	Position pos;
-	pos.set_pos("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+	pos.set_pos("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/R3KBNR w KQkq - 5 1");
 	pos.print();
 }
