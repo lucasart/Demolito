@@ -14,6 +14,7 @@
  * You should have received a copy of the GNU General Public License along with
  * this program. If not, see <http://www.gnu.org/licenses/>.
 */
+#include <iostream>
 #include "bitboard.h"
 #include "zobrist.h"
 #include "position.h"
@@ -26,4 +27,6 @@ int main()
 	Position pos;
 	pos.set_pos("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/R3KBNR w KQkq - 5 1");
 	pos.print();
+
+	std::cout << pos.get_pos() << std::endl;
 }

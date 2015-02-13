@@ -17,17 +17,19 @@ class Position {
 	void set(int color, int piece, int sq);		// set piece of color on sq
 
 public:
-	void set_pos(const std::string& fen);		// set position from fen
-	void play(const Position& before, Move m);	// play a move: this = before + play(m)
+	void set_pos(const std::string& fen);
+	std::string get_pos() const;
+	void play(const Position& before, Move m);	// copy/play a move: this = before + play(m)
 
-	bitboard_t get(int color, int piece) const;	// pieces of a given color and type
-	bitboard_t get_RQ(int color) const;		// rooks and queens of color
-	bitboard_t get_BQ(int color) const;		// bishops and queens of color
+	bitboard_t get(int color, int piece) const;
+	bitboard_t get_RQ(int color) const;
+	bitboard_t get_BQ(int color) const;
 
-	int get_epsq() const { return epSquare; };
+	int ep_square() const;
+	int king_square(int color) const;
 
-	int color_on(int sq) const;	// color of piece on square (assumed occupied)
-	int piece_on(int sq) const;	// type of piece on square (assumed occupied)
+	int color_on(int sq) const;
+	int piece_on(int sq) const;
 
 	void print() const;	// ASCII representation of the position
 };

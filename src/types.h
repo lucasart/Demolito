@@ -13,6 +13,8 @@ struct Move {			// decoded move
 	void decode(move_t em);
 };
 
+extern bool Chess960;
+
 /* Color, Piece */
 
 enum {WHITE, BLACK, NB_COLOR};
@@ -44,6 +46,8 @@ bool square_ok(int sq);
 int rank_of(int sq);
 int file_of(int sq);
 int square(int r, int f);
+
+std::string square_to_string(int sq);
 
 /* Directions */
 

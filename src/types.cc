@@ -17,6 +17,8 @@
 #include <cassert>
 #include "types.h"
 
+bool Chess960 = true;	// TODO: to be set by UCI
+
 /* Move */
 
 bool Move::ok() const
@@ -91,6 +93,13 @@ int square(int r, int f)
 {
 	assert(rank_ok(r) && file_ok(f));
 	return NB_FILE * r + f;
+}
+
+std::string square_to_string(int sq)
+{
+	assert(square_ok(sq));
+	char s[2] = { char(file_of(sq) + 'a'), char(rank_of(sq) + '1') };
+	return std::string(s);
 }
 
 /* Directions */

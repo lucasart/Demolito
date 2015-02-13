@@ -124,6 +124,75 @@ void Position::set_pos(const std::string& fen)
 	is >> rule50;
 }
 
+std::string Position::get_pos() const
+{
+	std::ostringstream os;
+
+	// Piece placement
+	for (int r = RANK_8; r >= RANK_1; r--) {
+		int cnt = 0;
+
+		for (int f = FILE_A; f <= FILE_H; f++) {
+			const int sq = square(r, f);
+
+			if (bb::test(occupied(), sq)) {
+				const int color = color_on(sq);
+				const int piece = piece_on(sq);
+				if (cnt)
+					os << char(cnt + '0');
+				cnt = 0;
+				os << PieceLabel[color][piece];
+			} else
+				cnt++;
+		}
+
+		if (cnt)
+			os << char(cnt + '0');
+		os << (r == RANK_1 ? ' ' : '/');
+	}
+
+	// Turn of play
+	os << (turn == WHITE ? "w " : "b ");
+
+	// Castling rights
+	for (int color = WHITE; color <= BLACK; color++) {
+		const bitboard_t sqs = castlableRooks & byColor[color];
+		if (!sqs)
+			continue;
+
+		// Because we have castlable rooks, king has to be on the first rank and not in a corner,
+		// which allows using bb::ray(ksq, ksq +/- 1) to search for the castle rook in Chess960.
+		const int ksq = king_square(color);
+		assert(rank_of(ksq) == (color == WHITE ? RANK_1 : RANK_8));
+		assert(file_of(ksq) != FILE_A && file_of(ksq) != FILE_H);
+
+		// Right side castling
+		if (sqs & bb::ray(ksq, ksq + 1)) {
+			if (Chess960)
+				os << char(file_of(bb::lsb(sqs & bb::ray(ksq, ksq + 1))) + (color == WHITE ? 'A' : 'a'));
+			else
+				os << PieceLabel[color][KING];
+		}
+
+		// Left side castling
+		if (sqs & bb::ray(ksq, ksq - 1)) {
+			if (Chess960)
+				os << char(file_of(bb::msb(sqs & bb::ray(ksq, ksq - 1))) + (color == WHITE ? 'A' : 'a'));
+			else
+				os << PieceLabel[color][QUEEN];
+		}
+	}
+	os << ' ';
+
+	// En passant
+	os << (square_ok(epSquare) ? square_to_string(epSquare) : "-") << ' ';
+
+	// 50 move counter
+	os << rule50;
+
+	return os.str();
+}
+
 bitboard_t Position::get(int color, int piece) const
 {
 	assert(color_ok(color) && piece_ok(piece));
@@ -146,6 +215,16 @@ int Position::color_on(int sq) const
 {
 	assert(bb::test(occupied(), sq));
 	return bb::test(byColor[WHITE], sq) ? WHITE : BLACK;
+}
+
+int Position::ep_square() const
+{
+	return epSquare;
+}
+
+int Position::king_square(int color) const
+{
+	return bb::lsb(get(color, KING));
 }
 
 int Position::piece_on(int sq) const
@@ -195,7 +274,7 @@ void Position::play(const Position& before, Move m)
 		epSquare = m.tsq == m.fsq + 2 * push ? m.fsq + push : NB_SQUARE;
 
 		// handle ep-capture and promotion
-		if (m.tsq == before.get_epsq())
+		if (m.tsq == before.ep_square())
 			clear(them, piece, m.tsq - push);
 		else if (rank_of(m.tsq) == RANK_8 || rank_of(m.tsq) == RANK_1) {
 			clear(us, piece, m.tsq);
@@ -229,7 +308,7 @@ void Position::play(const Position& before, Move m)
 
 	turn = them;
 	key ^= zobrist::turn();
-	key ^= zobrist::ep(before.get_epsq()) ^ zobrist::ep(epSquare);
+	key ^= zobrist::ep(before.ep_square()) ^ zobrist::ep(epSquare);
 	key ^= zobrist::castling(before.castlableRooks ^ castlableRooks);
 	assert(key_ok());
 }
