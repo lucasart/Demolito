@@ -27,15 +27,15 @@ bitboard_t ray(int sq1, int sq2);
 
 /* Bit manipulation */
 
-// Individual bit operations
 bool test(bitboard_t b, int sq);
 void clear(bitboard_t& b, int sq);
 void set(bitboard_t& b, int sq);
 
-// Bit loop primitives
 int lsb(bitboard_t b);
 int msb(bitboard_t b);
 int pop_lsb(bitboard_t& b);
+
+bool several(bitboard_t b);
 int count(bitboard_t b);
 
 /* Debug print */

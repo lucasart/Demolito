@@ -27,6 +27,11 @@ bitboard_t Position::occupied() const
 	return byColor[WHITE] | byColor[BLACK];
 }
 
+bitboard_t Position::occupied(int color) const
+{
+	return byColor[color];
+}
+
 bool Position::key_ok() const
 {
 	uint64_t k = 0;
@@ -199,6 +204,11 @@ bitboard_t Position::get(int color, int piece) const
 	return byColor[color] & byPiece[piece];
 }
 
+int Position::get_turn() const
+{
+	return turn;
+}
+
 bitboard_t Position::get_RQ(int color) const
 {
 	assert(color_ok(color));
@@ -326,4 +336,30 @@ void Position::print() const
 		std::cout << line << '\n';
 	}
 	std::cout << "\nrule50 = " << rule50 << std::endl;
+}
+
+bitboard_t PinInfo::hidden_checkers(const Position& pos, int attacker, int blocker) const
+{
+	assert(color_ok(attacker) && color_ok(blocker));
+	const int ksq = pos.king_square(opp_color(attacker));
+	bitboard_t pinners = (pos.get_RQ(attacker) & bb::rpattacks(ksq)) | (pos.get_BQ(attacker) & bb::bpattacks(ksq));
+
+	bitboard_t result = 0;
+	while (pinners) {
+		const int sq = bb::pop_lsb(pinners);
+		bitboard_t skewered = bb::segment(ksq, sq) & pos.occupied();
+		bb::clear(skewered, ksq);
+		bb::clear(skewered, sq);
+
+		if (!bb::several(skewered) && (skewered & pos.occupied(blocker)))
+			result |= skewered;
+	}
+	return result;
+}
+
+PinInfo::PinInfo(const Position& pos)
+{
+	const int us = pos.get_turn(), them = opp_color(us);
+	pinned = hidden_checkers(pos, them, us);
+	discoCheckers = hidden_checkers(pos, us, us);
 }

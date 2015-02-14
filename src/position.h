@@ -9,7 +9,6 @@ class Position {
 	int epSquare;			// en-passant square (NB_SQUARE if none)
 	int rule50;			// half-move counter for the 50 move rule
 
-	bitboard_t occupied() const;
 	bool key_ok() const;
 
 	void clear();					// clear everything
@@ -20,6 +19,11 @@ public:
 	void set_pos(const std::string& fen);
 	std::string get_pos() const;
 	void play(const Position& before, Move m);	// copy/play a move: this = before + play(m)
+
+	bitboard_t occupied() const;
+	bitboard_t occupied(int color) const;
+
+	int get_turn() const;
 
 	bitboard_t get(int color, int piece) const;
 	bitboard_t get_RQ(int color) const;
@@ -32,4 +36,14 @@ public:
 	int piece_on(int sq) const;
 
 	void print() const;	// ASCII representation of the position
+};
+
+class PinInfo {
+	bitboard_t pinned;		// pinned pieces
+	bitboard_t discoCheckers;	// discovery checkers
+
+	bitboard_t hidden_checkers(const Position& b, int attacker, int blocker) const;
+
+public:
+	PinInfo(const Position& pos);
 };

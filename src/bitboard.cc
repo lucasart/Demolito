@@ -196,6 +196,11 @@ int pop_lsb(bitboard_t& b)
 	return sq;
 }
 
+bool several(bitboard_t b)
+{
+	return b & (b - 1);
+}
+
 int count(bitboard_t b)
 {
 	return __builtin_popcountll(b);
