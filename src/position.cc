@@ -22,16 +22,6 @@
 #include "bitboard.h"
 #include "zobrist.h"
 
-bitboard_t Position::get_all() const
-{
-	return byColor[WHITE] | byColor[BLACK];
-}
-
-bitboard_t Position::get_all(int color) const
-{
-	return byColor[color];
-}
-
 bool Position::key_ok() const
 {
 	uint64_t k = 0;
@@ -202,15 +192,16 @@ std::string Position::get_pos() const
 	return os.str();
 }
 
+bitboard_t Position::get_all(int color) const
+{
+	assert(color_ok(color));
+	return byColor[color];
+}
+
 bitboard_t Position::get(int color, int piece) const
 {
 	assert(color_ok(color) && piece_ok(piece));
 	return byColor[color] & byPiece[piece];
-}
-
-int Position::get_turn() const
-{
-	return turn;
 }
 
 bitboard_t Position::get_RQ(int color) const
@@ -229,11 +220,6 @@ int Position::color_on(int sq) const
 {
 	assert(bb::test(get_all(), sq));
 	return bb::test(byColor[WHITE], sq) ? WHITE : BLACK;
-}
-
-int Position::ep_square() const
-{
-	return epSquare;
 }
 
 int Position::king_square(int color) const
@@ -288,7 +274,7 @@ void Position::play(const Position& before, Move m, bool givesCheck)
 		epSquare = m.tsq == m.fsq + 2 * push ? m.fsq + push : NB_SQUARE;
 
 		// handle ep-capture and promotion
-		if (m.tsq == before.ep_square())
+		if (m.tsq == before.get_ep_square())
 			clear(them, piece, m.tsq - push);
 		else if (rank_of(m.tsq) == RANK_8 || rank_of(m.tsq) == RANK_1) {
 			clear(us, piece, m.tsq);
@@ -323,7 +309,7 @@ void Position::play(const Position& before, Move m, bool givesCheck)
 	// Update dynamic stuff
 	checkers = givesCheck ? attackers_to(king_square(them)) & byColor[us] : 0;
 	key ^= zobrist::turn();
-	key ^= zobrist::ep(before.ep_square()) ^ zobrist::ep(epSquare);
+	key ^= zobrist::ep(before.get_ep_square()) ^ zobrist::ep(epSquare);
 	key ^= zobrist::castling(before.castlableRooks ^ castlableRooks);
 	assert(key_ok());
 

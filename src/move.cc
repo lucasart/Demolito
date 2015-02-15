@@ -80,7 +80,7 @@ bool Move::gives_check(const Position& pos, const PinInfo& pi) const
 		return true;
 
 	// En passant
-	if (piece == PAWN && tsq == pos.ep_square()) {
+	if (piece == PAWN && tsq == pos.get_ep_square()) {
 		bitboard_t occ = pos.get_all();
 		bb::set(occ, tsq);
 		bb::clear(occ, tsq + push_inc(them));

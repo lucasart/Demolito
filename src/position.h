@@ -23,15 +23,16 @@ public:
 	std::string get_pos() const;
 	void play(const Position& before, Move m, bool givesCheck);
 
-	bitboard_t get_all() const;
+	bitboard_t get_all() const	{ return byColor[WHITE] | byColor[BLACK]; }
 	bitboard_t get_all(int color) const;
-
 	bitboard_t get(int color, int piece) const;
 	bitboard_t get_RQ(int color) const;
 	bitboard_t get_BQ(int color) const;
 
-	int get_turn() const;
-	int ep_square() const;
+	int get_turn() const		{ return turn; }
+	int get_ep_square() const	{ return epSquare; }
+	bitboard_t get_checkers() const	{ return checkers; }
+
 	int king_square(int color) const;
 
 	int color_on(int sq) const;
