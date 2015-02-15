@@ -28,11 +28,11 @@ bitboard_t PinInfo::hidden_checkers(const Position& pos, int attacker, int block
 	bitboard_t result = 0;
 	while (pinners) {
 		int sq = bb::pop_lsb(pinners);
-		bitboard_t skewered = bb::segment(ksq, sq) & pos.occupied();
+		bitboard_t skewered = bb::segment(ksq, sq) & pos.get_all();
 		bb::clear(skewered, ksq);
 		bb::clear(skewered, sq);
 
-		if (!bb::several(skewered) && (skewered & pos.occupied(blocker)))
+		if (!bb::several(skewered) && (skewered & pos.get_all(blocker)))
 			result |= skewered;
 	}
 	return result;
@@ -72,7 +72,7 @@ bool Move::gives_check(const Position& pos, const PinInfo& pi) const
 	int piece = piece_ok(prom) ? prom : pos.piece_on(fsq);
 
 	// Direct check ?
-	if (bb::test(bb::piece_attacks(us, piece, tsq, pos.occupied()), ksq))
+	if (bb::test(bb::piece_attacks(us, piece, tsq, pos.get_all()), ksq))
 		return true;
 
 	// Disco check ?
@@ -81,15 +81,15 @@ bool Move::gives_check(const Position& pos, const PinInfo& pi) const
 
 	// En passant
 	if (piece == PAWN && tsq == pos.ep_square()) {
-		bitboard_t occ = pos.occupied();
+		bitboard_t occ = pos.get_all();
 		bb::set(occ, tsq);
 		bb::clear(occ, tsq + push_inc(them));
 		return (pos.get_RQ(us) & bb::rattacks(ksq, occ)) || (pos.get_BQ(us) & bb::battacks(ksq, occ));
 	}
 
 	// Castling
-	if (piece == KING && bb::test(pos.occupied(us), tsq)) {
-		bitboard_t occ = pos.occupied();
+	if (piece == KING && bb::test(pos.get_all(us), tsq)) {
+		bitboard_t occ = pos.get_all();
 		bb::clear(occ, fsq);
 		bb::set(occ, square(rank_of(fsq), tsq > fsq ? FILE_G : FILE_C));
 		return (pos.get_RQ(us) & bb::rattacks(ksq, occ)) || (pos.get_BQ(us) & bb::battacks(ksq, occ));

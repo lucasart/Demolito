@@ -25,10 +25,6 @@ int main()
 	zobrist::init();
 
 	Position pos;
-	pos.set_pos("rnbqkbnr/ppp2ppp/8/8/8/8/PPPPPPPP/R2KQBNR w KQkq - 5 1");
+	pos.set_pos("rnbqkbnr/ppp2ppp/8/8/8/8/PPP1PPPP/R2KQBNR w KQkq - 5 1");
 	pos.print();
-
-	std::cout << pos.get_pos() << std::endl;
-
-	PinInfo pi(pos);
 }

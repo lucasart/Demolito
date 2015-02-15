@@ -36,6 +36,7 @@ int file_of(int sq);
 int square(int r, int f);
 
 std::string square_to_string(int sq);
+int string_to_square(const std::string& s);
 
 /* Directions */
 

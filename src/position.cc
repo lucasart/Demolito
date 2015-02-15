@@ -22,12 +22,12 @@
 #include "bitboard.h"
 #include "zobrist.h"
 
-bitboard_t Position::occupied() const
+bitboard_t Position::get_all() const
 {
 	return byColor[WHITE] | byColor[BLACK];
 }
 
-bitboard_t Position::occupied(int color) const
+bitboard_t Position::get_all(int color) const
 {
 	return byColor[color];
 }
@@ -47,6 +47,17 @@ bool Position::key_ok() const
 		k ^= zobrist::turn();
 
 	return k == key;
+}
+
+bitboard_t Position::calc_checkers() const
+{
+	int us = get_turn(), them = opp_color(us);
+	int ksq = king_square(us);
+
+	return	(bb::pattacks(us, ksq) & get(them, PAWN))
+		| (bb::nattacks(ksq) & get(them, PAWN))
+		| (bb::rattacks(ksq, get_all()) & get_RQ(them))
+		| (bb::battacks(ksq, get_all()) & get_BQ(them));
 }
 
 void Position::clear()
@@ -95,12 +106,7 @@ void Position::set_pos(const std::string& fen)
 
 	// Turn of play
 	is >> s;
-	if (s == "w")
-		turn = WHITE;
-	else {
-		turn = BLACK;
-		key ^= zobrist::turn();
-	}
+	turn = s == "w" ? WHITE : BLACK;
 
 	// Castling rights
 	is >> s;
@@ -119,14 +125,16 @@ void Position::set_pos(const std::string& fen)
 		bb::set(castlableRooks, sq);
 	}
 
-	// En passant square
+	// en-passant and 50 move
 	is >> s;
-	epSquare = s != "-"
-		? square(s[1] - '1', s[0] - 'a')
-		: NB_SQUARE;
-
-	// 50-move counter
+	epSquare = string_to_square(s);
 	is >> rule50;
+
+	// Calculate dynamically updated stuff
+	if (get_turn() == BLACK)
+		key ^= zobrist::turn();
+	key ^= zobrist::ep(ep_square());
+	checkers = calc_checkers();
 }
 
 std::string Position::get_pos() const
@@ -140,7 +148,7 @@ std::string Position::get_pos() const
 		for (int f = FILE_A; f <= FILE_H; f++) {
 			int sq = square(r, f);
 
-			if (bb::test(occupied(), sq)) {
+			if (bb::test(get_all(), sq)) {
 				int color = color_on(sq);
 				int piece = piece_on(sq);
 				if (cnt)
@@ -189,10 +197,8 @@ std::string Position::get_pos() const
 	}
 	os << ' ';
 
-	// En passant
+	// en-passant and 50 move
 	os << (square_ok(epSquare) ? square_to_string(epSquare) : "-") << ' ';
-
-	// 50 move counter
 	os << rule50;
 
 	return os.str();
@@ -223,7 +229,7 @@ bitboard_t Position::get_BQ(int color) const
 
 int Position::color_on(int sq) const
 {
-	assert(bb::test(occupied(), sq));
+	assert(bb::test(get_all(), sq));
 	return bb::test(byColor[WHITE], sq) ? WHITE : BLACK;
 }
 
@@ -239,7 +245,7 @@ int Position::king_square(int color) const
 
 int Position::piece_on(int sq) const
 {
-	assert(bb::test(occupied(), sq));
+	assert(bb::test(get_all(), sq));
 
 	// Pawns first (most frequent)
 	if (bb::test(byPiece[PAWN], sq))
@@ -253,14 +259,14 @@ int Position::piece_on(int sq) const
 	assert(false);
 }
 
-void Position::play(const Position& before, Move m)
+void Position::play(const Position& before, Move m, bool givesCheck)
 {
 	*this = before;
 	rule50++;
 
 	int us = turn, them = opp_color(us);
 	int piece = piece_on(m.fsq);
-	int capture = bb::test(occupied(), m.tsq) ? piece_on(m.tsq) : NB_PIECE;
+	int capture = bb::test(get_all(), m.tsq) ? piece_on(m.tsq) : NB_PIECE;
 
 	// Capture piece on to square (if any)
 	if (capture != NB_PIECE) {
@@ -317,6 +323,9 @@ void Position::play(const Position& before, Move m)
 	}
 
 	turn = them;
+
+	// Update dynamic stuff
+	checkers = givesCheck ? calc_checkers() : 0;
 	key ^= zobrist::turn();
 	key ^= zobrist::ep(before.ep_square()) ^ zobrist::ep(epSquare);
 	key ^= zobrist::castling(before.castlableRooks ^ castlableRooks);
@@ -329,11 +338,17 @@ void Position::print() const
 		char line[] = ". . . . . . . .";
 		for (int f = FILE_A; f <= FILE_H; f++) {
 			int sq = square(r, f);
-			line[2 * f] = bb::test(occupied(), sq)
+			line[2 * f] = bb::test(get_all(), sq)
 				? PieceLabel[color_on(sq)][piece_on(sq)]
 				: sq == epSquare ? '*' : '.';
 		}
 		std::cout << line << '\n';
 	}
-	std::cout << "\nrule50 = " << rule50 << std::endl;
+	std::cout << get_pos() << std::endl;
+
+	std::cout << "checkers:";
+	bitboard_t b = checkers;
+	while (b)
+		std::cout << ' ' << square_to_string(bb::pop_lsb(b));
+	std::cout << std::endl;
 }

@@ -79,6 +79,11 @@ std::string square_to_string(int sq)
 	return std::string(s);
 }
 
+int string_to_square(const std::string& s)
+{
+	return s == "-" ? NB_SQUARE : square(s[1] - '1', s[0] - 'a');
+}
+
 /* Directions */
 
 int push_inc(int color)
