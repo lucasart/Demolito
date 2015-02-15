@@ -1,8 +1,5 @@
 #pragma once
 #include <string>
-#include <cstdint>
-
-typedef uint64_t bitboard_t;
 
 extern bool Chess960;
 

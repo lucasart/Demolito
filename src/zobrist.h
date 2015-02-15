@@ -1,4 +1,5 @@
 #pragma once
+#include "bitboard.h"
 #include "types.h"
 
 namespace zobrist {

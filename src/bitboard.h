@@ -1,5 +1,8 @@
 #pragma once
+#include <cstdint>
 #include "types.h"
+
+typedef uint64_t bitboard_t;
 
 namespace bb {
 
