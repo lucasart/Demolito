@@ -16,7 +16,6 @@
 */
 #include <cassert>
 #include "zobrist.h"
-#include "prng.h"
 #include "bitboard.h"
 
 namespace {
@@ -26,9 +25,32 @@ uint64_t ZobristCastling[NB_SQUARE];
 uint64_t ZobristEp[NB_SQUARE+1];
 uint64_t ZobristTurn;
 
+uint64_t rotate(uint64_t x, int k)
+{
+	return (x << k) | (x >> (64 - k));
+}
+
 }	// namespace
 
 namespace zobrist {
+
+void PRNG::init(uint64_t seed)
+{
+	a = 0xf1ea5eed;
+	b = c = d = seed;
+
+	for (int i = 0; i < 20; ++i)
+		rand();
+}
+
+uint64_t PRNG::rand()
+{
+	uint64_t e = a - rotate(b,  7);
+	a = b ^ rotate(c, 13);
+	b = c + rotate(d, 37);
+	c = d + e;
+	return d = e + a;
+}
 
 void init()
 {
