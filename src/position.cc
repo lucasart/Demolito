@@ -49,15 +49,13 @@ bool Position::key_ok() const
 	return k == key;
 }
 
-bitboard_t Position::calc_checkers() const
+bitboard_t Position::attackers_to(int sq) const
 {
-	int us = get_turn(), them = opp_color(us);
-	int ksq = king_square(us);
-
-	return	(bb::pattacks(us, ksq) & get(them, PAWN))
-		| (bb::nattacks(ksq) & get(them, PAWN))
-		| (bb::rattacks(ksq, get_all()) & get_RQ(them))
-		| (bb::battacks(ksq, get_all()) & get_BQ(them));
+	return	((bb::pattacks(WHITE, sq) | bb::pattacks(BLACK, sq)) & byPiece[PAWN])
+		| (bb::nattacks(sq) & byPiece[KNIGHT])
+		| (bb::kattacks(sq) & byPiece[KING])
+		| (bb::rattacks(sq, get_all()) & (byPiece[ROOK] | byPiece[QUEEN]))
+		| (bb::battacks(sq, get_all()) & (byPiece[BISHOP] | byPiece[QUEEN]));
 }
 
 void Position::clear()
@@ -131,10 +129,10 @@ void Position::set_pos(const std::string& fen)
 	is >> rule50;
 
 	// Calculate dynamically updated stuff
-	if (get_turn() == BLACK)
+	if (turn == BLACK)
 		key ^= zobrist::turn();
-	key ^= zobrist::ep(ep_square());
-	checkers = calc_checkers();
+	key ^= zobrist::ep(epSquare);
+	checkers = attackers_to(king_square(turn)) & byColor[opp_color(turn)];
 }
 
 std::string Position::get_pos() const
@@ -322,14 +320,14 @@ void Position::play(const Position& before, Move m, bool givesCheck)
 		}
 	}
 
-	turn = them;
-
 	// Update dynamic stuff
-	checkers = givesCheck ? calc_checkers() : 0;
+	checkers = givesCheck ? attackers_to(king_square(them)) & byColor[us] : 0;
 	key ^= zobrist::turn();
 	key ^= zobrist::ep(before.ep_square()) ^ zobrist::ep(epSquare);
 	key ^= zobrist::castling(before.castlableRooks ^ castlableRooks);
 	assert(key_ok());
+
+	turn = them;
 }
 
 void Position::print() const

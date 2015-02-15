@@ -12,7 +12,7 @@ class Position {
 	int rule50;
 
 	bool key_ok() const;
-	bitboard_t calc_checkers() const;
+	bitboard_t attackers_to(int sq) const;
 
 	void clear();
 	void clear(int color, int piece, int sq);
