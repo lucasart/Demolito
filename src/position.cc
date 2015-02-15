@@ -86,7 +86,7 @@ void Position::set_pos(const std::string& fen)
 			sq -= 16;
 		else {
 			for (int color = 0; color < NB_COLOR; color++) {
-				const int piece = PieceLabel[color].find(c);
+				int piece = PieceLabel[color].find(c);
 				if (piece_ok(piece))
 					set(color, piece, sq++);
 			}
@@ -105,8 +105,8 @@ void Position::set_pos(const std::string& fen)
 	// Castling rights
 	is >> s;
 	for (char c : s) {
-		const int color = isupper(c) ? WHITE : BLACK;
-		const int r = RANK_8 * color;
+		int color = isupper(c) ? WHITE : BLACK;
+		int r = RANK_8 * color;
 		c = toupper(c);
 
 		if (c == 'K')
@@ -138,11 +138,11 @@ std::string Position::get_pos() const
 		int cnt = 0;
 
 		for (int f = FILE_A; f <= FILE_H; f++) {
-			const int sq = square(r, f);
+			int sq = square(r, f);
 
 			if (bb::test(occupied(), sq)) {
-				const int color = color_on(sq);
-				const int piece = piece_on(sq);
+				int color = color_on(sq);
+				int piece = piece_on(sq);
 				if (cnt)
 					os << char(cnt + '0');
 				cnt = 0;
@@ -161,13 +161,13 @@ std::string Position::get_pos() const
 
 	// Castling rights
 	for (int color = WHITE; color <= BLACK; color++) {
-		const bitboard_t sqs = castlableRooks & byColor[color];
+		bitboard_t sqs = castlableRooks & byColor[color];
 		if (!sqs)
 			continue;
 
 		// Because we have castlable rooks, king has to be on the first rank and not in a corner,
 		// which allows using bb::ray(ksq, ksq +/- 1) to search for the castle rook in Chess960.
-		const int ksq = king_square(color);
+		int ksq = king_square(color);
 		assert(rank_of(ksq) == (color == WHITE ? RANK_1 : RANK_8));
 		assert(file_of(ksq) != FILE_A && file_of(ksq) != FILE_H);
 
@@ -258,9 +258,9 @@ void Position::play(const Position& before, Move m)
 	*this = before;
 	rule50++;
 
-	const int us = turn, them = opp_color(us);
-	const int piece = piece_on(m.fsq);
-	const int capture = bb::test(occupied(), m.tsq) ? piece_on(m.tsq) : NB_PIECE;
+	int us = turn, them = opp_color(us);
+	int piece = piece_on(m.fsq);
+	int capture = bb::test(occupied(), m.tsq) ? piece_on(m.tsq) : NB_PIECE;
 
 	// Capture piece on to square (if any)
 	if (capture != NB_PIECE) {
@@ -279,7 +279,7 @@ void Position::play(const Position& before, Move m)
 
 	if (piece == PAWN) {
 		// reset rule50, and set epsq
-		const int push = push_inc(us);
+		int push = push_inc(us);
 		rule50 = 0;
 		epSquare = m.tsq == m.fsq + 2 * push ? m.fsq + push : NB_SQUARE;
 
@@ -305,9 +305,9 @@ void Position::play(const Position& before, Move m)
 				// Capturing our own piece can only be a castling move, encoded KxR
 				assert(before.piece_on(m.tsq) == ROOK);
 
-				const int r = rank_of(m.fsq);
-				const int ksq = m.tsq > m.fsq ? square(r, FILE_G) : square(r, FILE_C);
-				const int rsq = m.tsq > m.fsq ? square(r, FILE_F) : square(r, FILE_D);
+				int r = rank_of(m.fsq);
+				int ksq = m.tsq > m.fsq ? square(r, FILE_G) : square(r, FILE_C);
+				int rsq = m.tsq > m.fsq ? square(r, FILE_F) : square(r, FILE_D);
 
 				clear(us, KING, m.tsq);
 				set(us, KING, ksq);
@@ -328,7 +328,7 @@ void Position::print() const
 	for (int r = RANK_8; r >= RANK_1; r--) {
 		char line[] = ". . . . . . . .";
 		for (int f = FILE_A; f <= FILE_H; f++) {
-			const int sq = square(r, f);
+			int sq = square(r, f);
 			line[2 * f] = bb::test(occupied(), sq)
 				? PieceLabel[color_on(sq)][piece_on(sq)]
 				: sq == epSquare ? '*' : '.';
@@ -336,30 +336,4 @@ void Position::print() const
 		std::cout << line << '\n';
 	}
 	std::cout << "\nrule50 = " << rule50 << std::endl;
-}
-
-bitboard_t PinInfo::hidden_checkers(const Position& pos, int attacker, int blocker) const
-{
-	assert(color_ok(attacker) && color_ok(blocker));
-	const int ksq = pos.king_square(opp_color(attacker));
-	bitboard_t pinners = (pos.get_RQ(attacker) & bb::rpattacks(ksq)) | (pos.get_BQ(attacker) & bb::bpattacks(ksq));
-
-	bitboard_t result = 0;
-	while (pinners) {
-		const int sq = bb::pop_lsb(pinners);
-		bitboard_t skewered = bb::segment(ksq, sq) & pos.occupied();
-		bb::clear(skewered, ksq);
-		bb::clear(skewered, sq);
-
-		if (!bb::several(skewered) && (skewered & pos.occupied(blocker)))
-			result |= skewered;
-	}
-	return result;
-}
-
-PinInfo::PinInfo(const Position& pos)
-{
-	const int us = pos.get_turn(), them = opp_color(us);
-	pinned = hidden_checkers(pos, them, us);
-	discoCheckers = hidden_checkers(pos, us, us);
 }

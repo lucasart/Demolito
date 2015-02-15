@@ -43,7 +43,7 @@ void safe_set_bit(bitboard_t& b, int r, int f)
 void init_KNP_attacks()
 {
 	for (int sq = 0; sq < NB_SQUARE; sq++) {
-		const int r = rank_of(sq), f = file_of(sq);
+		int r = rank_of(sq), f = file_of(sq);
 
 		for (int d = 0; d < 8; d++) {
 			safe_set_bit(NAttacks[sq], r + NDir[d][0], f + NDir[d][1]);
@@ -60,18 +60,18 @@ void init_KNP_attacks()
 void init_rays()
 {
 	for (int sq1 = 0; sq1 < NB_SQUARE; sq1++) {
-		const int r1 = rank_of(sq1), f1 = file_of(sq1);
+		int r1 = rank_of(sq1), f1 = file_of(sq1);
 		for (int d = 0; d < 8; d++) {
 			bitboard_t mask = 0;
 			for (int r2 = r1, f2 = f1; rank_ok(r2) && file_ok(f2); r2 += KDir[d][0], f2 += KDir[d][1]) {
-				const int sq2 = square(r2, f2);
+				int sq2 = square(r2, f2);
 				bb::set(mask, sq2);
 				Segment[sq1][sq2] = mask;
 			}
 
 			bitboard_t sqs = mask;
 			while (sqs) {
-				const int sq2 = bb::pop_lsb(sqs);
+				int sq2 = bb::pop_lsb(sqs);
 				Ray[sq1][sq2] = mask;
 			}
 		}
@@ -144,6 +144,24 @@ bitboard_t rpattacks(int sq)
 	return RPseudoAttacks[sq];
 }
 
+bitboard_t piece_attacks(int color, int piece, int sq, bitboard_t occ)
+{
+	assert(color_ok(color) && piece_ok(piece) && square_ok(sq));
+
+	if (piece == PAWN)
+		return pattacks(color, sq);
+	else if (piece == KNIGHT)
+		return nattacks(sq);
+	else if (piece == BISHOP)
+		return battacks(sq, occ);
+	else if (piece == ROOK)
+		return rattacks(sq, occ);
+	else if (piece == QUEEN)
+		return rattacks(sq, occ) | battacks(sq, occ);
+	else
+		return kattacks(sq);
+}
+
 bitboard_t segment(int sq1, int sq2)
 {
 	assert(square_ok(sq1) && square_ok(sq2));
@@ -191,7 +209,7 @@ int msb(bitboard_t b)
 
 int pop_lsb(bitboard_t& b)
 {
-	const int sq = lsb(b);
+	int sq = lsb(b);
 	b &= b - 1;
 	return sq;
 }

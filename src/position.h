@@ -1,4 +1,5 @@
 #include "types.h"
+#include "move.h"
 
 class Position {
 	bitboard_t byColor[NB_COLOR];	// occupied squares by color
@@ -11,14 +12,14 @@ class Position {
 
 	bool key_ok() const;
 
-	void clear();					// clear everything
-	void clear(int color, int piece, int sq);	// remove piece from color on sq
-	void set(int color, int piece, int sq);		// set piece of color on sq
+	void clear();
+	void clear(int color, int piece, int sq);
+	void set(int color, int piece, int sq);
 
 public:
 	void set_pos(const std::string& fen);
 	std::string get_pos() const;
-	void play(const Position& before, Move m);	// copy/play a move: this = before + play(m)
+	void play(const Position& before, Move m);
 
 	bitboard_t occupied() const;
 	bitboard_t occupied(int color) const;
@@ -35,15 +36,5 @@ public:
 	int color_on(int sq) const;
 	int piece_on(int sq) const;
 
-	void print() const;	// ASCII representation of the position
-};
-
-class PinInfo {
-	bitboard_t pinned;		// pinned pieces
-	bitboard_t discoCheckers;	// discovery checkers
-
-	bitboard_t hidden_checkers(const Position& b, int attacker, int blocker) const;
-
-public:
-	PinInfo(const Position& pos);
+	void print() const;
 };

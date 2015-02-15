@@ -144,15 +144,15 @@ const size_t RMagicIndex[64] = {
 
 bitboard_t calc_sliding_attacks(int sq, bitboard_t occ, const int dir[4][2])
 {
-	const int r = rank_of(sq), f = file_of(sq);
+	int r = rank_of(sq), f = file_of(sq);
 	bitboard_t result = 0;
 
 	for (int i = 0; i < 4; ++i) {
-		const int dr = dir[i][0], df = dir[i][1];
+		int dr = dir[i][0], df = dir[i][1];
 		int _r, _f;
 
 		for (_r = r + dr, _f = f + df; rank_ok(_r) && file_ok(_f); _r += dr, _f += df) {
-			const int _sq = square(_r, _f);
+			int _sq = square(_r, _f);
 			bb::set(result, _sq);
 			if (bb::test(occ, _sq))
 				break;
@@ -184,8 +184,8 @@ void init_helper(int sq, const bitboard_t mask[], const bitboard_t magic[], cons
 		squares[sq_cnt++] = bb::pop_lsb(temp);
 
 	for (temp = 0; temp < (1ULL << sq_cnt); temp++) {
-		const bitboard_t occ = init_magic_occ(squares, sq_cnt, temp);
-		const int idx = (occ * magic[sq]) >> shift[sq];
+		bitboard_t occ = init_magic_occ(squares, sq_cnt, temp);
+		int idx = (occ * magic[sq]) >> shift[sq];
 		bitboard_t *p = magic_db + magic_index[sq];
 		p[idx] = calc_sliding_attacks(sq, occ, dir);
 	}
@@ -209,14 +209,14 @@ void init_magic()
 bitboard_t battacks(int sq, bitboard_t occ)
 {
 	assert(square_ok(sq));
-	const int idx = ((occ & BMask[sq]) * BMagic[sq]) >> BShift[sq];
+	int idx = ((occ & BMask[sq]) * BMagic[sq]) >> BShift[sq];
 	return (BMagicDB + BMagicIndex[sq])[idx];
 }
 
 bitboard_t rattacks(int sq, bitboard_t occ)
 {
 	assert(square_ok(sq));
-	const int idx = ((occ & RMask[sq]) * RMagic[sq]) >> RShift[sq];
+	int idx = ((occ & RMask[sq]) * RMagic[sq]) >> RShift[sq];
 	return (RMagicDB + RMagicIndex[sq])[idx];
 }
 

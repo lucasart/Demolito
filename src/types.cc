@@ -19,29 +19,6 @@
 
 bool Chess960 = true;	// TODO: to be set by UCI
 
-/* Move */
-
-bool Move::ok() const
-// Test if fsq, tsq, prom are within acceptable bounds. No (pseudo)legality checking performed here
-{
-	return square_ok(fsq) && square_ok(tsq)
-		&& ((KNIGHT <= prom && prom <= QUEEN) || prom == NB_PIECE);
-}
-
-move_t Move::encode() const
-{
-	assert(ok());
-	return fsq | (tsq << 6) | (prom << 12);
-}
-
-void Move::decode(move_t em)
-{
-	fsq = em & 077;
-	tsq = (em >> 6) & 077;
-	prom = em >> 12;
-	assert(ok());
-}
-
 /* Color, Piece */
 
 bool color_ok(int c)
