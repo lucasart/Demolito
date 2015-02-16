@@ -65,6 +65,30 @@ void Move::decode(move_t em)
 	assert(ok());
 }
 
+std::string Move::to_string() const
+{
+	assert(ok());
+	std::string s;
+
+	s += file_of(fsq) + 'a';
+	s += rank_of(fsq) + '1';
+	s += file_of(tsq) + 'a';
+	s += rank_of(tsq) + '1';
+
+	if (piece_ok(prom))
+		s += PieceLabel[BLACK][prom];
+
+	return s;
+}
+
+void Move::from_string(const std::string& s)
+{
+	fsq = square(s[1] - '1', s[0] - 'a');
+	tsq = square(s[3] - '1', s[2] - 'a');
+	prom = s[4] ? (int)PieceLabel[BLACK].find(s[4]) : NB_PIECE;
+	assert(ok());
+}
+
 bool Move::gives_check(const Position& pos, const PinInfo& pi) const
 {
 	int us = pos.get_turn(), them = opp_color(us);

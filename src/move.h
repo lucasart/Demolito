@@ -21,5 +21,8 @@ struct Move {
 	move_t encode() const;
 	void decode(move_t em);
 
+	std::string to_string() const;
+	void from_string(const std::string& s);
+
 	bool gives_check(const Position& pos, const PinInfo& pi) const;
 };
