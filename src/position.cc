@@ -82,7 +82,7 @@ void Position::set_pos(const std::string& fen)
 		if (isdigit(c))
 			sq += c - '0';
 		else if (c == '/')
-			sq -= 16;
+			sq += 2 * DOWN;
 		else {
 			for (int color = 0; color < NB_COLOR; color++) {
 				int piece = PieceLabel[color].find(c);
@@ -113,7 +113,7 @@ void Position::set_pos(const std::string& fen)
 		bb::set(castlableRooks, sq);
 	}
 
-	// en-passant and 50 move
+	// En passant and 50 move
 	is >> s;
 	epSquare = string_to_square(s);
 	is >> rule50;
@@ -121,7 +121,7 @@ void Position::set_pos(const std::string& fen)
 	// Calculate dynamically updated stuff
 	if (turn == BLACK)
 		key ^= zobrist::turn();
-	key ^= zobrist::ep(epSquare);
+	key ^= zobrist::en_passant(epSquare);
 	checkers = attackers_to(king_square(turn)) & byColor[opp_color(turn)];
 }
 
@@ -185,7 +185,7 @@ std::string Position::get_pos() const
 	}
 	os << ' ';
 
-	// en-passant and 50 move
+	// En passant and 50 move
 	os << (square_ok(epSquare) ? square_to_string(epSquare) : "-") << ' ';
 	os << rule50;
 
@@ -268,7 +268,7 @@ void Position::play(const Position& before, Move m, bool givesCheck)
 	set(us, piece, m.tsq);
 
 	if (piece == PAWN) {
-		// reset rule50, and set epsq
+		// reset rule50, and set epSquare
 		int push = push_inc(us);
 		rule50 = 0;
 		epSquare = m.tsq == m.fsq + 2 * push ? m.fsq + push : NB_SQUARE;
@@ -309,7 +309,7 @@ void Position::play(const Position& before, Move m, bool givesCheck)
 	// Update dynamic stuff
 	checkers = givesCheck ? attackers_to(king_square(them)) & byColor[us] : 0;
 	key ^= zobrist::turn();
-	key ^= zobrist::ep(before.get_ep_square()) ^ zobrist::ep(epSquare);
+	key ^= zobrist::en_passant(before.get_ep_square()) ^ zobrist::en_passant(epSquare);
 	key ^= zobrist::castling(before.castlableRooks ^ castlableRooks);
 	assert(key_ok());
 

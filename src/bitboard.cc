@@ -40,7 +40,7 @@ void safe_set_bit(bitboard_t& b, int r, int f)
 		bb::set(b, square(r, f));
 }
 
-void init_KNP_attacks()
+void init_non_slider_attacks()
 {
 	for (int sq = 0; sq < NB_SQUARE; sq++) {
 		int r = rank_of(sq), f = file_of(sq);
@@ -78,7 +78,7 @@ void init_rays()
 	}
 }
 
-void init_pseudo_attacks()
+void init_slider_pseudo_attacks()
 {
 	for (int sq = 0; sq < NB_SQUARE; sq++) {
 		BPseudoAttacks[sq] = bb::battacks(sq, 0);
@@ -90,14 +90,14 @@ void init_pseudo_attacks()
 
 namespace bb {
 
-void init_magic();	// in magic.cc
+void init_slider_attacks();	// in magic.cc
 
 void init()
 {
-	init_KNP_attacks();
 	init_rays();
-	init_magic();
-	init_pseudo_attacks();
+	init_non_slider_attacks();
+	init_slider_attacks();
+	init_slider_pseudo_attacks();
 }
 
 /* Bitboard Accessors */

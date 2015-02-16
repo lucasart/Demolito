@@ -89,7 +89,7 @@ int string_to_square(const std::string& s)
 int push_inc(int color)
 {
 	assert(color_ok(color));
-	return color == WHITE ? +8 : -8;
+	return color == WHITE ? UP : DOWN;
 }
 
 /* Display */

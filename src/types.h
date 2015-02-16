@@ -40,6 +40,8 @@ int string_to_square(const std::string& s);
 
 /* Directions */
 
+enum {UP = 8, DOWN = -8, LEFT = -1, RIGHT = 1};
+
 int push_inc(int color);	// pawn push increment
 
 /* Display */

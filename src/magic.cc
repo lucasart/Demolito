@@ -195,7 +195,7 @@ void init_helper(int sq, const bitboard_t mask[], const bitboard_t magic[], cons
 
 namespace bb {
 
-void init_magic()
+void init_slider_attacks()
 {
 	const int Bdir[4][2] = {{-1,-1},{-1,1},{1,-1},{1,1}};
 	const int Rdir[4][2] = {{-1,0},{0,-1},{0,1},{1,0}};

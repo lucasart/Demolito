@@ -74,7 +74,6 @@ std::string Move::to_string() const
 	s += rank_of(fsq) + '1';
 	s += file_of(tsq) + 'a';
 	s += rank_of(tsq) + '1';
-
 	if (piece_ok(prom))
 		s += PieceLabel[BLACK][prom];
 
