@@ -12,6 +12,7 @@ void init();
 
 bitboard_t rank(int r);
 bitboard_t file(int f);
+bitboard_t relative_rank(int color, int r);
 
 // Non-slider attacks
 bitboard_t pattacks(int color, int sq);

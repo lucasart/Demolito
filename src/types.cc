@@ -66,6 +66,12 @@ int file_of(int sq)
 	return sq % NB_FILE;
 }
 
+int relative_rank(int color, int sq)
+{
+	assert(color_ok(color) && square_ok(sq));
+	return rank_of(sq) ^ (7 * color);
+}
+
 int square(int r, int f)
 {
 	assert(rank_ok(r) && file_ok(f));

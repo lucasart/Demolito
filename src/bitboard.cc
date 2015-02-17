@@ -114,6 +114,12 @@ bitboard_t file(int f)
 	return 0x0101010101010101ULL << f;
 }
 
+bitboard_t relative_rank(int color, int r)
+{
+	assert(color_ok(color) && rank_ok(r));
+	return rank(color == WHITE ? r : RANK_8 - r);
+}
+
 bitboard_t pattacks(int color, int sq)
 {
 	assert(color_ok(color) && square_ok(sq));

@@ -33,6 +33,7 @@ bool file_ok(int f);
 bool square_ok(int sq);
 int rank_of(int sq);
 int file_of(int sq);
+int relative_rank(int color, int sq);
 int square(int r, int f);
 
 std::string square_to_string(int sq);
