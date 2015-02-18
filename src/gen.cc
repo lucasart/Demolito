@@ -20,21 +20,15 @@
 
 namespace {
 
+template <bool Promotion>
 Move *serialize_moves(Move& m, bitboard_t tss, Move *mlist)
 {
 	while (tss) {
 		m.tsq = bb::pop_lsb(tss);
-		*mlist++ = m;
-	}
-
-	return mlist;
-}
-
-Move *serialize_promotions(Move& m, bitboard_t tss, Move *mlist)
-{
-	while (tss) {
-		m.tsq = bb::pop_lsb(tss);
-		for (m.prom = QUEEN; m.prom >= KNIGHT; m.prom--)
+		if (Promotion) {
+			for (m.prom = QUEEN; m.prom >= KNIGHT; m.prom--)
+				*mlist++ = m;
+		} else
 			*mlist++ = m;
 	}
 
@@ -71,7 +65,7 @@ Move *pawn_moves(const Position& pos, Move *mlist, bitboard_t targets)
 
 		// Generate moves
 		m.prom = NB_PIECE;
-		mlist = serialize_moves(m, tss, mlist);
+		mlist = serialize_moves<false>(m, tss, mlist);
 	}
 
 	// Promotions
@@ -85,7 +79,7 @@ Move *pawn_moves(const Position& pos, Move *mlist, bitboard_t targets)
 			bb::set(tss, m.fsq + push);
 
 		// Generate moves (or promotions)
-		mlist = serialize_promotions(m, tss, mlist);
+		mlist = serialize_moves<true>(m, tss, mlist);
 	}
 
 	return mlist;
@@ -102,14 +96,14 @@ Move *piece_moves(const Position& pos, Move *mlist, bitboard_t targets)
 	// King moves
 	m.fsq = pos.king_square(us);
 	tss = bb::kattacks(m.fsq) & targets;
-	mlist = serialize_moves(m, tss, mlist);
+	mlist = serialize_moves<false>(m, tss, mlist);
 
 	// Knight moves
 	fss = pos.get(us, KNIGHT);
 	while (fss) {
 		m.fsq = bb::pop_lsb(fss);
 		tss = bb::nattacks(m.fsq) & targets;
-		mlist = serialize_moves(m, tss, mlist);
+		mlist = serialize_moves<false>(m, tss, mlist);
 	}
 
 	// Rook moves
@@ -117,7 +111,7 @@ Move *piece_moves(const Position& pos, Move *mlist, bitboard_t targets)
 	while (fss) {
 		m.fsq = bb::pop_lsb(fss);
 		tss = bb::rattacks(m.fsq, pos.get_all()) & targets;
-		mlist = serialize_moves(m, tss, mlist);
+		mlist = serialize_moves<false>(m, tss, mlist);
 	}
 
 	// Bishop moves
@@ -125,7 +119,7 @@ Move *piece_moves(const Position& pos, Move *mlist, bitboard_t targets)
 	while (fss) {
 		m.fsq = bb::pop_lsb(fss);
 		tss = bb::battacks(m.fsq, pos.get_all()) & targets;
-		mlist = serialize_moves(m, tss, mlist);
+		mlist = serialize_moves<false>(m, tss, mlist);
 	}
 
 	return mlist;
