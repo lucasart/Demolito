@@ -125,4 +125,20 @@ Move *piece_moves(const Position& pos, Move *mlist, bitboard_t targets)
 	return mlist;
 }
 
+Move *castling_moves(const Position& pos, Move *mlist)
+{
+	Move m;
+	m.fsq = pos.king_square(pos.get_turn());
+	m.prom = NB_PIECE;
+
+	bitboard_t tss = pos.get_castlable_rooks();
+	while (tss) {
+		m.tsq = bb::pop_lsb(tss);
+		if (bb::count(bb::segment(m.fsq, m.tsq) & pos.get_all()) == 2)
+			*mlist++ = m;
+	}
+
+	return mlist;
+}
+
 }	// namespace gen

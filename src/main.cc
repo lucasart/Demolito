@@ -30,7 +30,7 @@ int main()
 	pos.print();
 
 	Move mlist[256];
-	Move *end = gen::pawn_moves(pos, mlist, ~pos.get_all(pos.get_turn()));
+	Move *end = gen::castling_moves(pos, mlist);
 	for (Move *m = mlist; m != end; m++)
 		std::cout << m->to_string() << std::endl;
 }
