@@ -2,15 +2,17 @@
 #include "types.h"
 #include "move.h"
 
+// TODO (lucas#1#): struct AttackInfo
+
 class Position {
-	bitboard_t byColor[NB_COLOR];
-	bitboard_t byPiece[NB_PIECE];
-	bitboard_t castlableRooks;
-	bitboard_t checkers;
-	uint64_t key;
-	int turn;
-	int epSquare;
-	int rule50;
+	bitboard_t _byColor[NB_COLOR];
+	bitboard_t _byPiece[NB_PIECE];
+	bitboard_t _castlableRooks;
+	bitboard_t _checkers;
+	uint64_t _key;
+	int _turn;
+	int _epSquare;
+	int _rule50;
 
 	bool key_ok() const;
 	bitboard_t attackers_to(int sq) const;
@@ -24,19 +26,21 @@ public:
 	std::string get_pos() const;
 	void play(const Position& before, Move m, bool givesCheck);
 
-	bitboard_t get_all() const		{ return byColor[WHITE] | byColor[BLACK]; }
-	bitboard_t get_all(int color) const;
-	bitboard_t get(int color, int piece) const;
-	bitboard_t get_RQ(int color) const;
-	bitboard_t get_BQ(int color) const;
+	bitboard_t occ() const			{ return _byColor[WHITE] | _byColor[BLACK]; }
+	bitboard_t occ(int color) const;
+	bitboard_t by_piece(int piece) const;
+	bitboard_t occ(int color, int piece) const;
+	bitboard_t occ_RQ(int color) const;
+	bitboard_t occ_BQ(int color) const;
 
-	int get_turn() const			{ return turn; }
-	int get_ep_square() const		{ return epSquare; }
-	bitboard_t get_checkers() const		{ return checkers; }
-	bitboard_t get_castlable_rooks() const	{ return castlableRooks; }
+	int turn() const			{ return _turn; }
+	int ep_square() const			{ return _epSquare; }
+	int rule50() const			{ return _rule50; }
+	bitboard_t checkers() const		{ return _checkers; }
+	bitboard_t castlable_rooks() const	{ return _castlableRooks; }
+	uint64_t key() const			{ return _key; }
 
 	int king_square(int color) const;
-
 	int color_on(int sq) const;
 	int piece_on(int sq) const;
 

@@ -17,7 +17,7 @@
 #include <cassert>
 #include "types.h"
 
-bool Chess960 = true;	// TODO: to be set by UCI
+bool Chess960 = true;	// TODO (lucas#3#): to be set by UCI
 
 /* Color, Piece */
 

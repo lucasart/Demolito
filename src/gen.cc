@@ -41,25 +41,25 @@ namespace gen {
 
 Move *pawn_moves(const Position& pos, Move *mlist, bitboard_t targets)
 {
-	int us = pos.get_turn(), them = opp_color(us), push = push_inc(us);
-	bitboard_t enemies = pos.get_all(them);
+	int us = pos.turn(), them = opp_color(us), push = push_inc(us);
+	bitboard_t enemies = pos.occ(them);
 	bitboard_t fss, tss;
 	Move m;
 
-	if (square_ok(pos.get_ep_square()))
-		bb::set(enemies, pos.get_ep_square());
+	if (square_ok(pos.ep_square()))
+		bb::set(enemies, pos.ep_square());
 
 	// Non promotions
-	fss = pos.get(us, PAWN) & ~bb::relative_rank(us, RANK_7);
+	fss = pos.occ(us, PAWN) & ~bb::relative_rank(us, RANK_7);
 	while (fss) {
                 m.fsq = bb::pop_lsb(fss);
 
 		// Calculate to squares: captures, single pushes and double pushes
 		tss = bb::pattacks(us, m.fsq) & enemies & targets;
-		if (bb::test(~pos.get_all(), m.fsq + push)) {
+		if (bb::test(~pos.occ(), m.fsq + push)) {
 			if (bb::test(targets, m.fsq + push))
 				bb::set(tss, m.fsq + push);
-			if (relative_rank(us, m.fsq) == RANK_2 && bb::test(targets & ~pos.get_all(), m.fsq + 2 * push))
+			if (relative_rank(us, m.fsq) == RANK_2 && bb::test(targets & ~pos.occ(), m.fsq + 2 * push))
 				bb::set(tss, m.fsq + 2 * push);
 		}
 
@@ -69,13 +69,13 @@ Move *pawn_moves(const Position& pos, Move *mlist, bitboard_t targets)
 	}
 
 	// Promotions
-	fss = pos.get(us, PAWN) & bb::relative_rank(us, RANK_7);
+	fss = pos.occ(us, PAWN) & bb::relative_rank(us, RANK_7);
 	while (fss) {
                 m.fsq = bb::pop_lsb(fss);
 
 		// Calculate to squares: captures and single pushes
 		tss = bb::pattacks(us, m.fsq) & enemies & targets;
-		if (bb::test(targets & ~pos.get_all(), m.fsq + push))
+		if (bb::test(targets & ~pos.occ(), m.fsq + push))
 			bb::set(tss, m.fsq + push);
 
 		// Generate moves (or promotions)
@@ -87,7 +87,7 @@ Move *pawn_moves(const Position& pos, Move *mlist, bitboard_t targets)
 
 Move *piece_moves(const Position& pos, Move *mlist, bitboard_t targets)
 {
-	int us = pos.get_turn();
+	int us = pos.turn();
 	bitboard_t fss, tss;
 
 	Move m;
@@ -99,7 +99,7 @@ Move *piece_moves(const Position& pos, Move *mlist, bitboard_t targets)
 	mlist = serialize_moves<false>(m, tss, mlist);
 
 	// Knight moves
-	fss = pos.get(us, KNIGHT);
+	fss = pos.occ(us, KNIGHT);
 	while (fss) {
 		m.fsq = bb::pop_lsb(fss);
 		tss = bb::nattacks(m.fsq) & targets;
@@ -107,18 +107,18 @@ Move *piece_moves(const Position& pos, Move *mlist, bitboard_t targets)
 	}
 
 	// Rook moves
-	fss = pos.get_RQ(us);
+	fss = pos.occ_RQ(us);
 	while (fss) {
 		m.fsq = bb::pop_lsb(fss);
-		tss = bb::rattacks(m.fsq, pos.get_all()) & targets;
+		tss = bb::rattacks(m.fsq, pos.occ()) & targets;
 		mlist = serialize_moves<false>(m, tss, mlist);
 	}
 
 	// Bishop moves
-	fss = pos.get_BQ(us);
+	fss = pos.occ_BQ(us);
 	while (fss) {
 		m.fsq = bb::pop_lsb(fss);
-		tss = bb::battacks(m.fsq, pos.get_all()) & targets;
+		tss = bb::battacks(m.fsq, pos.occ()) & targets;
 		mlist = serialize_moves<false>(m, tss, mlist);
 	}
 
@@ -128,13 +128,13 @@ Move *piece_moves(const Position& pos, Move *mlist, bitboard_t targets)
 Move *castling_moves(const Position& pos, Move *mlist)
 {
 	Move m;
-	m.fsq = pos.king_square(pos.get_turn());
+	m.fsq = pos.king_square(pos.turn());
 	m.prom = NB_PIECE;
 
-	bitboard_t tss = pos.get_castlable_rooks();
+	bitboard_t tss = pos.castlable_rooks();
 	while (tss) {
 		m.tsq = bb::pop_lsb(tss);
-		if (bb::count(bb::segment(m.fsq, m.tsq) & pos.get_all()) == 2)
+		if (bb::count(bb::segment(m.fsq, m.tsq) & pos.occ()) == 2)
 			*mlist++ = m;
 	}
 
