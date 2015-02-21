@@ -21,8 +21,11 @@
 namespace {
 
 template <bool Promotion>
-Move *serialize_moves(Move& m, bitboard_t tss, Move *mlist)
+Move *serialize_moves(Move& m, bitboard_t tss, const PinInfo& pi, Move *mlist)
 {
+	if (bb::test(pi.pinned, m.fsq))
+		tss &= bb::ray(pi.ksq, m.fsq);
+
 	while (tss) {
 		m.tsq = bb::pop_lsb(tss);
 		if (Promotion) {
@@ -39,15 +42,12 @@ Move *serialize_moves(Move& m, bitboard_t tss, Move *mlist)
 
 namespace gen {
 
-Move *pawn_moves(const Position& pos, Move *mlist, bitboard_t targets)
+Move *pawn_moves(const Position& pos, const PinInfo& pi, Move *mlist, bitboard_t targets)
 {
 	int us = pos.turn(), them = opp_color(us), push = push_inc(us);
 	bitboard_t enemies = pos.occ(them);
 	bitboard_t fss, tss;
 	Move m;
-
-	if (square_ok(pos.ep_square()))
-		bb::set(enemies, pos.ep_square());
 
 	// Non promotions
 	fss = pos.occ(us, PAWN) & ~bb::relative_rank(us, RANK_7);
@@ -65,7 +65,7 @@ Move *pawn_moves(const Position& pos, Move *mlist, bitboard_t targets)
 
 		// Generate moves
 		m.prom = NB_PIECE;
-		mlist = serialize_moves<false>(m, tss, mlist);
+		mlist = serialize_moves<false>(m, tss, pi, mlist);
 	}
 
 	// Promotions
@@ -79,13 +79,34 @@ Move *pawn_moves(const Position& pos, Move *mlist, bitboard_t targets)
 			bb::set(tss, m.fsq + push);
 
 		// Generate moves (or promotions)
-		mlist = serialize_moves<true>(m, tss, mlist);
+		mlist = serialize_moves<true>(m, tss, pi, mlist);
+	}
+
+	// En passant
+	if (square_ok(pos.ep_square()) && bb::test(targets, pos.ep_square())) {
+		m.prom = NB_PIECE;
+		m.tsq = pos.ep_square();
+		fss = bb::pattacks(them, m.tsq) & pos.occ(us, PAWN);
+
+                while (fss) {
+			m.fsq = bb::pop_lsb(fss);
+
+			// Play the ep-capture on the occupancy copy
+			bitboard_t occ = pos.occ();
+			bb::clear(occ, m.fsq);
+                        bb::clear(occ, m.tsq + push_inc(them));
+                        bb::set(occ, m.tsq);
+
+                        // If no enemy slider checks us, the en-passant is legal
+                        if (!(bb::rattacks(pi.ksq, occ) & pos.occ_RQ(them)) && !(bb::battacks(pi.ksq, occ) & pos.occ_BQ(them)))
+				*mlist++ = m;
+                }
 	}
 
 	return mlist;
 }
 
-Move *piece_moves(const Position& pos, Move *mlist, bitboard_t targets)
+Move *piece_moves(const Position& pos, const PinInfo& pi, Move *mlist, bitboard_t targets)
 {
 	int us = pos.turn();
 	bitboard_t fss, tss;
@@ -96,14 +117,14 @@ Move *piece_moves(const Position& pos, Move *mlist, bitboard_t targets)
 	// King moves
 	m.fsq = pos.king_square(us);
 	tss = bb::kattacks(m.fsq) & targets;
-	mlist = serialize_moves<false>(m, tss, mlist);
+	mlist = serialize_moves<false>(m, tss, pi, mlist);
 
 	// Knight moves
 	fss = pos.occ(us, KNIGHT);
 	while (fss) {
 		m.fsq = bb::pop_lsb(fss);
 		tss = bb::nattacks(m.fsq) & targets;
-		mlist = serialize_moves<false>(m, tss, mlist);
+		mlist = serialize_moves<false>(m, tss, pi, mlist);
 	}
 
 	// Rook moves
@@ -111,7 +132,7 @@ Move *piece_moves(const Position& pos, Move *mlist, bitboard_t targets)
 	while (fss) {
 		m.fsq = bb::pop_lsb(fss);
 		tss = bb::rattacks(m.fsq, pos.occ()) & targets;
-		mlist = serialize_moves<false>(m, tss, mlist);
+		mlist = serialize_moves<false>(m, tss, pi, mlist);
 	}
 
 	// Bishop moves
@@ -119,13 +140,13 @@ Move *piece_moves(const Position& pos, Move *mlist, bitboard_t targets)
 	while (fss) {
 		m.fsq = bb::pop_lsb(fss);
 		tss = bb::battacks(m.fsq, pos.occ()) & targets;
-		mlist = serialize_moves<false>(m, tss, mlist);
+		mlist = serialize_moves<false>(m, tss, pi, mlist);
 	}
 
 	return mlist;
 }
 
-Move *castling_moves(const Position& pos, Move *mlist)
+Move *castling_moves(const Position& pos, const PinInfo& pi, Move *mlist)
 {
 	Move m;
 	m.fsq = pos.king_square(pos.turn());
@@ -134,11 +155,25 @@ Move *castling_moves(const Position& pos, Move *mlist)
 	bitboard_t tss = pos.castlable_rooks();
 	while (tss) {
 		m.tsq = bb::pop_lsb(tss);
-		if (bb::count(bb::segment(m.fsq, m.tsq) & pos.occ()) == 2)
-			*mlist++ = m;
+		if (bb::count(bb::segment(m.fsq, m.tsq) & pos.occ()) > 2 || bb::test(pi.pinned, m.tsq))
+			continue;
+		// TODO: check king path for attacks
+		*mlist++ = m;
 	}
 
 	return mlist;
+}
+
+Move *all_moves(const Position& pos, const PinInfo& pi, Move *mlist)
+{
+	Move *m = mlist;
+	bitboard_t targets = ~pos.occ(pos.turn());
+
+	m = pawn_moves(pos, pi, m, targets);
+	m = piece_moves(pos, pi, m, targets);
+	m = castling_moves(pos, pi, m);
+
+	return m;
 }
 
 }	// namespace gen

@@ -41,6 +41,7 @@ bitboard_t PinInfo::hidden_checkers(const Position& pos, int attacker, int block
 PinInfo::PinInfo(const Position& pos)
 {
 	int us = pos.turn(), them = opp_color(us);
+	ksq = pos.king_square(us);
 	pinned = hidden_checkers(pos, them, us);
 	discoCheckers = hidden_checkers(pos, us, us);
 }
@@ -105,6 +106,7 @@ bool Move::gives_check(const Position& pos, const PinInfo& pi) const
 	// En passant
 	if (piece == PAWN && tsq == pos.ep_square()) {
 		bitboard_t occ = pos.occ();
+		bb::clear(occ, fsq);
 		bb::set(occ, tsq);
 		bb::clear(occ, tsq + push_inc(them));
 		return (pos.occ_RQ(us) & bb::rattacks(ksq, occ)) || (pos.occ_BQ(us) & bb::battacks(ksq, occ));

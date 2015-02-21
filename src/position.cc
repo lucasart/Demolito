@@ -195,7 +195,7 @@ std::string Position::get_pos() const
 bitboard_t Position::occ(int color) const
 {
 	assert(color_ok(color));
-	return occ(color);
+	return _byColor[color];
 }
 
 bitboard_t Position::occ(int color, int piece) const

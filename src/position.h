@@ -2,8 +2,6 @@
 #include "types.h"
 #include "move.h"
 
-// TODO (lucas#1#): struct AttackInfo
-
 class Position {
 	bitboard_t _byColor[NB_COLOR];
 	bitboard_t _byPiece[NB_PIECE];

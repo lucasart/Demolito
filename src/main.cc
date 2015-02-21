@@ -30,7 +30,8 @@ int main()
 	pos.print();
 
 	Move mlist[256];
-	Move *end = gen::castling_moves(pos, mlist);
+	PinInfo pi(pos);
+	Move *end = gen::all_moves(pos, pi, mlist);
 	for (Move *m = mlist; m != end; m++)
 		std::cout << m->to_string() << std::endl;
 }
