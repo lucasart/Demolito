@@ -45,7 +45,7 @@ void PRNG::init(uint64_t seed)
 
 uint64_t PRNG::rand()
 {
-	uint64_t e = a - rotate(b,  7);
+	uint64_t e = a - rotate(b, 7);
 	a = b ^ rotate(c, 13);
 	b = c + rotate(d, 37);
 	c = d + e;

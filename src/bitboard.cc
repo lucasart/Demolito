@@ -176,7 +176,7 @@ bitboard_t segment(int sq1, int sq2)
 
 bitboard_t ray(int sq1, int sq2)
 {
-        assert(square_ok(sq1) && square_ok(sq2));
+	assert(square_ok(sq1) && square_ok(sq2));
 	assert(sq1 != sq2);	// Ray[sq][sq] is undefined
 	return Ray[sq1][sq2];
 }

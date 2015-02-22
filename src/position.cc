@@ -170,7 +170,8 @@ std::string Position::get_pos() const
 		// Right side castling
 		if (sqs & bb::ray(ksq, ksq + 1)) {
 			if (Chess960)
-				os << char(file_of(bb::lsb(sqs & bb::ray(ksq, ksq + 1))) + (color == WHITE ? 'A' : 'a'));
+				os << char(file_of(bb::lsb(sqs & bb::ray(ksq, ksq + 1)))
+					+ (color == WHITE ? 'A' : 'a'));
 			else
 				os << PieceLabel[color][KING];
 		}
@@ -178,7 +179,8 @@ std::string Position::get_pos() const
 		// Left side castling
 		if (sqs & bb::ray(ksq, ksq - 1)) {
 			if (Chess960)
-				os << char(file_of(bb::msb(sqs & bb::ray(ksq, ksq - 1))) + (color == WHITE ? 'A' : 'a'));
+				os << char(file_of(bb::msb(sqs & bb::ray(ksq, ksq - 1)))
+					+ (color == WHITE ? 'A' : 'a'));
 			else
 				os << PieceLabel[color][QUEEN];
 		}

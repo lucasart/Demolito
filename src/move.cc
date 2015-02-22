@@ -23,7 +23,8 @@ bitboard_t PinInfo::hidden_checkers(const Position& pos, int attacker, int block
 {
 	assert(color_ok(attacker) && color_ok(blocker));
 	int ksq = pos.king_square(opp_color(attacker));
-	bitboard_t pinners = (pos.occ_RQ(attacker) & bb::rpattacks(ksq)) | (pos.occ_BQ(attacker) & bb::bpattacks(ksq));
+	bitboard_t pinners = (pos.occ_RQ(attacker) & bb::rpattacks(ksq))
+		| (pos.occ_BQ(attacker) & bb::bpattacks(ksq));
 
 	bitboard_t result = 0;
 	while (pinners) {
@@ -109,7 +110,8 @@ bool Move::gives_check(const Position& pos, const PinInfo& pi) const
 		bb::clear(occ, fsq);
 		bb::set(occ, tsq);
 		bb::clear(occ, tsq + push_inc(them));
-		return (pos.occ_RQ(us) & bb::rattacks(ksq, occ)) || (pos.occ_BQ(us) & bb::battacks(ksq, occ));
+		return (pos.occ_RQ(us) & bb::rattacks(ksq, occ))
+			|| (pos.occ_BQ(us) & bb::battacks(ksq, occ));
 	}
 
 	// Castling
@@ -117,7 +119,8 @@ bool Move::gives_check(const Position& pos, const PinInfo& pi) const
 		bitboard_t occ = pos.occ();
 		bb::clear(occ, fsq);
 		bb::set(occ, square(rank_of(fsq), tsq > fsq ? FILE_G : FILE_C));
-		return (pos.occ_RQ(us) & bb::rattacks(ksq, occ)) || (pos.occ_BQ(us) & bb::battacks(ksq, occ));
+		return (pos.occ_RQ(us) & bb::rattacks(ksq, occ))
+			|| (pos.occ_BQ(us) & bb::battacks(ksq, occ));
 	}
 
 	return false;
