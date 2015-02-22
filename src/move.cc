@@ -92,6 +92,7 @@ void Move::from_string(const std::string& s)
 
 bool Move::gives_check(const Position& pos, const PinInfo& pi) const
 {
+	assert(ok());
 	int us = pos.turn(), them = opp_color(us);
 	int ksq = pos.king_square(them);
 	int piece = piece_ok(prom) ? prom : pos.piece_on(fsq);
@@ -124,4 +125,19 @@ bool Move::gives_check(const Position& pos, const PinInfo& pi) const
 	}
 
 	return false;
+}
+
+bool Move::pseudo_is_legal(const Position& pos) const
+{
+	if (pos.piece_on(fsq) == KING) {
+		if (bb::test(pos.occ(pos.turn()), tsq)) {
+			// Castling: king must not move through or land on an attacked square
+			assert(pos.piece_on(tsq) == ROOK);
+			int _tsq = square(rank_of(fsq), fsq < tsq ? FILE_C : FILE_G);
+			return bb::test(pos.attacked(), bb::segment(fsq, _tsq));
+		} else
+			// Normal king move: do not land on an attacked square
+			return !bb::test(pos.attacked(), tsq);
+	} else
+		return true;
 }

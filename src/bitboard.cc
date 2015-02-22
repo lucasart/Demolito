@@ -201,6 +201,12 @@ void set(bitboard_t& b, int sq)
 	b ^= 1ULL << sq;
 }
 
+bitboard_t shift(bitboard_t b, int i)
+{
+	assert(-63 <= i && i <= 63);	// prevent oversized shift (undefined behaviour)
+	return i > 0 ? b << i : b >> -i;
+}
+
 int lsb(bitboard_t b)
 {
 	assert(b);

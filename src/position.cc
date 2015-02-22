@@ -48,6 +48,35 @@ bitboard_t Position::attackers_to(int sq) const
 		| (bb::battacks(sq, occ()) & (by_piece(BISHOP) | by_piece(QUEEN)));
 }
 
+bitboard_t Position::attacked_by(int color) const
+{
+	assert(color_ok(color));
+    bitboard_t fss, result;
+
+	// King and Knight attacks
+	result = bb::kattacks(king_square(color));
+	fss = occ(color, KNIGHT);
+	while (fss)
+		result |= bb::nattacks(bb::pop_lsb(fss));
+
+	// Pawn captures
+	fss = occ(color, PAWN) & ~bb::file(FILE_A);
+	result |= bb::shift(fss, push_inc(color) + LEFT);
+	fss = occ(color, PAWN) & ~bb::file(FILE_H);
+	result |= bb::shift(fss, push_inc(color) + RIGHT);
+
+	// Sliders
+	bitboard_t _occ = occ() ^ occ(opp_color(color), KING);
+	fss = occ_RQ(color);
+	while (fss)
+		result |= bb::rattacks(bb::pop_lsb(fss), _occ);
+	fss = occ_BQ(color);
+	while (fss)
+		result |= bb::battacks(bb::pop_lsb(fss), _occ);
+
+	return result;
+}
+
 void Position::clear()
 {
 	std::memset(this, 0, sizeof(*this));
@@ -118,7 +147,6 @@ void Position::set_pos(const std::string& fen)
 	_epSquare = string_to_square(s);
 	is >> _rule50;
 
-	// Calculate dynamically updated stuff
 	if (turn() == BLACK)
 		_key ^= zobrist::turn();
 	_key ^= zobrist::en_passant(ep_square());
@@ -224,6 +252,14 @@ bitboard_t Position::occ_BQ(int color) const
 	return occ(color) & (by_piece(BISHOP) | by_piece(QUEEN));
 }
 
+bitboard_t Position::attacked() const
+{
+	if (_attacked)
+		return _attacked;
+	else
+		return _attacked = attacked_by(opp_color(turn()));
+}
+
 int Position::color_on(int sq) const
 {
 	assert(bb::test(occ(), sq));
@@ -314,13 +350,13 @@ void Position::play(const Position& before, Move m, bool givesCheck)
 		}
 	}
 
-	// Update dynamic stuff
-	_checkers = givesCheck ? attackers_to(king_square(them)) & occ(us) : 0;
 	_key ^= zobrist::turn();
 	_key ^= zobrist::en_passant(before.ep_square()) ^ zobrist::en_passant(ep_square());
 	_key ^= zobrist::castling(before.castlable_rooks() ^ castlable_rooks());
 	assert(key_ok());
 
+	_checkers = givesCheck ? attackers_to(king_square(them)) & occ(us) : 0;
+	_attacked = 0;	// calculate only when needed
 	_turn = them;
 }
 

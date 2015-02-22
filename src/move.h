@@ -26,4 +26,5 @@ struct Move {
 	void from_string(const std::string& s);
 
 	bool gives_check(const Position& pos, const PinInfo& pi) const;
+	bool pseudo_is_legal(const Position& pos) const;
 };

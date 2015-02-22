@@ -35,6 +35,7 @@ bitboard_t ray(int sq1, int sq2);
 bool test(bitboard_t b, int sq);
 void clear(bitboard_t& b, int sq);
 void set(bitboard_t& b, int sq);
+bitboard_t shift(bitboard_t b, int i);
 
 int lsb(bitboard_t b);
 int msb(bitboard_t b);
