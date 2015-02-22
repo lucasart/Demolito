@@ -35,6 +35,7 @@ public:
 
 	int turn() const					{ return _turn; }
 	int ep_square() const				{ return _epSquare; }
+	bitboard_t ep_square_bb() const		{ return square_ok(_epSquare) ? 1ULL << _epSquare : 0; }
 	int rule50() const					{ return _rule50; }
 	bitboard_t checkers() const			{ return _checkers; }
 	bitboard_t attacked() const;

@@ -31,7 +31,7 @@ int main()
 
 	Move mlist[256];
 	PinInfo pi(pos);
-	Move *end = gen::all_moves(pos, pi, mlist);
+	Move *end = gen::all_moves(pos, mlist);
 	for (Move *m = mlist; m != end; m++)
 		std::cout << m->to_string() << std::endl;
 }

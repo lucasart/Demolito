@@ -127,17 +127,34 @@ bool Move::gives_check(const Position& pos, const PinInfo& pi) const
 	return false;
 }
 
-bool Move::pseudo_is_legal(const Position& pos) const
+bool Move::pseudo_is_legal(const Position& pos, const PinInfo& pi) const
 {
-	if (pos.piece_on(fsq) == KING) {
+	const int piece = pos.piece_on(fsq);
+
+	if (piece == KING) {
 		if (bb::test(pos.occ(pos.turn()), tsq)) {
-			// Castling: king must not move through or land on an attacked square
+			// Castling: king must not move through attacked square, and rook must not be pinned
 			assert(pos.piece_on(tsq) == ROOK);
-			int _tsq = square(rank_of(fsq), fsq < tsq ? FILE_C : FILE_G);
-			return bb::test(pos.attacked(), bb::segment(fsq, _tsq));
+			const int _tsq = square(rank_of(fsq), fsq < tsq ? FILE_C : FILE_G);
+			return bb::test(pos.attacked(), bb::segment(fsq, _tsq)) && !bb::test(pi.pinned, tsq);
 		} else
 			// Normal king move: do not land on an attacked square
 			return !bb::test(pos.attacked(), tsq);
-	} else
-		return true;
+	} else {
+		// Normal case: illegal if pinned, and moves out of pin-ray
+		if (bb::test(pi.pinned, fsq) && !bb::test(bb::ray(pi.ksq, fsq), tsq))
+			return false;
+
+		// En-passant special case: also illegal if self-check through the en-passant captured pawn
+        if (tsq == pos.ep_square() && piece == PAWN) {
+			const int us = pos.turn(), them = opp_color(us);
+			bitboard_t occ = pos.occ();
+			bb::clear(occ, fsq);
+			bb::set(occ, tsq);
+			bb::clear(occ, tsq + push_inc(them));
+			return !(bb::rattacks(pi.ksq, occ) & pos.occ_RQ(them))
+				&& !(bb::battacks(pi.ksq, occ) & pos.occ_BQ(them));
+        } else
+			return true;
+	}
 }
