@@ -135,8 +135,8 @@ bool Move::pseudo_is_legal(const Position& pos, const PinInfo& pi) const
 		if (bb::test(pos.occ(pos.turn()), tsq)) {
 			// Castling: king must not move through attacked square, and rook must not be pinned
 			assert(pos.piece_on(tsq) == ROOK);
-			const int _tsq = square(rank_of(fsq), fsq < tsq ? FILE_C : FILE_G);
-			return bb::test(pos.attacked(), bb::segment(fsq, _tsq)) && !bb::test(pi.pinned, tsq);
+			const int _tsq = square(rank_of(fsq), fsq < tsq ? FILE_G : FILE_C);
+			return !(pos.attacked() & bb::segment(fsq, _tsq)) && !bb::test(pi.pinned, tsq);
 		} else
 			// Normal king move: do not land on an attacked square
 			return !bb::test(pos.attacked(), tsq);

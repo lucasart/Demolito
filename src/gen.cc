@@ -17,32 +17,32 @@
 #include <cassert>
 #include <iostream>
 #include "gen.h"
+#include "move.h"
 #include "bitboard.h"
 
 namespace {
 
 template <bool Promotion>
-Move *serialize_moves(Move& m, bitboard_t tss, Move *mlist)
+Move *serialize_moves(Move& m, bitboard_t tss, Move *mList)
 {
 	while (tss) {
 		m.tsq = bb::pop_lsb(tss);
 		if (Promotion) {
 			for (m.prom = QUEEN; m.prom >= KNIGHT; m.prom--)
-				*mlist++ = m;
+				*mList++ = m;
 		} else
-			*mlist++ = m;
+			*mList++ = m;
 	}
 
-	return mlist;
+	return mList;
 }
 
 }	// namespace
 
 namespace gen {
 
-Move *pawn_moves(const Position& pos, Move *mlist, bitboard_t targets)
+Move *pawn_moves(const Position& pos, Move *mList, bitboard_t targets)
 {
-	assert(!pos.checkers());
 	int us = pos.turn(), them = opp_color(us), push = push_inc(us);
 	bitboard_t capturable = pos.occ(them) | pos.ep_square_bb();
 	bitboard_t fss, tss;
@@ -65,7 +65,7 @@ Move *pawn_moves(const Position& pos, Move *mlist, bitboard_t targets)
 
 		// Generate moves
 		m.prom = NB_PIECE;
-		mlist = serialize_moves<false>(m, tss, mlist);
+		mList = serialize_moves<false>(m, tss, mList);
 	}
 
 	// Promotions
@@ -79,16 +79,15 @@ Move *pawn_moves(const Position& pos, Move *mlist, bitboard_t targets)
 			bb::set(tss, m.fsq + push);
 
 		// Generate moves (or promotions)
-		mlist = serialize_moves<true>(m, tss, mlist);
+		mList = serialize_moves<true>(m, tss, mList);
 	}
 
-	return mlist;
+	return mList;
 }
 
-Move *piece_moves(const Position& pos, Move *mlist, bitboard_t targets,
+Move *piece_moves(const Position& pos, Move *mList, bitboard_t targets,
 	bool kingMoves)
 {
-	assert(!pos.checkers());
 	int us = pos.turn();
 	bitboard_t fss, tss;
 
@@ -99,7 +98,7 @@ Move *piece_moves(const Position& pos, Move *mlist, bitboard_t targets,
 	if (kingMoves) {
 		m.fsq = pos.king_square(us);
 		tss = bb::kattacks(m.fsq) & targets;
-		mlist = serialize_moves<false>(m, tss, mlist);
+		mList = serialize_moves<false>(m, tss, mList);
 	}
 
 	// Knight moves
@@ -107,7 +106,7 @@ Move *piece_moves(const Position& pos, Move *mlist, bitboard_t targets,
 	while (fss) {
 		m.fsq = bb::pop_lsb(fss);
 		tss = bb::nattacks(m.fsq) & targets;
-		mlist = serialize_moves<false>(m, tss, mlist);
+		mList = serialize_moves<false>(m, tss, mList);
 	}
 
 	// Rook moves
@@ -115,7 +114,7 @@ Move *piece_moves(const Position& pos, Move *mlist, bitboard_t targets,
 	while (fss) {
 		m.fsq = bb::pop_lsb(fss);
 		tss = bb::rattacks(m.fsq, pos.occ()) & targets;
-		mlist = serialize_moves<false>(m, tss, mlist);
+		mList = serialize_moves<false>(m, tss, mList);
 	}
 
 	// Bishop moves
@@ -123,13 +122,13 @@ Move *piece_moves(const Position& pos, Move *mlist, bitboard_t targets,
 	while (fss) {
 		m.fsq = bb::pop_lsb(fss);
 		tss = bb::battacks(m.fsq, pos.occ()) & targets;
-		mlist = serialize_moves<false>(m, tss, mlist);
+		mList = serialize_moves<false>(m, tss, mList);
 	}
 
-	return mlist;
+	return mList;
 }
 
-Move *castling_moves(const Position& pos, Move *mlist)
+Move *castling_moves(const Position& pos, Move *mList)
 {
 	assert(!pos.checkers());
 	Move m;
@@ -140,13 +139,13 @@ Move *castling_moves(const Position& pos, Move *mlist)
 	while (tss) {
 		m.tsq = bb::pop_lsb(tss);
 		if (bb::count(bb::segment(m.fsq, m.tsq) & pos.occ()) == 2)
-			*mlist++ = m;
+			*mList++ = m;
 	}
 
-	return mlist;
+	return mList;
 }
 
-Move *check_escapes(const Position& pos, Move *mlist)
+Move *check_escapes(const Position& pos, Move *mList)
 {
 	assert(pos.checkers());
 	bitboard_t ours = pos.occ(pos.turn());
@@ -156,8 +155,9 @@ Move *check_escapes(const Position& pos, Move *mlist)
 
 	// King moves
 	tss = bb::kattacks(ksq) & ~ours;
+	m.fsq = ksq;
 	m.prom = NB_PIECE;
-	mlist = serialize_moves<false>(m, tss, mlist);
+	mList = serialize_moves<false>(m, tss, mList);
 
 	if (!bb::several(pos.checkers())) {
 		// Single checker
@@ -170,7 +170,7 @@ Move *check_escapes(const Position& pos, Move *mlist)
 			? bb::segment(ksq, checkerSquare)
 			: pos.checkers();
 
-		mlist = piece_moves(pos, mlist, ~ours, false);
+		mList = piece_moves(pos, mList, tss & ~ours, false);
 
 		// if checked by a Pawn and epsq is available, then the check must result
 		// from a pawn double push, and we also need to consider capturing it en
@@ -178,19 +178,19 @@ Move *check_escapes(const Position& pos, Move *mlist)
 		if (checkerPiece == PAWN && square_ok(pos.ep_square()))
 			bb::set(tss, pos.ep_square());
 
-		mlist = pawn_moves(pos, mlist, tss);
+		mList = pawn_moves(pos, mList, tss);
 	}
 
-	return mlist;
+	return mList;
 }
 
-Move *all_moves(const Position& pos, Move *mlist)
+Move *all_moves(const Position& pos, Move *mList)
 {
 	if (pos.checkers())
-		return check_escapes(pos, mlist);
+		return check_escapes(pos, mList);
 	else {
 		bitboard_t targets = ~pos.occ(pos.turn());
-		Move *m = mlist;
+		Move *m = mList;
 
 		m = pawn_moves(pos, m, targets);
 		m = piece_moves(pos, m, targets);
@@ -198,5 +198,35 @@ Move *all_moves(const Position& pos, Move *mlist)
 		return m;
 	}
 }
+
+template <bool Root>
+uint64_t perft(const Position& pos, int depth)
+{
+	// Do not use bulk-counting. It's faster, but falses profiling results.
+	if (depth <= 0)
+		return 1;
+
+	uint64_t result = 0;
+	Position after;
+	PinInfo pi(pos);
+	Move mList[MAX_MOVES];
+	Move *end = all_moves(pos, mList);
+
+	for (Move *m = mList; m != end; m++) {
+		if (!m->pseudo_is_legal(pos, pi))
+			continue;
+
+		after.play(pos, *m, m->gives_check(pos, pi));
+		uint64_t sub_tree = perft<false>(after, depth - 1);
+		result += sub_tree;
+
+		if (Root)
+			std::cout << m->to_string() << '\t' << sub_tree << std::endl;
+	}
+
+	return result;
+}
+
+template uint64_t perft<true>(const Position& pos, int depth);
 
 }	// namespace gen

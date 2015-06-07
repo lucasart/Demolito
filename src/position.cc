@@ -33,6 +33,9 @@ bool Position::key_ok() const
 				k ^= zobrist::key(color, piece, bb::pop_lsb(b));
 		}
 
+	k ^= zobrist::en_passant(ep_square());
+	k ^= zobrist::castling(castlable_rooks());
+
 	if (turn() == BLACK)
 		k ^= zobrist::turn();
 
@@ -41,7 +44,8 @@ bool Position::key_ok() const
 
 bitboard_t Position::attackers_to(int sq) const
 {
-	return	((bb::pattacks(WHITE, sq) | bb::pattacks(BLACK, sq)) & by_piece(PAWN))
+	return (occ(WHITE, PAWN) & bb::pattacks(BLACK, sq))
+		| (occ(BLACK, PAWN) & bb::pattacks(WHITE, sq))
 		| (bb::nattacks(sq) & by_piece(KNIGHT))
 		| (bb::kattacks(sq) & by_piece(KING))
 		| (bb::rattacks(sq, occ()) & (by_piece(ROOK) | by_piece(QUEEN)))
@@ -51,7 +55,7 @@ bitboard_t Position::attackers_to(int sq) const
 bitboard_t Position::attacked_by(int color) const
 {
 	assert(color_ok(color));
-    bitboard_t fss, result;
+	bitboard_t fss, result;
 
 	// King and Knight attacks
 	result = bb::kattacks(king_square(color));
@@ -127,19 +131,21 @@ void Position::set_pos(const std::string& fen)
 
 	// Castling rights
 	is >> s;
-	for (char c : s) {
-		int color = isupper(c) ? WHITE : BLACK;
-		int r = RANK_8 * color;
-		c = toupper(c);
+	if (s != "-") {
+		for (char c : s) {
+			int color = isupper(c) ? WHITE : BLACK;
+			int r = RANK_8 * color;
+			c = toupper(c);
 
-		if (c == 'K')
-			sq = square(r, FILE_H);
-		else if (c == 'Q')
-			sq = square(r, FILE_A);
-		else if ('A' <= c && c <= 'H')
-			sq = square(r, c - 'A');
+			if (c == 'K')
+				sq = square(r, FILE_H);
+			else if (c == 'Q')
+				sq = square(r, FILE_A);
+			else if ('A' <= c && c <= 'H')
+				sq = square(r, c - 'A');
 
-		bb::set(_castlableRooks, sq);
+			bb::set(_castlableRooks, sq);
+		}
 	}
 
 	// En passant and 50 move
@@ -150,6 +156,9 @@ void Position::set_pos(const std::string& fen)
 	if (turn() == BLACK)
 		_key ^= zobrist::turn();
 	_key ^= zobrist::en_passant(ep_square());
+	_key ^= zobrist::castling(castlable_rooks());
+	assert(key_ok());
+
 	_checkers = attackers_to(king_square(turn())) & occ(opp_color(turn()));
 }
 
@@ -353,11 +362,12 @@ void Position::play(const Position& before, Move m, bool givesCheck)
 	_key ^= zobrist::turn();
 	_key ^= zobrist::en_passant(before.ep_square()) ^ zobrist::en_passant(ep_square());
 	_key ^= zobrist::castling(before.castlable_rooks() ^ castlable_rooks());
-	assert(key_ok());
 
 	_checkers = givesCheck ? attackers_to(king_square(them)) & occ(us) : 0;
 	_attacked = 0;	// calculate only when needed
 	_turn = them;
+
+	assert(key_ok());
 }
 
 void Position::print() const
@@ -374,9 +384,11 @@ void Position::print() const
 	}
 	std::cout << get_pos() << std::endl;
 
-	std::cout << "checkers:";
 	bitboard_t b = checkers();
-	while (b)
-		std::cout << ' ' << square_to_string(bb::pop_lsb(b));
-	std::cout << std::endl;
+	if (b) {
+		std::cout << "checkers:";
+		while (b)
+			std::cout << ' ' << square_to_string(bb::pop_lsb(b));
+		std::cout << std::endl;
+	}
 }
