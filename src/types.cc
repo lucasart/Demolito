@@ -81,7 +81,7 @@ int square(int r, int f)
 std::string square_to_string(int sq)
 {
 	assert(square_ok(sq));
-	char s[3] = {char(file_of(sq) + 'a'), char(rank_of(sq) + '1'), '\0'};
+	const char s[3] = {char(file_of(sq) + 'a'), char(rank_of(sq) + '1'), '\0'};
 	return std::string(s);
 }
 

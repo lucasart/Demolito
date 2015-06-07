@@ -39,7 +39,7 @@ bool Position::key_ok() const
 	if (turn() == BLACK)
 		k ^= zobrist::turn();
 
-	return k == key();
+	return k == _key;
 }
 
 bitboard_t Position::attackers_to(int sq) const
@@ -118,7 +118,7 @@ void Position::set_pos(const std::string& fen)
 			sq += 2 * DOWN;
 		else {
 			for (int color = 0; color < NB_COLOR; color++) {
-				int piece = PieceLabel[color].find(c);
+				const int piece = PieceLabel[color].find(c);
 				if (piece_ok(piece))
 					set(color, piece, sq++);
 			}
@@ -171,11 +171,10 @@ std::string Position::get_pos() const
 		int cnt = 0;
 
 		for (int f = FILE_A; f <= FILE_H; f++) {
-			int sq = square(r, f);
+			const int sq = square(r, f);
 
 			if (bb::test(occ(), sq)) {
-				int color = color_on(sq);
-				int piece = piece_on(sq);
+				const int color = color_on(sq), piece = piece_on(sq);
 				if (cnt)
 					os << char(cnt + '0');
 				cnt = 0;
@@ -194,13 +193,13 @@ std::string Position::get_pos() const
 
 	// Castling rights
 	for (int color = WHITE; color <= BLACK; color++) {
-		bitboard_t sqs = castlable_rooks() & occ(color);
+		const bitboard_t sqs = castlable_rooks() & occ(color);
 		if (!sqs)
 			continue;
 
 		// Because we have castlable rooks, king has to be on the first rank and not in a corner,
 		// which allows using bb::ray(ksq, ksq +/- 1) to search for the castle rook in Chess960.
-		int ksq = king_square(color);
+		const int ksq = king_square(color);
 		assert(rank_of(ksq) == (color == WHITE ? RANK_1 : RANK_8));
 		assert(file_of(ksq) != FILE_A && file_of(ksq) != FILE_H);
 
@@ -231,6 +230,12 @@ std::string Position::get_pos() const
 	return os.str();
 }
 
+bitboard_t Position::occ() const
+{
+	assert(!(_byColor[WHITE] & _byColor[BLACK]));
+	return _byColor[WHITE] | _byColor[BLACK];
+}
+
 bitboard_t Position::occ(int color) const
 {
 	assert(color_ok(color));
@@ -259,6 +264,49 @@ bitboard_t Position::occ_BQ(int color) const
 {
 	assert(color_ok(color));
 	return occ(color) & (by_piece(BISHOP) | by_piece(QUEEN));
+}
+
+int Position::turn() const
+{
+	assert(color_ok(_turn));
+	return _turn;
+}
+
+int Position::ep_square() const
+{
+	assert(square_ok(_epSquare) || _epSquare == NB_SQUARE);
+    return _epSquare;
+}
+
+bitboard_t Position::ep_square_bb() const
+{
+	// Guard against oversized shift
+	return square_ok(ep_square()) ? 1ULL << ep_square() : 0;
+}
+
+int Position::rule50() const
+{
+	// NB: rule50() = 100 is ok, if (and only if) position is check mate
+	assert(0 <= _rule50 && _rule50 <= 100);
+	return _rule50;
+}
+
+bitboard_t Position::checkers() const
+{
+	assert(_checkers == (attackers_to(king_square(turn())) & occ(opp_color(turn()))));
+	return _checkers;
+}
+
+bitboard_t Position::castlable_rooks() const
+{
+	// TODO: verify _castlableRooks
+	return _castlableRooks;
+}
+
+uint64_t Position::key() const
+{
+	assert(key_ok());
+	return _key;
 }
 
 bitboard_t Position::attacked() const
@@ -294,6 +342,7 @@ int Position::piece_on(int sq) const
 			return piece;
 
 	assert(false);
+	return NB_PIECE;	// silence compiler warning (may as well return an invalid piece)
 }
 
 void Position::play(const Position& before, Move m, bool givesCheck)
@@ -301,9 +350,9 @@ void Position::play(const Position& before, Move m, bool givesCheck)
 	*this = before;
 	_rule50++;
 
-	int us = turn(), them = opp_color(us);
-	int piece = piece_on(m.fsq);
-	int capture = bb::test(occ(), m.tsq) ? piece_on(m.tsq) : NB_PIECE;
+	const int us = turn(), them = opp_color(us);
+	const int piece = piece_on(m.fsq);
+	const int capture = bb::test(occ(), m.tsq) ? piece_on(m.tsq) : NB_PIECE;
 
 	// Capture piece on to square (if any)
 	if (capture != NB_PIECE) {
@@ -322,7 +371,7 @@ void Position::play(const Position& before, Move m, bool givesCheck)
 
 	if (piece == PAWN) {
 		// reset rule50, and set epSquare
-		int push = push_inc(us);
+		const int push = push_inc(us);
 		_rule50 = 0;
 		_epSquare = m.tsq == m.fsq + 2 * push ? m.fsq + push : NB_SQUARE;
 
@@ -375,7 +424,7 @@ void Position::print() const
 	for (int r = RANK_8; r >= RANK_1; r--) {
 		char line[] = ". . . . . . . .";
 		for (int f = FILE_A; f <= FILE_H; f++) {
-			int sq = square(r, f);
+			const int sq = square(r, f);
 			line[2 * f] = bb::test(occ(), sq)
 				? PieceLabel[color_on(sq)][piece_on(sq)]
 				: sq == ep_square() ? '*' : '.';

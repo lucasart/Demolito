@@ -78,10 +78,6 @@ uint64_t key(int color, int piece, int sq)
 
 uint64_t castling(bitboard_t castlableRooks)
 {
-	assert(bb::count(castlableRooks & bb::rank(RANK_1)) <= 2);
-	assert(bb::count(castlableRooks & bb::rank(RANK_8)) <= 2);
-	assert(!(castlableRooks & ~bb::rank(RANK_1) & ~bb::rank(RANK_8)));
-
 	bitboard_t result = 0;
 	while (castlableRooks)
 		result ^= ZobristCastling[bb::pop_lsb(castlableRooks)];

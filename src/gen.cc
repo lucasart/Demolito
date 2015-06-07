@@ -43,8 +43,8 @@ namespace gen {
 
 Move *pawn_moves(const Position& pos, Move *mList, bitboard_t targets)
 {
-	int us = pos.turn(), them = opp_color(us), push = push_inc(us);
-	bitboard_t capturable = pos.occ(them) | pos.ep_square_bb();
+	const int us = pos.turn(), them = opp_color(us), push = push_inc(us);
+	const bitboard_t capturable = pos.occ(them) | pos.ep_square_bb();
 	bitboard_t fss, tss;
 	Move m;
 
@@ -88,7 +88,7 @@ Move *pawn_moves(const Position& pos, Move *mList, bitboard_t targets)
 Move *piece_moves(const Position& pos, Move *mList, bitboard_t targets,
 	bool kingMoves)
 {
-	int us = pos.turn();
+	const int us = pos.turn();
 	bitboard_t fss, tss;
 
 	Move m;
@@ -149,7 +149,7 @@ Move *check_escapes(const Position& pos, Move *mList)
 {
 	assert(pos.checkers());
 	bitboard_t ours = pos.occ(pos.turn());
-	int ksq = pos.king_square(pos.turn());
+	const int ksq = pos.king_square(pos.turn());
 	bitboard_t tss;
 	Move m;
 
@@ -161,8 +161,8 @@ Move *check_escapes(const Position& pos, Move *mList)
 
 	if (!bb::several(pos.checkers())) {
 		// Single checker
-		int checkerSquare = bb::lsb(pos.checkers());
-		int checkerPiece = pos.piece_on(checkerSquare);
+		const int checkerSquare = bb::lsb(pos.checkers());
+		const int checkerPiece = pos.piece_on(checkerSquare);
 
 		// Piece moves must cover the checking segment for a sliding check,
 		// or capture the checker otherwise.
@@ -208,7 +208,7 @@ uint64_t perft(const Position& pos, int depth)
 
 	uint64_t result = 0;
 	Position after;
-	PinInfo pi(pos);
+	const PinInfo pi(pos);
 	Move mList[MAX_MOVES];
 	Move *end = all_moves(pos, mList);
 
@@ -217,7 +217,7 @@ uint64_t perft(const Position& pos, int depth)
 			continue;
 
 		after.play(pos, *m, m->gives_check(pos, pi));
-		uint64_t sub_tree = perft<false>(after, depth - 1);
+		const uint64_t sub_tree = perft<false>(after, depth - 1);
 		result += sub_tree;
 
 		if (Root)

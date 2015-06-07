@@ -13,6 +13,6 @@ Move *check_escapes(const Position& pos, Move *mList);
 
 Move *all_moves(const Position& pos, Move *mList);
 
-template <bool Root> uint64_t perft(const Position& pos, int depth);
+template <bool Root=true> uint64_t perft(const Position& pos, int depth);
 
 }	// namespace gen

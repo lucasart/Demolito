@@ -22,13 +22,13 @@
 bitboard_t PinInfo::hidden_checkers(const Position& pos, int attacker, int blocker) const
 {
 	assert(color_ok(attacker) && color_ok(blocker));
-	int ksq = pos.king_square(opp_color(attacker));
+	const int ksq = pos.king_square(opp_color(attacker));
 	bitboard_t pinners = (pos.occ_RQ(attacker) & bb::rpattacks(ksq))
 		| (pos.occ_BQ(attacker) & bb::bpattacks(ksq));
 
 	bitboard_t result = 0;
 	while (pinners) {
-		int sq = bb::pop_lsb(pinners);
+		const int sq = bb::pop_lsb(pinners);
 		bitboard_t skewered = bb::segment(ksq, sq) & pos.occ();
 		bb::clear(skewered, ksq);
 		bb::clear(skewered, sq);
@@ -41,7 +41,7 @@ bitboard_t PinInfo::hidden_checkers(const Position& pos, int attacker, int block
 
 PinInfo::PinInfo(const Position& pos)
 {
-	int us = pos.turn(), them = opp_color(us);
+	const int us = pos.turn(), them = opp_color(us);
 	ksq = pos.king_square(us);
 	pinned = hidden_checkers(pos, them, us);
 	discoCheckers = hidden_checkers(pos, us, us);
@@ -93,9 +93,9 @@ void Move::from_string(const std::string& s)
 bool Move::gives_check(const Position& pos, const PinInfo& pi) const
 {
 	assert(ok());
-	int us = pos.turn(), them = opp_color(us);
-	int ksq = pos.king_square(them);
-	int piece = piece_ok(prom) ? prom : pos.piece_on(fsq);
+	const int us = pos.turn(), them = opp_color(us);
+	const int ksq = pos.king_square(them);
+	const int piece = piece_ok(prom) ? prom : pos.piece_on(fsq);
 
 	// Direct check ?
 	if (bb::test(bb::piece_attacks(us, piece, tsq, pos.occ()), ksq))

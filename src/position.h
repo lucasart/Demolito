@@ -26,21 +26,21 @@ public:
 	std::string get_pos() const;
 	void play(const Position& before, Move m, bool givesCheck);
 
-	bitboard_t occ() const				{ return _byColor[WHITE] | _byColor[BLACK]; }
+	bitboard_t occ() const;
 	bitboard_t occ(int color) const;
 	bitboard_t by_piece(int piece) const;
 	bitboard_t occ(int color, int piece) const;
 	bitboard_t occ_RQ(int color) const;
 	bitboard_t occ_BQ(int color) const;
 
-	int turn() const					{ return _turn; }
-	int ep_square() const				{ return _epSquare; }
-	bitboard_t ep_square_bb() const		{ return square_ok(_epSquare) ? 1ULL << _epSquare : 0; }
-	int rule50() const					{ return _rule50; }
-	bitboard_t checkers() const			{ return _checkers; }
+	int turn() const;
+	int ep_square() const;
+	bitboard_t ep_square_bb() const;
+	int rule50() const;
+	bitboard_t checkers() const;
 	bitboard_t attacked() const;
-	bitboard_t castlable_rooks() const	{ return _castlableRooks; }
-	uint64_t key() const				{ return _key; }
+	bitboard_t castlable_rooks() const;
+	uint64_t key() const;
 
 	int king_square(int color) const;
 	int color_on(int sq) const;
