@@ -42,7 +42,6 @@ bitboard_t PinInfo::hidden_checkers(const Position& pos, int attacker, int block
 PinInfo::PinInfo(const Position& pos)
 {
 	const int us = pos.turn(), them = opp_color(us);
-	ksq = pos.king_square(us);
 	pinned = hidden_checkers(pos, them, us);
 	discoCheckers = hidden_checkers(pos, us, us);
 }
@@ -130,6 +129,7 @@ bool Move::gives_check(const Position& pos, const PinInfo& pi) const
 bool Move::pseudo_is_legal(const Position& pos, const PinInfo& pi) const
 {
 	const int piece = pos.piece_on(fsq);
+	const int ksq = pos.king_square(pos.turn());
 
 	if (piece == KING) {
 		if (bb::test(pos.occ(pos.turn()), tsq)) {
@@ -142,7 +142,7 @@ bool Move::pseudo_is_legal(const Position& pos, const PinInfo& pi) const
 			return !bb::test(pos.attacked(), tsq);
 	} else {
 		// Normal case: illegal if pinned, and moves out of pin-ray
-		if (bb::test(pi.pinned, fsq) && !bb::test(bb::ray(pi.ksq, fsq), tsq))
+		if (bb::test(pi.pinned, fsq) && !bb::test(bb::ray(ksq, fsq), tsq))
 			return false;
 
 		// En-passant special case: also illegal if self-check through the en-passant captured pawn
@@ -152,8 +152,8 @@ bool Move::pseudo_is_legal(const Position& pos, const PinInfo& pi) const
 			bb::clear(occ, fsq);
 			bb::set(occ, tsq);
 			bb::clear(occ, tsq + push_inc(them));
-			return !(bb::rattacks(pi.ksq, occ) & pos.occ_RQ(them))
-				&& !(bb::battacks(pi.ksq, occ) & pos.occ_BQ(them));
+			return !(bb::rattacks(ksq, occ) & pos.occ_RQ(them))
+				&& !(bb::battacks(ksq, occ) & pos.occ_BQ(them));
         } else
 			return true;
 	}

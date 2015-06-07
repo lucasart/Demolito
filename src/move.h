@@ -7,7 +7,6 @@ class Position;
 struct PinInfo {
 	bitboard_t pinned;		// pinned pieces
 	bitboard_t discoCheckers;	// discovery checkers
-	int ksq;			// king square (for side to move)
 
 	bitboard_t hidden_checkers(const Position& b, int attacker, int blocker) const;
 	PinInfo(const Position& pos);
