@@ -192,33 +192,37 @@ std::string Position::get_pos() const
 	os << (turn() == WHITE ? "w " : "b ");
 
 	// Castling rights
-	for (int color = WHITE; color <= BLACK; color++) {
-		const bitboard_t sqs = castlable_rooks() & occ(color);
-		if (!sqs)
-			continue;
+	if (!castlable_rooks())
+		os << '-';
+	else {
+		for (int color = WHITE; color <= BLACK; color++) {
+			const bitboard_t sqs = castlable_rooks() & occ(color);
+			if (!sqs)
+				continue;
 
-		// Because we have castlable rooks, king has to be on the first rank and not in a corner,
-		// which allows using bb::ray(ksq, ksq +/- 1) to search for the castle rook in Chess960.
-		const int ksq = king_square(color);
-		assert(rank_of(ksq) == (color == WHITE ? RANK_1 : RANK_8));
-		assert(file_of(ksq) != FILE_A && file_of(ksq) != FILE_H);
+			// Because we have castlable rooks, king has to be on the first rank and not in a corner,
+			// which allows using bb::ray(ksq, ksq +/- 1) to search for the castle rook in Chess960.
+			const int ksq = king_square(color);
+			assert(rank_of(ksq) == (color == WHITE ? RANK_1 : RANK_8));
+			assert(file_of(ksq) != FILE_A && file_of(ksq) != FILE_H);
 
-		// Right side castling
-		if (sqs & bb::ray(ksq, ksq + 1)) {
-			if (Chess960)
-				os << char(file_of(bb::lsb(sqs & bb::ray(ksq, ksq + 1)))
-					+ (color == WHITE ? 'A' : 'a'));
-			else
-				os << PieceLabel[color][KING];
-		}
+			// Right side castling
+			if (sqs & bb::ray(ksq, ksq + 1)) {
+				if (Chess960)
+					os << char(file_of(bb::lsb(sqs & bb::ray(ksq, ksq + 1)))
+						+ (color == WHITE ? 'A' : 'a'));
+				else
+					os << PieceLabel[color][KING];
+			}
 
-		// Left side castling
-		if (sqs & bb::ray(ksq, ksq - 1)) {
-			if (Chess960)
-				os << char(file_of(bb::msb(sqs & bb::ray(ksq, ksq - 1)))
-					+ (color == WHITE ? 'A' : 'a'));
-			else
-				os << PieceLabel[color][QUEEN];
+			// Left side castling
+			if (sqs & bb::ray(ksq, ksq - 1)) {
+				if (Chess960)
+					os << char(file_of(bb::msb(sqs & bb::ray(ksq, ksq - 1)))
+						+ (color == WHITE ? 'A' : 'a'));
+				else
+					os << PieceLabel[color][QUEEN];
+			}
 		}
 	}
 	os << ' ';

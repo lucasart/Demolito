@@ -15,21 +15,14 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
 */
 #include <iostream>
+#include <cstdlib>
 #include "bitboard.h"
 #include "zobrist.h"
-#include "position.h"
-#include "gen.h"
+#include "test.h"
 
-int main()
+int main(int argc, char **argv)
 {
 	bb::init();
 	zobrist::init();
-
-	Position pos;
-	pos.set_pos("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1");
-	pos.print();
-
-	PinInfo pi(pos);
-	uint64_t r = gen::perft(pos, 4);
-	std::cout << "perft = " << r << std::endl;
+	std::cout << "total = " << bench(std::atoi(argv[1])) << std::endl;
 }
