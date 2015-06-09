@@ -2,17 +2,16 @@
  * Demolito, a UCI chess engine.
  * Copyright 2015 Lucas Braesch.
  *
- * Demolito is free software: you can redistribute it and/or modify it under the
- * terms of the GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option) any later
- * version.
+ * Demolito is free software: you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License as published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
  *
- * Demolito is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ * Demolito is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License along with
- * this program. If not, see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU General Public License along with this program. If
+ * not, see <http://www.gnu.org/licenses/>.
 */
 #include <cassert>
 #include "move.h"
@@ -133,10 +132,12 @@ bool Move::pseudo_is_legal(const Position& pos, const PinInfo& pi) const
 
 	if (piece == KING) {
 		if (bb::test(pos.occ(pos.turn()), tsq)) {
-			// Castling: king must not move through attacked square, and rook must not be pinned
+			// Castling: king must not move through attacked square, and rook must not
+			// be pinned
 			assert(pos.piece_on(tsq) == ROOK);
 			const int _tsq = square(rank_of(fsq), fsq < tsq ? FILE_G : FILE_C);
-			return !(pos.attacked() & bb::segment(fsq, _tsq)) && !bb::test(pi.pinned, tsq);
+			return !(pos.attacked() & bb::segment(fsq, _tsq))
+				&& !bb::test(pi.pinned, tsq);
 		} else
 			// Normal king move: do not land on an attacked square
 			return !bb::test(pos.attacked(), tsq);
@@ -145,7 +146,8 @@ bool Move::pseudo_is_legal(const Position& pos, const PinInfo& pi) const
 		if (bb::test(pi.pinned, fsq) && !bb::test(bb::ray(ksq, fsq), tsq))
 			return false;
 
-		// En-passant special case: also illegal if self-check through the en-passant captured pawn
+		// En-passant special case: also illegal if self-check through the en-passant
+		// captured pawn
         if (tsq == pos.ep_square() && piece == PAWN) {
 			const int us = pos.turn(), them = opp_color(us);
 			bitboard_t occ = pos.occ();

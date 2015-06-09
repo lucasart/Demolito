@@ -2,17 +2,16 @@
  * Demolito, a UCI chess engine.
  * Copyright 2015 Lucas Braesch.
  *
- * Demolito is free software: you can redistribute it and/or modify it under the
- * terms of the GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option) any later
- * version.
+ * Demolito is free software: you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License as published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
  *
- * Demolito is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ * Demolito is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License along with
- * this program. If not, see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU General Public License along with this program. If
+ * not, see <http://www.gnu.org/licenses/>.
 */
 #include <cassert>
 #include <iostream>
@@ -63,7 +62,8 @@ void init_rays()
 		int r1 = rank_of(sq1), f1 = file_of(sq1);
 		for (int d = 0; d < 8; d++) {
 			bitboard_t mask = 0;
-			for (int r2 = r1, f2 = f1; rank_ok(r2) && file_ok(f2); r2 += KDir[d][0], f2 += KDir[d][1]) {
+			for (int r2 = r1, f2 = f1; rank_ok(r2) && file_ok(f2);
+			r2 += KDir[d][0], f2 += KDir[d][1]) {
 				int sq2 = square(r2, f2);
 				bb::set(mask, sq2);
 				Segment[sq1][sq2] = mask;

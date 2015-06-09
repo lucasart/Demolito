@@ -2,17 +2,16 @@
  * Demolito, a UCI chess engine.
  * Copyright 2015 Lucas Braesch.
  *
- * Demolito is free software: you can redistribute it and/or modify it under the
- * terms of the GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option) any later
- * version.
+ * Demolito is free software: you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License as published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
  *
- * Demolito is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ * Demolito is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License along with
- * this program. If not, see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU General Public License along with this program. If
+ * not, see <http://www.gnu.org/licenses/>.
 */
 #include <cassert>
 #include <iostream>
@@ -200,8 +199,9 @@ std::string Position::get_pos() const
 			if (!sqs)
 				continue;
 
-			// Because we have castlable rooks, king has to be on the first rank and not in a corner,
-			// which allows using bb::ray(ksq, ksq +/- 1) to search for the castle rook in Chess960.
+			// Because we have castlable rooks, king has to be on the first rank and not
+			// in a corner, which allows using bb::ray(ksq, ksq +/- 1) to search for the
+			// castle rook in Chess960.
 			const int ksq = king_square(color);
 			assert(rank_of(ksq) == (color == WHITE ? RANK_1 : RANK_8));
 			assert(file_of(ksq) != FILE_A && file_of(ksq) != FILE_H);

@@ -2,17 +2,16 @@
  * Demolito, a UCI chess engine.
  * Copyright 2015 Lucas Braesch.
  *
- * Demolito is free software: you can redistribute it and/or modify it under the
- * terms of the GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option) any later
- * version.
+ * Demolito is free software: you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License as published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
  *
- * Demolito is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ * Demolito is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License along with
- * this program. If not, see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU General Public License along with this program. If
+ * not, see <http://www.gnu.org/licenses/>.
 */
 #include <cassert>
 #include <iostream>
@@ -164,17 +163,17 @@ Move *check_escapes(const Position& pos, Move *mList)
 		const int checkerSquare = bb::lsb(pos.checkers());
 		const int checkerPiece = pos.piece_on(checkerSquare);
 
-		// Piece moves must cover the checking segment for a sliding check,
-		// or capture the checker otherwise.
+		// Piece moves must cover the checking segment for a sliding check, or capture the
+		// checker otherwise.
 		tss = BISHOP <= checkerPiece && checkerPiece <= QUEEN
 			? bb::segment(ksq, checkerSquare)
 			: pos.checkers();
 
 		mList = piece_moves(pos, mList, tss & ~ours, false);
 
-		// if checked by a Pawn and epsq is available, then the check must result
-		// from a pawn double push, and we also need to consider capturing it en
-		// passant to solve the check
+		// if checked by a Pawn and epsq is available, then the check must result from a
+		// pawn double push, and we also need to consider capturing it en-passant to solve
+		// the check.
 		if (checkerPiece == PAWN && square_ok(pos.ep_square()))
 			bb::set(tss, pos.ep_square());
 
