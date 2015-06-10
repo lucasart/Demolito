@@ -41,14 +41,14 @@ bool Position::key_ok() const
 	return k == _key;
 }
 
-bitboard_t Position::attackers_to(int sq) const
+bitboard_t Position::attackers_to(int sq, bitboard_t _occ) const
 {
 	return (occ(WHITE, PAWN) & bb::pattacks(BLACK, sq))
 		| (occ(BLACK, PAWN) & bb::pattacks(WHITE, sq))
 		| (bb::nattacks(sq) & by_piece(KNIGHT))
 		| (bb::kattacks(sq) & by_piece(KING))
-		| (bb::rattacks(sq, occ()) & (by_piece(ROOK) | by_piece(QUEEN)))
-		| (bb::battacks(sq, occ()) & (by_piece(BISHOP) | by_piece(QUEEN)));
+		| (bb::rattacks(sq, _occ) & (by_piece(ROOK) | by_piece(QUEEN)))
+		| (bb::battacks(sq, _occ) & (by_piece(BISHOP) | by_piece(QUEEN)));
 }
 
 bitboard_t Position::attacked_by(int color) const
@@ -158,7 +158,7 @@ void Position::set_pos(const std::string& fen)
 	_key ^= zobrist::castling(castlable_rooks());
 	assert(key_ok());
 
-	_checkers = attackers_to(king_square(turn())) & occ(opp_color(turn()));
+	_checkers = attackers_to(king_square(turn()), occ()) & occ(opp_color(turn()));
 }
 
 std::string Position::get_pos() const
@@ -237,6 +237,8 @@ std::string Position::get_pos() const
 bitboard_t Position::occ() const
 {
 	assert(!(_byColor[WHITE] & _byColor[BLACK]));
+	assert((_byColor[WHITE] | _byColor[BLACK]) == (by_piece(KNIGHT) | by_piece(BISHOP)
+		| by_piece(ROOK) | by_piece(QUEEN) | by_piece(KING) | by_piece(PAWN)));
 	return _byColor[WHITE] | _byColor[BLACK];
 }
 
@@ -279,7 +281,7 @@ int Position::turn() const
 int Position::ep_square() const
 {
 	assert(square_ok(_epSquare) || _epSquare == NB_SQUARE);
-    return _epSquare;
+	return _epSquare;
 }
 
 bitboard_t Position::ep_square_bb() const
@@ -297,7 +299,7 @@ int Position::rule50() const
 
 bitboard_t Position::checkers() const
 {
-	assert(_checkers == (attackers_to(king_square(turn())) & occ(opp_color(turn()))));
+	assert(_checkers == (attackers_to(king_square(turn()), occ()) & occ(opp_color(turn()))));
 	return _checkers;
 }
 
@@ -333,6 +335,8 @@ int Position::king_square(int color) const
 }
 
 int Position::piece_on(int sq) const
+// TODO: optimize by storing in an array. Explore performance trade-off once program is more
+// complete and profiling results are more relevant.
 {
 	assert(bb::test(occ(), sq));
 
@@ -400,14 +404,11 @@ void Position::play(const Position& before, Move m, bool givesCheck)
 			if (bb::test(before.occ(us), m.tsq)) {
 				// Capturing our own piece can only be a castling move, encoded KxR
 				assert(before.piece_on(m.tsq) == ROOK);
-
-				int r = rank_of(m.fsq);
-				int ksq = m.tsq > m.fsq ? square(r, FILE_G) : square(r, FILE_C);
-				int rsq = m.tsq > m.fsq ? square(r, FILE_F) : square(r, FILE_D);
+				const int r = rank_of(m.fsq);
 
 				clear(us, KING, m.tsq);
-				set(us, KING, ksq);
-				set(us, ROOK, rsq);
+				set(us, KING, m.tsq > m.fsq ? square(r, FILE_G) : square(r, FILE_C));
+				set(us, ROOK, m.tsq > m.fsq ? square(r, FILE_F) : square(r, FILE_D));
 			}
 		}
 	}
@@ -416,7 +417,7 @@ void Position::play(const Position& before, Move m, bool givesCheck)
 	_key ^= zobrist::en_passant(before.ep_square()) ^ zobrist::en_passant(ep_square());
 	_key ^= zobrist::castling(before.castlable_rooks() ^ castlable_rooks());
 
-	_checkers = givesCheck ? attackers_to(king_square(them)) & occ(us) : 0;
+	_checkers = givesCheck ? attackers_to(king_square(them), occ()) & occ(us) : 0;
 	_attacked = 0;	// calculate only when needed
 	_turn = them;
 

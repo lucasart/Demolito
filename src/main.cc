@@ -24,5 +24,14 @@ int main(int argc, char **argv)
 {
 	bb::init();
 	zobrist::init();
-	std::cout << "total = " << bench(std::atoi(argv[1])) << std::endl;
+
+	if (argc >= 2) {
+		const std::string cmd(argv[1]);
+		if (cmd == "see")
+			std::cout << "\nSEE: " << (test::see(true) ? "ok" : "failed") << std::endl;
+		else if (cmd == "perft" && argc >= 3) {
+			const int depth = std::atoi(argv[2]);
+			std::cout << "total = " << test::bench(depth) << std::endl;
+		}
+	}
 }

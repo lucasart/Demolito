@@ -14,7 +14,6 @@ class Position {
 	int _rule50;
 
 	bool key_ok() const;
-	bitboard_t attackers_to(int sq) const;
 	bitboard_t attacked_by(int color) const;
 
 	void clear();
@@ -45,6 +44,8 @@ public:
 	int king_square(int color) const;
 	int color_on(int sq) const;
 	int piece_on(int sq) const;
+
+	bitboard_t attackers_to(int sq, bitboard_t _occ) const;
 
 	void print() const;
 };

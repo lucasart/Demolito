@@ -24,6 +24,10 @@ struct Move {
 	std::string to_string() const;
 	void from_string(const std::string& s);
 
+	Move() = default;
+	Move(const std::string& s) { from_string(s); }
+
 	bool gives_check(const Position& pos, const PinInfo& pi) const;
 	bool pseudo_is_legal(const Position& pos, const PinInfo& pi) const;
+	int see(const Position& pos) const;
 };

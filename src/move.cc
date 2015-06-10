@@ -148,7 +148,7 @@ bool Move::pseudo_is_legal(const Position& pos, const PinInfo& pi) const
 
 		// En-passant special case: also illegal if self-check through the en-passant
 		// captured pawn
-        if (tsq == pos.ep_square() && piece == PAWN) {
+		if (tsq == pos.ep_square() && piece == PAWN) {
 			const int us = pos.turn(), them = opp_color(us);
 			bitboard_t occ = pos.occ();
 			bb::clear(occ, fsq);
@@ -156,7 +156,80 @@ bool Move::pseudo_is_legal(const Position& pos, const PinInfo& pi) const
 			bb::clear(occ, tsq + push_inc(them));
 			return !(bb::rattacks(ksq, occ) & pos.occ_RQ(them))
 				&& !(bb::battacks(ksq, occ) & pos.occ_BQ(them));
-        } else
+		} else
 			return true;
 	}
+}
+
+int Move::see(const Position& pos) const
+{
+	const int see_value[NB_PIECE+1] = {vN, vB, vR, vQ, 20 * vQ, vP, 0};
+
+	int us = pos.turn();
+	bitboard_t occ = pos.occ();
+
+	// General case
+	int gain[32] = {see_value[bb::test(occ, tsq) ? pos.piece_on(tsq) : NB_PIECE]};
+	int capture = pos.piece_on(fsq);
+	bb::clear(occ, fsq);
+
+	// Special cases
+	if (capture == PAWN) {
+		if (tsq == pos.ep_square()) {
+			bb::clear(occ, tsq - push_inc(us));
+			gain[0] = see_value[capture];
+		} else if (relative_rank(us, tsq) == RANK_8)
+			gain[0] += see_value[capture = prom] - see_value[PAWN];
+	}
+
+	// Easy case: tsq is not defended
+	if (!bb::test(pos.attacked(), tsq))
+		return gain[0];
+
+	bitboard_t attackers = pos.attackers_to(tsq, occ);
+	bitboard_t our_attackers;
+
+	int idx = 0;
+	while (us = opp_color(us), our_attackers = attackers & pos.occ(us)) {
+		// Find least valuable attacker (LVA)
+		int piece = PAWN;
+		if (!(our_attackers & pos.occ(us, PAWN))) {
+			for (piece = KNIGHT; piece <= KING; piece++) {
+				if (our_attackers & pos.occ(us, piece))
+					break;
+			}
+		}
+
+		// Remove the LVA
+		bb::clear(occ, bb::lsb(our_attackers & pos.occ(us, piece)));
+
+		// Scan for new X-ray attacks through the LVA
+		if (piece != KNIGHT) {
+			attackers |= (pos.by_piece(BISHOP) | pos.by_piece(QUEEN))
+				& bb::bpattacks(tsq) & bb::battacks(tsq, occ);
+			attackers |= (pos.by_piece(ROOK) | pos.by_piece(QUEEN))
+				& bb::rpattacks(tsq) & bb::rattacks(tsq, occ);
+		}
+
+		// Remove attackers we've already done
+		attackers &= occ;
+
+		// Add the new entry to the gain[] array
+		idx++;
+		assert(idx < 32);
+		gain[idx] = see_value[capture] - gain[idx-1];
+
+		if (piece == PAWN && relative_rank(us, tsq) == RANK_8) {
+			gain[idx] += see_value[QUEEN] - see_value[PAWN];
+			capture = QUEEN;
+		} else
+			capture = piece;
+	}
+
+	do {
+		if (-gain[idx] < gain[idx-1])
+			gain[idx-1] = -gain[idx];
+	} while (--idx);
+
+	return gain[0];
 }

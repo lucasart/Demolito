@@ -18,6 +18,8 @@
 #include "position.h"
 #include "gen.h"
 
+namespace test {
+
 uint64_t bench(int depth)
 {
 	const std::string fens[] = {
@@ -56,3 +58,46 @@ uint64_t bench(int depth)
 
         return result;
 }
+
+bool see(bool verbose)
+{
+	struct TestSEE {
+		std::string fen, move;
+		int value;
+	};
+
+	TestSEE test[] = {
+		{"k6K/8/4b3/8/3N4/8/8/8 w - -", "d4e6", vB},
+		{"k6K/3p4/4b3/8/3N4/8/8/8 w - -", "d4e6", 0},
+		{"k6K/3p4/4b3/8/3N4/8/8/4R3 w - -", "d4e6", vB - vN + vP},
+		{"k3r2K/3p4/4b3/8/3N4/8/4R3/4R3 w - -", "d4e6", vB - vN + vP},
+		{"k6K/3P4/8/8/8/8/8/8 w - -", "d7d8q", vQ - vP},
+		{"k6K/3P4/2n5/8/8/8/8/8 w - -", "d7d8q", -vP},
+		{"k6K/3P4/2n1N3/8/8/8/8/8 w - -", "d7d8q", -vP + vN},
+		{"k6K/3PP3/2n5/b7/7B/8/8/3R4 w - -", "d7d8q", vN + vB - 2*vP},
+		{"3R3K/k3P3/8/b7/8/8/8/8 b - -", "a5d8", vR - vB + vP - vQ},
+		{"8/4k3/8/8/RrR1N2r/8/5K2/8 b - - 11 1 ", "h4e4", vN - vR}
+	};
+
+	Position pos;
+
+	for (auto& t : test) {
+		pos.set_pos(t.fen);
+		const Move m(t.move);
+		const int s = m.see(pos);
+
+		if (verbose) {
+			std::cout << '\n';
+			pos.print();
+		} else
+			std::cout << t.fen << '\t';
+
+		std::cout << t.move << '\t' << "SEE = " << s << std::endl;
+		if (s != t.value)
+			return false;
+	}
+
+	return true;
+}
+
+}	// namespace test

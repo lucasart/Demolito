@@ -45,6 +45,16 @@ enum {UP = 8, DOWN = -8, LEFT = -1, RIGHT = 1};
 
 int push_inc(int color);	// pawn push increment
 
+/* Material values */
+
+#define vOP 80
+#define vEP 100
+#define vP  ((vOP + vEP) / 2)
+#define vN  330
+#define vB  330
+#define vR  540
+#define vQ  1000
+
 /* Display */
 
 extern const std::string PieceLabel[NB_COLOR];
