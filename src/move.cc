@@ -115,11 +115,12 @@ bool Move::gives_check(const Position& pos, const PinInfo& pi) const
 
 	// Castling
 	if (piece == KING && bb::test(pos.occ(us), tsq)) {
+		const int kingSq = square(rank_of(fsq), tsq > fsq ? FILE_G : FILE_C);
+		const int rookSq = square(rank_of(fsq), tsq > fsq ? FILE_F : FILE_D);
 		bitboard_t occ = pos.occ();
 		bb::clear(occ, fsq);
-		bb::set(occ, square(rank_of(fsq), tsq > fsq ? FILE_G : FILE_C));
-		return (pos.occ_RQ(us) & bb::rattacks(ksq, occ))
-			|| (pos.occ_BQ(us) & bb::battacks(ksq, occ));
+		bb::set(occ, kingSq);
+		return bb::test(bb::rattacks(ksq, occ), rookSq);
 	}
 
 	return false;
@@ -183,6 +184,7 @@ int Move::see(const Position& pos) const
 	}
 
 	// Easy case: tsq is not defended
+	// TODO: explore performance tradeoff between using pos.attacked() and using attackers below
 	if (!bb::test(pos.attacked(), tsq))
 		return gain[0];
 
