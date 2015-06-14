@@ -13,7 +13,6 @@
  * You should have received a copy of the GNU General Public License along with this program. If
  * not, see <http://www.gnu.org/licenses/>.
 */
-#include <cassert>
 #include "move.h"
 #include "bitboard.h"
 #include "position.h"
@@ -63,6 +62,14 @@ void Move::decode(move_t em)
 	tsq = (em >> 6) & 077;
 	prom = em >> 12;
 	assert(ok());
+}
+
+bool Move::is_tactical(const Position& pos) const
+{
+	const int us = pos.turn(), them = opp_color(us);
+	return (bb::test(pos.occ(them), tsq))
+		|| ((tsq == pos.ep_square() || relative_rank(us, tsq) == RANK_8)
+		&& (pos.piece_on(fsq) == PAWN));
 }
 
 std::string Move::to_string() const

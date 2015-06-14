@@ -15,7 +15,6 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
 */
 #include <iostream>
-#include <cstdlib>
 #include "bitboard.h"
 #include "zobrist.h"
 #include "test.h"
@@ -30,7 +29,7 @@ int main(int argc, char **argv)
 		if (cmd == "see")
 			std::cout << "\nSEE: " << (test::see(true) ? "ok" : "failed") << std::endl;
 		else if (cmd == "perft" && argc >= 3) {
-			const int depth = std::atoi(argv[2]);
+			const int depth = std::stoi(argv[2]);
 			std::cout << "total = " << test::bench(depth) << std::endl;
 		}
 	}

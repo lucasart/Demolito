@@ -1,4 +1,5 @@
 #pragma once
+#include <cassert>
 #include <string>
 
 extern bool Chess960;
