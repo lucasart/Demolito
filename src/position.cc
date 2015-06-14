@@ -82,6 +82,8 @@ bitboard_t Position::attacked_by(int color) const
 void Position::clear()
 {
 	std::memset(this, 0, sizeof(*this));
+	for (int sq = 0; sq < NB_SQUARE; sq++)
+		_piece_on[sq] = NB_PIECE;
 }
 
 void Position::clear(int color, int piece, int sq)
@@ -89,6 +91,7 @@ void Position::clear(int color, int piece, int sq)
 	assert(color_ok(color) && piece_ok(piece) && square_ok(sq));
 	bb::clear(_byColor[color], sq);
 	bb::clear(_byPiece[piece], sq);
+	_piece_on[sq] = NB_PIECE;
 	_key ^= zobrist::key(color, piece, sq);
 }
 
@@ -97,6 +100,7 @@ void Position::set(int color, int piece, int sq)
 	assert(color_ok(color) && piece_ok(piece) && square_ok(sq));
 	bb::set(_byColor[color], sq);
 	bb::set(_byPiece[piece], sq);
+	_piece_on[sq] = piece;
 	_key ^= zobrist::key(color, piece, sq);
 }
 
@@ -334,22 +338,9 @@ int Position::king_square(int color) const
 }
 
 int Position::piece_on(int sq) const
-// TODO: optimize by storing in an array. Explore performance trade-off once program is more
-// complete and profiling results are more relevant.
 {
 	assert(bb::test(occ(), sq));
-
-	// Pawns first (most frequent)
-	if (bb::test(by_piece(PAWN), sq))
-		return PAWN;
-
-	// Then pieces in ascending order (Q & K are the rarest, at the end)
-	for (int piece = 0; piece < NB_PIECE; piece++)
-		if (bb::test(by_piece(piece), sq))
-			return piece;
-
-	assert(false);
-	return NB_PIECE;	// silence compiler warning (may as well return an invalid piece)
+	return _piece_on[sq];
 }
 
 void Position::play(const Position& before, Move m, bool givesCheck)
@@ -359,7 +350,7 @@ void Position::play(const Position& before, Move m, bool givesCheck)
 
 	const int us = turn(), them = opp_color(us);
 	const int piece = piece_on(m.fsq);
-	const int capture = bb::test(occ(), m.tsq) ? piece_on(m.tsq) : NB_PIECE;
+	const int capture = piece_on(m.tsq);
 
 	// Capture piece on to square (if any)
 	if (capture != NB_PIECE) {

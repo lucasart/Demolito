@@ -9,6 +9,7 @@ class Position {
 	bitboard_t _checkers;
 	mutable bitboard_t _attacked;
 	uint64_t _key;
+	char _piece_on[NB_SQUARE];
 	int _turn;
 	int _epSquare;
 	int _rule50;

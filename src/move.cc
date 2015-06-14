@@ -177,7 +177,7 @@ int Move::see(const Position& pos) const
 	bitboard_t occ = pos.occ();
 
 	// General case
-	int gain[32] = {see_value[bb::test(occ, tsq) ? pos.piece_on(tsq) : NB_PIECE]};
+	int gain[32] = {see_value[pos.piece_on(tsq)]};
 	int capture = pos.piece_on(fsq);
 	bb::clear(occ, fsq);
 
