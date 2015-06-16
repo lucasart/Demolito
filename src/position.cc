@@ -20,6 +20,9 @@
 #include "bitboard.h"
 #include "zobrist.h"
 
+// Invalid values for lazy calculation
+#define INVALID	uint64_t(-1)
+
 bool Position::key_ok() const
 {
 	uint64_t k = 0;
@@ -159,9 +162,10 @@ void Position::set_pos(const std::string& fen)
 		_key ^= zobrist::turn();
 	_key ^= zobrist::en_passant(ep_square());
 	_key ^= zobrist::castling(castlable_rooks());
-	assert(key_ok());
 
-	_checkers = attackers_to(king_square(turn()), occ()) & occ(opp_color(turn()));
+	_attacked = _checkers = INVALID;
+
+	assert(key_ok());
 }
 
 std::string Position::get_pos() const
@@ -302,8 +306,10 @@ int Position::rule50() const
 
 bitboard_t Position::checkers() const
 {
-	assert(_checkers == (attackers_to(king_square(turn()), occ()) & occ(opp_color(turn()))));
-	return _checkers;
+	if (_checkers == INVALID)
+		return _checkers = attackers_to(king_square(turn()), occ()) & occ(opp_color(turn()));
+	else
+		return _checkers;
 }
 
 bitboard_t Position::castlable_rooks() const
@@ -320,10 +326,10 @@ uint64_t Position::key() const
 
 bitboard_t Position::attacked() const
 {
-	if (_attacked)
-		return _attacked;
-	else
+	if (_attacked == INVALID)
 		return _attacked = attacked_by(opp_color(turn()));
+	else
+		return _attacked;
 }
 
 int Position::color_on(int sq) const
@@ -339,11 +345,10 @@ int Position::king_square(int color) const
 
 int Position::piece_on(int sq) const
 {
-	assert(bb::test(occ(), sq));
 	return _piece_on[sq];
 }
 
-void Position::play(const Position& before, Move m, bool givesCheck)
+void Position::play(const Position& before, Move m)
 {
 	*this = before;
 	_rule50++;
@@ -407,8 +412,8 @@ void Position::play(const Position& before, Move m, bool givesCheck)
 	_key ^= zobrist::en_passant(before.ep_square()) ^ zobrist::en_passant(ep_square());
 	_key ^= zobrist::castling(before.castlable_rooks() ^ castlable_rooks());
 
-	_checkers = givesCheck ? attackers_to(king_square(them), occ()) & occ(us) : 0;
-	_attacked = 0;	// calculate only when needed
+	_attacked = _checkers = INVALID;
+
 	_turn = them;
 
 	assert(key_ok());

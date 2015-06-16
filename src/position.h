@@ -6,8 +6,7 @@ class Position {
 	bitboard_t _byColor[NB_COLOR];
 	bitboard_t _byPiece[NB_PIECE];
 	bitboard_t _castlableRooks;
-	bitboard_t _checkers;
-	mutable bitboard_t _attacked;
+	mutable bitboard_t _attacked, _checkers;	// lazy calc
 	uint64_t _key;
 	char _piece_on[NB_SQUARE];
 	int _turn;
@@ -24,7 +23,7 @@ class Position {
 public:
 	void set_pos(const std::string& fen);
 	std::string get_pos() const;
-	void play(const Position& before, Move m, bool givesCheck);
+	void play(const Position& before, Move m);
 
 	bitboard_t occ() const;
 	bitboard_t occ(int color) const;

@@ -29,7 +29,7 @@ struct Move {
 	Move() = default;
 	Move(const std::string& s) { from_string(s); }
 
-	bool gives_check(const Position& pos, const PinInfo& pi) const;
+	bool gives_check(const Position& pos, const PinInfo& pi) const;	// TODO: dead code (may be useful in search?)
 	bool pseudo_is_legal(const Position& pos, const PinInfo& pi) const;
 	int see(const Position& pos) const;
 };
