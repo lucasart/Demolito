@@ -96,6 +96,10 @@ int push_inc(int color)
 	return color == WHITE ? UP : DOWN;
 }
 
+/* Eval */
+
+const eval_t Material[NB_PIECE] = {{N, N}, {B, B}, {R, R}, {Q, Q}, {K, K}, {OP, EP}};
+
 /* Display */
 
 const std::string PieceLabel[NB_COLOR] = {"NBRQKP.", "nbrqkp."};

@@ -171,7 +171,7 @@ bool Move::pseudo_is_legal(const Position& pos, const PinInfo& pi) const
 
 int Move::see(const Position& pos) const
 {
-	const int see_value[NB_PIECE+1] = {vN, vB, vR, vQ, 20 * vQ, vP, 0};
+	const int see_value[NB_PIECE+1] = {N, B, R, Q, K, P, 0};
 
 	int us = pos.turn();
 	bitboard_t occ = pos.occ();

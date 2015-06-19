@@ -18,11 +18,13 @@
 #include "bitboard.h"
 #include "zobrist.h"
 #include "test.h"
+#include "pst.h"
 
 int main(int argc, char **argv)
 {
 	bb::init();
 	zobrist::init();
+	pst::init(1);
 
 	if (argc >= 2) {
 		const std::string cmd(argv[1]);

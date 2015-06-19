@@ -1,4 +1,5 @@
 #pragma once
+#include <cstdint>
 #include <cassert>
 #include <string>
 
@@ -48,13 +49,24 @@ int push_inc(int color);	// pawn push increment
 
 /* Material values */
 
-#define vOP 80
-#define vEP 100
-#define vP  ((vOP + vEP) / 2)
-#define vN  330
-#define vB  330
-#define vR  540
-#define vQ  1000
+enum {
+	OP = 80, EP = 100, P = 90,
+	N = 330, B = 330,
+	R = 540, Q = 1000,
+	K = 20000
+};
+
+/* Eval */
+
+enum {OPENING, ENDGAME, NB_PHASE};
+
+#ifdef __clang__
+typedef int eval_t __attribute__ (( ext_vector_type(2) ));
+#else
+typedef int eval_t __attribute__ (( vector_size(8) ));
+#endif
+
+extern const eval_t Material[NB_PIECE];
 
 /* Display */
 
