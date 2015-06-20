@@ -19,6 +19,7 @@
 #include "position.h"
 #include "bitboard.h"
 #include "zobrist.h"
+#include "pst.h"
 
 // Invalid values for lazy calculation
 #define INVALID	uint64_t(-1)
@@ -28,11 +29,11 @@ bool Position::key_ok() const
 	uint64_t k = 0;
 
 	for (int color = 0; color < NB_COLOR; color++)
-		for (int piece = 0; piece < NB_PIECE; piece++) {
-			bitboard_t b = occ(color, piece);
-			while (b)
-				k ^= zobrist::key(color, piece, bb::pop_lsb(b));
-		}
+	for (int piece = 0; piece < NB_PIECE; piece++) {
+		bitboard_t b = occ(color, piece);
+		while (b)
+			k ^= zobrist::key(color, piece, bb::pop_lsb(b));
+	}
 
 	k ^= zobrist::en_passant(ep_square());
 	k ^= zobrist::castling(castlable_rooks());
@@ -41,6 +42,20 @@ bool Position::key_ok() const
 		k ^= zobrist::turn();
 
 	return k == _key;
+}
+
+bool Position::pst_ok() const
+{
+	eval_t sum = {0, 0};
+
+	for (int color = 0; color < NB_COLOR; color++)
+	for (int piece = 0; piece < NB_PIECE; piece++) {
+		bitboard_t b = occ(color, piece);
+		while (b)
+			sum += pst::table[color][piece][bb::pop_lsb(b)];
+	}
+
+	return _pst[OPENING] == sum[OPENING] && _pst[ENDGAME] == sum[ENDGAME];
 }
 
 bitboard_t Position::attackers_to(int sq, bitboard_t _occ) const
@@ -86,7 +101,7 @@ void Position::clear()
 {
 	std::memset(this, 0, sizeof(*this));
 	for (int sq = 0; sq < NB_SQUARE; sq++)
-		_piece_on[sq] = NB_PIECE;
+		_pieceOn[sq] = NB_PIECE;
 }
 
 void Position::clear(int color, int piece, int sq)
@@ -94,7 +109,8 @@ void Position::clear(int color, int piece, int sq)
 	assert(color_ok(color) && piece_ok(piece) && square_ok(sq));
 	bb::clear(_byColor[color], sq);
 	bb::clear(_byPiece[piece], sq);
-	_piece_on[sq] = NB_PIECE;
+	_pieceOn[sq] = NB_PIECE;
+	_pst -= pst::table[color][piece][sq];
 	_key ^= zobrist::key(color, piece, sq);
 }
 
@@ -103,7 +119,8 @@ void Position::set(int color, int piece, int sq)
 	assert(color_ok(color) && piece_ok(piece) && square_ok(sq));
 	bb::set(_byColor[color], sq);
 	bb::set(_byPiece[piece], sq);
-	_piece_on[sq] = piece;
+	_pieceOn[sq] = piece;
+	_pst += pst::table[color][piece][sq];
 	_key ^= zobrist::key(color, piece, sq);
 }
 
@@ -312,6 +329,14 @@ bitboard_t Position::checkers() const
 		return _checkers;
 }
 
+bitboard_t Position::attacked() const
+{
+	if (_attacked == INVALID)
+		return _attacked = attacked_by(opp_color(turn()));
+	else
+		return _attacked;
+}
+
 bitboard_t Position::castlable_rooks() const
 {
 	// TODO: verify _castlableRooks
@@ -324,12 +349,15 @@ uint64_t Position::key() const
 	return _key;
 }
 
-bitboard_t Position::attacked() const
+eval_t Position::pst() const
 {
-	if (_attacked == INVALID)
-		return _attacked = attacked_by(opp_color(turn()));
-	else
-		return _attacked;
+	assert(pst_ok());
+	return _pst;
+}
+
+int Position::king_square(int color) const
+{
+	return bb::lsb(occ(color, KING));
 }
 
 int Position::color_on(int sq) const
@@ -338,14 +366,9 @@ int Position::color_on(int sq) const
 	return bb::test(occ(WHITE), sq) ? WHITE : BLACK;
 }
 
-int Position::king_square(int color) const
-{
-	return bb::lsb(occ(color, KING));
-}
-
 int Position::piece_on(int sq) const
 {
-	return _piece_on[sq];
+	return _pieceOn[sq];
 }
 
 void Position::play(const Position& before, Move m)

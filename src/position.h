@@ -8,12 +8,14 @@ class Position {
 	bitboard_t _castlableRooks;
 	mutable bitboard_t _attacked, _checkers;	// lazy calc
 	uint64_t _key;
-	char _piece_on[NB_SQUARE];
+	eval_t _pst;
+	char _pieceOn[NB_SQUARE];
 	int _turn;
 	int _epSquare;
 	int _rule50;
 
 	bool key_ok() const;
+	bool pst_ok() const;
 	bitboard_t attacked_by(int color) const;
 
 	void clear();
@@ -40,6 +42,7 @@ public:
 	bitboard_t attacked() const;
 	bitboard_t castlable_rooks() const;
 	uint64_t key() const;
+	eval_t pst() const;
 
 	int king_square(int color) const;
 	int color_on(int sq) const;

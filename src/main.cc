@@ -24,7 +24,7 @@ int main(int argc, char **argv)
 {
 	bb::init();
 	zobrist::init();
-	pst::init(1);
+	pst::init();
 
 	if (argc >= 2) {
 		const std::string cmd(argv[1]);
