@@ -98,7 +98,7 @@ int push_inc(int color)
 
 /* Eval */
 
-const eval_t Material[NB_PIECE] = {{N, N}, {B, B}, {R, R}, {Q, Q}, {K, K}, {OP, EP}};
+const eval_t Material[NB_PIECE] = {{N, N}, {B, B}, {R, R}, {Q, Q}, {0, 0}, {OP, EP}};
 
 /* Display */
 
