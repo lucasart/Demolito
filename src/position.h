@@ -10,12 +10,12 @@ class Position {
 	uint64_t _key;
 	eval_t _pst;
 	char _pieceOn[NB_SQUARE];
-	int _turn;
-	int _epSquare;
-	int _rule50;
+	int _turn, _epSquare, _rule50;
+	eval_t _pieceMaterial[NB_COLOR];
 
 	bool key_ok() const;
 	bool pst_ok() const;
+	bool material_ok() const;
 	bitboard_t attacked_by(int color) const;
 
 	void clear();
@@ -42,7 +42,10 @@ public:
 	bitboard_t attacked() const;
 	bitboard_t castlable_rooks() const;
 	uint64_t key() const;
+
 	eval_t pst() const;
+	eval_t piece_material() const;
+	eval_t piece_material(int color) const;
 
 	int king_square(int color) const;
 	int color_on(int sq) const;

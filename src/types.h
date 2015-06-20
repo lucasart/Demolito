@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <cassert>
 #include <string>
+#include <array>
 
 extern bool Chess960;
 
@@ -60,11 +61,25 @@ enum {
 
 enum {OPENING, ENDGAME, NB_PHASE};
 
-#ifdef __clang__
+/*#ifdef __clang__
 typedef int eval_t __attribute__ (( ext_vector_type(2) ));
 #else
 typedef int eval_t __attribute__ (( vector_size(8) ));
-#endif
+#endif*/
+
+typedef std::array<int, 2> eval_t;
+
+inline eval_t operator+(eval_t e1, eval_t e2) { return {e1[0] + e2[0], e1[1] + e2[1]}; }
+inline eval_t operator-(eval_t e1, eval_t e2) { return {e1[0] - e2[0], e1[1] - e2[1]}; }
+
+inline eval_t operator+=(eval_t& e1, eval_t e2) { return e1[0] += e2[0], e1[1] += e2[1], e1; }
+inline eval_t operator-=(eval_t& e1, eval_t e2) { return e1[0] -= e2[0], e1[1] -= e2[1], e1; }
+
+inline eval_t operator*(eval_t e, int x) { return {e[0] * x, e[1] * x}; }
+inline eval_t operator/(eval_t e, int x) { return {e[0] / x, e[1] / x}; }
+
+inline eval_t operator*=(eval_t& e, int x) { return e[0] *= x, e[1] *= x, e; }
+inline eval_t operator/=(eval_t& e, int x) { return e[0] /= x, e[1] /= x, e; }
 
 extern const eval_t Material[NB_PIECE];
 

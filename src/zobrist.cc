@@ -55,9 +55,9 @@ void init()
 	PRNG prng;
 
 	for (int color = 0; color < NB_COLOR; color++)
-		for (int piece = 0; piece < NB_PIECE; piece++)
-			for (int sq = 0; sq < NB_SQUARE; sq++)
-				Zobrist[color][piece][sq] = prng.rand();
+	for (int piece = 0; piece < NB_PIECE; piece++)
+	for (int sq = 0; sq < NB_SQUARE; sq++)
+		Zobrist[color][piece][sq] = prng.rand();
 
 	for (int sq = 0; sq < NB_SQUARE; sq++)
 		ZobristCastling[sq] = prng.rand();

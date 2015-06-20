@@ -26,7 +26,7 @@ const int CenterShape[8] = {-2,-1, 0, 1, 1, 0,-1,-2};
 eval_t knight(int r, int f)
 {
 	const eval_t CenterWeight = {10, 3};
-	return (CenterShape[r] + CenterShape[f]) * CenterWeight;
+	return CenterWeight * (CenterShape[r] + CenterShape[f]);
 }
 
 eval_t bishop(int r, int f)
@@ -35,7 +35,7 @@ eval_t bishop(int r, int f)
 	const eval_t DiagonalWeight = {4, 0};
 	const eval_t BackRankWeight = {-10, 0};
 
-	return (CenterShape[r] + CenterShape[f]) * CenterWeight
+	return CenterWeight * (CenterShape[r] + CenterShape[f])
 		+ DiagonalWeight * (7 == r + f || r == f)
 		+ BackRankWeight * (r == RANK_1);
 }
@@ -45,8 +45,8 @@ eval_t rook(int r, int f)
 	const eval_t FileWeight    = {3, 0};
 	const eval_t SeventhWeight = {8, 8};
 
-	return CenterShape[f] * FileWeight
-		+ (r == RANK_7) * SeventhWeight;
+	return FileWeight * CenterShape[f]
+		+ SeventhWeight * (r == RANK_7);
 }
 
 eval_t queen(int r, int f)
@@ -54,7 +54,7 @@ eval_t queen(int r, int f)
 	const eval_t CenterWeight   = {0, 4};
 	const eval_t BackRankWeight = {-5, 0};
 
-	return (CenterShape[r] + CenterShape[f]) * CenterWeight
+	return CenterWeight * (CenterShape[r] + CenterShape[f])
 		+ BackRankWeight * (r == RANK_1);
 }
 
@@ -87,8 +87,8 @@ void init(int verbosity)
 	for (int piece = 0; piece < NB_PIECE; piece++)
 	for (int sq = 0; sq < NB_SQUARE; sq++) {
 		const int rr = rank_of(sq) ^ (RANK_8 * color), f = file_of(sq);
-		table[color][piece][sq] = (color == WHITE ? 1 : -1)
-			* (Material[piece] + (*PstFn[piece])(rr, f));
+		table[color][piece][sq] = (Material[piece] + (*PstFn[piece])(rr, f))
+			* (color == WHITE ? 1 : -1);
 	}
 
 	for (int phase = 0; phase < NB_PHASE; phase++)

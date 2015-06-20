@@ -55,7 +55,18 @@ bool Position::pst_ok() const
 			sum += pst::table[color][piece][bb::pop_lsb(b)];
 	}
 
-	return _pst[OPENING] == sum[OPENING] && _pst[ENDGAME] == sum[ENDGAME];
+	return _pst == sum;
+}
+
+bool Position::material_ok() const
+{
+	eval_t npm[NB_COLOR] = {{0,0}, {0,0}};
+
+	for (int color = 0; color < NB_COLOR; color++)
+	for (int piece = 0; piece < NB_PIECE; piece++)
+		npm[color] += Material[piece] * bb::count(occ(color, piece));
+
+	return npm == _pieceMaterial;
 }
 
 bitboard_t Position::attackers_to(int sq, bitboard_t _occ) const
@@ -111,6 +122,8 @@ void Position::clear(int color, int piece, int sq)
 	bb::clear(_byPiece[piece], sq);
 	_pieceOn[sq] = NB_PIECE;
 	_pst -= pst::table[color][piece][sq];
+	if (piece != PAWN)
+		_pieceMaterial[color] -= Material[piece];
 	_key ^= zobrist::key(color, piece, sq);
 }
 
@@ -121,6 +134,8 @@ void Position::set(int color, int piece, int sq)
 	bb::set(_byPiece[piece], sq);
 	_pieceOn[sq] = piece;
 	_pst += pst::table[color][piece][sq];
+	if (piece != PAWN)
+		_pieceMaterial[color] += Material[piece];
 	_key ^= zobrist::key(color, piece, sq);
 }
 
@@ -353,6 +368,18 @@ eval_t Position::pst() const
 {
 	assert(pst_ok());
 	return _pst;
+}
+
+eval_t Position::piece_material() const
+{
+	assert(material_ok());
+	return piece_material(WHITE) + piece_material(BLACK);
+}
+
+eval_t Position::piece_material(int color) const
+{
+	assert(material_ok());
+	return _pieceMaterial[color];
 }
 
 int Position::king_square(int color) const
