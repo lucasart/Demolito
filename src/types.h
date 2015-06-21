@@ -2,7 +2,6 @@
 #include <cstdint>
 #include <cassert>
 #include <string>
-#include <array>
 
 extern bool Chess960;
 
@@ -66,19 +65,28 @@ typedef int eval_t __attribute__ (( ext_vector_type(2) ));
 typedef int eval_t __attribute__ (( vector_size(8) ));
 #endif*/
 
-typedef std::array<int, 2> eval_t;
+struct eval_t {
+	int v[NB_PHASE];
 
-inline eval_t operator+(eval_t e1, eval_t e2) { return {e1[0] + e2[0], e1[1] + e2[1]}; }
-inline eval_t operator-(eval_t e1, eval_t e2) { return {e1[0] - e2[0], e1[1] - e2[1]}; }
+	int operator[](int phase) const { return v[phase]; }
+	int op() const { return v[OPENING]; }
+	int eg() const { return v[ENDGAME]; }
+	int& op() { return v[OPENING]; }
+	int& eg() { return v[ENDGAME]; }
 
-inline eval_t operator+=(eval_t& e1, eval_t e2) { return e1[0] += e2[0], e1[1] += e2[1], e1; }
-inline eval_t operator-=(eval_t& e1, eval_t e2) { return e1[0] -= e2[0], e1[1] -= e2[1], e1; }
+	bool operator==(eval_t e) const { return op() == e.op() && eg() == e.eg(); }
+	bool operator!=(eval_t e) const { return !(*this == e); }
 
-inline eval_t operator*(eval_t e, int x) { return {e[0] * x, e[1] * x}; }
-inline eval_t operator/(eval_t e, int x) { return {e[0] / x, e[1] / x}; }
+	eval_t operator+(eval_t e) const { return {op() + e.op(), eg() + e.eg()}; }
+	eval_t operator-(eval_t e) const { return {op() - e.op(), eg() - e.eg()}; }
+	eval_t operator*(int x) const { return {op() * x, eg() * x}; }
+	eval_t operator/(int x) const { return {op() / x, eg() / x}; }
 
-inline eval_t operator*=(eval_t& e, int x) { return e[0] *= x, e[1] *= x, e; }
-inline eval_t operator/=(eval_t& e, int x) { return e[0] /= x, e[1] /= x, e; }
+	eval_t& operator+=(eval_t e) { return op() += e.op(), eg() += e.eg(), *this; }
+	eval_t& operator-=(eval_t e) { return op() -= e.op(), eg() -= e.eg(), *this; }
+	eval_t& operator*=(int x) { return op() *= x, eg() *= x, *this; }
+	eval_t& operator/=(int x) { return op() /= x, eg() /= x, *this; }
+};
 
 extern const eval_t Material[NB_PIECE];
 

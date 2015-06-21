@@ -62,11 +62,14 @@ bool Position::material_ok() const
 {
 	eval_t npm[NB_COLOR] = {{0,0}, {0,0}};
 
-	for (int color = 0; color < NB_COLOR; color++)
-	for (int piece = KNIGHT; piece <= QUEEN; piece++)
-		npm[color] += Material[piece] * bb::count(occ(color, piece));
+	for (int color = 0; color < NB_COLOR; color++) {
+		for (int piece = KNIGHT; piece <= QUEEN; piece++)
+			npm[color] += Material[piece] * bb::count(occ(color, piece));
+		if (npm[color] != _pieceMaterial[color])
+			return false;
+	}
 
-	return npm[OPENING] == _pieceMaterial[OPENING] && npm[ENDGAME] == _pieceMaterial[ENDGAME];
+	return true;
 }
 
 bitboard_t Position::attackers_to(int sq, bitboard_t _occ) const
