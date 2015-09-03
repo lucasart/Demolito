@@ -95,44 +95,6 @@ void Move::from_string(const std::string& s)
 	assert(ok());
 }
 
-bool Move::gives_check(const Position& pos, const PinInfo& pi) const
-{
-	assert(ok());
-	const int us = pos.turn(), them = opp_color(us);
-	const int ksq = pos.king_square(them);
-	const int piece = piece_ok(prom) ? prom : pos.piece_on(fsq);
-
-	// Direct check ?
-	if (bb::test(bb::piece_attacks(us, piece, tsq, pos.occ()), ksq))
-		return true;
-
-	// Disco check ?
-	if (bb::test(pi.discoCheckers, fsq) && !bb::test(bb::ray(ksq, fsq), tsq))
-		return true;
-
-	// En passant
-	if (piece == PAWN && tsq == pos.ep_square()) {
-		bitboard_t occ = pos.occ();
-		bb::clear(occ, fsq);
-		bb::set(occ, tsq);
-		bb::clear(occ, tsq + push_inc(them));
-		return (pos.occ_RQ(us) & bb::rattacks(ksq, occ))
-			|| (pos.occ_BQ(us) & bb::battacks(ksq, occ));
-	}
-
-	// Castling
-	if (piece == KING && bb::test(pos.occ(us), tsq)) {
-		const int kingSq = square(rank_of(fsq), tsq > fsq ? FILE_G : FILE_C);
-		const int rookSq = square(rank_of(fsq), tsq > fsq ? FILE_F : FILE_D);
-		bitboard_t occ = pos.occ();
-		bb::clear(occ, fsq);
-		bb::set(occ, kingSq);
-		return bb::test(bb::rattacks(ksq, occ), rookSq);
-	}
-
-	return false;
-}
-
 bool Move::pseudo_is_legal(const Position& pos, const PinInfo& pi) const
 {
 	const int piece = pos.piece_on(fsq);

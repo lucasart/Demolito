@@ -60,6 +60,24 @@ Selector<ph>::Selector(const Position& pos)
 	idx = 0;
 }
 
+template <Phase ph>
+Move Selector<ph>::select()
+{
+	int maxScore = -INF;
+	size_t swapIdx = idx;
+
+	for (size_t i = idx; i < cnt; i++)
+		if (scores[i] > maxScore)
+			swapIdx = i;
+
+	if (swapIdx != idx) {
+		std::swap(moves[idx], moves[swapIdx]);
+		std::swap(scores[idx], scores[swapIdx]);
+	}
+
+        return moves[idx++];
+}
+
 template class Selector<SEARCH>;
 template class Selector<QSEARCH>;
 

@@ -90,6 +90,9 @@ struct eval_t {
 
 extern const eval_t Material[NB_PIECE];
 
+#define INF  32767
+#define MATE 32000
+
 /* Display */
 
 extern const std::string PieceLabel[NB_COLOR];
