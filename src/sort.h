@@ -11,6 +11,7 @@ public:
 	Selector(const Position& pos);
 	Move select();
 	size_t count() const { return cnt; }
+	bool done() const { return idx == cnt; }
 private:
 	Move moves[MAX_MOVES];
 	int scores[MAX_MOVES];

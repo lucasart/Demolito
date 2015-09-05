@@ -13,6 +13,7 @@
  * You should have received a copy of the GNU General Public License along with this program. If
  * not, see <http://www.gnu.org/licenses/>.
 */
+#include <iostream>
 #include "search.h"
 #include "sort.h"
 #include "eval.h"
@@ -48,7 +49,8 @@ int search(const Position& pos, Stack *ss, int depth, int alpha, int beta)
 	Position nextPos;
 
 	// Move loop
-	while ((m = S.select()) && (alpha < beta)) {
+	while (!S.done() && alpha < beta) {
+		m = S.select();
 
 		// Play move
 		nextPos.play(pos, m);
@@ -87,5 +89,7 @@ Move bestmove(const Position& pos)
 
 	for (int depth = 1; depth < MAX_PLY; depth++) {
 		const int score = search<sort::SEARCH>(pos, ss, depth, -INF, +INF);
+		std::cout << "info depth " << depth << " score " << score
+			<< " pv " << ss->best.to_string() << std::endl;
 	}
 }

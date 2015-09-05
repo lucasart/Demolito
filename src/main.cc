@@ -19,7 +19,6 @@
 #include "zobrist.h"
 #include "test.h"
 #include "pst.h"
-#include "gen.h"
 
 int main(int argc, char **argv)
 {

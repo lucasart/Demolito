@@ -136,7 +136,9 @@ Move *castling_moves(const Position& pos, Move *mList)
 	bitboard_t tss = pos.castlable_rooks() & pos.occ(pos.turn());
 	while (tss) {
 		m.tsq = bb::pop_lsb(tss);
-		if (bb::count(bb::segment(m.fsq, m.tsq) & pos.occ()) == 2)
+		const int ktsq = square(rank_of(m.tsq), m.tsq > m.fsq ? FILE_G : FILE_C);
+		const bitboard_t s = bb::segment(m.fsq, m.tsq) | bb::segment(m.fsq, ktsq);
+		if (bb::count(s & pos.occ()) == 2)
 			*mList++ = m;
 	}
 

@@ -24,7 +24,6 @@ struct Move {
 	void decode(move_t em);
 
 	bool is_tactical(const Position& pos) const;
-	operator bool() const { return tsq + fsq; }
 
 	std::string to_string() const;
 	void from_string(const std::string& s);
