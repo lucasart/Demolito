@@ -1,5 +1,4 @@
 #pragma once
-#include "sort.h"
+#include "position.h"
 
-template <sort::Phase ph>
-int search(const Position& pos, int depth, int alpha, int beta);
+Move bestmove(const Position& pos);

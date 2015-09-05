@@ -50,6 +50,11 @@ bool Move::ok() const
 		&& ((KNIGHT <= prom && prom <= QUEEN) || prom == NB_PIECE);
 }
 
+void Move::clear()
+{
+	fsq = tsq = prom = 0;	// IOW, null move is encoded as a1a1N
+}
+
 move_t Move::encode() const
 {
 	assert(ok());

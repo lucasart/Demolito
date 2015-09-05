@@ -18,6 +18,8 @@ struct Move {
 	int fsq, tsq, prom;
 
 	bool ok() const;
+	void clear();
+
 	move_t encode() const;
 	void decode(move_t em);
 

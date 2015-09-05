@@ -14,13 +14,22 @@
  * not, see <http://www.gnu.org/licenses/>.
 */
 #include "search.h"
+#include "sort.h"
 #include "eval.h"
 
+namespace {
+
+struct Stack {
+	Move best;
+	int ply;
+};
+
 template <sort::Phase ph>
-int search(const Position& pos, int depth, int ply, int alpha, int beta)
+int search(const Position& pos, Stack *ss, int depth, int alpha, int beta)
 {
 	int bestScore = -INF;
 	const bool inCheck = pos.checkers();
+	ss->best.clear();
 
 	// QSearch stand pat
 	if (ph == sort::QSEARCH && !inCheck) {
@@ -48,20 +57,35 @@ int search(const Position& pos, int depth, int ply, int alpha, int beta)
 
 		// Recursion
 		const int score = nextDepth > 0
-			? -search<sort::SEARCH>(nextPos, nextDepth, ply + 1, -beta, -alpha)
-			: -search<sort::QSEARCH>(nextPos, nextDepth, ply + 1, -beta, -alpha);
+			? -search<sort::SEARCH>(nextPos, ss + 1, nextDepth, -beta, -alpha)
+			: -search<sort::QSEARCH>(nextPos, ss + 1, nextDepth, -beta, -alpha);
 
 		// Update bestScore and alpha
 		if (score > bestScore) {
 			bestScore = score;
-			if (score > alpha)
+			if (score > alpha) {
+				ss->best = m;
 				alpha = score;
+			}
 		}
 	}
 
 	// No legal move: mated or stalemated
 	if (!S.count())
-		return inCheck ? ply - MATE : 0;
+		return inCheck ? ss->ply - MATE : 0;
 
 	return bestScore;
+}
+
+}	// namespace
+
+Move bestmove(const Position& pos)
+{
+	Stack ss[MAX_PLY];
+	for (int ply = 0; ply < MAX_PLY; ply++)
+		ss[ply].ply = ply;
+
+	for (int depth = 1; depth < MAX_PLY; depth++) {
+		const int score = search<sort::SEARCH>(pos, ss, depth, -INF, +INF);
+	}
 }
