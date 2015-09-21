@@ -17,8 +17,7 @@
 
 namespace sort {
 
-template <Phase ph>
-void Selector<ph>::generate(const Position& pos)
+void Selector::generate(const Position& pos, Phase ph)
 {
 	Move *it = moves;
 
@@ -39,23 +38,20 @@ void Selector<ph>::generate(const Position& pos)
 	cnt = it - moves;
 }
 
-template <Phase ph>
-void Selector<ph>::score(const Position& pos)
+void Selector::score(const Position& pos)
 {
 	for (size_t i = 0; i < cnt; i++)
 		scores[i] = moves[i].is_tactical(pos) ? moves[i].see(pos) : 0;
 }
 
-template <Phase ph>
-Selector<ph>::Selector(const Position& pos)
+Selector::Selector(const Position& pos, Phase ph)
 {
-	generate(pos);
+	generate(pos, ph);
 	score(pos);
 	idx = 0;
 }
 
-template <Phase ph>
-Move Selector<ph>::select()
+Move Selector::select()
 {
 	int maxScore = -INF;
 	size_t swapIdx = idx;
@@ -71,8 +67,5 @@ Move Selector<ph>::select()
 
         return moves[idx++];
 }
-
-template class Selector<SEARCH>;
-template class Selector<QSEARCH>;
 
 }

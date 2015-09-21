@@ -50,7 +50,7 @@ int recurse(const Position& pos, Stack *ss, int depth, int alpha, int beta)
 	}
 
 	// Generate and score moves
-	sort::Selector<ph> S(pos);
+	sort::Selector S(pos, ph);
 
 	Move m;
 	size_t moveCount = 0;
