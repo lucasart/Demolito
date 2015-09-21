@@ -51,7 +51,7 @@ Selector::Selector(const Position& pos, Phase ph)
 	idx = 0;
 }
 
-Move Selector::select()
+Move Selector::select(const Position& pos, int& see)
 {
 	int maxScore = -INF;
 	size_t swapIdx = idx;
@@ -65,6 +65,7 @@ Move Selector::select()
 		std::swap(scores[idx], scores[swapIdx]);
 	}
 
+        see = moves[idx].is_tactical(pos) ? scores[idx] : moves[idx].see(pos);
         return moves[idx++];
 }
 

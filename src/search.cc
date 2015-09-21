@@ -53,13 +53,14 @@ int recurse(const Position& pos, Stack *ss, int depth, int alpha, int beta)
 	sort::Selector S(pos, ph);
 
 	Move m;
+	int see;
 	size_t moveCount = 0;
 	Position nextPos;
 	PinInfo pi(pos);
 
 	// Move loop
 	while (!S.done() && alpha < beta) {
-		m = S.select();
+		m = S.select(pos, see);
 		if (!m.pseudo_is_legal(pos, pi))
 			continue;
 		moveCount++;
@@ -72,7 +73,7 @@ int recurse(const Position& pos, Stack *ss, int depth, int alpha, int beta)
 		// Recursion
 		int score;
 		if (depth <= -8 && !inCheck)
-			score = ss->eval + m.see(pos);	// guard against qsearch explosion
+			score = ss->eval + see;	// guard against qsearch explosion
 		else
 			score = nextDepth > 0
 				? -recurse<sort::SEARCH>(nextPos, ss + 1, nextDepth, -beta, -alpha)

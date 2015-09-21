@@ -8,7 +8,7 @@ enum Phase {SEARCH, QSEARCH};
 class Selector {
 public:
 	Selector(const Position& pos, Phase ph);
-	Move select();
+	Move select(const Position& pos, int& see);
 	size_t count() const { return cnt; }
 	bool done() const { return idx == cnt; }
 private:
