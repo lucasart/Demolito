@@ -22,7 +22,7 @@ namespace {
 
 struct Stack {
 	Move best;
-	int ply;
+	int ply, eval;
 };
 
 template <sort::Phase ph>
@@ -31,12 +31,16 @@ int search(const Position& pos, Stack *ss, int depth, int alpha, int beta)
 	int bestScore = -INF;
 	const bool inCheck = pos.checkers();
 	ss->best.clear();
-
 	Search::nodes++;
+
+	ss->eval = inCheck ? -INF : evaluate(pos);
+
+	if (ss->ply >= MAX_PLY)
+		return ss->eval;
 
 	// QSearch stand pat
 	if (ph == sort::QSEARCH && !inCheck) {
-		bestScore = evaluate(pos);
+		bestScore = ss->eval;
 		if (bestScore > alpha) {
 			alpha = bestScore;
 			if (bestScore > beta)
@@ -65,9 +69,13 @@ int search(const Position& pos, Stack *ss, int depth, int alpha, int beta)
 		const int nextDepth = depth - 1 /*+ (pos.checkers() != 0)*/;
 
 		// Recursion
-		const int score = nextDepth > 0
-			? -search<sort::SEARCH>(nextPos, ss + 1, nextDepth, -beta, -alpha)
-			: -search<sort::QSEARCH>(nextPos, ss + 1, nextDepth, -beta, -alpha);
+		int score;
+		if (depth <= -8 && !inCheck)
+			score = ss->eval + m.see(pos);	// guard against qsearch explosion
+		else
+			score = nextDepth > 0
+				? -search<sort::SEARCH>(nextPos, ss + 1, nextDepth, -beta, -alpha)
+				: -search<sort::QSEARCH>(nextPos, ss + 1, nextDepth, -beta, -alpha);
 
 		// Update bestScore and alpha
 		if (score > bestScore) {
