@@ -15,12 +15,12 @@
 */
 #include <iostream>
 #include "test.h"
-#include "position.h"
+#include "search.h"
 #include "gen.h"
 
 namespace test {
 
-uint64_t bench(int depth)
+uint64_t bench(bool perft, int depth)
 {
 	const std::string fens[] = {
 		"r1bqkbnr/pp1ppppp/2n5/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 0 1",
@@ -45,15 +45,23 @@ uint64_t bench(int depth)
 		"r4rk1/1pp1q1pp/p2p4/3Pn3/1PP1Pp2/P7/3QB1PP/2R2RK1 b - - 0 1"
 	};
 
-        uint64_t result = 0;
+        uint64_t result = 0, nodes;
+        Search::Limits lim = {depth};
         Position pos;
 
         for (const std::string& fen : fens) {
 		pos.set(fen);
 		pos.print();
-		const uint64_t leaves = gen::perft(pos, depth);
-		std::cout << "perft(" << depth << ") = " << leaves << std::endl;
-		result += leaves;
+
+		if (perft) {
+			nodes = gen::perft(pos, depth);
+			std::cout << "perft(" << depth << ") = " << nodes << std::endl;
+		} else {
+			Search::bestmove(pos, lim);
+			nodes = Search::nodes;
+		}
+
+		result += nodes;
         }
 
         return result;

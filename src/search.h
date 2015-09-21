@@ -1,4 +1,14 @@
 #pragma once
 #include "position.h"
 
-Move bestmove(const Position& pos);
+namespace Search {
+
+extern uint64_t nodes;
+
+struct Limits {
+	int depth;
+};
+
+Move bestmove(const Position& pos, const Limits& lim);
+
+}

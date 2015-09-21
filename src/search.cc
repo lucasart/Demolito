@@ -32,6 +32,8 @@ int search(const Position& pos, Stack *ss, int depth, int alpha, int beta)
 	const bool inCheck = pos.checkers();
 	ss->best.clear();
 
+	Search::nodes++;
+
 	// QSearch stand pat
 	if (ph == sort::QSEARCH && !inCheck) {
 		bestScore = evaluate(pos);
@@ -86,17 +88,25 @@ int search(const Position& pos, Stack *ss, int depth, int alpha, int beta)
 
 }	// namespace
 
-Move bestmove(const Position& pos)
+namespace Search {
+
+uint64_t nodes;
+
+Move bestmove(const Position& pos, const Limits& lim)
 {
+	nodes = 0;
+
 	Stack ss[MAX_PLY];
 	for (int ply = 0; ply < MAX_PLY; ply++)
 		ss[ply].ply = ply;
 
-	for (int depth = 1; depth < MAX_PLY; depth++) {
+	for (int depth = 1; depth <= lim.depth; depth++) {
 		const int score = search<sort::SEARCH>(pos, ss, depth, -INF, +INF);
-		std::cout << "info depth " << depth << " score " << score
+		std::cout << "info depth " << depth << " score " << score << " nodes " << nodes
 			<< " pv " << ss->best.to_string() << std::endl;
 	}
 
 	return ss->best;
 }
+
+}	// namespace search
