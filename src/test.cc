@@ -20,7 +20,7 @@
 
 namespace test {
 
-uint64_t bench(bool perft, int depth)
+uint64_t bench(bool perft, int depth, int threads)
 {
 	const std::string fens[] = {
 		"r1bqkbnr/pp1ppppp/2n5/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 0 1",
@@ -46,7 +46,7 @@ uint64_t bench(bool perft, int depth)
 	};
 
         uint64_t result = 0, nodes;
-        search::Limits lim = {depth};
+        search::Limits lim = {depth, threads};
         Position pos;
 
         for (const std::string& fen : fens) {

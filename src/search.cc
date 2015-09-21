@@ -14,6 +14,8 @@
  * not, see <http://www.gnu.org/licenses/>.
 */
 #include <iostream>
+#include <thread>
+#include <vector>
 #include "search.h"
 #include "sort.h"
 #include "eval.h"
@@ -22,26 +24,28 @@ namespace {
 
 struct Stack {
 	Move best;
-	int ply, eval;
+	int eval;
 };
 
+thread_local Stack ss[MAX_PLY];
+
 template <sort::Phase ph>
-int recurse(const Position& pos, Stack *ss, int depth, int alpha, int beta)
+int recurse(const Position& pos, int ply, int depth, int alpha, int beta)
 {
 	int bestScore = -INF;
 	const bool inCheck = pos.checkers();
-	ss->best.clear();
+	ss[ply].best.clear();
 
 	search::nodes.fetch_add(1, std::memory_order_relaxed);
 
-	ss->eval = inCheck ? -INF : evaluate(pos);
+	ss[ply].eval = inCheck ? -INF : evaluate(pos);
 
-	if (ss->ply >= MAX_PLY)
-		return ss->eval;
+	if (ply >= MAX_PLY)
+		return ss[ply].eval;
 
 	// QSearch stand pat
 	if (ph == sort::QSEARCH && !inCheck) {
-		bestScore = ss->eval;
+		bestScore = ss[ply].eval;
 		if (bestScore > alpha) {
 			alpha = bestScore;
 			if (bestScore > beta)
@@ -73,17 +77,17 @@ int recurse(const Position& pos, Stack *ss, int depth, int alpha, int beta)
 		// Recursion
 		int score;
 		if (depth <= -8 && !inCheck)
-			score = ss->eval + see;	// guard against qsearch explosion
+			score = ss[ply].eval + see;	// guard against qsearch explosion
 		else
 			score = nextDepth > 0
-				? -recurse<sort::SEARCH>(nextPos, ss + 1, nextDepth, -beta, -alpha)
-				: -recurse<sort::QSEARCH>(nextPos, ss + 1, nextDepth, -beta, -alpha);
+				? -recurse<sort::SEARCH>(nextPos, ply + 1, nextDepth, -beta, -alpha)
+				: -recurse<sort::QSEARCH>(nextPos, ply + 1, nextDepth, -beta, -alpha);
 
 		// Update bestScore and alpha
 		if (score > bestScore) {
 			bestScore = score;
 			if (score > alpha) {
-				ss->best = m;
+				ss[ply].best = m;
 				alpha = score;
 			}
 		}
@@ -91,7 +95,7 @@ int recurse(const Position& pos, Stack *ss, int depth, int alpha, int beta)
 
 	// No legal move: mated or stalemated
 	if (!moveCount)
-		return inCheck ? ss->ply - MATE : 0;
+		return inCheck ? ply - MATE : 0;
 
 	return bestScore;
 }
@@ -102,21 +106,27 @@ namespace search {
 
 std::atomic<uint64_t> nodes;
 
+void iterate(const Position& pos, const Limits& lim)
+{
+	for (int depth = 1; depth <= lim.depth; depth++) {
+		const int score = recurse<sort::SEARCH>(pos, 0, depth, -INF, +INF);
+		std::cout << "info depth " << depth << " score " << score << " nodes " << nodes
+			<< " pv " << ss->best.to_string() << std::endl;
+	}
+}
+
 Move bestmove(const Position& pos, const Limits& lim)
 {
 	nodes = 0;
 
-	Stack ss[MAX_PLY];
-	for (int ply = 0; ply < MAX_PLY; ply++)
-		ss[ply].ply = ply;
+	std::vector<std::thread> threads;
+	for (int i = 0; i < lim.threads; i++)
+		threads.emplace_back(iterate, std::cref(pos), std::cref(lim));
 
-	for (int depth = 1; depth <= lim.depth; depth++) {
-		const int score = recurse<sort::SEARCH>(pos, ss, depth, -INF, +INF);
-		std::cout << "info depth " << depth << " score " << score << " nodes " << nodes
-			<< " pv " << ss->best.to_string() << std::endl;
-	}
+	for (auto& t : threads)
+		t.join();
 
-	return ss->best;
+	return ss[0].best;
 }
 
 }	// namespace search

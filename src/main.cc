@@ -30,9 +30,10 @@ int main(int argc, char **argv)
 		const std::string cmd(argv[1]);
 		if (cmd == "see")
 			std::cout << "\nSEE: " << (test::see(true) ? "ok" : "failed") << std::endl;
-		else if ((cmd == "perft" || cmd == "search") && argc >= 3) {
-			const int depth = std::stoi(argv[2]);
-			std::cout << "total = " << test::bench(cmd == "perft", depth) << std::endl;
+		else if ((cmd == "perft" || cmd == "search") && argc >= 4) {
+			const int depth = std::stoi(argv[2]), threads = std::stoi(argv[3]);
+			const uint64_t nodes = test::bench(cmd == "perft", depth, threads);
+			std::cout << "total = " << nodes << std::endl;
 		}
 	}
 }
