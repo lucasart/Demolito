@@ -1,7 +1,7 @@
 #pragma once
 #include "position.h"
 
-namespace Search {
+namespace search {
 
 extern uint64_t nodes;
 

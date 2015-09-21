@@ -26,12 +26,12 @@ struct Stack {
 };
 
 template <sort::Phase ph>
-int search(const Position& pos, Stack *ss, int depth, int alpha, int beta)
+int recurse(const Position& pos, Stack *ss, int depth, int alpha, int beta)
 {
 	int bestScore = -INF;
 	const bool inCheck = pos.checkers();
 	ss->best.clear();
-	Search::nodes++;
+	search::nodes++;
 
 	ss->eval = inCheck ? -INF : evaluate(pos);
 
@@ -74,8 +74,8 @@ int search(const Position& pos, Stack *ss, int depth, int alpha, int beta)
 			score = ss->eval + m.see(pos);	// guard against qsearch explosion
 		else
 			score = nextDepth > 0
-				? -search<sort::SEARCH>(nextPos, ss + 1, nextDepth, -beta, -alpha)
-				: -search<sort::QSEARCH>(nextPos, ss + 1, nextDepth, -beta, -alpha);
+				? -recurse<sort::SEARCH>(nextPos, ss + 1, nextDepth, -beta, -alpha)
+				: -recurse<sort::QSEARCH>(nextPos, ss + 1, nextDepth, -beta, -alpha);
 
 		// Update bestScore and alpha
 		if (score > bestScore) {
@@ -96,7 +96,7 @@ int search(const Position& pos, Stack *ss, int depth, int alpha, int beta)
 
 }	// namespace
 
-namespace Search {
+namespace search {
 
 uint64_t nodes;
 
@@ -109,7 +109,7 @@ Move bestmove(const Position& pos, const Limits& lim)
 		ss[ply].ply = ply;
 
 	for (int depth = 1; depth <= lim.depth; depth++) {
-		const int score = search<sort::SEARCH>(pos, ss, depth, -INF, +INF);
+		const int score = recurse<sort::SEARCH>(pos, ss, depth, -INF, +INF);
 		std::cout << "info depth " << depth << " score " << score << " nodes " << nodes
 			<< " pv " << ss->best.to_string() << std::endl;
 	}

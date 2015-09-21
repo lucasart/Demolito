@@ -46,7 +46,7 @@ uint64_t bench(bool perft, int depth)
 	};
 
         uint64_t result = 0, nodes;
-        Search::Limits lim = {depth};
+        search::Limits lim = {depth};
         Position pos;
 
         for (const std::string& fen : fens) {
@@ -57,8 +57,8 @@ uint64_t bench(bool perft, int depth)
 			nodes = gen::perft(pos, depth);
 			std::cout << "perft(" << depth << ") = " << nodes << std::endl;
 		} else {
-			Search::bestmove(pos, lim);
-			nodes = Search::nodes;
+			search::bestmove(pos, lim);
+			nodes = search::nodes;
 		}
 
 		result += nodes;
