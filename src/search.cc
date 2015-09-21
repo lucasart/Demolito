@@ -31,7 +31,8 @@ int recurse(const Position& pos, Stack *ss, int depth, int alpha, int beta)
 	int bestScore = -INF;
 	const bool inCheck = pos.checkers();
 	ss->best.clear();
-	search::nodes++;
+
+	search::nodes.fetch_add(1, std::memory_order_relaxed);
 
 	ss->eval = inCheck ? -INF : evaluate(pos);
 
@@ -98,7 +99,7 @@ int recurse(const Position& pos, Stack *ss, int depth, int alpha, int beta)
 
 namespace search {
 
-uint64_t nodes;
+std::atomic<uint64_t> nodes;
 
 Move bestmove(const Position& pos, const Limits& lim)
 {
