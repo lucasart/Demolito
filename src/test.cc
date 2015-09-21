@@ -49,7 +49,7 @@ uint64_t bench(int depth)
         Position pos;
 
         for (const std::string& fen : fens) {
-		pos.set_pos(fen);
+		pos.set(fen);
 		pos.print();
 		const uint64_t leaves = gen::perft(pos, depth);
 		std::cout << "perft(" << depth << ") = " << leaves << std::endl;
@@ -82,7 +82,7 @@ bool see(bool verbose)
 	Position pos;
 
 	for (auto& t : test) {
-		pos.set_pos(t.fen);
+		pos.set(t.fen);
 		const Move m(t.move);
 		const int s = m.see(pos);
 

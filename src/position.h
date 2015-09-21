@@ -23,9 +23,9 @@ class Position {
 	void set(int color, int piece, int sq);
 
 public:
-	void set_pos(const std::string& fen);
-	std::string get_pos() const;
-	void play(const Position& before, Move m);
+	void set(const std::string& fen);
+	std::string get() const;
+	void set(const Position& before, Move m);
 
 	bitboard_t occ() const;
 	bitboard_t occ(int color) const;

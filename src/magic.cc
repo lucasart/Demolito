@@ -160,31 +160,31 @@ bitboard_t calc_sliding_attacks(int sq, bitboard_t occ, const int dir[4][2])
 	return result;
 }
 
-bitboard_t init_magic_occ(const int* sq, int sq_cnt, bitboard_t lineOcc)
+bitboard_t init_magic_occ(const int* sq, int squareCount, bitboard_t lineOcc)
 {
 	bitboard_t result = 0;
 
-	for (int i = 0; i < sq_cnt; ++i)
+	for (int i = 0; i < squareCount; ++i)
 		if (bb::test(lineOcc, i))
 			bb::set(result, sq[i]);
 
 	return result;
 }
 
-void init_helper(int sq, const bitboard_t mask[], const bitboard_t magic[], const int shift[], bitboard_t magic_db[],
-	const size_t magic_index[], const int dir[4][2])
+void init_helper(int sq, const bitboard_t mask[], const bitboard_t magic[], const int shift[],
+	bitboard_t magicDb[], const size_t magicIndex[], const int dir[4][2])
 {
 	int squares[NB_SQUARE];
-	int sq_cnt = 0;
+	int squareCount = 0;
 
 	bitboard_t temp = mask[sq];
 	while (temp)
-		squares[sq_cnt++] = bb::pop_lsb(temp);
+		squares[squareCount++] = bb::pop_lsb(temp);
 
-	for (temp = 0; temp < (1ULL << sq_cnt); temp++) {
-		bitboard_t occ = init_magic_occ(squares, sq_cnt, temp);
+	for (temp = 0; temp < (1ULL << squareCount); temp++) {
+		bitboard_t occ = init_magic_occ(squares, squareCount, temp);
 		const int idx = (occ * magic[sq]) >> shift[sq];
-		bitboard_t *p = magic_db + magic_index[sq];
+		bitboard_t *p = magicDb + magicIndex[sq];
 		p[idx] = calc_sliding_attacks(sq, occ, dir);
 	}
 }

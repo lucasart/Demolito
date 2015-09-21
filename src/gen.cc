@@ -216,7 +216,7 @@ uint64_t perft(const Position& pos, int depth)
 		if (!m->pseudo_is_legal(pos, pi))
 			continue;
 
-		after.play(pos, *m);
+		after.set(pos, *m);
 		const uint64_t sub_tree = perft<false>(after, depth - 1);
 		result += sub_tree;
 

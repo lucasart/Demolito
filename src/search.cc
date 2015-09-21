@@ -58,7 +58,7 @@ int search(const Position& pos, Stack *ss, int depth, int alpha, int beta)
 		moveCount++;
 
 		// Play move
-		nextPos.play(pos, m);
+		nextPos.set(pos, m);
 
 		const int nextDepth = depth - 1 /*+ (pos.checkers() != 0)*/;
 

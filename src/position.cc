@@ -146,7 +146,7 @@ void Position::set(int color, int piece, int sq)
 	_key ^= zobrist::key(color, piece, sq);
 }
 
-void Position::set_pos(const std::string& fen)
+void Position::set(const std::string& fen)
 {
 	clear();
 	std::istringstream is(fen);
@@ -207,7 +207,7 @@ void Position::set_pos(const std::string& fen)
 	assert(key_ok());
 }
 
-std::string Position::get_pos() const
+std::string Position::get() const
 {
 	std::ostringstream os;
 
@@ -405,7 +405,7 @@ int Position::piece_on(int sq) const
 	return _pieceOn[sq];
 }
 
-void Position::play(const Position& before, Move m)
+void Position::set(const Position& before, Move m)
 {
 	*this = before;
 	_rule50++;
@@ -488,7 +488,7 @@ void Position::print() const
 		}
 		std::cout << line << '\n';
 	}
-	std::cout << get_pos() << std::endl;
+	std::cout << get() << std::endl;
 
 	bitboard_t b = checkers();
 	if (b) {
