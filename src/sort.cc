@@ -42,14 +42,8 @@ void Selector<ph>::generate(const Position& pos)
 template <Phase ph>
 void Selector<ph>::score(const Position& pos)
 {
-	for (size_t i = 0; i < cnt; i++) {
-		if (ph == SEARCH)
-			scores[i] = moves[i].is_tactical(pos) ? moves[i].see(pos) : 0;
-		else {
-			assert(moves[i].is_tactical(pos));
-			scores[i] = moves[i].see(pos);
-		}
-	}
+	for (size_t i = 0; i < cnt; i++)
+		scores[i] = moves[i].is_tactical(pos) ? moves[i].see(pos) : 0;
 }
 
 template <Phase ph>
