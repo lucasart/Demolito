@@ -46,11 +46,16 @@ int search(const Position& pos, Stack *ss, int depth, int alpha, int beta)
 	sort::Selector<ph> S(pos);
 
 	Move m;
+	size_t moveCount = 0;
 	Position nextPos;
+	PinInfo pi(pos);
 
 	// Move loop
 	while (!S.done() && alpha < beta) {
 		m = S.select();
+		if (!m.pseudo_is_legal(pos, pi))
+			continue;
+		moveCount++;
 
 		// Play move
 		nextPos.play(pos, m);
@@ -73,7 +78,7 @@ int search(const Position& pos, Stack *ss, int depth, int alpha, int beta)
 	}
 
 	// No legal move: mated or stalemated
-	if (!S.count())
+	if (!moveCount)
 		return inCheck ? ss->ply - MATE : 0;
 
 	return bestScore;
@@ -92,4 +97,6 @@ Move bestmove(const Position& pos)
 		std::cout << "info depth " << depth << " score " << score
 			<< " pv " << ss->best.to_string() << std::endl;
 	}
+
+	return ss->best;
 }
