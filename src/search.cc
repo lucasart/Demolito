@@ -78,6 +78,10 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta)
 			continue;
 		moveCount++;
 
+		// Prune losing captures in QSearch
+		if (ph == QSEARCH && !inCheck && see < 0)
+			continue;
+
 		// Play move
 		nextPos.set(pos, m);
 
@@ -86,7 +90,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta)
 		// Recursion
 		int score;
 		if (depth <= -8 && !inCheck)
-			score = ss[ply].eval + see;	// guard against qsearch explosion
+			score = ss[ply].eval + see;	// guard against QSearch explosion
 		else
 			score = nextDepth > 0
 				? -recurse<SEARCH>(nextPos, ply + 1, nextDepth, -beta, -alpha)
