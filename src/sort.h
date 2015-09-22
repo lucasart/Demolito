@@ -1,7 +1,7 @@
 #pragma once
 #include "gen.h"
 
-namespace sort {
+namespace search {
 
 enum Phase {SEARCH, QSEARCH};
 
@@ -20,4 +20,4 @@ private:
 	void score(const Position& pos);
 };
 
-}	// namespace sort
+}	// namespace search

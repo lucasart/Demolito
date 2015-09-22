@@ -36,7 +36,7 @@ struct Stack {
 
 thread_local Stack ss[MAX_PLY];
 
-template <sort::Phase ph>
+template <Phase ph>
 int recurse(const Position& pos, int ply, int depth, int alpha, int beta)
 {
 	int bestScore = -INF;
@@ -53,7 +53,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta)
 		return ss[ply].eval;
 
 	// QSearch stand pat
-	if (ph == sort::QSEARCH && !inCheck) {
+	if (ph == QSEARCH && !inCheck) {
 		bestScore = ss[ply].eval;
 		if (bestScore > alpha) {
 			alpha = bestScore;
@@ -63,7 +63,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta)
 	}
 
 	// Generate and score moves
-	sort::Selector S(pos, ph);
+	Selector S(pos, ph);
 
 	Move m;
 	int see;
@@ -89,8 +89,8 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta)
 			score = ss[ply].eval + see;	// guard against qsearch explosion
 		else
 			score = nextDepth > 0
-				? -recurse<sort::SEARCH>(nextPos, ply + 1, nextDepth, -beta, -alpha)
-				: -recurse<sort::QSEARCH>(nextPos, ply + 1, nextDepth, -beta, -alpha);
+				? -recurse<SEARCH>(nextPos, ply + 1, nextDepth, -beta, -alpha)
+				: -recurse<QSEARCH>(nextPos, ply + 1, nextDepth, -beta, -alpha);
 
 		// Update bestScore and alpha
 		if (score > bestScore) {
@@ -114,7 +114,7 @@ void iterate(const Position& pos, const Limits& lim)
 	for (int depth = 1; depth <= lim.depth; depth++) {
 		int score;
 		try {
-			score = recurse<sort::SEARCH>(pos, 0, depth, -INF, +INF);
+			score = recurse<SEARCH>(pos, 0, depth, -INF, +INF);
 		} catch (const Abort&) {
 			break;
 		}

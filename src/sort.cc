@@ -15,7 +15,7 @@
 */
 #include "sort.h"
 
-namespace sort {
+namespace search {
 
 void Selector::generate(const Position& pos, Phase ph)
 {
@@ -69,4 +69,4 @@ Move Selector::select(const Position& pos, int& see)
         return moves[idx++];
 }
 
-}
+}	// namespace search
