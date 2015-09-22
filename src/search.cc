@@ -16,11 +16,18 @@
 #include <iostream>
 #include <thread>
 #include <vector>
+#include <mutex>
 #include "search.h"
 #include "sort.h"
 #include "eval.h"
 
-namespace {
+namespace search {
+
+std::atomic<uint64_t> nodes;	// global node counter
+std::atomic<bool> abort;	// all threads should abort flag
+class Abort {};			// exception raised in each thread to trigger abortion
+
+std::mutex coutMutex;	// prevent scrambled std::cout display
 
 struct Stack {
 	Move best;
@@ -36,7 +43,9 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta)
 	const bool inCheck = pos.checkers();
 	ss[ply].best.clear();
 
-	search::nodes.fetch_add(1, std::memory_order_relaxed);
+	nodes.fetch_add(1, std::memory_order_relaxed);
+	if (abort.load(std::memory_order_relaxed))
+		throw Abort();
 
 	ss[ply].eval = inCheck ? -INF : evaluate(pos);
 
@@ -100,24 +109,27 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta)
 	return bestScore;
 }
 
-}	// namespace
-
-namespace search {
-
-std::atomic<uint64_t> nodes;
-
 void iterate(const Position& pos, const Limits& lim)
 {
 	for (int depth = 1; depth <= lim.depth; depth++) {
-		const int score = recurse<sort::SEARCH>(pos, 0, depth, -INF, +INF);
+		int score;
+		try {
+			score = recurse<sort::SEARCH>(pos, 0, depth, -INF, +INF);
+		} catch (const Abort&) {
+			break;
+		}
+		coutMutex.lock();
 		std::cout << "info depth " << depth << " score " << score << " nodes " << nodes
 			<< " pv " << ss->best.to_string() << std::endl;
+		coutMutex.unlock();
 	}
+	abort = true;
 }
 
 Move bestmove(const Position& pos, const Limits& lim)
 {
 	nodes = 0;
+	abort = false;
 
 	std::vector<std::thread> threads;
 	for (int i = 0; i < lim.threads; i++)
