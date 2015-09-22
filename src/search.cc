@@ -43,8 +43,8 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta)
 	const bool inCheck = pos.checkers();
 	ss[ply].best.clear();
 
-	nodes.fetch_add(1, std::memory_order_relaxed);
-	if (abort.load(std::memory_order_relaxed))
+	nodes++;
+	if (abort)
 		throw Abort();
 
 	ss[ply].eval = inCheck ? -INF : evaluate(pos);
