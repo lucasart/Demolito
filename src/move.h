@@ -18,6 +18,7 @@ struct Move {
 	bool ok() const;
 	void clear();
 
+	bool null() const { return (fsq | tsq | prom) == 0; }
 	bool is_tactical(const Position& pos) const;
 
 	std::string to_string() const;

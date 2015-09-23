@@ -30,32 +30,26 @@ std::atomic<uint64_t> nodes;	// global node counter
 std::atomic<bool> abort;	// all threads should abort flag
 class Abort {};			// exception raised in each thread to trigger abortion
 
-struct Stack {
-	Move best;
-	int eval;
-};
-
-thread_local Stack ss[MAX_PLY];
-
 template <Phase ph>
-int recurse(const Position& pos, int ply, int depth, int alpha, int beta)
+int recurse(const Position& pos, int ply, int depth, int alpha, int beta, Move *pv)
 {
 	int bestScore = -INF;
 	const bool inCheck = pos.checkers();
-	ss[ply].best.clear();
 
 	nodes++;
+	Move subtreePv[MAX_PLY - ply];
+	pv[0].clear();
 	if (abort)
 		throw Abort();
 
-	ss[ply].eval = inCheck ? -INF : evaluate(pos);
+	const int eval = inCheck ? -INF : evaluate(pos);
 
 	if (ply >= MAX_PLY)
-		return ss[ply].eval;
+		return eval;
 
 	// QSearch stand pat
 	if (ph == QSEARCH && !inCheck) {
-		bestScore = ss[ply].eval;
+		bestScore = eval;
 		if (bestScore > alpha) {
 			alpha = bestScore;
 			if (bestScore > beta)
@@ -91,17 +85,20 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta)
 		// Recursion
 		int score;
 		if (depth <= -8 && !inCheck)
-			score = ss[ply].eval + see;	// guard against QSearch explosion
+			score = eval + see;	// guard against QSearch explosion
 		else
 			score = nextDepth > 0
-				? -recurse<SEARCH>(nextPos, ply + 1, nextDepth, -beta, -alpha)
-				: -recurse<QSEARCH>(nextPos, ply + 1, nextDepth, -beta, -alpha);
+				? -recurse<SEARCH>(nextPos, ply + 1, nextDepth, -beta, -alpha, subtreePv)
+				: -recurse<QSEARCH>(nextPos, ply + 1, nextDepth, -beta, -alpha, subtreePv);
 
 		// Update bestScore and alpha
 		if (score > bestScore) {
 			bestScore = score;
 			if (score > alpha) {
-				ss[ply].best = m;
+				pv[0] = m;
+				for (int i = 0; i < MAX_PLY - ply; i++)
+					if ((pv[i + 1] = subtreePv[i]).null())
+						break;
 				alpha = score;
 			}
 		}
@@ -116,21 +113,29 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta)
 
 void iterate(const Position& pos, const Limits& lim)
 {
+	Move pv[MAX_PLY + 1];
+
 	for (int depth = 1; depth <= lim.depth; depth++) {
 		int score;
 		try {
-			score = recurse<SEARCH>(pos, 0, depth, -INF, +INF);
+			score = recurse<SEARCH>(pos, 0, depth, -INF, +INF, pv);
 		} catch (const Abort&) {
 			break;
 		}
 
+		std::string pvStr;
+		for (int i = 0; i <= MAX_PLY && !pv[i].null(); i++) {
+			pvStr += pv[i].to_string();
+			pvStr.append(" ");
+		}
+
 		sync_cout << "info depth " << depth << " score " << score << " nodes " << nodes
-			<< " pv " << ss->best.to_string() << sync_endl;
+			<< " pv " << pvStr << sync_endl;
 	}
 	abort = true;
 }
 
-Move bestmove(const Position& pos, const Limits& lim)
+void bestmove(const Position& pos, const Limits& lim)
 {
 	nodes = 0;
 	abort = false;
@@ -152,7 +157,7 @@ Move bestmove(const Position& pos, const Limits& lim)
 	for (auto& t : threads)
 		t.join();
 
-	return ss[0].best;
+	// FIXME: return best move
 }
 
 }	// namespace search

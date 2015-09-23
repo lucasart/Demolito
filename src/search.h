@@ -12,6 +12,6 @@ struct Limits {
 	uint64_t nodes;
 };
 
-Move bestmove(const Position& pos, const Limits& lim);
+void bestmove(const Position& pos, const Limits& lim);
 
 }
