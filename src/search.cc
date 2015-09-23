@@ -24,6 +24,8 @@
 
 namespace search {
 
+using namespace std::chrono;
+
 std::atomic<uint64_t> nodes;	// global node counter
 std::atomic<bool> abort;	// all threads should abort flag
 class Abort {};			// exception raised in each thread to trigger abortion
@@ -132,6 +134,7 @@ Move bestmove(const Position& pos, const Limits& lim)
 {
 	nodes = 0;
 	abort = false;
+	auto start = high_resolution_clock::now();
 
 	std::vector<std::thread> threads;
 	for (int i = 0; i < lim.threads; i++)
@@ -140,6 +143,9 @@ Move bestmove(const Position& pos, const Limits& lim)
 	while (!abort) {
 		std::this_thread::sleep_for(std::chrono::milliseconds(5));
 		if (lim.nodes && nodes >= lim.nodes)
+			abort = true;
+		else if (lim.movetime && duration_cast<milliseconds>
+		(high_resolution_clock::now() - start).count() >= lim.movetime)
 			abort = true;
 	}
 

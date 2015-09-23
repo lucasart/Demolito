@@ -45,11 +45,13 @@ uint64_t bench(bool perft, int depth, int threads)
 		"r4rk1/1pp1q1pp/p2p4/3Pn3/1PP1Pp2/P7/3QB1PP/2R2RK1 b - - 0 1"
 	};
 
-        uint64_t result = 0, nodes;
-        search::Limits lim = {depth, threads, 0};
-        Position pos;
+	uint64_t result = 0, nodes;
+	search::Limits lim;
+	lim.threads = threads;
+	lim.depth = depth;
+	Position pos;
 
-        for (const std::string& fen : fens) {
+	for (const std::string& fen : fens) {
 		pos.set(fen);
 		pos.print();
 
@@ -62,9 +64,9 @@ uint64_t bench(bool perft, int depth, int threads)
 		}
 
 		result += nodes;
-        }
+	}
 
-        return result;
+	return result;
 }
 
 bool see(bool verbose)
