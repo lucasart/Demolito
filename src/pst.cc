@@ -21,12 +21,12 @@ namespace pst {
 
 eval_t table[NB_COLOR][NB_PIECE][NB_SQUARE];
 
-const int CenterShape[8] = {-2,-1, 0, 1, 1, 0,-1,-2};
+const int Center[8] = {-3,-1, 0, 1, 1, 0,-1,-3};
 
 eval_t knight(int r, int f)
 {
 	const eval_t CenterWeight = {10, 3};
-	return CenterWeight * (CenterShape[r] + CenterShape[f]);
+	return CenterWeight * (Center[r] + Center[f]);
 }
 
 eval_t bishop(int r, int f)
@@ -35,7 +35,7 @@ eval_t bishop(int r, int f)
 	const eval_t DiagonalWeight = {4, 0};
 	const eval_t BackRankWeight = {-10, 0};
 
-	return CenterWeight * (CenterShape[r] + CenterShape[f])
+	return CenterWeight * (Center[r] + Center[f])
 		+ DiagonalWeight * (7 == r + f || r == f)
 		+ BackRankWeight * (r == RANK_1);
 }
@@ -45,7 +45,7 @@ eval_t rook(int r, int f)
 	const eval_t FileWeight    = {3, 0};
 	const eval_t SeventhWeight = {8, 8};
 
-	return FileWeight * CenterShape[f]
+	return FileWeight * Center[f]
 		+ SeventhWeight * (r == RANK_7);
 }
 
@@ -54,7 +54,7 @@ eval_t queen(int r, int f)
 	const eval_t CenterWeight   = {0, 4};
 	const eval_t BackRankWeight = {-5, 0};
 
-	return CenterWeight * (CenterShape[r] + CenterShape[f])
+	return CenterWeight * (Center[r] + Center[f])
 		+ BackRankWeight * (r == RANK_1);
 }
 
@@ -67,15 +67,23 @@ eval_t king(int r, int f)
 	const eval_t FileWeight   = {10, 0};
 	const eval_t RankWeight   = {7, 0};
 
-	return CenterWeight * (CenterShape[r] + CenterShape[f])
+	return CenterWeight * (Center[r] + Center[f])
 		+ FileWeight * FileShape[f]
 		+ RankWeight * RankShape[r];
 }
 
 eval_t pawn(int r, int f)
 {
-	const eval_t CenterWeight = {8, 0};
-	return CenterWeight * CenterShape[f];
+	const eval_t PCenter = {18, 0};
+	eval_t e = {0, 0};
+
+	if (f == FILE_D || f == FILE_E) {
+		if (r == RANK_3 || r == RANK_5)
+			e += PCenter / 2;
+		else if (r == RANK_4)
+			e += PCenter;
+	}
+	return e;
 }
 
 void init(int verbosity)
@@ -83,6 +91,7 @@ void init(int verbosity)
 	typedef eval_t (*pst_fn)(int, int);
 	const pst_fn PstFn[NB_PIECE] = {&knight, &bishop, &rook, &queen, &king, &pawn};
 
+	// Calculate PST, based on specialized functions for each piece
 	for (int color = 0; color < NB_COLOR; color++)
 	for (int piece = 0; piece < NB_PIECE; piece++)
 	for (int sq = 0; sq < NB_SQUARE; sq++) {
@@ -91,6 +100,7 @@ void init(int verbosity)
 			* (color == WHITE ? 1 : -1);
 	}
 
+	// Display, based on verbosity level
 	for (int phase = 0; phase < NB_PHASE; phase++)
 	for (int color = 0; color < verbosity; color++)
 	for (int piece = 0; piece < NB_PIECE; piece++) {
