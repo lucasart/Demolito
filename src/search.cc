@@ -16,6 +16,7 @@
 #include <iostream>
 #include <thread>
 #include <vector>
+#include <chrono>
 #include "search.h"
 #include "sort.h"
 #include "eval.h"
@@ -135,6 +136,12 @@ Move bestmove(const Position& pos, const Limits& lim)
 	std::vector<std::thread> threads;
 	for (int i = 0; i < lim.threads; i++)
 		threads.emplace_back(iterate, std::cref(pos), std::cref(lim));
+
+	while (!abort) {
+		std::this_thread::sleep_for(std::chrono::milliseconds(5));
+		if (lim.nodes && nodes >= lim.nodes)
+			abort = true;
+	}
 
 	for (auto& t : threads)
 		t.join();

@@ -46,7 +46,7 @@ uint64_t bench(bool perft, int depth, int threads)
 	};
 
         uint64_t result = 0, nodes;
-        search::Limits lim = {depth, threads};
+        search::Limits lim = {depth, threads, 0};
         Position pos;
 
         for (const std::string& fen : fens) {
