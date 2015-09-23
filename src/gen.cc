@@ -21,13 +21,18 @@
 namespace {
 
 template <bool Promotion>
-Move *serialize_moves(Move& m, bitboard_t tss, Move *mList)
+Move *serialize_moves(Move& m, bitboard_t tss, Move *mList, bool subPromotions = true)
 {
 	while (tss) {
 		m.tsq = bb::pop_lsb(tss);
 		if (Promotion) {
-			for (m.prom = QUEEN; m.prom >= KNIGHT; m.prom--)
+			if (subPromotions) {
+				for (m.prom = QUEEN; m.prom >= KNIGHT; m.prom--)
+					*mList++ = m;
+			} else {
+				m.prom = QUEEN;
 				*mList++ = m;
+			}
 		} else
 			*mList++ = m;
 	}
@@ -39,7 +44,7 @@ Move *serialize_moves(Move& m, bitboard_t tss, Move *mList)
 
 namespace gen {
 
-Move *pawn_moves(const Position& pos, Move *mList, bitboard_t targets)
+Move *pawn_moves(const Position& pos, Move *mList, bitboard_t targets, bool subPromotions)
 {
 	const int us = pos.turn(), them = opp_color(us), push = push_inc(us);
 	const bitboard_t capturable = pos.occ(them) | pos.ep_square_bb();
@@ -77,14 +82,13 @@ Move *pawn_moves(const Position& pos, Move *mList, bitboard_t targets)
 			bb::set(tss, m.fsq + push);
 
 		// Generate moves (or promotions)
-		mList = serialize_moves<true>(m, tss, mList);
+		mList = serialize_moves<true>(m, tss, mList, subPromotions);
 	}
 
 	return mList;
 }
 
-Move *piece_moves(const Position& pos, Move *mList, bitboard_t targets,
-	bool kingMoves)
+Move *piece_moves(const Position& pos, Move *mList, bitboard_t targets, bool kingMoves)
 {
 	const int us = pos.turn();
 	bitboard_t fss, tss;
@@ -145,7 +149,7 @@ Move *castling_moves(const Position& pos, Move *mList)
 	return mList;
 }
 
-Move *check_escapes(const Position& pos, Move *mList)
+Move *check_escapes(const Position& pos, Move *mList, bool subPromotions)
 {
 	assert(pos.checkers());
 	bitboard_t ours = pos.occ(pos.turn());
@@ -178,7 +182,7 @@ Move *check_escapes(const Position& pos, Move *mList)
 		if (checkerPiece == PAWN && square_ok(pos.ep_square()))
 			bb::set(tss, pos.ep_square());
 
-		mList = pawn_moves(pos, mList, tss);
+		mList = pawn_moves(pos, mList, tss, subPromotions);
 	}
 
 	return mList;

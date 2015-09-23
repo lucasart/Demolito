@@ -22,7 +22,7 @@ void Selector::generate(const Position& pos, Phase ph)
 	Move *it = moves;
 
 	if (pos.checkers())
-		it = gen::check_escapes(pos, it);
+		it = gen::check_escapes(pos, it, ph == SEARCH);
 	else {
 		const int us = pos.turn(), them = opp_color(us);
 		const bitboard_t pieceTargets = ph == SEARCH ? ~pos.occ(us) : pos.occ(them);
@@ -30,7 +30,7 @@ void Selector::generate(const Position& pos, Phase ph)
 			| bb::rank(us == WHITE ? RANK_8 : RANK_1);
 
 		it = gen::piece_moves(pos, it, pieceTargets);
-		it = gen::pawn_moves(pos, it, pawnTargets);
+		it = gen::pawn_moves(pos, it, pawnTargets, ph == SEARCH);
 		if (ph == SEARCH)
 			it = gen::castling_moves(pos, it);
 	}
