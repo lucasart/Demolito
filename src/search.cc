@@ -16,18 +16,16 @@
 #include <iostream>
 #include <thread>
 #include <vector>
-#include <mutex>
 #include "search.h"
 #include "sort.h"
 #include "eval.h"
+#include "misc.h"
 
 namespace search {
 
 std::atomic<uint64_t> nodes;	// global node counter
 std::atomic<bool> abort;	// all threads should abort flag
 class Abort {};			// exception raised in each thread to trigger abortion
-
-std::mutex coutMutex;	// prevent scrambled std::cout display
 
 struct Stack {
 	Move best;
@@ -122,10 +120,9 @@ void iterate(const Position& pos, const Limits& lim)
 		} catch (const Abort&) {
 			break;
 		}
-		coutMutex.lock();
-		std::cout << "info depth " << depth << " score " << score << " nodes " << nodes
-			<< " pv " << ss->best.to_string() << std::endl;
-		coutMutex.unlock();
+
+		sync_cout << "info depth " << depth << " score " << score << " nodes " << nodes
+			<< " pv " << ss->best.to_string() << sync_endl;
 	}
 	abort = true;
 }
