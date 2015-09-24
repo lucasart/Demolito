@@ -25,9 +25,25 @@ namespace search {
 
 using namespace std::chrono;
 
-std::atomic<uint64_t> nodeCount;	// global node counter
-std::atomic<bool> abort;		// all threads should abort flag
-class Abort {};				// exception raised in each thread to trigger abortion
+// This is thread local, set at thread creation, so each thread can know its unique id
+thread_local int ThreadId = 0;
+
+// iteration[i] is the iteration on which thread #i is working
+std::vector<int> iteration;
+
+// signal: bit #i is set if thread #i should stop
+std::atomic<uint64_t> signal;
+#define ALL_THREADS uint64_t(-1)
+enum Abort {
+	ABORT_NEXT,	// abort only specific threads, to make them move to the next iteration
+	ABORT_STOP	// abort all threads to stop the search
+};
+
+// Protect thread scheduling decisions
+std::mutex mtxSchedule;
+
+// Global node counter
+std::atomic<uint64_t> nodeCount;
 
 template <Phase ph>
 int recurse(const Position& pos, int ply, int depth, int alpha, int beta, Move *pv)
@@ -38,8 +54,14 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, Move *
 	nodeCount++;
 	Move subtreePv[MAX_PLY - ply];
 	pv[0].clear();
-	if (abort)
-		throw Abort();
+
+	const uint64_t s = signal;
+	if (s) {
+		if (s == ALL_THREADS)
+			throw ABORT_STOP;
+		else if (bb::test(s, ThreadId))
+			throw ABORT_NEXT;
+	}
 
 	const int eval = inCheck ? -INF : evaluate(pos);
 
@@ -110,20 +132,47 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, Move *
 	return bestScore;
 }
 
-void iterate(const Position& pos, const Limits& lim, UCI::Info& ui)
+void iterate(const Position& pos, const Limits& lim, UCI::Info& ui, int threadId)
 {
+	ThreadId = threadId;
 	Move pv[MAX_PLY + 1];
 
 	for (int depth = 1; depth <= lim.depth; depth++) {
+		{
+			std::lock_guard<std::mutex> lk(mtxSchedule);
+			iteration[ThreadId] = depth;
+			if (signal != ALL_THREADS)
+				signal &= ~(1ULL << ThreadId);
+		}
+
 		int score;
 		try {
 			score = recurse<SEARCH>(pos, 0, depth, -INF, +INF, pv);
-		} catch (const Abort&) {
-			break;
+
+			// Iteration was completed normally. Now we need to see who is working on
+			// obsolete iterations, and raise the appropriate signal, to make them move
+			// on to the next iteration.
+			{
+				std::lock_guard<std::mutex> lk(mtxSchedule);
+				assert(!bb::test(signal, ThreadId));
+				for (int i = 0; i < lim.threads; i++)
+					if (iteration[i] == depth)
+						signal |= 1ULL << i;
+			}
+		} catch (const Abort e) {
+			assert(bb::test(signal, ThreadId));
+			if (e == ABORT_STOP)
+				break;
+			else {
+				assert(e == ABORT_NEXT);
+				continue;
+			}
 		}
 		ui.update(depth, score, nodeCount, pv);
 	}
-	abort = true;
+
+	// Max depth completed by current thread. All threads should stop.
+	signal = ALL_THREADS;
 }
 
 void bestmove(const Position& pos, const Limits& lim)
@@ -131,22 +180,28 @@ void bestmove(const Position& pos, const Limits& lim)
 	auto start = high_resolution_clock::now();
 
 	nodeCount = 0;
-	abort = false;
 	UCI::Info ui;
+
+	signal = 0;
+	iteration.resize(lim.threads, 0);
 
 	std::vector<std::thread> threads;
 	for (int i = 0; i < lim.threads; i++)
-		threads.emplace_back(iterate, std::cref(pos), std::cref(lim), std::ref(ui));
+		threads.emplace_back(iterate, std::cref(pos), std::cref(lim), std::ref(ui), i);
 
-	while (!abort) {
+	while (signal != ALL_THREADS) {
 		std::this_thread::sleep_for(milliseconds(5));
 		ui.print();
 
-		if (lim.nodes && nodeCount >= lim.nodes)
-			abort = true;
-		else if (lim.movetime && duration_cast<milliseconds>
-		(high_resolution_clock::now() - start).count() >= lim.movetime)
-			abort = true;
+		// Check for search termination conditions
+		if (lim.nodes && nodeCount >= lim.nodes) {
+			std::lock_guard<std::mutex> lk(mtxSchedule);
+			signal = ALL_THREADS;
+		} else if (lim.movetime && duration_cast<milliseconds>
+		(high_resolution_clock::now() - start).count() >= lim.movetime) {
+			std::lock_guard<std::mutex> lk(mtxSchedule);
+			signal = ALL_THREADS;
+		}
 	}
 
 	for (auto& t : threads)
