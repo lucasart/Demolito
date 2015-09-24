@@ -4,7 +4,7 @@
 
 namespace search {
 
-extern std::atomic<uint64_t> nodes;
+extern std::atomic<uint64_t> nodeCount;
 
 struct Limits {
 	Limits(): depth(0), movetime(0), threads(1), nodes(0) {}

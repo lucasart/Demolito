@@ -13,22 +13,23 @@
  * You should have received a copy of the GNU General Public License along with this program. If
  * not, see <http://www.gnu.org/licenses/>.
 */
-#include <iostream>
 #include <thread>
 #include <vector>
 #include <chrono>
 #include "search.h"
 #include "sort.h"
 #include "eval.h"
-#include "misc.h"
+#include "uci.h"
 
 namespace search {
 
 using namespace std::chrono;
 
-std::atomic<uint64_t> nodes;	// global node counter
-std::atomic<bool> abort;	// all threads should abort flag
-class Abort {};			// exception raised in each thread to trigger abortion
+std::atomic<uint64_t> nodeCount;	// global node counter
+std::atomic<bool> abort;		// all threads should abort flag
+class Abort {};				// exception raised in each thread to trigger abortion
+
+UCI::Info ui;
 
 template <Phase ph>
 int recurse(const Position& pos, int ply, int depth, int alpha, int beta, Move *pv)
@@ -36,7 +37,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, Move *
 	int bestScore = -INF;
 	const bool inCheck = pos.checkers();
 
-	nodes++;
+	nodeCount++;
 	Move subtreePv[MAX_PLY - ply];
 	pv[0].clear();
 	if (abort)
@@ -124,22 +125,23 @@ void iterate(const Position& pos, const Limits& lim)
 		}
 
 		std::string pvStr;
-		for (int i = 0; i <= MAX_PLY && !pv[i].null(); i++) {
+		for (int i = 0; i <= MAX_PLY; i++) {
 			pvStr += pv[i].to_string();
 			pvStr.append(" ");
 		}
 
-		sync_cout << "info depth " << depth << " score " << score << " nodes " << nodes
-			<< " pv " << pvStr << sync_endl;
+		ui.update(depth, score, nodeCount, pv);
 	}
 	abort = true;
 }
 
 void bestmove(const Position& pos, const Limits& lim)
 {
-	nodes = 0;
-	abort = false;
 	auto start = high_resolution_clock::now();
+
+	nodeCount = 0;
+	abort = false;
+	ui.clear();
 
 	std::vector<std::thread> threads;
 	for (int i = 0; i < lim.threads; i++)
@@ -147,7 +149,9 @@ void bestmove(const Position& pos, const Limits& lim)
 
 	while (!abort) {
 		std::this_thread::sleep_for(std::chrono::milliseconds(5));
-		if (lim.nodes && nodes >= lim.nodes)
+		ui.print();
+
+		if (lim.nodes && nodeCount >= lim.nodes)
 			abort = true;
 		else if (lim.movetime && duration_cast<milliseconds>
 		(high_resolution_clock::now() - start).count() >= lim.movetime)
