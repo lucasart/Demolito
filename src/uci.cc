@@ -4,19 +4,15 @@
 
 namespace UCI {
 
-void Info::clear()
+Info::Info() : _depth(0), updated(false)
 {
-	m.lock();
-	_depth = _score = _nodes = 0;
 	_pv[0].clear();
-	updated = false;
-	m.unlock();
 }
 
 void Info::update(int depth, int score, int nodes, Move *pv)
 {
-	m.lock();
-	if (depth >= _depth) {
+	std::lock_guard<std::mutex> lk(m);
+	if (depth > _depth) {
 		_depth = depth;
 		_score = score;
 		_nodes = nodes;
@@ -25,23 +21,21 @@ void Info::update(int depth, int score, int nodes, Move *pv)
 				break;
 		updated = true;
 	}
-	m.unlock();
 }
 
 // print info line, only if it has been updated since last print()
 void Info::print() const
 {
-	std::ostringstream os;
-
-	m.lock();
+	std::lock_guard<std::mutex> lk(m);
 	if (updated) {
-		os << "info depth " << _depth << " score " << _score << " nodes " << _nodes << " pv ";
+		std::ostringstream os;
+		os << "info depth " << _depth << " score " << _score
+			<< " nodes " << _nodes << " pv";
 		for (int i = 0; !_pv[i].null(); i++)
-			os << _pv[i].to_string() << ' ';
+			os << ' ' << _pv[i].to_string();
 		std::cout << os.str() << std::endl;
 		updated = false;
 	}
-	m.unlock();
 }
 
 }	// namespace UCI

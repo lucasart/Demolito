@@ -10,7 +10,7 @@ class Info {
 	mutable bool updated;
 	mutable std::mutex m;
 public:
-	void clear();
+	Info();
 	void update(int depth, int score, int nodes, Move *pv);
 	void print() const;
 };

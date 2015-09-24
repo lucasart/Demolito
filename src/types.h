@@ -92,7 +92,7 @@ extern const eval_t Material[NB_PIECE];
 
 #define INF	32767
 #define MATE	32000
-#define MAX_PLY	32000
+#define MAX_PLY	128
 
 /* Display */
 

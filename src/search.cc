@@ -29,8 +29,6 @@ std::atomic<uint64_t> nodeCount;	// global node counter
 std::atomic<bool> abort;		// all threads should abort flag
 class Abort {};				// exception raised in each thread to trigger abortion
 
-UCI::Info ui;
-
 template <Phase ph>
 int recurse(const Position& pos, int ply, int depth, int alpha, int beta, Move *pv)
 {
@@ -112,7 +110,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, Move *
 	return bestScore;
 }
 
-void iterate(const Position& pos, const Limits& lim)
+void iterate(const Position& pos, const Limits& lim, UCI::Info& ui)
 {
 	Move pv[MAX_PLY + 1];
 
@@ -123,13 +121,6 @@ void iterate(const Position& pos, const Limits& lim)
 		} catch (const Abort&) {
 			break;
 		}
-
-		std::string pvStr;
-		for (int i = 0; i <= MAX_PLY; i++) {
-			pvStr += pv[i].to_string();
-			pvStr.append(" ");
-		}
-
 		ui.update(depth, score, nodeCount, pv);
 	}
 	abort = true;
@@ -141,14 +132,14 @@ void bestmove(const Position& pos, const Limits& lim)
 
 	nodeCount = 0;
 	abort = false;
-	ui.clear();
+	UCI::Info ui;
 
 	std::vector<std::thread> threads;
 	for (int i = 0; i < lim.threads; i++)
-		threads.emplace_back(iterate, std::cref(pos), std::cref(lim));
+		threads.emplace_back(iterate, std::cref(pos), std::cref(lim), std::ref(ui));
 
 	while (!abort) {
-		std::this_thread::sleep_for(std::chrono::milliseconds(5));
+		std::this_thread::sleep_for(milliseconds(5));
 		ui.print();
 
 		if (lim.nodes && nodeCount >= lim.nodes)
