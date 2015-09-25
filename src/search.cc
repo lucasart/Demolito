@@ -13,6 +13,7 @@
  * You should have received a copy of the GNU General Public License along with this program. If
  * not, see <http://www.gnu.org/licenses/>.
 */
+#include <iostream>
 #include <thread>
 #include <vector>
 #include <chrono>
@@ -127,10 +128,35 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, Move *
 	return bestScore;
 }
 
+int aspirate(const Position& pos, int depth, Move *pv, int score)
+{
+	int delta = 16;
+	int alpha = score - delta;
+	int beta = score + delta;
+
+	for ( ; ; delta += delta) {
+		score = recurse<SEARCH>(pos, 0, depth, alpha, beta, pv);
+		std::cout << "depth=" << depth
+			<< "\talpha=" << alpha
+			<< "\tbeta=" << beta
+			<< "\tscore" << score
+			<< std::endl;
+		if (score <= alpha) {
+			beta = (alpha + beta) / 2;
+			alpha -= delta;
+		} else if (score >= beta) {
+			alpha = (alpha + beta) / 2;
+			beta += delta;
+		} else
+			return score;
+	}
+}
+
 void iterate(const Position& pos, const Limits& lim, UCI::Info& ui, int threadId)
 {
 	ThreadId = threadId;
 	Move pv[MAX_PLY + 1];
+	int score;
 
 	for (int depth = 1; depth <= lim.depth; depth++) {
 		{
@@ -141,9 +167,10 @@ void iterate(const Position& pos, const Limits& lim, UCI::Info& ui, int threadId
 			signal &= ~(1ULL << ThreadId);
 		}
 
-		int score;
 		try {
-			score = recurse<SEARCH>(pos, 0, depth, -INF, +INF, pv);
+			score = depth <= 1
+				? recurse<SEARCH>(pos, 0, depth, -INF, +INF, pv)
+				: aspirate(pos, depth, pv, score);
 
 			// Iteration was completed normally. Now we need to see who is working on
 			// obsolete iterations, and raise the appropriate signal, to make them move
