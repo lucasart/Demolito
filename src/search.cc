@@ -141,8 +141,9 @@ void iterate(const Position& pos, const Limits& lim, UCI::Info& ui, int threadId
 		{
 			std::lock_guard<std::mutex> lk(mtxSchedule);
 			iteration[ThreadId] = depth;
-			if (signal != ALL_THREADS)
-				signal &= ~(1ULL << ThreadId);
+			if (signal == ALL_THREADS)
+				return;
+			signal &= ~(1ULL << ThreadId);
 		}
 
 		int score;
@@ -155,9 +156,11 @@ void iterate(const Position& pos, const Limits& lim, UCI::Info& ui, int threadId
 			{
 				std::lock_guard<std::mutex> lk(mtxSchedule);
 				assert(!bb::test(signal, ThreadId));
+				uint64_t s = 0;
 				for (int i = 0; i < lim.threads; i++)
 					if (iteration[i] == depth)
-						signal |= 1ULL << i;
+						bb::set(s, i);
+				signal |= s;
 			}
 		} catch (const Abort e) {
 			assert(bb::test(signal, ThreadId));
@@ -172,6 +175,7 @@ void iterate(const Position& pos, const Limits& lim, UCI::Info& ui, int threadId
 	}
 
 	// Max depth completed by current thread. All threads should stop.
+	std::lock_guard<std::mutex> lk(mtxSchedule);
 	signal = ALL_THREADS;
 }
 
@@ -189,7 +193,7 @@ void bestmove(const Position& pos, const Limits& lim)
 	for (int i = 0; i < lim.threads; i++)
 		threads.emplace_back(iterate, std::cref(pos), std::cref(lim), std::ref(ui), i);
 
-	while (signal != ALL_THREADS) {
+	do {
 		std::this_thread::sleep_for(milliseconds(5));
 		ui.print();
 
@@ -202,7 +206,7 @@ void bestmove(const Position& pos, const Limits& lim)
 			std::lock_guard<std::mutex> lk(mtxSchedule);
 			signal = ALL_THREADS;
 		}
-	}
+	} while (signal != ALL_THREADS);
 
 	for (auto& t : threads)
 		t.join();
