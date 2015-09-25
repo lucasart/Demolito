@@ -26,21 +26,16 @@ namespace search {
 using namespace std::chrono;
 
 // This is thread local, set at thread creation, so each thread can know its unique id
-thread_local int ThreadId = 0;
+thread_local int ThreadId;
 
-// iteration[i] is the iteration on which thread #i is working
-std::vector<int> iteration;
-
-// signal: bit #i is set if thread #i should stop
-std::atomic<uint64_t> signal;
-#define ALL_THREADS uint64_t(-1)
+std::vector<int> iteration;	// iteration[i] is the iteration on which thread #i is working
+std::atomic<uint64_t> signal;	// signal: bit #i is set if thread #i should stop
+const uint64_t ALL_THREADS = uint64_t(-1);	// special signal value that causes searching threads to throw ABORT_STOP
 enum Abort {
-	ABORT_NEXT,	// abort only specific threads, to make them move to the next iteration
-	ABORT_STOP	// abort all threads to stop the search
+	ABORT_NEXT,	// current thread aborts the current iteration to be scheduled to the next one
+	ABORT_STOP	// current thread aborts the current iteration to stop iterating completely
 };
-
-// Protect thread scheduling decisions
-std::mutex mtxSchedule;
+std::mutex mtxSchedule;	// protect thread scheduling decisions
 
 // Global node counter
 std::atomic<uint64_t> nodeCount;
