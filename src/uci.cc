@@ -38,4 +38,11 @@ void Info::print() const
 	}
 }
 
+Move Info::best(Move& ponder) const
+{
+	std::lock_guard<std::mutex> lk(m);
+	ponder = _pv[1];
+	return _pv[0];
+}
+
 }	// namespace UCI

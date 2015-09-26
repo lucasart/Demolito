@@ -138,7 +138,7 @@ int aspirate(const Position& pos, int depth, Move *pv, int score)
 		std::cout << "depth=" << depth
 			<< "\talpha=" << alpha
 			<< "\tbeta=" << beta
-			<< "\tscore" << score
+			<< "\tscore=" << score
 			<< std::endl;
 		if (score <= alpha) {
 			beta = (alpha + beta) / 2;
@@ -209,7 +209,7 @@ void iterate(const Position& pos, const Limits& lim, UCI::Info& ui, int threadId
 	signal = ALL_THREADS;
 }
 
-void bestmove(const Position& pos, const Limits& lim)
+Move bestmove(const Position& pos, const Limits& lim, Move& ponder)
 {
 	auto start = high_resolution_clock::now();
 
@@ -241,7 +241,7 @@ void bestmove(const Position& pos, const Limits& lim)
 	for (auto& t : threads)
 		t.join();
 
-	// FIXME: return best move
+	return ui.best(ponder);
 }
 
 }	// namespace search
