@@ -69,7 +69,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, Move *
 		bestScore = eval;
 		if (bestScore > alpha) {
 			alpha = bestScore;
-			if (bestScore > beta)
+			if (bestScore >= beta)
 				return bestScore;
 		}
 	}
