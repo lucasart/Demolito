@@ -50,9 +50,9 @@ int push_inc(int color);	// pawn push increment
 /* Material values */
 
 enum {
-	OP = 80, EP = 100, P = 90,
-	N = 330, B = 330,
-	R = 540, Q = 1000
+	OP = 160, EP = 200, P = 180,
+	N = 660, B = 660,
+	R = 1080, Q = 2000
 };
 
 /* Eval */

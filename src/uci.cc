@@ -29,7 +29,7 @@ void Info::print() const
 	std::lock_guard<std::mutex> lk(m);
 	if (updated) {
 		std::ostringstream os;
-		os << "info depth " << _depth << " score " << _score
+		os << "info depth " << _depth << " score " << _score / 2
 			<< " nodes " << _nodes << " pv";
 		for (int i = 0; !_pv[i].null(); i++)
 			os << ' ' << _pv[i].to_string();

@@ -129,7 +129,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, Move *
 
 int aspirate(const Position& pos, int depth, Move *pv, int score)
 {
-	int delta = 16;
+	int delta = 32;
 	int alpha = score - delta;
 	int beta = score + delta;
 

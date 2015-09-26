@@ -21,7 +21,7 @@ namespace pst {
 
 eval_t table[NB_COLOR][NB_PIECE][NB_SQUARE];
 
-const int Center[8] = {-3,-1, 0, 1, 1, 0,-1,-3};
+const int Center[8] = {-6,-2, 0, 2, 2, 0,-2,-6};
 
 eval_t knight(int r, int f)
 {
@@ -32,8 +32,8 @@ eval_t knight(int r, int f)
 eval_t bishop(int r, int f)
 {
 	const eval_t CenterWeight   = {2, 3};
-	const eval_t DiagonalWeight = {4, 0};
-	const eval_t BackRankWeight = {-10, 0};
+	const eval_t DiagonalWeight = {8, 0};
+	const eval_t BackRankWeight = {-20, 0};
 
 	return CenterWeight * (Center[r] + Center[f])
 		+ DiagonalWeight * (7 == r + f || r == f)
@@ -43,7 +43,7 @@ eval_t bishop(int r, int f)
 eval_t rook(int r, int f)
 {
 	const eval_t FileWeight    = {3, 0};
-	const eval_t SeventhWeight = {8, 8};
+	const eval_t SeventhWeight = {16, 16};
 
 	return FileWeight * Center[f]
 		+ SeventhWeight * (r == RANK_7);
@@ -52,7 +52,7 @@ eval_t rook(int r, int f)
 eval_t queen(int r, int f)
 {
 	const eval_t CenterWeight   = {0, 4};
-	const eval_t BackRankWeight = {-5, 0};
+	const eval_t BackRankWeight = {-10, 0};
 
 	return CenterWeight * (Center[r] + Center[f])
 		+ BackRankWeight * (r == RANK_1);
@@ -64,8 +64,8 @@ eval_t king(int r, int f)
 	const int RankShape[8] = { 1, 0,-2,-3,-4,-5,-5,-5};
 
 	const eval_t CenterWeight = {0, 14};
-	const eval_t FileWeight   = {10, 0};
-	const eval_t RankWeight   = {7, 0};
+	const eval_t FileWeight   = {20, 0};
+	const eval_t RankWeight   = {14, 0};
 
 	return CenterWeight * (Center[r] + Center[f])
 		+ FileWeight * FileShape[f]
@@ -74,7 +74,7 @@ eval_t king(int r, int f)
 
 eval_t pawn(int r, int f)
 {
-	const eval_t PCenter = {18, 0};
+	const eval_t PCenter = {36, 0};
 	eval_t e = {0, 0};
 
 	if (f == FILE_D || f == FILE_E) {
