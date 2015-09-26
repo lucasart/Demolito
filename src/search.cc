@@ -111,13 +111,12 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, Move *
 		// Update bestScore and alpha
 		if (score > bestScore) {
 			bestScore = score;
-			if (score > alpha) {
-				pv[0] = m;
-				for (int i = 0; i < MAX_PLY - ply; i++)
-					if ((pv[i + 1] = subtreePv[i]).null())
-						break;
+			pv[0] = m;
+			for (int i = 0; i < MAX_PLY - ply; i++)
+				if ((pv[i + 1] = subtreePv[i]).null())
+					break;
+			if (score > alpha)
 				alpha = score;
-			}
 		}
 	}
 
