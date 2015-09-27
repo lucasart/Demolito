@@ -101,7 +101,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, Move *
 
 		// Recursion
 		int score;
-		if (depth <= -8 && !inCheck)
+		if (depth <= MIN_DEPTH && !inCheck)
 			score = eval + see;	// guard against QSearch explosion
 		else
 			score = nextDepth > 0
