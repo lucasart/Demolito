@@ -210,7 +210,7 @@ void iterate(const Position& pos, const Limits& lim, UCI::Info& ui, int threadId
 
 void bestmove(const Position& pos, const Limits& lim)
 {
-	auto start = high_resolution_clock::now();
+	const auto start = high_resolution_clock::now();
 
 	nodeCount = 0;
 	UCI::Info ui;
