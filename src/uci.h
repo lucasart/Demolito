@@ -15,7 +15,7 @@ public:
 	Info();
 	void update(int depth, int score, int nodes, Move *pv);
 	void print() const;
-	Move best(Move& ponder) const;
+	void print_bestmove() const;
 };
 
 }	// namespace UCI

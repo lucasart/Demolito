@@ -5,6 +5,8 @@
 namespace search {
 
 extern std::atomic<uint64_t> nodeCount;
+extern std::atomic<uint64_t> signal;
+#define STOP	uint64_t(-1)
 
 struct Limits {
 	Limits(): depth(MAX_DEPTH), movetime(0), threads(1), nodes(0) {}
@@ -12,6 +14,6 @@ struct Limits {
 	uint64_t nodes;
 };
 
-Move bestmove(const Position& pos, const Limits& lim, Move& ponder);
+void bestmove(const Position& pos, const Limits& lim);
 
 }

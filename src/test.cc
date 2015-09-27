@@ -59,10 +59,7 @@ uint64_t bench(bool perft, int depth, int threads)
 			nodes = gen::perft(pos, depth);
 			std::cout << "perft(" << depth << ") = " << nodes << std::endl;
 		} else {
-			Move best, ponder;
-			best = search::bestmove(pos, lim, ponder);
-			std::cout << "best move: " << best.to_string()
-				<< " expected reply: " << ponder.to_string() << std::endl;
+			search::bestmove(pos, lim);
 			nodes = search::nodeCount;
 		}
 

@@ -31,7 +31,6 @@ thread_local int ThreadId;
 
 std::vector<int> iteration;	// iteration[i] is the iteration on which thread #i is working
 std::atomic<uint64_t> signal;	// signal: bit #i is set if thread #i should stop
-const uint64_t ALL_THREADS = uint64_t(-1);	// special signal value that causes searching threads to throw ABORT_STOP
 enum Abort {
 	ABORT_NEXT,	// current thread aborts the current iteration to be scheduled to the next one
 	ABORT_STOP	// current thread aborts the current iteration to stop iterating completely
@@ -53,7 +52,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, Move *
 
 	const uint64_t s = signal;
 	if (s) {
-		if (s == ALL_THREADS)
+		if (s == STOP)
 			throw ABORT_STOP;
 		else if (bb::test(s, ThreadId))
 			throw ABORT_NEXT;
@@ -170,7 +169,7 @@ void iterate(const Position& pos, const Limits& lim, UCI::Info& ui, int threadId
 				continue;
 
 			iteration[ThreadId] = depth;
-			if (signal == ALL_THREADS)
+			if (signal == STOP)
 				return;
 			signal &= ~(1ULL << ThreadId);
 		}
@@ -206,10 +205,10 @@ void iterate(const Position& pos, const Limits& lim, UCI::Info& ui, int threadId
 
 	// Max depth completed by current thread. All threads should stop.
 	std::lock_guard<std::mutex> lk(mtxSchedule);
-	signal = ALL_THREADS;
+	signal = STOP;
 }
 
-Move bestmove(const Position& pos, const Limits& lim, Move& ponder)
+void bestmove(const Position& pos, const Limits& lim)
 {
 	auto start = high_resolution_clock::now();
 
@@ -230,18 +229,18 @@ Move bestmove(const Position& pos, const Limits& lim, Move& ponder)
 		// Check for search termination conditions
 		if (lim.nodes && nodeCount >= lim.nodes) {
 			std::lock_guard<std::mutex> lk(mtxSchedule);
-			signal = ALL_THREADS;
+			signal = STOP;
 		} else if (lim.movetime && duration_cast<milliseconds>
 		(high_resolution_clock::now() - start).count() >= lim.movetime) {
 			std::lock_guard<std::mutex> lk(mtxSchedule);
-			signal = ALL_THREADS;
+			signal = STOP;
 		}
-	} while (signal != ALL_THREADS);
+	} while (signal != STOP);
 
 	for (auto& t : threads)
 		t.join();
 
-	return ui.best(ponder);
+	ui.print_bestmove();
 }
 
 }	// namespace search
