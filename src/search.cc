@@ -187,7 +187,7 @@ void iterate(const Position& pos, const Limits& lim, UCI::Info& ui, int threadId
 				assert(!bb::test(signal, ThreadId));
 				uint64_t s = 0;
 				for (int i = 0; i < lim.threads; i++)
-					if (iteration[i] == depth)
+					if (i != ThreadId && iteration[i] == depth)
 						bb::set(s, i);
 				signal |= s;
 			}
