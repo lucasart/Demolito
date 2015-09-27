@@ -19,6 +19,7 @@
 #include "zobrist.h"
 #include "test.h"
 #include "pst.h"
+#include "uci.h"
 
 int main(int argc, char **argv)
 {
@@ -35,5 +36,6 @@ int main(int argc, char **argv)
 			const uint64_t nodes = test::bench(cmd == "perft", depth, threads);
 			std::cout << "total = " << nodes << std::endl;
 		}
-	}
+	} else
+		UCI::loop();
 }

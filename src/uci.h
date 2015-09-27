@@ -4,6 +4,8 @@
 
 namespace UCI {
 
+void loop();
+
 class Info {
 	Move _pv[MAX_PLY + 1];
 	int _depth, _score, _nodes;
