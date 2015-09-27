@@ -125,45 +125,27 @@ void loop()
 	}
 }
 
-Info::Info() : _depth(0), updated(false)
-{
-	_pv[0].clear();
-}
-
 void Info::update(int depth, int score, int nodes, Move *pv)
 {
 	std::lock_guard<std::mutex> lk(m);
-	if (depth > _depth) {
-		_depth = depth;
-		_score = score;
-		_nodes = nodes;
-		for (int i = 0; ; i++)
-			if ((_pv[i] = pv[i]).null())
-				break;
-		updated = true;
-	}
-}
+	if (depth > lastDepth) {
+		lastDepth = depth;
+		best = pv[0];
+		ponder = pv[1];
 
-// print info line, only if it has been updated since last print()
-void Info::print() const
-{
-	std::lock_guard<std::mutex> lk(m);
-	if (updated) {
 		std::ostringstream os;
-		os << "info depth " << _depth << " score cp " << _score / 2
-			<< " nodes " << _nodes << " pv";
-		for (int i = 0; !_pv[i].null(); i++)
-			os << ' ' << _pv[i].to_string();
-		std::cout << os.str() << std::endl;
-		updated = false;
+                os << "info depth " << depth << " score cp " << score / 2
+			<< " nodes " << nodes << " pv";
+                for (int i = 0; !pv[i].null(); os << ' ' << pv[i++].to_string());
+                std::cout << os.str() << std::endl;
 	}
 }
 
 void Info::print_bestmove() const
 {
 	std::lock_guard<std::mutex> lk(m);
-	std::cout << "bestmove " << _pv[0].to_string()
-		<< " ponder " << _pv[1].to_string() << std::endl;
+	std::cout << "bestmove " << best.to_string()
+		<< " ponder " << ponder.to_string() << std::endl;
 }
 
 }	// namespace UCI

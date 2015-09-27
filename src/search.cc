@@ -218,7 +218,6 @@ void bestmove(const Position& pos, const Limits& lim)
 
 	do {
 		std::this_thread::sleep_for(milliseconds(5));
-		ui.print();
 
 		// Check for search termination conditions
 		if (lim.nodes && nodeCount >= lim.nodes) {

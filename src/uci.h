@@ -7,14 +7,12 @@ namespace UCI {
 void loop();
 
 class Info {
-	Move _pv[MAX_PLY + 1];
-	int _depth, _score, _nodes;
-	mutable bool updated;
+	int lastDepth;
+	Move best, ponder;
 	mutable std::mutex m;
 public:
-	Info();
+	Info() : lastDepth(0) { best.clear(); ponder.clear(); }
 	void update(int depth, int score, int nodes, Move *pv);
-	void print() const;
 	void print_bestmove() const;
 };
 
