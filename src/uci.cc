@@ -8,8 +8,33 @@
 namespace {
 
 Position pos;
-
 std::thread Timer;
+
+int Threads = 1;
+
+void uci()
+{
+	std::cout << "id name Demolito\nid author lucasart\n"
+		<< "option name Threads type spin default " << Threads << " min 1 max 64\n"
+		<< "uciok" << std::endl;
+}
+
+void setoption(std::istringstream& is)
+{
+	std::string token, name;
+
+	is >> token;
+	if (token != "name")
+		return;
+
+	while ((is >> token) && token != "value")
+		name += token;
+
+	if (name == "Threads") {
+		is >> Threads;
+		std::cout << Threads << std::endl;
+	}
+}
 
 void position(std::istringstream& is)
 {
@@ -78,7 +103,9 @@ void loop()
 		is >> token;
 
 		if (token == "uci")
-			std::cout << "uciok" << std::endl;
+			uci();
+		else if (token == "setoption")
+			setoption(is);
 		else if (token == "isready")
 			std::cout << "readyok" << std::endl;
 		else if (token == "ucinewgame")
