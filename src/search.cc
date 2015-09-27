@@ -13,7 +13,6 @@
  * You should have received a copy of the GNU General Public License along with this program. If
  * not, see <http://www.gnu.org/licenses/>.
 */
-#include <iostream>
 #include <thread>
 #include <vector>
 #include <chrono>
@@ -134,11 +133,6 @@ int aspirate(const Position& pos, int depth, Move *pv, int score)
 
 	for ( ; ; delta += delta) {
 		score = recurse<SEARCH>(pos, 0, depth, alpha, beta, pv);
-		std::cout << "depth=" << depth
-			<< "\talpha=" << alpha
-			<< "\tbeta=" << beta
-			<< "\tscore=" << score
-			<< std::endl;
 		if (score <= alpha) {
 			beta = (alpha + beta) / 2;
 			alpha -= delta;

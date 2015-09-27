@@ -30,10 +30,8 @@ void setoption(std::istringstream& is)
 	while ((is >> token) && token != "value")
 		name += token;
 
-	if (name == "Threads") {
+	if (name == "Threads")
 		is >> Threads;
-		std::cout << Threads << std::endl;
-	}
 }
 
 void position(std::istringstream& is)
