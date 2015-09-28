@@ -117,13 +117,14 @@ void loop()
 			search::signal = STOP;
 		else if (token == "eval")
 			eval();
-		else if (token == "quit") {
-			if (Timer.joinable())
-				Timer.join();
+		else if (token == "quit")
 			break;
-		} else
+		else
 			std::cout << "unknown command: " << command << std::endl;
 	}
+
+	if (Timer.joinable())
+		Timer.join();
 }
 
 void Info::update(int depth, int score, int nodes, Move *pv)
