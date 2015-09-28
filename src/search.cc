@@ -154,13 +154,17 @@ void iterate(const Position& pos, const Limits& lim, UCI::Info& ui, int threadId
 		{
 			std::lock_guard<std::mutex> lk(mtxSchedule);
 
-			// If half the threads are searching this depth, proceed to the next one,
-			// unless there is no next one (ie. depth == lim.depth)
-			int cnt = 0;
-			for (int d : iteration)
-				cnt += d == depth;
-			if (cnt >= (lim.threads + 1) / 2 && depth < lim.depth)
-				continue;
+			// If enough of the other threads are searching this iteration, move on to
+			// the next one. Special cases where this does not apply:
+			// depth == 1: we want all threads to finish depth == 1 asap.
+			// depth == lim.depth: there is no next iteration.
+			if (lim.threads >= 2 && depth >= 2 && depth < lim.depth) {
+				int cnt = 0;
+				for (int i = 0; i < lim.threads; i++)
+					cnt += i != ThreadId && iteration[i] == depth;
+				if (cnt >= lim.threads / 2 && depth < lim.depth)
+					continue;
+			}
 
 			iteration[ThreadId] = depth;
 			if (signal == STOP)
