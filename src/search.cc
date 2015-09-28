@@ -20,13 +20,14 @@
 #include "sort.h"
 #include "eval.h"
 #include "uci.h"
+#include "zobrist.h"
 
 namespace search {
 
 using namespace std::chrono;
 
-// This is thread local, set at thread creation, so each thread can know its unique id
-thread_local int ThreadId;
+thread_local int ThreadId;	// set at thread creation, so each thread can know its unique id
+std::vector<zobrist::History> history;
 
 std::vector<int> iteration;	// iteration[i] is the iteration on which thread #i is working
 std::atomic<uint64_t> signal;	// signal: bit #i is set if thread #i should stop
@@ -42,6 +43,7 @@ std::atomic<uint64_t> nodeCount;
 template <Phase ph>
 int recurse(const Position& pos, int ply, int depth, int alpha, int beta, Move *pv)
 {
+	assert(history[ThreadId].back() == pos.key());
 	int bestScore = -INF;
 	const bool inCheck = pos.checkers();
 
@@ -94,6 +96,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, Move *
 
 		// Play move
 		nextPos.set(pos, m);
+		history[ThreadId].push(nextPos.key());
 
 		const int nextDepth = depth - 1 /*+ (pos.checkers() != 0)*/;
 
@@ -105,6 +108,9 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, Move *
 			score = nextDepth > 0
 				? -recurse<SEARCH>(nextPos, ply + 1, nextDepth, -beta, -alpha, subtreePv)
 				: -recurse<QSEARCH>(nextPos, ply + 1, nextDepth, -beta, -alpha, subtreePv);
+
+		// Undo move
+		history[ThreadId].pop();
 
 		// Update bestScore and alpha
 		if (score > bestScore) {
@@ -133,6 +139,7 @@ int aspirate(const Position& pos, int depth, Move *pv, int score)
 
 	for ( ; ; delta += delta) {
 		score = recurse<SEARCH>(pos, 0, depth, alpha, beta, pv);
+
 		if (score <= alpha) {
 			beta = (alpha + beta) / 2;
 			alpha -= delta;
@@ -144,7 +151,7 @@ int aspirate(const Position& pos, int depth, Move *pv, int score)
 	}
 }
 
-void iterate(const Position& pos, const Limits& lim, UCI::Info& ui, int threadId)
+void iterate(const Position& pos, const Limits& lim, uci::Info& ui, int threadId)
 {
 	ThreadId = threadId;
 	Move pv[MAX_PLY + 1];
@@ -191,6 +198,7 @@ void iterate(const Position& pos, const Limits& lim, UCI::Info& ui, int threadId
 			}
 		} catch (const Abort e) {
 			assert(bb::test(signal, ThreadId));
+			history[ThreadId] = uci::history;	// Restore an orderly state
 			if (e == ABORT_STOP)
 				break;
 			else {
@@ -211,10 +219,11 @@ void bestmove(const Position& pos, const Limits& lim)
 	const auto start = high_resolution_clock::now();
 
 	nodeCount = 0;
-	UCI::Info ui;
+	uci::Info ui;
 
 	signal = 0;
 	iteration.resize(lim.threads, 0);
+	history.resize(lim.threads, uci::history);
 
 	std::vector<std::thread> threads;
 	for (int i = 0; i < lim.threads; i++)

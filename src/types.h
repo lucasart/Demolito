@@ -95,6 +95,7 @@ extern const eval_t Material[NB_PIECE];
 #define MAX_DEPTH	127
 #define MIN_DEPTH	-8
 #define MAX_PLY		(MAX_DEPTH - MIN_DEPTH + 2)
+#define MAX_GAME_PLY	1024
 
 /* Display */
 

@@ -12,6 +12,15 @@ public:
 	uint64_t rand();
 };
 
+class History {
+	uint64_t keys[MAX_GAME_PLY];
+	size_t idx;
+public:
+	void clear() { idx = 0; }
+	void push(uint64_t key);
+	void pop();
+};
+
 void init();
 
 uint64_t key(int color, int piece, int sq);

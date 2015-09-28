@@ -37,5 +37,5 @@ int main(int argc, char **argv)
 			std::cout << "total = " << nodes << std::endl;
 		}
 	} else
-		UCI::loop();
+		uci::loop();
 }

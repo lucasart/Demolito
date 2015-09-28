@@ -4,6 +4,7 @@
 #include "uci.h"
 #include "eval.h"
 #include "search.h"
+#include "zobrist.h"
 
 namespace {
 
@@ -12,7 +13,7 @@ std::thread Timer;
 
 int Threads = 1;
 
-void uci()
+void intro()
 {
 	std::cout << "id name Demolito\nid author lucasart\n"
 		<< "option name Threads type spin default " << Threads << " min 1 max 64\n"
@@ -51,12 +52,15 @@ void position(std::istringstream& is)
 	Position p[NB_COLOR];
 	int idx = 0;
 	p[idx].set(fen);
+	uci::history.clear();
+	uci::history.push(p[idx].key());
 
 	// Parse moves (if any)
 	while (is >> token) {
 		const Move m(token);
 		p[idx ^ 1].set(p[idx], m);
 		idx ^= 1;
+		uci::history.push(p[idx].key());
 	}
 
 	pos = p[idx];
@@ -91,7 +95,9 @@ void eval()
 
 }	// namespace
 
-namespace UCI {
+namespace uci {
+
+zobrist::History history;
 
 void loop()
 {
@@ -102,7 +108,7 @@ void loop()
 		is >> token;
 
 		if (token == "uci")
-			uci();
+			intro();
 		else if (token == "setoption")
 			setoption(is);
 		else if (token == "isready")
@@ -150,4 +156,4 @@ void Info::print_bestmove() const
 		<< " ponder " << ponder.to_string() << std::endl;
 }
 
-}	// namespace UCI
+}	// namespace uci

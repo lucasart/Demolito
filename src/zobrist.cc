@@ -32,6 +32,20 @@ uint64_t rotate(uint64_t x, int k)
 
 namespace zobrist {
 
+thread_local History history;
+
+void History::push(uint64_t key)
+{
+	assert(idx < MAX_GAME_PLY);
+	keys[idx++] = key;
+}
+
+void History::pop()
+{
+	assert(idx);
+	idx--;
+}
+
 void PRNG::init(uint64_t seed)
 {
 	a = 0xf1ea5eed;

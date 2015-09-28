@@ -1,8 +1,11 @@
 #pragma once
 #include <mutex>
 #include "move.h"
+#include "zobrist.h"
 
-namespace UCI {
+namespace uci {
+
+extern zobrist::History history;
 
 void loop();
 
