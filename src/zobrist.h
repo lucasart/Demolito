@@ -14,11 +14,12 @@ public:
 
 class History {
 	uint64_t keys[MAX_GAME_PLY];
-	size_t idx;
+	int idx;
 public:
 	void clear() { idx = 0; }
 	void push(uint64_t key);
 	void pop();
+	bool repetition(int rule50) const;
 };
 
 void init();

@@ -47,10 +47,6 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, Move *
 	int bestScore = -INF;
 	const bool inCheck = pos.checkers();
 
-	nodeCount++;
-	Move subtreePv[MAX_PLY - ply];
-	pv[0].clear();
-
 	const uint64_t s = signal;
 	if (s) {
 		if (s == STOP)
@@ -59,10 +55,16 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, Move *
 			throw ABORT_NEXT;
 	}
 
-	const int eval = inCheck ? -INF : evaluate(pos);
+        nodeCount++;
+        Move childPv[MAX_PLY - ply];
+        pv[0].clear();
 
+	if (ply > 0 && history[ThreadId].repetition(pos.rule50()))
+		return 0;
+
+        const int eval = inCheck ? -INF : evaluate(pos);
 	if (ply >= MAX_PLY)
-		return eval;
+                return eval;
 
 	// QSearch stand pat
 	if (ph == QSEARCH && !inCheck) {
@@ -106,8 +108,8 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, Move *
 			score = eval + see;	// guard against QSearch explosion
 		else
 			score = nextDepth > 0
-				? -recurse<SEARCH>(nextPos, ply + 1, nextDepth, -beta, -alpha, subtreePv)
-				: -recurse<QSEARCH>(nextPos, ply + 1, nextDepth, -beta, -alpha, subtreePv);
+				? -recurse<SEARCH>(nextPos, ply + 1, nextDepth, -beta, -alpha, childPv)
+				: -recurse<QSEARCH>(nextPos, ply + 1, nextDepth, -beta, -alpha, childPv);
 
 		// Undo move
 		history[ThreadId].pop();
@@ -117,7 +119,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, Move *
 			bestScore = score;
 			pv[0] = m;
 			for (int i = 0; i < MAX_PLY - ply; i++)
-				if ((pv[i + 1] = subtreePv[i]).null())
+				if ((pv[i + 1] = childPv[i]).null())
 					break;
 			if (score > alpha)
 				alpha = score;

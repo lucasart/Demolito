@@ -36,14 +36,23 @@ thread_local History history;
 
 void History::push(uint64_t key)
 {
-	assert(idx < MAX_GAME_PLY);
+	assert(0 <= idx && idx < MAX_GAME_PLY);
 	keys[idx++] = key;
 }
 
 void History::pop()
 {
-	assert(idx);
+	assert(0 < idx && idx < MAX_GAME_PLY);
 	idx--;
+}
+
+bool History::repetition(int rule50) const
+{
+	// TODO: use 3 repetition past root position
+	for (int i = 4; i <= rule50 && i < idx; i += 2)
+		if (keys[idx-1 - i] == keys[idx-1])
+			return true;
+	return false;
 }
 
 void PRNG::init(uint64_t seed)
