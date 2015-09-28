@@ -79,6 +79,7 @@ void go(std::istringstream& is)
 	if (Timer.joinable())
 		Timer.join();
 
+	lim.threads = Threads;
 	Timer = std::thread(search::bestmove, std::cref(pos), std::cref(lim));
 }
 
