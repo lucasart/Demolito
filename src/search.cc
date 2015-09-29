@@ -239,14 +239,17 @@ void bestmove(const Position& pos, const Limits& lim)
 	do {
 		std::this_thread::sleep_for(milliseconds(5));
 
-		// Check for search termination conditions
-		if (lim.nodes && nodeCount >= lim.nodes) {
-			std::lock_guard<std::mutex> lk(mtxSchedule);
-			signal = STOP;
-		} else if (lim.movetime && duration_cast<milliseconds>
-		(high_resolution_clock::now() - start).count() >= lim.movetime) {
-			std::lock_guard<std::mutex> lk(mtxSchedule);
-			signal = STOP;
+		// Check for search termination conditions, but only after depth 1 has been
+		// completed, to make sure we do not return an illegal move.
+		if (ui.last_depth() >= 1) {
+			if (lim.nodes && nodeCount >= lim.nodes) {
+				std::lock_guard<std::mutex> lk(mtxSchedule);
+				signal = STOP;
+			} else if (lim.movetime && duration_cast<milliseconds>
+			(high_resolution_clock::now() - start).count() >= lim.movetime) {
+				std::lock_guard<std::mutex> lk(mtxSchedule);
+				signal = STOP;
+			}
 		}
 	} while (signal != STOP);
 

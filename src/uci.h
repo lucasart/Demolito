@@ -15,6 +15,7 @@ class Info {
 	mutable std::mutex m;
 public:
 	Info() : lastDepth(0) { best.clear(); ponder.clear(); }
+	int last_depth() const { return lastDepth; }
 	void update(int depth, int score, int nodes, Move *pv);
 	void print_bestmove() const;
 };
