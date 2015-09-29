@@ -24,10 +24,15 @@
 
 namespace search {
 
-using namespace std::chrono;
-
 thread_local int ThreadId;	// set at thread creation, so each thread can know its unique id
-std::vector<zobrist::History> history;
+
+std::vector<zobrist::History> history;	// history of zobrist keys, per thread
+
+struct Stack {
+	Move m;
+	int eval;
+};
+thread_local Stack ss[MAX_PLY+1];	// search stack, per thread
 
 std::vector<int> iteration;	// iteration[i] is the iteration on which thread #i is working
 std::atomic<uint64_t> signal;	// signal: bit #i is set if thread #i should stop
@@ -62,13 +67,13 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, Move *
 	if (ply > 0 && history[ThreadId].repetition(pos.rule50()))
 		return 0;
 
-        const int eval = inCheck ? -INF : evaluate(pos);
+        ss[ply].eval = inCheck ? -INF : evaluate(pos);
 	if (ply >= MAX_PLY)
-                return eval;
+		return ss[ply].eval;
 
 	// QSearch stand pat
 	if (ph == QSEARCH && !inCheck) {
-		bestScore = eval;
+		bestScore = ss[ply].eval;
 		if (bestScore > alpha) {
 			alpha = bestScore;
 			if (bestScore >= beta)
@@ -79,16 +84,14 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, Move *
 	// Generate and score moves
 	Selector S(pos, ph);
 
-	Move m;
-	int see;
 	size_t moveCount = 0;
-	Position nextPos;
 	PinInfo pi(pos);
 
 	// Move loop
 	while (!S.done() && alpha < beta) {
-		m = S.select(pos, see);
-		if (!m.pseudo_is_legal(pos, pi))
+		int see;
+		ss[ply].m = S.select(pos, see);
+		if (!ss[ply].m.pseudo_is_legal(pos, pi))
 			continue;
 		moveCount++;
 
@@ -97,7 +100,8 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, Move *
 			continue;
 
 		// Play move
-		nextPos.set(pos, m);
+		Position nextPos;
+		nextPos.set(pos, ss[ply].m);
 		history[ThreadId].push(nextPos.key());
 
 		const int nextDepth = depth - 1 /*+ (pos.checkers() != 0)*/;
@@ -105,7 +109,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, Move *
 		// Recursion
 		int score;
 		if (depth <= MIN_DEPTH && !inCheck)
-			score = eval + see;	// guard against QSearch explosion
+			score = ss[ply].eval + see;	// guard against QSearch explosion
 		else
 			score = nextDepth > 0
 				? -recurse<SEARCH>(nextPos, ply + 1, nextDepth, -beta, -alpha, childPv)
@@ -117,7 +121,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, Move *
 		// Update bestScore and alpha
 		if (score > bestScore) {
 			bestScore = score;
-			pv[0] = m;
+			pv[0] = ss[ply].m;
 			for (int i = 0; i < MAX_PLY - ply; i++)
 				if ((pv[i + 1] = childPv[i]).null())
 					break;
@@ -218,6 +222,7 @@ void iterate(const Position& pos, const Limits& lim, uci::Info& ui, int threadId
 
 void bestmove(const Position& pos, const Limits& lim)
 {
+	using namespace std::chrono;
 	const auto start = high_resolution_clock::now();
 
 	nodeCount = 0;
