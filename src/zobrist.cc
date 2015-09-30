@@ -42,8 +42,14 @@ void History::push(uint64_t key)
 
 void History::pop()
 {
-	assert(0 < idx && idx < MAX_GAME_PLY);
+	assert(0 < idx && idx <= MAX_GAME_PLY);
 	idx--;
+}
+
+uint64_t History::back() const
+{
+	assert(0 < idx && idx <= MAX_GAME_PLY);
+	return keys[idx - 1];
 }
 
 bool History::repetition(int rule50) const

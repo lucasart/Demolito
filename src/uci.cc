@@ -9,6 +9,7 @@
 namespace {
 
 Position pos;
+search::Limits lim;
 std::thread Timer;
 
 int Threads = 1;
@@ -68,7 +69,6 @@ void position(std::istringstream& is)
 
 void go(std::istringstream& is)
 {
-	search::Limits lim;
 	std::string token;
 
 	while (is >> token) {

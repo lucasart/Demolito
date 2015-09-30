@@ -19,6 +19,7 @@ public:
 	void clear() { idx = 0; }
 	void push(uint64_t key);
 	void pop();
+	uint64_t back() const;
 	bool repetition(int rule50) const;
 };
 

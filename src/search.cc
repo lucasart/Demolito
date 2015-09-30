@@ -229,12 +229,15 @@ void bestmove(const Position& pos, const Limits& lim)
 	uci::Info ui;
 
 	signal = 0;
-	iteration.resize(lim.threads, 0);
-	history.resize(lim.threads, uci::history);
+	iteration.resize(lim.threads);
+	history.resize(lim.threads);
 
 	std::vector<std::thread> threads;
-	for (int i = 0; i < lim.threads; i++)
+	for (int i = 0; i < lim.threads; i++) {
+		iteration[i] = 0;
+		history[i] = uci::history;
 		threads.emplace_back(iterate, std::cref(pos), std::cref(lim), std::ref(ui), i);
+	}
 
 	do {
 		std::this_thread::sleep_for(milliseconds(5));

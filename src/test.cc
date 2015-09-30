@@ -18,6 +18,7 @@
 #include "test.h"
 #include "search.h"
 #include "gen.h"
+#include "uci.h"
 
 namespace test {
 
@@ -57,6 +58,8 @@ uint64_t bench(bool perft, int depth, int threads)
 
 	for (const std::string& fen : fens) {
 		pos.set(fen);
+		uci::history.clear();
+		uci::history.push(pos.key());
 		pos.print();
 
 		if (perft) {
