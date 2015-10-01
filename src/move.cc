@@ -55,6 +55,21 @@ void Move::clear()
 	fsq = tsq = prom = 0;	// IOW, null move is encoded as a1a1N
 }
 
+Move::operator move_t() const
+{
+	assert(ok());
+	return fsq | (tsq << 6) | (prom << 12);
+}
+
+Move Move::operator =(move_t em)
+{
+	fsq = em & 077;
+	tsq = (em >> 6) & 077;
+	prom = em >> 12;
+	assert(ok());
+	return *this;
+}
+
 bool Move::is_tactical(const Position& pos) const
 {
 	const int us = pos.turn(), them = opp_color(us);

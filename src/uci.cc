@@ -133,9 +133,9 @@ void loop()
 		Timer.join();
 }
 
-void Info::update(int depth, int score, int nodes, std::vector<Move>& pv)
+void Info::update(int depth, int score, int nodes, std::vector<move_t>& pv)
 {
-	std::lock_guard<std::mutex> lk(m);
+	std::lock_guard<std::mutex> lk(mtx);
 	if (depth > lastDepth) {
 		lastDepth = depth;
 		best = pv[0];
@@ -144,14 +144,15 @@ void Info::update(int depth, int score, int nodes, std::vector<Move>& pv)
 		std::ostringstream os;
                 os << "info depth " << depth << " score cp " << score / 2
 			<< " nodes " << nodes << " pv";
-                for (int i = 0; !pv[i].null(); os << ' ' << pv[i++].to_string());
+                for (int i = 0; pv[i]; i++)
+			os << ' ' << Move(pv[i]).to_string();
                 std::cout << os.str() << std::endl;
 	}
 }
 
 void Info::print_bestmove() const
 {
-	std::lock_guard<std::mutex> lk(m);
+	std::lock_guard<std::mutex> lk(mtx);
 	std::cout << "bestmove " << best.to_string()
 		<< " ponder " << ponder.to_string() << std::endl;
 }

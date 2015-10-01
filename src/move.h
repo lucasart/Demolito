@@ -12,11 +12,17 @@ struct PinInfo {
 	PinInfo(const Position& pos);
 };
 
+typedef uint16_t move_t;	// fsq:6, tsq:6, prom: 3 (NB_PIECE if none)
+
 struct Move {
 	int fsq, tsq, prom;
 
 	bool ok() const;
 	void clear();
+
+	Move(move_t em) { *this = em; }
+	operator move_t() const;
+	Move operator =(move_t em);
 
 	bool null() const { return (fsq | tsq | prom) == 0; }
 	bool is_tactical(const Position& pos) const;
