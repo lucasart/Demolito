@@ -83,6 +83,9 @@ std::string Move::to_string() const
 	assert(ok());
 	std::string s;
 
+	if (null())
+		return "0000";
+
 	s += file_of(fsq) + 'a';
 	s += rank_of(fsq) + '1';
 	s += file_of(tsq) + 'a';
