@@ -16,7 +16,8 @@ int Threads = 1;
 
 void intro()
 {
-	std::cout << "id name Demolito\nid author lucasart\n"
+	std::cout << "id name Demolito\nid author lucasart\n" << std::boolalpha
+		<< "option name UCI_Chess960 type check default " << Chess960 << '\n'
 		<< "option name Threads type spin default " << Threads << " min 1 max 64\n"
 		<< "uciok" << std::endl;
 }
@@ -32,6 +33,8 @@ void setoption(std::istringstream& is)
 	while ((is >> token) && token != "value")
 		name += token;
 
+	if (name == "UCI_Chess960")
+		is >> std::boolalpha >> Chess960;
 	if (name == "Threads")
 		is >> Threads;
 }

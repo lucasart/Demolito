@@ -15,7 +15,7 @@
 */
 #include "types.h"
 
-bool Chess960 = true;	// TODO: to be set by UCI
+bool Chess960 = false;
 
 /* Color, Piece */
 
