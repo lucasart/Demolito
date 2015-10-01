@@ -20,7 +20,7 @@ int blend(const Position& pos, eval_t e)
 {
 	const int full = 4 * (N + B + R) + 2 * Q;
 	const int total = pos.piece_material().eg();
-	return e.eg() * total / full + e.eg() * (full - total) / full;
+	return e.op() * total / full + e.eg() * (full - total) / full;
 }
 
 int evaluate(const Position& pos)

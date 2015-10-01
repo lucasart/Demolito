@@ -90,7 +90,7 @@ void go(std::istringstream& is)
 void eval()
 {
 	pos.print();
-	std::cout << "eval = " << evaluate(pos) << std::endl;
+	std::cout << "eval = " << evaluate(pos) / 2 << std::endl;
 }
 
 }	// namespace
