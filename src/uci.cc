@@ -133,7 +133,7 @@ void loop()
 		Timer.join();
 }
 
-void Info::update(int depth, int score, int nodes, Move *pv)
+void Info::update(int depth, int score, int nodes, std::vector<Move>& pv)
 {
 	std::lock_guard<std::mutex> lk(m);
 	if (depth > lastDepth) {

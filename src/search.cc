@@ -46,7 +46,7 @@ std::mutex mtxSchedule;	// protect thread scheduling decisions
 std::atomic<uint64_t> nodeCount;
 
 template <Phase ph>
-int recurse(const Position& pos, int ply, int depth, int alpha, int beta, Move *pv)
+int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::vector<Move>& pv)
 {
 	assert(history[ThreadId].back() == pos.key());
 	int bestScore = -INF;
@@ -60,9 +60,10 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, Move *
 			throw ABORT_NEXT;
 	}
 
-        nodeCount++;
-        Move childPv[MAX_PLY - ply];
-        pv[0].clear();
+	nodeCount++;
+	std::vector<Move> childPv;
+	childPv.reserve(MAX_PLY - ply);
+	pv[0].clear();
 
 	if (ply > 0 && history[ThreadId].repetition(pos.rule50()))
 		return 0;
@@ -137,7 +138,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, Move *
 	return bestScore;
 }
 
-int aspirate(const Position& pos, int depth, Move *pv, int score)
+int aspirate(const Position& pos, int depth, std::vector<Move>& pv, int score)
 {
 	int delta = 32;
 	int alpha = score - delta;
@@ -160,7 +161,7 @@ int aspirate(const Position& pos, int depth, Move *pv, int score)
 void iterate(const Position& pos, const Limits& lim, uci::Info& ui, int threadId)
 {
 	ThreadId = threadId;
-	Move pv[MAX_PLY + 1];
+	std::vector<Move> pv(MAX_PLY + 1);
 	int score;
 
 	for (int depth = 1; depth <= lim.depth; depth++) {
