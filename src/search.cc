@@ -105,7 +105,8 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 		nextPos.set(pos, ss[ply].m);
 		history[ThreadId].push(nextPos.key());
 
-		const int nextDepth = depth - 1 /*+ (pos.checkers() != 0)*/;
+		const int ext = see >= 0 && nextPos.checkers();
+		const int nextDepth = depth - 1 + ext;
 
 		// Recursion
 		int score;
