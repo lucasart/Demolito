@@ -132,7 +132,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 	}
 
 	// No legal move: mated or stalemated
-	if (ph == SEARCH && !moveCount)
+	if ((ph == SEARCH || inCheck) && !moveCount)
 		return inCheck ? ply - MATE : 0;
 
 	return bestScore;
