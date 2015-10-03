@@ -19,7 +19,7 @@ namespace search {
 
 void Selector::generate(const Position& pos, Phase ph)
 {
-	Move *it = moves;
+	move_t *it = moves;
 
 	if (pos.checkers())
 		it = gen::check_escapes(pos, it, ph == SEARCH);
@@ -40,8 +40,10 @@ void Selector::generate(const Position& pos, Phase ph)
 
 void Selector::score(const Position& pos)
 {
-	for (size_t i = 0; i < cnt; i++)
-		scores[i] = moves[i].is_tactical(pos) ? moves[i].see(pos) : 0;
+	for (size_t i = 0; i < cnt; i++) {
+		const Move m(moves[i]);
+		scores[i] = m.is_tactical(pos) ? m.see(pos) : 0;
+	}
 }
 
 Selector::Selector(const Position& pos, Phase ph)
@@ -65,7 +67,8 @@ Move Selector::select(const Position& pos, int& see)
 		std::swap(scores[idx], scores[swapIdx]);
 	}
 
-        see = moves[idx].is_tactical(pos) ? scores[idx] : moves[idx].see(pos);
+	const Move m(moves[idx]);
+        see = m.is_tactical(pos) ? scores[idx] : m.see(pos);
         return moves[idx++];
 }
 

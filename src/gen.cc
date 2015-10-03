@@ -21,30 +21,30 @@
 namespace {
 
 template <bool Promotion>
-Move *serialize_moves(Move& m, bitboard_t tss, Move *mList, bool subPromotions = true)
+move_t *serialize_moves(Move& m, bitboard_t tss, move_t *emList, bool subPromotions = true)
 {
 	while (tss) {
 		m.tsq = bb::pop_lsb(tss);
 		if (Promotion) {
 			if (subPromotions) {
 				for (m.prom = QUEEN; m.prom >= KNIGHT; m.prom--)
-					*mList++ = m;
+					*emList++ = m;
 			} else {
 				m.prom = QUEEN;
-				*mList++ = m;
+				*emList++ = m;
 			}
 		} else
-			*mList++ = m;
+			*emList++ = m;
 	}
 
-	return mList;
+	return emList;
 }
 
 }	// namespace
 
 namespace gen {
 
-Move *pawn_moves(const Position& pos, Move *mList, bitboard_t targets, bool subPromotions)
+move_t *pawn_moves(const Position& pos, move_t *emList, bitboard_t targets, bool subPromotions)
 {
 	const int us = pos.turn(), them = opp_color(us), push = push_inc(us);
 	const bitboard_t capturable = pos.occ(them) | pos.ep_square_bb();
@@ -68,7 +68,7 @@ Move *pawn_moves(const Position& pos, Move *mList, bitboard_t targets, bool subP
 
 		// Generate moves
 		m.prom = NB_PIECE;
-		mList = serialize_moves<false>(m, tss, mList);
+		emList = serialize_moves<false>(m, tss, emList);
 	}
 
 	// Promotions
@@ -82,13 +82,13 @@ Move *pawn_moves(const Position& pos, Move *mList, bitboard_t targets, bool subP
 			bb::set(tss, m.fsq + push);
 
 		// Generate moves (or promotions)
-		mList = serialize_moves<true>(m, tss, mList, subPromotions);
+		emList = serialize_moves<true>(m, tss, emList, subPromotions);
 	}
 
-	return mList;
+	return emList;
 }
 
-Move *piece_moves(const Position& pos, Move *mList, bitboard_t targets, bool kingMoves)
+move_t *piece_moves(const Position& pos, move_t *emList, bitboard_t targets, bool kingMoves)
 {
 	const int us = pos.turn();
 	bitboard_t fss, tss;
@@ -100,7 +100,7 @@ Move *piece_moves(const Position& pos, Move *mList, bitboard_t targets, bool kin
 	if (kingMoves) {
 		m.fsq = pos.king_square(us);
 		tss = bb::kattacks(m.fsq) & targets;
-		mList = serialize_moves<false>(m, tss, mList);
+		emList = serialize_moves<false>(m, tss, emList);
 	}
 
 	// Knight moves
@@ -108,7 +108,7 @@ Move *piece_moves(const Position& pos, Move *mList, bitboard_t targets, bool kin
 	while (fss) {
 		m.fsq = bb::pop_lsb(fss);
 		tss = bb::nattacks(m.fsq) & targets;
-		mList = serialize_moves<false>(m, tss, mList);
+		emList = serialize_moves<false>(m, tss, emList);
 	}
 
 	// Rook moves
@@ -116,7 +116,7 @@ Move *piece_moves(const Position& pos, Move *mList, bitboard_t targets, bool kin
 	while (fss) {
 		m.fsq = bb::pop_lsb(fss);
 		tss = bb::rattacks(m.fsq, pos.occ()) & targets;
-		mList = serialize_moves<false>(m, tss, mList);
+		emList = serialize_moves<false>(m, tss, emList);
 	}
 
 	// Bishop moves
@@ -124,13 +124,13 @@ Move *piece_moves(const Position& pos, Move *mList, bitboard_t targets, bool kin
 	while (fss) {
 		m.fsq = bb::pop_lsb(fss);
 		tss = bb::battacks(m.fsq, pos.occ()) & targets;
-		mList = serialize_moves<false>(m, tss, mList);
+		emList = serialize_moves<false>(m, tss, emList);
 	}
 
-	return mList;
+	return emList;
 }
 
-Move *castling_moves(const Position& pos, Move *mList)
+move_t *castling_moves(const Position& pos, move_t *emList)
 {
 	assert(!pos.checkers());
 	Move m;
@@ -143,13 +143,13 @@ Move *castling_moves(const Position& pos, Move *mList)
 		const int ktsq = square(rank_of(m.tsq), m.tsq > m.fsq ? FILE_G : FILE_C);
 		const bitboard_t s = bb::segment(m.fsq, m.tsq) | bb::segment(m.fsq, ktsq);
 		if (bb::count(s & pos.occ()) == 2)
-			*mList++ = m;
+			*emList++ = m;
 	}
 
-	return mList;
+	return emList;
 }
 
-Move *check_escapes(const Position& pos, Move *mList, bool subPromotions)
+move_t *check_escapes(const Position& pos, move_t *emList, bool subPromotions)
 {
 	assert(pos.checkers());
 	bitboard_t ours = pos.occ(pos.turn());
@@ -161,7 +161,7 @@ Move *check_escapes(const Position& pos, Move *mList, bool subPromotions)
 	tss = bb::kattacks(ksq) & ~ours;
 	m.fsq = ksq;
 	m.prom = NB_PIECE;
-	mList = serialize_moves<false>(m, tss, mList);
+	emList = serialize_moves<false>(m, tss, emList);
 
 	if (!bb::several(pos.checkers())) {
 		// Single checker
@@ -174,7 +174,7 @@ Move *check_escapes(const Position& pos, Move *mList, bool subPromotions)
 			? bb::segment(ksq, checkerSquare)
 			: pos.checkers();
 
-		mList = piece_moves(pos, mList, tss & ~ours, false);
+		emList = piece_moves(pos, emList, tss & ~ours, false);
 
 		// if checked by a Pawn and epsq is available, then the check must result from a
 		// pawn double push, and we also need to consider capturing it en-passant to solve
@@ -182,24 +182,24 @@ Move *check_escapes(const Position& pos, Move *mList, bool subPromotions)
 		if (checkerPiece == PAWN && square_ok(pos.ep_square()))
 			bb::set(tss, pos.ep_square());
 
-		mList = pawn_moves(pos, mList, tss, subPromotions);
+		emList = pawn_moves(pos, emList, tss, subPromotions);
 	}
 
-	return mList;
+	return emList;
 }
 
-Move *all_moves(const Position& pos, Move *mList)
+move_t *all_moves(const Position& pos, move_t *emList)
 {
 	if (pos.checkers())
-		return check_escapes(pos, mList);
+		return check_escapes(pos, emList);
 	else {
 		bitboard_t targets = ~pos.occ(pos.turn());
-		Move *m = mList;
+		move_t *em = emList;
 
-		m = pawn_moves(pos, m, targets);
-		m = piece_moves(pos, m, targets);
-		m = castling_moves(pos, m);
-		return m;
+		em = pawn_moves(pos, em, targets);
+		em = piece_moves(pos, em, targets);
+		em = castling_moves(pos, em);
+		return em;
 	}
 }
 
@@ -213,19 +213,20 @@ uint64_t perft(const Position& pos, int depth)
 	uint64_t result = 0;
 	Position after;
 	const PinInfo pi(pos);
-	Move mList[MAX_MOVES];
-	Move *end = all_moves(pos, mList);
+	move_t emList[MAX_MOVES];
+	move_t *end = all_moves(pos, emList);
 
-	for (Move *m = mList; m != end; m++) {
-		if (!m->pseudo_is_legal(pos, pi))
+	for (move_t *em = emList; em != end; em++) {
+		const Move m(*em);
+		if (!m.pseudo_is_legal(pos, pi))
 			continue;
 
-		after.set(pos, *m);
+		after.set(pos, m);
 		const uint64_t sub_tree = perft<false>(after, depth - 1);
 		result += sub_tree;
 
 		if (Root)
-			std::cout << m->to_string() << '\t' << sub_tree << std::endl;
+			std::cout << m.to_string() << '\t' << sub_tree << std::endl;
 	}
 
 	return result;

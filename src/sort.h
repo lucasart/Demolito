@@ -12,7 +12,7 @@ public:
 	size_t count() const { return cnt; }
 	bool done() const { return idx == cnt; }
 private:
-	Move moves[MAX_MOVES];
+	move_t moves[MAX_MOVES];
 	int scores[MAX_MOVES];
 	size_t cnt, idx;
 
