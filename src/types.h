@@ -97,6 +97,9 @@ extern const eval_t Material[NB_PIECE];
 #define MAX_PLY		(MAX_DEPTH - MIN_DEPTH + 2)
 #define MAX_GAME_PLY	1024
 
+bool score_ok(int score);
+bool score_is_mate(int score);
+
 /* Display */
 
 extern const std::string PieceLabel[NB_COLOR];

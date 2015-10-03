@@ -100,6 +100,17 @@ int push_inc(int color)
 
 const eval_t Material[NB_PIECE] = {{N, N}, {B, B}, {R, R}, {Q, Q}, {0, 0}, {OP, EP}};
 
+bool score_ok(int score)
+{
+	return -MATE < score && score < MATE;
+}
+
+bool score_is_mate(int score)
+{
+	assert(score_ok(score));
+	return (score <= MAX_PLY - MATE) || (score >= MATE - MAX_PLY);
+}
+
 /* Display */
 
 const std::string PieceLabel[NB_COLOR] = {"NBRQKP.", "nbrqkp."};

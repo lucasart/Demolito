@@ -21,5 +21,6 @@ public:
 	void print_bestmove(const Position& pos) const;
 };
 
-}	// namespace UCI
+std::string format_score(int score);
 
+}	// namespace UCI

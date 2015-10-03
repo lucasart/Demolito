@@ -93,7 +93,7 @@ void go(std::istringstream& is)
 void eval()
 {
 	pos.print();
-	std::cout << "eval = " << evaluate(pos) / 2 << std::endl;
+	std::cout << "score " << uci::format_score(evaluate(pos)) << std::endl;
 }
 
 }	// namespace
@@ -145,11 +145,12 @@ void Info::update(const Position& pos, int depth, int score, int nodes, std::vec
 		ponder = pv[1];
 
 		std::ostringstream os;
-                os << "info depth " << depth << " score cp " << score / 2
+                os << "info depth " << depth << " score " << format_score(score)
 			<< " nodes " << nodes << " pv";
                 for (int i = 0; pv[i]; i++)
 			os << ' ' << Move(pv[i]).to_string(pos);
-                std::cout << os.str() << std::endl;
+
+		std::cout << os.str() << std::endl;
 	}
 }
 
@@ -158,6 +159,21 @@ void Info::print_bestmove(const Position& pos) const
 	std::lock_guard<std::mutex> lk(mtx);
 	std::cout << "bestmove " << best.to_string(pos)
 		<< " ponder " << ponder.to_string(pos) << std::endl;
+}
+
+std::string format_score(int score)
+{
+	std::ostringstream os;
+
+	if (score_is_mate(score)) {
+		const int dtm = score > 0
+			? (MATE - score + 1) / 2
+			: (score - MATE + 1) / 2;
+		os << "mate " << dtm;
+	} else
+		os << "cp " << score * 100 / EP;
+
+	return os.str();
 }
 
 }	// namespace uci
