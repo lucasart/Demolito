@@ -52,7 +52,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 	int bestScore = -INF;
 	const bool inCheck = pos.checkers();
 
-	const uint64_t s = signal;
+	const uint64_t s = signal.load(std::memory_order_relaxed);
 	if (s) {
 		if (s == STOP)
 			throw ABORT_STOP;
@@ -60,7 +60,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 			throw ABORT_NEXT;
 	}
 
-	nodeCount++;
+	nodeCount.fetch_add(1, std::memory_order_relaxed);
 	std::vector<move_t> childPv;
 	childPv.reserve(MAX_PLY - ply);
 	pv[0] = 0;
