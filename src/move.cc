@@ -78,29 +78,47 @@ bool Move::is_tactical(const Position& pos) const
 		&& (pos.piece_on(fsq) == PAWN));
 }
 
-std::string Move::to_string() const
+bool Move::is_castling(const Position& pos) const
+{
+	return bb::test(pos.occ(pos.turn()), tsq);
+}
+
+std::string Move::to_string(const Position& pos) const
 {
 	assert(ok());
-	std::string s;
 
+	std::string s;
 	if (null())
 		return "0000";
 
+	const int _tsq = !Chess960 && is_castling(pos)
+		? (tsq > fsq ? fsq + 2 : fsq - 2)	// e1h1 -> e1g1, e1c1 -> e1a1
+		: tsq;
+
 	s += file_of(fsq) + 'a';
 	s += rank_of(fsq) + '1';
-	s += file_of(tsq) + 'a';
-	s += rank_of(tsq) + '1';
+	s += file_of(_tsq) + 'a';
+	s += rank_of(_tsq) + '1';
+
 	if (piece_ok(prom))
 		s += PieceLabel[BLACK][prom];
 
 	return s;
 }
 
-void Move::from_string(const std::string& s)
+void Move::from_string(const Position& pos, const std::string& s)
 {
 	fsq = square(s[1] - '1', s[0] - 'a');
 	tsq = square(s[3] - '1', s[2] - 'a');
 	prom = s[4] ? (int)PieceLabel[BLACK].find(s[4]) : NB_PIECE;
+
+	if (!Chess960 && pos.piece_on(fsq) == KING) {
+		if (tsq == fsq + 2)		// e1g1
+			tsq++;			// -> e1h1
+		else if (tsq == fsq - 2)	// e1c1
+			tsq -= 2;		// -> e1a1
+	}
+
 	assert(ok());
 }
 

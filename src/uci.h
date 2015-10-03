@@ -17,8 +17,8 @@ class Info {
 public:
 	Info() : lastDepth(0) { best.clear(); ponder.clear(); }
 	int last_depth() const { return lastDepth; }
-	void update(int depth, int score, int nodes, std::vector<move_t>& pv);
-	void print_bestmove() const;
+	void update(const Position& pos, int depth, int score, int nodes, std::vector<move_t>& pv);
+	void print_bestmove(const Position& pos) const;
 };
 
 }	// namespace UCI

@@ -20,18 +20,19 @@ struct Move {
 	bool ok() const;
 	void clear();
 
+	Move() = default;
 	Move(move_t em) { *this = em; }
+	Move(const Position& pos, const std::string& s) { from_string(pos, s); }
+
 	operator move_t() const;
 	Move operator =(move_t em);
 
 	bool null() const { return (fsq | tsq | prom) == 0; }
 	bool is_tactical(const Position& pos) const;
+	bool is_castling(const Position& pos) const;
 
-	std::string to_string() const;
-	void from_string(const std::string& s);
-
-	Move() = default;
-	Move(const std::string& s) { from_string(s); }
+	std::string to_string(const Position& pos) const;
+	void from_string(const Position& pos, const std::string& s);
 
 	bool pseudo_is_legal(const Position& pos, const PinInfo& pi) const;
 	int see(const Position& pos) const;

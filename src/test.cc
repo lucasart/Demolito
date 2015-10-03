@@ -104,7 +104,7 @@ bool see(bool verbose)
 
 	for (auto& t : test) {
 		pos.set(t.fen);
-		const Move m(t.move);
+		const Move m(pos, t.move);
 		const int s = m.see(pos);
 
 		if (verbose) {

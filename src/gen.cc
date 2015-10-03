@@ -226,7 +226,7 @@ uint64_t perft(const Position& pos, int depth)
 		result += sub_tree;
 
 		if (Root)
-			std::cout << m.to_string() << '\t' << sub_tree << std::endl;
+			std::cout << m.to_string(pos) << '\t' << sub_tree << std::endl;
 	}
 
 	return result;

@@ -61,7 +61,7 @@ void position(std::istringstream& is)
 
 	// Parse moves (if any)
 	while (is >> token) {
-		const Move m(token);
+		const Move m(p[idx], token);
 		p[idx ^ 1].set(p[idx], m);
 		idx ^= 1;
 		uci::history.push(p[idx].key());
@@ -136,7 +136,7 @@ void loop()
 		Timer.join();
 }
 
-void Info::update(int depth, int score, int nodes, std::vector<move_t>& pv)
+void Info::update(const Position& pos, int depth, int score, int nodes, std::vector<move_t>& pv)
 {
 	std::lock_guard<std::mutex> lk(mtx);
 	if (depth > lastDepth) {
@@ -148,16 +148,16 @@ void Info::update(int depth, int score, int nodes, std::vector<move_t>& pv)
                 os << "info depth " << depth << " score cp " << score / 2
 			<< " nodes " << nodes << " pv";
                 for (int i = 0; pv[i]; i++)
-			os << ' ' << Move(pv[i]).to_string();
+			os << ' ' << Move(pv[i]).to_string(pos);
                 std::cout << os.str() << std::endl;
 	}
 }
 
-void Info::print_bestmove() const
+void Info::print_bestmove(const Position& pos) const
 {
 	std::lock_guard<std::mutex> lk(mtx);
-	std::cout << "bestmove " << best.to_string()
-		<< " ponder " << ponder.to_string() << std::endl;
+	std::cout << "bestmove " << best.to_string(pos)
+		<< " ponder " << ponder.to_string(pos) << std::endl;
 }
 
 }	// namespace uci

@@ -214,7 +214,7 @@ void iterate(const Position& pos, const Limits& lim, uci::Info& ui, int threadId
 				continue;
 			}
 		}
-		ui.update(depth, score, nodeCount, pv);
+		ui.update(pos, depth, score, nodeCount, pv);
 	}
 
 	// Max depth completed by current thread. All threads should stop.
@@ -261,7 +261,7 @@ void bestmove(const Position& pos, const Limits& lim)
 	for (auto& t : threads)
 		t.join();
 
-	ui.print_bestmove();
+	ui.print_bestmove(pos);
 }
 
 }	// namespace search
