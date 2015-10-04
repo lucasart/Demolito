@@ -68,7 +68,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 	if (ply > 0 && history[ThreadId].repetition(pos.rule50()))
 		return 0;
 
-        ss[ply].eval = inCheck ? -INF : evaluate(pos);
+	ss[ply].eval = inCheck ? -INF : evaluate(pos);
 	if (ply >= MAX_PLY)
 		return ss[ply].eval;
 

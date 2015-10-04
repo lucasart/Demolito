@@ -68,8 +68,8 @@ Move Selector::select(const Position& pos, int& see)
 	}
 
 	const Move m(moves[idx]);
-        see = m.is_tactical(pos) ? scores[idx] : m.see(pos);
-        return moves[idx++];
+	see = m.is_tactical(pos) ? scores[idx] : m.see(pos);
+	return moves[idx++];
 }
 
 }	// namespace search

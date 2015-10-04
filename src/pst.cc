@@ -31,7 +31,7 @@ eval_t knight(int r, int f)
 
 eval_t bishop(int r, int f)
 {
-	const eval_t CenterWeight   = {2, 3};
+	const eval_t CenterWeight = {2, 3};
 	const eval_t DiagonalWeight = {8, 0};
 	const eval_t BackRankWeight = {-20, 0};
 
@@ -42,7 +42,7 @@ eval_t bishop(int r, int f)
 
 eval_t rook(int r, int f)
 {
-	const eval_t FileWeight    = {3, 0};
+	const eval_t FileWeight = {3, 0};
 	const eval_t SeventhWeight = {16, 16};
 
 	return FileWeight * Center[f]
@@ -51,7 +51,7 @@ eval_t rook(int r, int f)
 
 eval_t queen(int r, int f)
 {
-	const eval_t CenterWeight   = {0, 4};
+	const eval_t CenterWeight = {0, 4};
 	const eval_t BackRankWeight = {-10, 0};
 
 	return CenterWeight * (Center[r] + Center[f])
@@ -64,8 +64,8 @@ eval_t king(int r, int f)
 	const int RankShape[8] = { 1, 0,-2,-3,-4,-5,-5,-5};
 
 	const eval_t CenterWeight = {0, 14};
-	const eval_t FileWeight   = {20, 0};
-	const eval_t RankWeight   = {14, 0};
+	const eval_t FileWeight = {20, 0};
+	const eval_t RankWeight = {14, 0};
 
 	return CenterWeight * (Center[r] + Center[f])
 		+ FileWeight * FileShape[f]
