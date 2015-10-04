@@ -16,10 +16,12 @@
 #include <iostream>
 #include <sstream>
 #include <thread>
+#include <cstring>	// for std::memset
 #include "uci.h"
 #include "eval.h"
 #include "search.h"
 #include "zobrist.h"
+#include "tt.h"
 
 namespace {
 
@@ -27,12 +29,14 @@ Position pos;
 search::Limits lim;
 std::thread Timer;
 
+size_t Hash = 1;
 int Threads = 1;
 
 void intro()
 {
 	std::cout << "id name Demolito\nid author lucasart\n" << std::boolalpha
 		<< "option name UCI_Chess960 type check default " << Chess960 << '\n'
+		<< "option name Hash type spin default " << Hash << " min 1 max 1048576\n"
 		<< "option name Threads type spin default " << Threads << " min 1 max 64\n"
 		<< "uciok" << std::endl;
 }
@@ -50,7 +54,14 @@ void setoption(std::istringstream& is)
 
 	if (name == "UCI_Chess960")
 		is >> std::boolalpha >> Chess960;
-	if (name == "Threads")
+	else if (name == "Hash") {
+		is >> Hash;
+		Hash = 1ULL << bb::msb(Hash);	// must be a power of two
+		const size_t oldSize = tt::table.size();
+		tt::table.resize(Hash * 1024 * (1024 / sizeof(tt::Packed)));
+		if (tt::table.size() > oldSize)
+			std::memset(&tt::table[oldSize], 0, sizeof(tt::Packed) * (tt::table.size() - oldSize));
+	} if (name == "Threads")
 		is >> Threads;
 }
 
