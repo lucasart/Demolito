@@ -18,35 +18,25 @@
 
 namespace tt {
 
-std::vector<Packed> table(1024 * 1024 / sizeof(Packed));	// default=1MB (min Hash)
+std::vector<Packed> table(1024 * 1024 / sizeof(Packed), 0);	// default=1MB (min Hash)
 
-UnPacked Packed::unpack() const
+int score_to_tt(int score, int ply)
 {
-	UnPacked u;
-	u.key = word[0];
-
-	u.score = word[1] & 0xffff;
-	u.em = (word[1] >> 16) & 0xffff;
-	u.eval = (word[1] >> 32) & 0xffff;
-	u.depth = (word[1] >> 48) & 0xff;
-	u.bound = (word[1] >> 56) & 0xff;
-
-	return u;
+	return score >= mate_in(MAX_PLY) ? score + ply
+		: score <= mated_in(MAX_PLY) ? score - ply
+		: score;
 }
 
-Packed UnPacked::pack() const
+int score_from_tt(int ttScore, int ply)
 {
-	// TODO: assert bounds checking
-	Packed p;
-	p.word[0] = key;
+	return ttScore >= mate_in(MAX_PLY) ? ttScore - ply
+		: ttScore <= mated_in(MAX_PLY) ? ttScore + ply
+		: ttScore;
+}
 
-	p.word[1] = uint64_t(score);
-	p.word[1] |= uint64_t(em) << 16;
-	p.word[1] |= uint64_t(eval) << 32;
-	p.word[1] |= uint64_t(depth) << 48;
-	p.word[1] |= uint64_t(bound) << 56;
-
-	return p;
+void write(const Packed& p)
+{
+	table[p.key & (table.size() - 1)] = p;
 }
 
 }	// namespace tt

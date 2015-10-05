@@ -102,13 +102,23 @@ const eval_t Material[NB_PIECE] = {{N, N}, {B, B}, {R, R}, {Q, Q}, {0, 0}, {OP, 
 
 bool score_ok(int score)
 {
-	return -MATE < score && score < MATE;
+	return std::abs(score) < MATE;
 }
 
-bool score_is_mate(int score)
+bool is_mate_score(int score)
 {
-	assert(score_ok(score));
-	return (score <= MAX_PLY - MATE) || (score >= MATE - MAX_PLY);
+	score_ok(score);
+	return std::abs(score) >= MATE - MAX_PLY;
+}
+
+int mated_in(int ply)
+{
+	return ply - MATE;
+}
+
+int mate_in(int ply)
+{
+	return MATE - ply;
 }
 
 /* Display */

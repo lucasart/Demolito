@@ -15,7 +15,7 @@ class Info {
 	Move best, ponder;
 	mutable std::mutex mtx;
 public:
-	Info() : lastDepth(0) { best.clear(); ponder.clear(); }
+	Info() : lastDepth(0), best(0), ponder(0) {}
 	int last_depth() const { return lastDepth; }
 	void update(const Position& pos, int depth, int score, int nodes, std::vector<move_t>& pv);
 	void print_bestmove(const Position& pos) const;

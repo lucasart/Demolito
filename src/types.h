@@ -98,7 +98,9 @@ extern const eval_t Material[NB_PIECE];
 #define MAX_GAME_PLY	1024
 
 bool score_ok(int score);
-bool score_is_mate(int score);
+bool is_mate_score(int score);
+int mated_in(int ply);
+int mate_in(int ply);
 
 /* Display */
 

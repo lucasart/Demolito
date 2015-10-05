@@ -16,7 +16,6 @@
 #include <iostream>
 #include <sstream>
 #include <thread>
-#include <cstring>	// for std::memset
 #include "uci.h"
 #include "eval.h"
 #include "search.h"
@@ -57,10 +56,7 @@ void setoption(std::istringstream& is)
 	else if (name == "Hash") {
 		is >> Hash;
 		Hash = 1ULL << bb::msb(Hash);	// must be a power of two
-		const size_t oldSize = tt::table.size();
-		tt::table.resize(Hash * 1024 * (1024 / sizeof(tt::Packed)));
-		if (tt::table.size() > oldSize)
-			std::memset(&tt::table[oldSize], 0, sizeof(tt::Packed) * (tt::table.size() - oldSize));
+		tt::table.resize(Hash * 1024 * (1024 / sizeof(tt::Packed)), 0);
 	} if (name == "Threads")
 		is >> Threads;
 }
@@ -191,7 +187,7 @@ std::string format_score(int score)
 {
 	std::ostringstream os;
 
-	if (score_is_mate(score)) {
+	if (is_mate_score(score)) {
 		const int dtm = score > 0
 			? (MATE - score + 1) / 2
 			: (score - MATE + 1) / 2;

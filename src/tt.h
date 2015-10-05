@@ -4,23 +4,23 @@
 
 namespace tt {
 
-enum {EXACT, LBOUND, UBOUND};
-
-struct Packed;
-
-struct UnPacked {
-	uint64_t key;
-	int depth, score, eval, bound;
-	move_t em;
-
-	Packed pack() const;
-};
+enum {LBOUND, EXACT, UBOUND};
 
 struct Packed {
-	uint64_t word[2];
+	uint64_t key;
+	int16_t score, eval, em;
+	int8_t depth, bound;
 
-	UnPacked unpack() const;
+	Packed() = default;
+	Packed(uint64_t v) { key = v; }	// Used to zero initialize
 };
+
+// Adjust mate scores to plies from current position, instead of plies from root
+int score_to_tt(int score, int ply);
+int score_from_tt(int ttScore, int ply);
+
+void clear();
+void write(const Packed& p);
 
 extern std::vector<Packed> table;
 

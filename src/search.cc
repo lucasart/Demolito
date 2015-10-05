@@ -21,6 +21,7 @@
 #include "eval.h"
 #include "uci.h"
 #include "zobrist.h"
+#include "tt.h"
 
 namespace search {
 
@@ -48,8 +49,9 @@ template <Phase ph>
 int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::vector<move_t>& pv)
 {
 	assert(history[ThreadId].back() == pos.key());
+	const int oldAlpha = alpha;
 	int bestScore = -INF;
-	const bool inCheck = pos.checkers();
+	Move bestMove(0);
 
 	const uint64_t s = signal.load(std::memory_order_relaxed);
 	if (s) {
@@ -59,7 +61,6 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 			throw ABORT_NEXT;
 	}
 
-	nodeCount.fetch_add(1, std::memory_order_relaxed);
 	std::vector<move_t> childPv;
 	childPv.reserve(MAX_PLY - ply);
 	pv[0] = 0;
@@ -67,12 +68,28 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 	if (ply > 0 && history[ThreadId].repetition(pos.rule50()))
 		return 0;
 
-	ss[ply].eval = inCheck ? -INF : evaluate(pos);
+	// TT probe
+	tt::Packed p = tt::table[pos.key() & (tt::table.size() - 1)];
+	if (p.key == pos.key()) {
+		p.score = tt::score_from_tt(p.score, ply);
+		if (p.depth >= depth && ply >= 1) {
+			if (p.score <= alpha && p.bound >= tt::EXACT)
+				return p.score;
+			else if (p.score >= beta && p.bound <= tt::EXACT)
+				return p.score;
+			else if (alpha < p.score && p.score < beta && p.bound == tt::EXACT)
+				return p.score;
+		}
+		ss[ply].eval = p.eval;
+	} else
+		ss[ply].eval = pos.checkers() ? -INF : evaluate(pos);
+
+	nodeCount.fetch_add(1, std::memory_order_relaxed);
 	if (ply >= MAX_PLY)
 		return ss[ply].eval;
 
 	// QSearch stand pat
-	if (ph == QSEARCH && !inCheck) {
+	if (ph == QSEARCH && !pos.checkers()) {
 		bestScore = ss[ply].eval;
 		if (bestScore > alpha) {
 			alpha = bestScore;
@@ -96,7 +113,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 		moveCount++;
 
 		// Prune losing captures in QSearch
-		if (ph == QSEARCH && !inCheck && see < 0)
+		if (ph == QSEARCH && !pos.checkers() && see < 0)
 			continue;
 
 		// Play move
@@ -109,7 +126,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 
 		// Recursion
 		int score;
-		if (depth <= MIN_DEPTH && !inCheck)
+		if (depth <= MIN_DEPTH && !pos.checkers())
 			score = ss[ply].eval + see;	// guard against QSearch explosion
 		else
 			score = nextDepth > 0
@@ -122,6 +139,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 		// Update bestScore and alpha
 		if (score > bestScore) {
 			bestScore = score;
+			bestMove = ss[ply].m;
 			pv[0] = ss[ply].m;
 			for (int i = 0; i < MAX_PLY - ply; i++)
 				if (!(pv[i + 1] = childPv[i]))
@@ -132,8 +150,17 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 	}
 
 	// No legal move: mated or stalemated
-	if ((ph == SEARCH || inCheck) && !moveCount)
-		return inCheck ? ply - MATE : 0;
+	if ((ph == SEARCH || pos.checkers()) && !moveCount)
+		return pos.checkers() ? ply - MATE : 0;
+
+	// TT write
+	p.key = pos.key();
+	p.bound = bestScore <= oldAlpha ? tt::UBOUND : bestScore >= beta ? tt::LBOUND : tt::EXACT;
+	p.score = tt::score_to_tt(bestScore, ply);
+	p.eval = ss[ply].eval;
+	p.depth = depth;
+	p.em = bestMove;
+	tt::write(p);
 
 	return bestScore;
 }
