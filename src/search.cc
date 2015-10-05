@@ -34,7 +34,6 @@ struct Stack {
 };
 thread_local Stack ss[MAX_PLY+1];	// search stack, per thread
 
-std::vector<int> iteration;	// iteration[i] is the iteration on which thread #i is working
 std::atomic<uint64_t> signal;	// signal: bit #i is set if thread #i should stop
 enum Abort {
 	ABORT_NEXT,	// current thread aborts the current iteration to be scheduled to the next one
@@ -159,7 +158,7 @@ int aspirate(const Position& pos, int depth, std::vector<move_t>& pv, int score)
 	}
 }
 
-void iterate(const Position& pos, const Limits& lim, uci::Info& ui, int threadId)
+void iterate(const Position& pos, const Limits& lim, uci::Info& ui, std::vector<int>& iteration, int threadId)
 {
 	ThreadId = threadId;
 	std::vector<move_t> pv(MAX_PLY + 1);
@@ -231,14 +230,13 @@ void bestmove(const Position& pos, const Limits& lim)
 	uci::Info ui;
 
 	signal = 0;
-	iteration.reserve(lim.threads);
+	std::vector<int> iteration(lim.threads, 0);
 	history.reserve(lim.threads);
 
 	std::vector<std::thread> threads;
 	for (int i = 0; i < lim.threads; i++) {
-		iteration[i] = 0;
 		history[i] = uci::history;
-		threads.emplace_back(iterate, std::cref(pos), std::cref(lim), std::ref(ui), i);
+		threads.emplace_back(iterate, std::cref(pos), std::cref(lim), std::ref(ui), std::ref(iteration), i);
 	}
 
 	do {
