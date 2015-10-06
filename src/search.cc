@@ -45,10 +45,13 @@ std::mutex mtxSchedule;	// protect thread scheduling decisions
 // Global node counter
 std::atomic<uint64_t> nodeCount;
 
-template <Phase ph>
+template <Phase ph, bool PvNode>
 int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::vector<move_t>& pv)
 {
 	assert(history[ThreadId].back() == pos.key());
+	assert(alpha < beta);
+	assert(PvNode || alpha+1 == beta);
+
 	const int oldAlpha = alpha;
 	int bestScore = -INF;
 	Move bestMove(0);
@@ -62,8 +65,10 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 	}
 
 	std::vector<move_t> childPv;
-	childPv.reserve(MAX_PLY - ply);
-	pv[0] = 0;
+	if (PvNode) {
+		childPv.reserve(MAX_PLY - ply);
+		pv[0] = 0;
+	}
 
 	if (ply > 0 && history[ThreadId].repetition(pos.rule50()))
 		return 0;
@@ -80,6 +85,8 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 			else if (alpha < p.score && p.score < beta && p.bound == tt::EXACT)
 				return p.score;
 		}
+		if (ph == SEARCH && p.depth <= 0)
+			p.move = 0;
 		ss[ply].eval = p.eval;
 	} else
 		ss[ply].eval = pos.checkers() ? -INF : evaluate(pos);
@@ -99,7 +106,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 	}
 
 	// Generate and score moves
-	Selector S(pos, ph);
+	Selector S(pos, ph, p.move);
 
 	size_t moveCount = 0;
 	PinInfo pi(pos);
@@ -126,26 +133,40 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 
 		// Recursion
 		int score;
-		if (depth <= MIN_DEPTH && !pos.checkers())
-			score = ss[ply].eval + see;	// guard against QSearch explosion
-		else
-			score = nextDepth > 0
-				? -recurse<SEARCH>(nextPos, ply + 1, nextDepth, -beta, -alpha, childPv)
-				: -recurse<QSEARCH>(nextPos, ply + 1, nextDepth, -beta, -alpha, childPv);
+		if (nextDepth <= 0) {
+			// Qsearch recursion (alpha/beta)
+			if (depth <= MIN_DEPTH && !pos.checkers())
+				score = ss[ply].eval + see;	// guard against QSearch explosion
+			else
+				score = -recurse<QSEARCH, PvNode>(nextPos, ply + 1, nextDepth, -beta, -alpha, childPv);
+		} else {
+			// Search recursion (PVS)
+			if (PvNode && moveCount == 1)
+				score = -recurse<SEARCH, true>(nextPos, ply + 1, nextDepth, -beta, -alpha, childPv);
+			else {
+				score = -recurse<SEARCH, false>(nextPos, ply + 1, nextDepth, -alpha-1, -alpha, childPv);
+				if (PvNode && score > alpha)
+					score = -recurse<SEARCH, true>(nextPos, ply + 1, nextDepth, -beta, -alpha, childPv);
+			}
+		}
 
 		// Undo move
 		history[ThreadId].pop();
 
-		// Update bestScore and alpha
+		// New best score
 		if (score > bestScore) {
 			bestScore = score;
-			bestMove = ss[ply].m;
-			pv[0] = ss[ply].m;
-			for (int i = 0; i < MAX_PLY - ply; i++)
-				if (!(pv[i + 1] = childPv[i]))
-					break;
-			if (score > alpha)
+			// New alpha
+			if (score > alpha) {
 				alpha = score;
+				bestMove = ss[ply].m;
+				if (PvNode) {
+					pv[0] = ss[ply].m;
+					for (int i = 0; i < MAX_PLY - ply; i++)
+						if (!(pv[i + 1] = childPv[i]))
+							break;
+				}
+			}
 		}
 	}
 
@@ -159,7 +180,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 	p.score = tt::score_to_tt(bestScore, ply);
 	p.eval = ss[ply].eval;
 	p.depth = depth;
-	p.em = bestMove;
+	p.move = bestMove;
 	tt::write(p);
 
 	return bestScore;
@@ -172,7 +193,7 @@ int aspirate(const Position& pos, int depth, std::vector<move_t>& pv, int score)
 	int beta = score + delta;
 
 	for ( ; ; delta += delta) {
-		score = recurse<SEARCH>(pos, 0, depth, alpha, beta, pv);
+		score = recurse<SEARCH, true>(pos, 0, depth, alpha, beta, pv);
 
 		if (score <= alpha) {
 			beta = (alpha + beta) / 2;
@@ -215,7 +236,7 @@ void iterate(const Position& pos, const Limits& lim, uci::Info& ui, std::vector<
 
 		try {
 			score = depth <= 1
-				? recurse<SEARCH>(pos, 0, depth, -INF, +INF, pv)
+				? recurse<SEARCH, true>(pos, 0, depth, -INF, +INF, pv)
 				: aspirate(pos, depth, pv, score);
 
 			// Iteration was completed normally. Now we need to see who is working on

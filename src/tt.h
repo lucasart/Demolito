@@ -9,7 +9,7 @@ enum {LBOUND, EXACT, UBOUND};
 union Packed {
 	struct {
 		uint64_t key;
-		int16_t score, eval, em;
+		int16_t score, eval, move;
 		int8_t depth, bound;
 	};
 	struct {

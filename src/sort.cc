@@ -38,18 +38,22 @@ void Selector::generate(const Position& pos, Phase ph)
 	cnt = it - moves;
 }
 
-void Selector::score(const Position& pos)
+void Selector::score(const Position& pos, move_t ttMove)
 {
 	for (size_t i = 0; i < cnt; i++) {
-		const Move m(moves[i]);
-		scores[i] = m.is_tactical(pos) ? m.see(pos) : 0;
+		if (moves[i] == ttMove)
+			scores[i] = +INF;
+		else {
+			const Move m(moves[i]);
+			scores[i] = m.is_tactical(pos) ? m.see(pos) : 0;
+		}
 	}
 }
 
-Selector::Selector(const Position& pos, Phase ph)
+Selector::Selector(const Position& pos, Phase ph, move_t ttMove)
 {
 	generate(pos, ph);
-	score(pos);
+	score(pos, ttMove);
 	idx = 0;
 }
 
