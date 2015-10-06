@@ -69,8 +69,8 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 		return 0;
 
 	// TT probe
-	tt::Packed p = tt::table[pos.key() & (tt::table.size() - 1)];
-	if (p.key == pos.key()) {
+	tt::Packed p(0);
+	if (tt::read(pos.key(), p)) {
 		p.score = tt::score_from_tt(p.score, ply);
 		if (p.depth >= depth && ply >= 1) {
 			if (p.score <= alpha && p.bound >= tt::EXACT)

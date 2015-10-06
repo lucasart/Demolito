@@ -34,9 +34,24 @@ int score_from_tt(int ttScore, int ply)
 		: ttScore;
 }
 
+bool read(uint64_t key, Packed& p)
+{
+	const size_t idx = key & (table.size() - 1);
+	Packed _p = table[idx];
+	_p.word1 ^= _p.word2;
+	if (_p.word1 == key) {
+		p = _p;
+		return true;
+	} else
+		return false;
+}
+
 void write(const Packed& p)
 {
-	table[p.key & (table.size() - 1)] = p;
+	const size_t idx = p.key & (table.size() - 1);
+	Packed _p = p;
+	_p.word1 ^= _p.word2;
+	table[idx] = _p;
 }
 
 }	// namespace tt
