@@ -21,7 +21,7 @@ namespace pst {
 
 eval_t table[NB_COLOR][NB_PIECE][NB_SQUARE];
 
-const int Center[8] = {-6,-2, 0, 2, 2, 0,-2,-6};
+const int Center[8] = {-5,-2, 0, 2, 2, 0,-2,-5};
 
 eval_t knight(int r, int f)
 {
