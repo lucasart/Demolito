@@ -74,22 +74,24 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 		return 0;
 
 	// TT probe
-	tt::Packed p(0);
-	if (tt::read(pos.key(), p)) {
-		p.score = tt::score_from_tt(p.score, ply);
-		if (p.depth >= depth && ply >= 1) {
-			if (p.score <= alpha && p.bound >= tt::EXACT)
-				return p.score;
-			else if (p.score >= beta && p.bound <= tt::EXACT)
-				return p.score;
-			else if (alpha < p.score && p.score < beta && p.bound == tt::EXACT)
-				return p.score;
+	tt::Entry tte;
+	if (tt::read(pos.key(), tte)) {
+		tte.score = tt::score_from_tt(tte.score, ply);
+		if (tte.depth >= depth && ply >= 1) {
+			if (tte.score <= alpha && tte.bound >= tt::EXACT)
+				return tte.score;
+			else if (tte.score >= beta && tte.bound <= tt::EXACT)
+				return tte.score;
+			else if (alpha < tte.score && tte.score < beta && tte.bound == tt::EXACT)
+				return tte.score;
 		}
-		if (ph == SEARCH && p.depth <= 0)
-			p.move = 0;
-		ss[ply].eval = p.eval;
-	} else
+		if (ph == SEARCH && tte.depth <= 0)
+			tte.move = 0;
+		ss[ply].eval = tte.eval;
+	} else {
+		tte.move = 0;
 		ss[ply].eval = pos.checkers() ? -INF : evaluate(pos);
+	}
 
 	nodeCount.fetch_add(1, std::memory_order_relaxed);
 	if (ply >= MAX_PLY)
@@ -106,7 +108,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 	}
 
 	// Generate and score moves
-	Selector S(pos, ph, p.move);
+	Selector S(pos, ph, tte.move);
 
 	size_t moveCount = 0;
 	PinInfo pi(pos);
@@ -175,13 +177,13 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 		return pos.checkers() ? ply - MATE : 0;
 
 	// TT write
-	p.key = pos.key();
-	p.bound = bestScore <= oldAlpha ? tt::UBOUND : bestScore >= beta ? tt::LBOUND : tt::EXACT;
-	p.score = tt::score_to_tt(bestScore, ply);
-	p.eval = ss[ply].eval;
-	p.depth = depth;
-	p.move = bestMove;
-	tt::write(p);
+	tte.key = pos.key();
+	tte.bound = bestScore <= oldAlpha ? tt::UBOUND : bestScore >= beta ? tt::LBOUND : tt::EXACT;
+	tte.score = tt::score_to_tt(bestScore, ply);
+	tte.eval = ss[ply].eval;
+	tte.depth = depth;
+	tte.move = bestMove;
+	tt::write(tte);
 
 	return bestScore;
 }

@@ -18,7 +18,7 @@
 
 namespace tt {
 
-std::vector<Packed> table(1024 * 1024 / sizeof(Packed), 0);	// default=1MB (min Hash)
+std::vector<Entry> table(1024 * 1024 / sizeof(Entry), 0);	// default=1MB (min Hash)
 
 int score_to_tt(int score, int ply)
 {
@@ -34,24 +34,17 @@ int score_from_tt(int ttScore, int ply)
 		: ttScore;
 }
 
-bool read(uint64_t key, Packed& p)
+bool read(uint64_t key, Entry& p)
 {
 	const size_t idx = key & (table.size() - 1);
-	Packed _p = table[idx];
-	_p.word1 ^= _p.word2;
-	if (_p.word1 == key) {
-		p = _p;
-		return true;
-	} else
-		return false;
+	p = table[idx];
+	return p.key == key;
 }
 
-void write(const Packed& p)
+void write(const Entry& p)
 {
 	const size_t idx = p.key & (table.size() - 1);
-	Packed _p = p;
-	_p.word1 ^= _p.word2;
-	table[idx] = _p;
+	table[idx] = p;
 }
 
 }	// namespace tt

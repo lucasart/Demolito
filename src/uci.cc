@@ -56,7 +56,7 @@ void setoption(std::istringstream& is)
 	else if (name == "Hash") {
 		is >> Hash;
 		Hash = 1ULL << bb::msb(Hash);	// must be a power of two
-		tt::table.resize(Hash * 1024 * (1024 / sizeof(tt::Packed)), 0);
+		tt::table.resize(Hash * 1024 * (1024 / sizeof(tt::Entry)), 0);
 	} if (name == "Threads")
 		is >> Threads;
 }
