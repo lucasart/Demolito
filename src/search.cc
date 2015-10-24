@@ -45,6 +45,8 @@ std::mutex mtxSchedule;	// protect thread scheduling decisions
 // Global node counter
 std::atomic<uint64_t> nodeCount;
 
+const int Tempo = 16;
+
 template <Phase ph>
 int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::vector<move_t>& pv)
 {
@@ -54,7 +56,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 	const bool PvNode = beta > alpha + 1;
 	const int oldAlpha = alpha;
 	int bestScore = -INF;
-	Move bestMove(0);
+	move_t bestMove = 0;
 
 	const uint64_t s = signal.load(std::memory_order_relaxed);
 	if (s) {
@@ -87,10 +89,10 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 		}
 		if (ph == SEARCH && tte.depth <= 0)
 			tte.move = 0;
-		ss[ply].eval = tte.eval;
+		ss[ply].eval = tte.eval + Tempo;
 	} else {
 		tte.move = 0;
-		ss[ply].eval = pos.checkers() ? -INF : evaluate(pos);
+		ss[ply].eval = pos.checkers() ? -INF : evaluate(pos) + Tempo;
 	}
 
 	nodeCount.fetch_add(1, std::memory_order_relaxed);
@@ -180,7 +182,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 	tte.key = pos.key();
 	tte.bound = bestScore <= oldAlpha ? tt::UBOUND : bestScore >= beta ? tt::LBOUND : tt::EXACT;
 	tte.score = tt::score_to_tt(bestScore, ply);
-	tte.eval = ss[ply].eval;
+	tte.eval = pos.checkers() ? -INF : ss[ply].eval - Tempo;
 	tte.depth = depth;
 	tte.move = bestMove;
 	tt::write(tte);
