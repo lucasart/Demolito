@@ -45,13 +45,13 @@ std::mutex mtxSchedule;	// protect thread scheduling decisions
 // Global node counter
 std::atomic<uint64_t> nodeCount;
 
-template <Phase ph, bool PvNode>
+template <Phase ph>
 int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::vector<move_t>& pv)
 {
 	assert(history[ThreadId].back() == pos.key());
 	assert(alpha < beta);
-	assert(PvNode || alpha+1 == beta);
 
+	const bool PvNode = beta > alpha + 1;
 	const int oldAlpha = alpha;
 	int bestScore = -INF;
 	Move bestMove(0);
@@ -140,15 +140,15 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 			if (depth <= MIN_DEPTH && !pos.checkers())
 				score = ss[ply].eval + see;	// guard against QSearch explosion
 			else
-				score = -recurse<QSEARCH, PvNode>(nextPos, ply + 1, nextDepth, -beta, -alpha, childPv);
+				score = -recurse<QSEARCH>(nextPos, ply + 1, nextDepth, -beta, -alpha, childPv);
 		} else {
 			// Search recursion (PVS)
 			if (PvNode && moveCount == 1)
-				score = -recurse<SEARCH, true>(nextPos, ply + 1, nextDepth, -beta, -alpha, childPv);
+				score = -recurse<SEARCH>(nextPos, ply + 1, nextDepth, -beta, -alpha, childPv);
 			else {
-				score = -recurse<SEARCH, false>(nextPos, ply + 1, nextDepth, -alpha-1, -alpha, childPv);
-				if (PvNode && score > alpha)
-					score = -recurse<SEARCH, true>(nextPos, ply + 1, nextDepth, -beta, -alpha, childPv);
+				score = -recurse<SEARCH>(nextPos, ply + 1, nextDepth, -alpha-1, -alpha, childPv);
+				if (PvNode && alpha < score && score < beta)
+					score = -recurse<SEARCH>(nextPos, ply + 1, nextDepth, -beta, -alpha, childPv);
 			}
 		}
 
@@ -195,7 +195,7 @@ int aspirate(const Position& pos, int depth, std::vector<move_t>& pv, int score)
 	int beta = score + delta;
 
 	for ( ; ; delta += delta) {
-		score = recurse<SEARCH, true>(pos, 0, depth, alpha, beta, pv);
+		score = recurse<SEARCH>(pos, 0, depth, alpha, beta, pv);
 
 		if (score <= alpha) {
 			beta = (alpha + beta) / 2;
@@ -238,7 +238,7 @@ void iterate(const Position& pos, const Limits& lim, uci::Info& ui, std::vector<
 
 		try {
 			score = depth <= 1
-				? recurse<SEARCH, true>(pos, 0, depth, -INF, +INF, pv)
+				? recurse<SEARCH>(pos, 0, depth, -INF, +INF, pv)
 				: aspirate(pos, depth, pv, score);
 
 			// Iteration was completed normally. Now we need to see who is working on
