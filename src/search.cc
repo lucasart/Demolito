@@ -27,7 +27,17 @@ namespace search {
 
 thread_local int ThreadId;	// set at thread creation, so each thread can know its unique id
 
-std::vector<zobrist::History> history;	// history of zobrist keys, per thread
+// Per thread data
+std::vector<zobrist::History> history;
+std::vector<uint64_t> nodeCount;
+
+uint64_t nodes()
+{
+	uint64_t total = 0;
+	for (uint64_t n : nodeCount)
+		total += n;
+	return total;
+}
 
 struct Stack {
 	Move m;
@@ -41,9 +51,6 @@ enum Abort {
 	ABORT_STOP	// current thread aborts the current iteration to stop iterating completely
 };
 std::mutex mtxSchedule;	// protect thread scheduling decisions
-
-// Global node counter
-std::atomic<uint64_t> nodeCount;
 
 const int Tempo = 16;
 
@@ -95,7 +102,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 		ss[ply].eval = pos.checkers() ? -INF : evaluate(pos) + Tempo;
 	}
 
-	nodeCount.fetch_add(1, std::memory_order_relaxed);
+	nodeCount[ThreadId]++;
 	if (ply >= MAX_PLY)
 		return ss[ply].eval;
 
@@ -265,7 +272,7 @@ void iterate(const Position& pos, const Limits& lim, uci::Info& ui, std::vector<
 				continue;
 			}
 		}
-		ui.update(pos, depth, score, nodeCount, pv);
+		ui.update(pos, depth, score, nodes(), pv);
 	}
 
 	// Max depth completed by current thread. All threads should stop.
@@ -278,16 +285,20 @@ void bestmove(const Position& pos, const Limits& lim)
 	using namespace std::chrono;
 	const auto start = high_resolution_clock::now();
 
-	nodeCount = 0;
 	uci::Info ui;
 
 	signal = 0;
 	std::vector<int> iteration(lim.threads, 0);
-	history.reserve(lim.threads);
+	history.resize(lim.threads);
+	nodeCount.resize(lim.threads);
 
 	std::vector<std::thread> threads;
 	for (int i = 0; i < lim.threads; i++) {
+		// Initialize per-thread data
 		history[i] = uci::history;
+		nodeCount[i] = 0;
+
+		// Start searching thread
 		threads.emplace_back(iterate, std::cref(pos), std::cref(lim), std::ref(ui), std::ref(iteration), i);
 	}
 
@@ -297,7 +308,7 @@ void bestmove(const Position& pos, const Limits& lim)
 		// Check for search termination conditions, but only after depth 1 has been
 		// completed, to make sure we do not return an illegal move.
 		if (ui.last_depth() >= 1) {
-			if (lim.nodes && nodeCount >= lim.nodes) {
+			if (lim.nodes && nodes() >= lim.nodes) {
 				std::lock_guard<std::mutex> lk(mtxSchedule);
 				signal = STOP;
 			} else if (lim.movetime && duration_cast<milliseconds>

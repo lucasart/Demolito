@@ -4,9 +4,10 @@
 
 namespace search {
 
-extern std::atomic<uint64_t> nodeCount;
 extern std::atomic<uint64_t> signal;
 #define STOP	uint64_t(-1)
+
+uint64_t nodes();
 
 struct Limits {
 	Limits(): depth(MAX_DEPTH), movetime(0), threads(1), nodes(0) {}
