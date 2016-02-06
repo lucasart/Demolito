@@ -130,13 +130,19 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 			continue;
 		moveCount++;
 
-		// Prune losing captures in QSearch
-		if (ph == QSEARCH && !pos.checkers() && see < 0)
+		// Prune losing captures in the qsearch
+		if (ph == QSEARCH && see < 0 && !pos.checkers())
 			continue;
 
 		// Play move
 		Position nextPos;
 		nextPos.set(pos, ss[ply].m);
+
+		// Prune losing captures in the search, near the leaves
+		if (ph == SEARCH && depth <= 1 && see < 0
+		&& !PvNode && !pos.checkers() && !nextPos.checkers())
+			continue;
+
 		history[ThreadId].push(nextPos.key());
 
 		const int ext = see >= 0 && nextPos.checkers();
