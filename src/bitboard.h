@@ -13,7 +13,7 @@ bitboard_t rank(int r);
 bitboard_t file(int f);
 bitboard_t relative_rank(int color, int r);
 
-// Non-slider attacks
+// Leaper attacks
 bitboard_t pattacks(int color, int sq);
 bitboard_t nattacks(int sq);
 bitboard_t kattacks(int sq);

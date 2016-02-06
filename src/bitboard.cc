@@ -38,7 +38,7 @@ void safe_set_bit(bitboard_t& b, int r, int f)
 		bb::set(b, square(r, f));
 }
 
-void init_non_slider_attacks()
+void init_leaper_attacks()
 {
 	for (int sq = 0; sq < NB_SQUARE; sq++) {
 		int r = rank_of(sq), f = file_of(sq);
@@ -94,7 +94,7 @@ void init_slider_attacks();	// in magic.cc
 void init()
 {
 	init_rays();
-	init_non_slider_attacks();
+	init_leaper_attacks();
 	init_slider_attacks();
 	init_slider_pseudo_attacks();
 }
