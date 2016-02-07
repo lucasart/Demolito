@@ -139,7 +139,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 		nextPos.set(pos, ss[ply].m);
 
 		// Prune losing captures in the search, near the leaves
-		if (ph == SEARCH && depth <= 3 && see < 0
+		if (ph == SEARCH && depth <= 4 && see < 0
 		&& !PvNode && !pos.checkers() && !nextPos.checkers())
 			continue;
 
