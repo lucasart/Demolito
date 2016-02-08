@@ -151,17 +151,26 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 		// Recursion
 		int score;
 		if (nextDepth <= 0) {
-			// Qsearch recursion (alpha/beta)
+			// Qsearch recursion (plain alpha/beta)
 			if (depth <= MIN_DEPTH && !pos.checkers())
 				score = ss[ply].eval + see;	// guard against QSearch explosion
 			else
 				score = -recurse<QSEARCH>(nextPos, ply + 1, nextDepth, -beta, -alpha, childPv);
 		} else {
-			// Search recursion (PVS)
-			if (PvNode && moveCount == 1)
+			// Search recursion (PVS + Reduction)
+			if (moveCount == 1)
 				score = -recurse<SEARCH>(nextPos, ply + 1, nextDepth, -beta, -alpha, childPv);
 			else {
-				score = -recurse<SEARCH>(nextPos, ply + 1, nextDepth, -alpha-1, -alpha, childPv);
+				const int reduction = !pos.checkers() && !nextPos.checkers() && !ss[ply].m.is_tactical(pos);
+
+				// Reduced depth, zero window
+				score = -recurse<SEARCH>(nextPos, ply + 1, nextDepth - reduction, -alpha-1, -alpha, childPv);
+
+				// Fail high: re-search zero window at full depth
+				if (reduction && score > alpha)
+					score = -recurse<SEARCH>(nextPos, ply + 1, nextDepth, -alpha-1, -alpha, childPv);
+
+				// Fail high at full depth for PvNode: re-search full window
 				if (PvNode && alpha < score && score < beta)
 					score = -recurse<SEARCH>(nextPos, ply + 1, nextDepth, -beta, -alpha, childPv);
 			}
