@@ -54,10 +54,15 @@ uint64_t History::back() const
 
 bool History::repetition(int rule50) const
 {
+	// 50 move rule
+	if (rule50 >= 100)
+		return true;
+
 	// TODO: use 3 repetition past root position
 	for (int i = 4; i <= rule50 && i < idx; i += 2)
 		if (keys[idx-1 - i] == keys[idx-1])
 			return true;
+
 	return false;
 }
 
