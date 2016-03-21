@@ -161,11 +161,13 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 			if (moveCount == 1)
 				score = -recurse<SEARCH>(nextPos, ply + 1, nextDepth, -beta, -alpha, childPv);
 			else {
-				const int reduction = depth >= 3 && !pos.checkers() && !nextPos.checkers()
+				const int reduction = !pos.checkers() && !nextPos.checkers()
 					&& (!ss[ply].m.is_tactical(pos) || see < 0);
 
 				// Reduced depth, zero window
-				score = -recurse<SEARCH>(nextPos, ply + 1, nextDepth - reduction, -alpha-1, -alpha, childPv);
+				score = nextDepth - reduction > 0
+					? -recurse<SEARCH>(nextPos, ply + 1, nextDepth - reduction, -alpha-1, -alpha, childPv)
+					: -recurse<QSEARCH>(nextPos, ply + 1, nextDepth - reduction, -alpha-1, -alpha, childPv);
 
 				// Fail high: re-search zero window at full depth
 				if (reduction && score > alpha)
