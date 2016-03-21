@@ -17,21 +17,21 @@
 
 namespace search {
 
-void Selector::generate(const Position& pos, Phase ph)
+void Selector::generate(const Position& pos, int depth)
 {
 	move_t *it = moves;
 
 	if (pos.checkers())
-		it = gen::check_escapes(pos, it, ph == SEARCH);
+		it = gen::check_escapes(pos, it, depth > 0);
 	else {
 		const int us = pos.turn(), them = opp_color(us);
-		const bitboard_t pieceTargets = ph == SEARCH ? ~pos.occ(us) : pos.occ(them);
+		const bitboard_t pieceTargets = depth > 0 ? ~pos.occ(us) : pos.occ(them);
 		const bitboard_t pawnTargets = pieceTargets | pos.ep_square_bb()
 			| bb::rank(us == WHITE ? RANK_8 : RANK_1);
 
 		it = gen::piece_moves(pos, it, pieceTargets);
-		it = gen::pawn_moves(pos, it, pawnTargets, ph == SEARCH);
-		if (ph == SEARCH)
+		it = gen::pawn_moves(pos, it, pawnTargets, depth > 0);
+		if (depth > 0)
 			it = gen::castling_moves(pos, it);
 	}
 
@@ -50,9 +50,9 @@ void Selector::score(const Position& pos, move_t ttMove)
 	}
 }
 
-Selector::Selector(const Position& pos, Phase ph, move_t ttMove)
+Selector::Selector(const Position& pos, int depth, move_t ttMove)
 {
-	generate(pos, ph);
+	generate(pos, depth);
 	score(pos, ttMove);
 	idx = 0;
 }

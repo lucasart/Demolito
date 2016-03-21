@@ -3,11 +3,9 @@
 
 namespace search {
 
-enum Phase {SEARCH, QSEARCH};
-
 class Selector {
 public:
-	Selector(const Position& pos, Phase ph, move_t ttMove);
+	Selector(const Position& pos, int depth, move_t ttMove);
 	Move select(const Position& pos, int& see);
 	size_t count() const { return cnt; }
 	bool done() const { return idx == cnt; }
@@ -16,7 +14,7 @@ private:
 	int scores[MAX_MOVES];
 	size_t cnt, idx;
 
-	void generate(const Position& pos, Phase ph);
+	void generate(const Position& pos, int depth);
 	void score(const Position& pos, move_t ttMove);
 };
 

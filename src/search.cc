@@ -54,7 +54,6 @@ std::mutex mtxSchedule;	// protect thread scheduling decisions
 
 const int Tempo = 16;
 
-template <Phase ph>
 int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::vector<move_t>& pv)
 {
 	assert(history[ThreadId].back() == pos.key());
@@ -94,7 +93,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 			else if (alpha < tte.score && tte.score < beta && tte.bound == tt::EXACT)
 				return tte.score;
 		}
-		if (ph == SEARCH && tte.depth <= 0)
+		if (depth > 0 && tte.depth <= 0)
 			tte.move = 0;
 		ss[ply].eval = tte.eval + Tempo;
 	} else {
@@ -107,7 +106,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 		return ss[ply].eval;
 
 	// QSearch stand pat
-	if (ph == QSEARCH && !pos.checkers()) {
+	if (depth <= 0 && !pos.checkers()) {
 		bestScore = ss[ply].eval;
 		if (bestScore > alpha) {
 			alpha = bestScore;
@@ -117,7 +116,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 	}
 
 	// Generate and score moves
-	Selector S(pos, ph, tte.move);
+	Selector S(pos, depth, tte.move);
 
 	size_t moveCount = 0;
 	PinInfo pi(pos);
@@ -131,7 +130,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 		moveCount++;
 
 		// Prune losing captures in the qsearch
-		if (ph == QSEARCH && see < 0 && !pos.checkers())
+		if (depth <= 0 && see < 0 && !pos.checkers())
 			continue;
 
 		// Play move
@@ -139,7 +138,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 		nextPos.set(pos, ss[ply].m);
 
 		// Prune losing captures in the search, near the leaves
-		if (ph == SEARCH && depth <= 4 && see < 0
+		if (depth > 0 && depth <= 4 && see < 0
 		&& !PvNode && !pos.checkers() && !nextPos.checkers())
 			continue;
 
@@ -155,27 +154,25 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 			if (depth <= MIN_DEPTH && !pos.checkers())
 				score = ss[ply].eval + see;	// guard against QSearch explosion
 			else
-				score = -recurse<QSEARCH>(nextPos, ply + 1, nextDepth, -beta, -alpha, childPv);
+				score = -recurse(nextPos, ply + 1, nextDepth, -beta, -alpha, childPv);
 		} else {
 			// Search recursion (PVS + Reduction)
 			if (moveCount == 1)
-				score = -recurse<SEARCH>(nextPos, ply + 1, nextDepth, -beta, -alpha, childPv);
+				score = -recurse(nextPos, ply + 1, nextDepth, -beta, -alpha, childPv);
 			else {
 				const int reduction = !pos.checkers() && !nextPos.checkers()
 					&& (!ss[ply].m.is_tactical(pos) || see < 0);
 
 				// Reduced depth, zero window
-				score = nextDepth - reduction > 0
-					? -recurse<SEARCH>(nextPos, ply + 1, nextDepth - reduction, -alpha-1, -alpha, childPv)
-					: -recurse<QSEARCH>(nextPos, ply + 1, nextDepth - reduction, -alpha-1, -alpha, childPv);
+				score = -recurse(nextPos, ply + 1, nextDepth - reduction, -alpha-1, -alpha, childPv);
 
 				// Fail high: re-search zero window at full depth
 				if (reduction && score > alpha)
-					score = -recurse<SEARCH>(nextPos, ply + 1, nextDepth, -alpha-1, -alpha, childPv);
+					score = -recurse(nextPos, ply + 1, nextDepth, -alpha-1, -alpha, childPv);
 
 				// Fail high at full depth for PvNode: re-search full window
 				if (PvNode && alpha < score && score < beta)
-					score = -recurse<SEARCH>(nextPos, ply + 1, nextDepth, -beta, -alpha, childPv);
+					score = -recurse(nextPos, ply + 1, nextDepth, -beta, -alpha, childPv);
 			}
 		}
 
@@ -200,7 +197,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 	}
 
 	// No legal move: mated or stalemated
-	if ((ph == SEARCH || pos.checkers()) && !moveCount)
+	if ((depth > 0 || pos.checkers()) && !moveCount)
 		return pos.checkers() ? ply - MATE : 0;
 
 	// TT write
@@ -222,7 +219,7 @@ int aspirate(const Position& pos, int depth, std::vector<move_t>& pv, int score)
 	int beta = score + delta;
 
 	for ( ; ; delta += delta) {
-		score = recurse<SEARCH>(pos, 0, depth, alpha, beta, pv);
+		score = recurse(pos, 0, depth, alpha, beta, pv);
 
 		if (score <= alpha) {
 			beta = (alpha + beta) / 2;
@@ -265,7 +262,7 @@ void iterate(const Position& pos, const Limits& lim, uci::Info& ui, std::vector<
 
 		try {
 			score = depth <= 1
-				? recurse<SEARCH>(pos, 0, depth, -INF, +INF, pv)
+				? recurse(pos, 0, depth, -INF, +INF, pv)
 				: aspirate(pos, depth, pv, score);
 
 			// Iteration was completed normally. Now we need to see who is working on
