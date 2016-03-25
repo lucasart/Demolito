@@ -133,6 +133,10 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 		if (depth <= 0 && see < 0 && !pos.checkers())
 			continue;
 
+		// SEE proxy tells us we're unlikely to beat alpha
+		if (depth <= 0 && !pos.checkers() && ss[ply].eval + P/2 <= alpha && see <= 0)
+			continue;
+
 		// Play move
 		Position nextPos;
 		nextPos.set(pos, ss[ply].m);
