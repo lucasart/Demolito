@@ -59,7 +59,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 	assert(history[ThreadId].back() == pos.key());
 	assert(alpha < beta);
 
-	const bool PvNode = beta > alpha + 1;
+	const bool pvNode = beta > alpha + 1;
 	const int oldAlpha = alpha;
 	int bestScore = -INF;
 	move_t bestMove = 0;
@@ -73,7 +73,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 	}
 
 	std::vector<move_t> childPv;
-	if (PvNode) {
+	if (pvNode) {
 		childPv.reserve(MAX_PLY - ply);
 		pv[0] = 0;
 	}
@@ -139,7 +139,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 
 		// Prune losing captures in the search, near the leaves
 		if (depth > 0 && depth <= 4 && see < 0
-		&& !PvNode && !pos.checkers() && !nextPos.checkers())
+		&& !pvNode && !pos.checkers() && !nextPos.checkers())
 			continue;
 
 		history[ThreadId].push(nextPos.key());
@@ -161,12 +161,8 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 				score = -recurse(nextPos, ply + 1, nextDepth, -beta, -alpha, childPv);
 			else {
 				int reduction = 0;
-				if (!pos.checkers() && !nextPos.checkers()) {
-					if (ss[ply].m.is_tactical(pos))
-						reduction = see < 0;
-					else
-						reduction = 1 + (see < 0);
-				}
+				if (!pos.checkers() && !nextPos.checkers())
+					reduction = !ss[ply].m.is_tactical(pos) + (see < 0);
 
 				// Reduced depth, zero window
 				score = -recurse(nextPos, ply + 1, nextDepth - reduction, -alpha-1, -alpha, childPv);
@@ -175,8 +171,8 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 				if (reduction && score > alpha)
 					score = -recurse(nextPos, ply + 1, nextDepth, -alpha-1, -alpha, childPv);
 
-				// Fail high at full depth for PvNode: re-search full window
-				if (PvNode && alpha < score && score < beta)
+				// Fail high at full depth for pvNode: re-search full window
+				if (pvNode && alpha < score && score < beta)
 					score = -recurse(nextPos, ply + 1, nextDepth, -beta, -alpha, childPv);
 			}
 		}
@@ -191,7 +187,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 			if (score > alpha) {
 				alpha = score;
 				bestMove = ss[ply].m;
-				if (PvNode) {
+				if (pvNode) {
 					pv[0] = ss[ply].m;
 					for (int i = 0; i < MAX_PLY - ply; i++)
 						if (!(pv[i + 1] = childPv[i]))
