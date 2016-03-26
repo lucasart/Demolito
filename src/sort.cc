@@ -45,7 +45,7 @@ void Selector::score(const Position& pos, move_t ttMove)
 			scores[i] = +INF;
 		else {
 			const Move m(moves[i]);
-			scores[i] = m.is_tactical(pos) ? m.see(pos) : 0;
+			scores[i] = m.is_capture(pos) ? m.see(pos) : 0;
 		}
 	}
 }
@@ -72,7 +72,7 @@ Move Selector::select(const Position& pos, int& see)
 	}
 
 	const Move m(moves[idx]);
-	see = m.is_tactical(pos) ? scores[idx] : m.see(pos);
+	see = m.is_capture(pos) ? scores[idx] : m.see(pos);
 	return moves[idx++];
 }
 

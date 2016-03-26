@@ -70,12 +70,12 @@ Move Move::operator =(move_t em)
 	return *this;
 }
 
-bool Move::is_tactical(const Position& pos) const
+bool Move::is_capture(const Position& pos) const
 {
 	const int us = pos.turn(), them = opp_color(us);
 	return (bb::test(pos.occ(them), tsq))
 		|| ((tsq == pos.ep_square() || relative_rank(us, tsq) == RANK_8)
-		&& (pos.piece_on(fsq) == PAWN));
+		&& pos.piece_on(fsq) == PAWN);
 }
 
 bool Move::is_castling(const Position& pos) const

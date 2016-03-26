@@ -166,7 +166,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 			else {
 				int reduction = 0;
 				if (!pos.checkers() && !nextPos.checkers())
-					reduction = !ss[ply].m.is_tactical(pos) + (see < 0);
+					reduction = !ss[ply].m.is_capture(pos) + (see < 0);
 
 				// Reduced depth, zero window
 				score = -recurse(nextPos, ply + 1, nextDepth - reduction, -alpha-1, -alpha, childPv);

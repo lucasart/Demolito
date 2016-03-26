@@ -28,7 +28,7 @@ struct Move {
 	Move operator =(move_t em);
 
 	bool null() const { return (fsq | tsq | prom) == 0; }
-	bool is_tactical(const Position& pos) const;
+	bool is_capture(const Position& pos) const;
 	bool is_castling(const Position& pos) const;
 
 	std::string to_string(const Position& pos) const;
