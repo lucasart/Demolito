@@ -1,6 +1,6 @@
 /*
  * Demolito, a UCI chess engine.
- * Copyright 2015 Lucas Braesch.
+ * Copyright 2015 lucasart.
  *
  * Demolito is free software: you can redistribute it and/or modify it under the terms of the GNU
  * General Public License as published by the Free Software Foundation, either version 3 of the
@@ -25,98 +25,98 @@ const int Center[8] = {-5,-2, 0, 2, 2, 0,-2,-5};
 
 eval_t knight(int r, int f)
 {
-	const eval_t CenterWeight = {10, 3};
-	return CenterWeight * (Center[r] + Center[f]);
+    const eval_t CenterWeight = {10, 3};
+    return CenterWeight * (Center[r] + Center[f]);
 }
 
 eval_t bishop(int r, int f)
 {
-	const eval_t CenterWeight = {2, 3};
-	const eval_t DiagonalWeight = {8, 0};
-	const eval_t BackRankWeight = {-20, 0};
+    const eval_t CenterWeight = {2, 3};
+    const eval_t DiagonalWeight = {8, 0};
+    const eval_t BackRankWeight = {-20, 0};
 
-	return CenterWeight * (Center[r] + Center[f])
-		+ DiagonalWeight * (7 == r + f || r == f)
-		+ BackRankWeight * (r == RANK_1);
+    return CenterWeight * (Center[r] + Center[f])
+        + DiagonalWeight * (7 == r + f || r == f)
+        + BackRankWeight * (r == RANK_1);
 }
 
 eval_t rook(int r, int f)
 {
-	const eval_t FileWeight = {3, 0};
-	const eval_t SeventhWeight = {16, 16};
+    const eval_t FileWeight = {3, 0};
+    const eval_t SeventhWeight = {16, 16};
 
-	return FileWeight * Center[f]
-		+ SeventhWeight * (r == RANK_7);
+    return FileWeight * Center[f]
+        + SeventhWeight * (r == RANK_7);
 }
 
 eval_t queen(int r, int f)
 {
-	const eval_t CenterWeight = {0, 4};
-	const eval_t BackRankWeight = {-10, 0};
+    const eval_t CenterWeight = {0, 4};
+    const eval_t BackRankWeight = {-10, 0};
 
-	return CenterWeight * (Center[r] + Center[f])
-		+ BackRankWeight * (r == RANK_1);
+    return CenterWeight * (Center[r] + Center[f])
+        + BackRankWeight * (r == RANK_1);
 }
 
 eval_t king(int r, int f)
 {
-	const int FileShape[8] = { 3, 4, 2, 0, 0, 2, 4, 3};
-	const int RankShape[8] = { 1, 0,-2,-3,-4,-5,-5,-5};
+    const int FileShape[8] = { 3, 4, 2, 0, 0, 2, 4, 3};
+    const int RankShape[8] = { 1, 0,-2,-3,-4,-5,-5,-5};
 
-	const eval_t CenterWeight = {0, 14};
-	const eval_t FileWeight = {20, 0};
-	const eval_t RankWeight = {14, 0};
+    const eval_t CenterWeight = {0, 14};
+    const eval_t FileWeight = {20, 0};
+    const eval_t RankWeight = {14, 0};
 
-	return CenterWeight * (Center[r] + Center[f])
-		+ FileWeight * FileShape[f]
-		+ RankWeight * RankShape[r];
+    return CenterWeight * (Center[r] + Center[f])
+        + FileWeight * FileShape[f]
+        + RankWeight * RankShape[r];
 }
 
 eval_t pawn(int r, int f)
 {
-	const eval_t PCenter = {36, 0};
-	const eval_t P7Rank = {100, 100};	// FIXME: replace by proper passed pawn eval
-	eval_t e = {0, 0};
+    const eval_t PCenter = {36, 0};
+    const eval_t P7Rank = {100, 100};    // FIXME: replace by proper passed pawn eval
+    eval_t e = {0, 0};
 
-	if (f == FILE_D || f == FILE_E) {
-		if (r == RANK_3 || r == RANK_5)
-			e += PCenter / 2;
-		else if (r == RANK_4)
-			e += PCenter;
-	}
+    if (f == FILE_D || f == FILE_E) {
+        if (r == RANK_3 || r == RANK_5)
+            e += PCenter / 2;
+        else if (r == RANK_4)
+            e += PCenter;
+    }
 
-	if (r == RANK_7)
-		e += P7Rank;
+    if (r == RANK_7)
+        e += P7Rank;
 
-	return e;
+    return e;
 }
 
 void init(int verbosity)
 {
-	typedef eval_t (*pst_fn)(int, int);
-	const pst_fn PstFn[NB_PIECE] = {&knight, &bishop, &rook, &queen, &king, &pawn};
+    typedef eval_t (*pst_fn)(int, int);
+    const pst_fn PstFn[NB_PIECE] = {&knight, &bishop, &rook, &queen, &king, &pawn};
 
-	// Calculate PST, based on specialized functions for each piece
-	for (int color = 0; color < NB_COLOR; color++)
-	for (int piece = 0; piece < NB_PIECE; piece++)
-	for (int sq = 0; sq < NB_SQUARE; sq++) {
-		const int rr = rank_of(sq) ^ (RANK_8 * color), f = file_of(sq);
-		table[color][piece][sq] = (Material[piece] + (*PstFn[piece])(rr, f))
-			* (color == WHITE ? 1 : -1);
-	}
+    // Calculate PST, based on specialized functions for each piece
+    for (int color = 0; color < NB_COLOR; color++)
+    for (int piece = 0; piece < NB_PIECE; piece++)
+    for (int sq = 0; sq < NB_SQUARE; sq++) {
+        const int rr = rank_of(sq) ^ (RANK_8 * color), f = file_of(sq);
+        table[color][piece][sq] = (Material[piece] + (*PstFn[piece])(rr, f))
+            * (color == WHITE ? 1 : -1);
+    }
 
-	// Display, based on verbosity level
-	for (int phase = 0; phase < NB_PHASE; phase++)
-	for (int color = 0; color < verbosity; color++)
-	for (int piece = 0; piece < NB_PIECE; piece++) {
-		std::cout << (phase == OPENING ? "opening" : "endgame")
-			<< PieceLabel[WHITE][piece] << std::endl;
-		for (int r = RANK_8; r >= RANK_1; r--) {
-			for (int f = FILE_A; f <= FILE_H; f++)
-				std::cout << table[color][piece][square(r, f)][phase] << '\t';
-			std::cout << std::endl;
-		}
-	}
+    // Display, based on verbosity level
+    for (int phase = 0; phase < NB_PHASE; phase++)
+    for (int color = 0; color < verbosity; color++)
+    for (int piece = 0; piece < NB_PIECE; piece++) {
+        std::cout << (phase == OPENING ? "opening" : "endgame")
+            << PieceLabel[WHITE][piece] << std::endl;
+        for (int r = RANK_8; r >= RANK_1; r--) {
+            for (int f = FILE_A; f <= FILE_H; f++)
+                std::cout << table[color][piece][square(r, f)][phase] << '\t';
+            std::cout << std::endl;
+        }
+    }
 }
 
-}	// namespace pst
+}    // namespace pst

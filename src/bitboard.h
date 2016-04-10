@@ -21,8 +21,8 @@ bitboard_t kattacks(int sq);
 // Slider attacks
 bitboard_t battacks(int sq, bitboard_t occ);
 bitboard_t rattacks(int sq, bitboard_t occ);
-bitboard_t bpattacks(int sq);	// pseudo-attacks (empty board)
-bitboard_t rpattacks(int sq);	// pseudo-attacks (empty board)
+bitboard_t bpattacks(int sq);    // pseudo-attacks (empty board)
+bitboard_t rpattacks(int sq);    // pseudo-attacks (empty board)
 
 bitboard_t piece_attacks(int color, int piece, int sq, bitboard_t occ);
 
@@ -47,4 +47,4 @@ int count(bitboard_t b);
 
 void print(bitboard_t b);
 
-}	// namespace bb
+}    // namespace bb

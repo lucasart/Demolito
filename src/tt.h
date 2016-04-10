@@ -7,12 +7,12 @@ namespace tt {
 enum {LBOUND, EXACT, UBOUND};
 
 struct Entry {
-	uint64_t key;
-	int16_t score, eval, move;
-	int8_t depth, bound;
+    uint64_t key;
+    int16_t score, eval, move;
+    int8_t depth, bound;
 
-	Entry() = default;
-	Entry(uint64_t v) { key = v; }
+    Entry() = default;
+    Entry(uint64_t v) { key = v; }
 };
 
 // Adjust mate scores to plies from current position, instead of plies from root
@@ -24,4 +24,4 @@ void write(const Entry& p);
 
 extern std::vector<Entry> table;
 
-}	// namespace tt
+}    // namespace tt

@@ -1,6 +1,6 @@
 /*
  * Demolito, a UCI chess engine.
- * Copyright 2015 Lucas Braesch.
+ * Copyright 2015 lucasart.
  *
  * Demolito is free software: you can redistribute it and/or modify it under the terms of the GNU
  * General Public License as published by the Free Software Foundation, either version 3 of the
@@ -25,10 +25,10 @@ uint64_t ZobristTurn;
 
 uint64_t rotate(uint64_t x, int k)
 {
-	return (x << k) | (x >> (64 - k));
+    return (x << k) | (x >> (64 - k));
 }
 
-}	// namespace
+}    // namespace
 
 namespace zobrist {
 
@@ -36,96 +36,96 @@ thread_local History history;
 
 void History::push(uint64_t key)
 {
-	assert(0 <= idx && idx < MAX_GAME_PLY);
-	keys[idx++] = key;
+    assert(0 <= idx && idx < MAX_GAME_PLY);
+    keys[idx++] = key;
 }
 
 void History::pop()
 {
-	assert(0 < idx && idx <= MAX_GAME_PLY);
-	idx--;
+    assert(0 < idx && idx <= MAX_GAME_PLY);
+    idx--;
 }
 
 uint64_t History::back() const
 {
-	assert(0 < idx && idx <= MAX_GAME_PLY);
-	return keys[idx - 1];
+    assert(0 < idx && idx <= MAX_GAME_PLY);
+    return keys[idx - 1];
 }
 
 bool History::repetition(int rule50) const
 {
-	// 50 move rule
-	if (rule50 >= 100)
-		return true;
+    // 50 move rule
+    if (rule50 >= 100)
+        return true;
 
-	// TODO: use 3 repetition past root position
-	for (int i = 4; i <= rule50 && i < idx; i += 2)
-		if (keys[idx-1 - i] == keys[idx-1])
-			return true;
+    // TODO: use 3 repetition past root position
+    for (int i = 4; i <= rule50 && i < idx; i += 2)
+        if (keys[idx-1 - i] == keys[idx-1])
+            return true;
 
-	return false;
+    return false;
 }
 
 void PRNG::init(uint64_t seed)
 {
-	a = 0xf1ea5eed;
-	b = c = d = seed;
+    a = 0xf1ea5eed;
+    b = c = d = seed;
 
-	for (int i = 0; i < 20; ++i)
-		rand();
+    for (int i = 0; i < 20; ++i)
+        rand();
 }
 
 uint64_t PRNG::rand()
 {
-	uint64_t e = a - rotate(b, 7);
-	a = b ^ rotate(c, 13);
-	b = c + rotate(d, 37);
-	c = d + e;
-	return d = e + a;
+    uint64_t e = a - rotate(b, 7);
+    a = b ^ rotate(c, 13);
+    b = c + rotate(d, 37);
+    c = d + e;
+    return d = e + a;
 }
 
 void init()
 {
-	PRNG prng;
+    PRNG prng;
 
-	for (int color = 0; color < NB_COLOR; color++)
-	for (int piece = 0; piece < NB_PIECE; piece++)
-	for (int sq = 0; sq < NB_SQUARE; sq++)
-		Zobrist[color][piece][sq] = prng.rand();
+    for (int color = 0; color < NB_COLOR; color++)
+    for (int piece = 0; piece < NB_PIECE; piece++)
+    for (int sq = 0; sq < NB_SQUARE; sq++)
+        Zobrist[color][piece][sq] = prng.rand();
 
-	for (int sq = 0; sq < NB_SQUARE; sq++)
-		ZobristCastling[sq] = prng.rand();
+    for (int sq = 0; sq < NB_SQUARE; sq++)
+        ZobristCastling[sq] = prng.rand();
 
-	for (int sq = 0; sq <= NB_SQUARE; sq++)
-		ZobristEnPassant[sq] = prng.rand();
+    for (int sq = 0; sq <= NB_SQUARE; sq++)
+        ZobristEnPassant[sq] = prng.rand();
 
-	ZobristTurn = prng.rand();
+    ZobristTurn = prng.rand();
 }
 
 uint64_t key(int color, int piece, int sq)
 {
-	assert(color_ok(color) && piece_ok(piece) && square_ok(sq));
-	return Zobrist[color][piece][sq];
+    assert(color_ok(color) && piece_ok(piece) && square_ok(sq));
+    return Zobrist[color][piece][sq];
 }
 
 uint64_t castling(bitboard_t castlableRooks)
 {
-	bitboard_t result = 0;
-	while (castlableRooks)
-		result ^= ZobristCastling[bb::pop_lsb(castlableRooks)];
+    bitboard_t result = 0;
+    while (castlableRooks)
+        result ^= ZobristCastling[bb::pop_lsb(castlableRooks)];
 
-	return result;
+    return result;
 }
 
 uint64_t en_passant(int sq)
 {
-	assert(square_ok(sq) || sq == NB_SQUARE);
-	return ZobristEnPassant[sq];
+    assert(square_ok(sq) || sq == NB_SQUARE);
+    return ZobristEnPassant[sq];
 }
 
 uint64_t turn()
 {
-	return ZobristTurn;
+    return ZobristTurn;
 }
 
-}	// namespace zobrist
+}    // namespace zobrist
