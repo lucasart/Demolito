@@ -1,6 +1,7 @@
 #pragma once
 #include "types.h"
 #include "move.h"
+#include "zobrist.h"
 
 class Position {
     bitboard_t _byColor[NB_COLOR];
@@ -24,6 +25,9 @@ class Position {
 
 public:
     void set(const std::string& fen);
+    void random(zobrist::PRNG& prng, int pieces);
+    void finish();
+
     void set(const Position& before, Move m);
     std::string get() const;
 

@@ -18,8 +18,8 @@
 #include <cstring>    // std::memset
 #include "position.h"
 #include "bitboard.h"
-#include "zobrist.h"
 #include "pst.h"
+#include "gen.h"
 
 // Invalid values for lazy calculation
 #define INVALID    uint64_t(-1)
@@ -146,6 +146,19 @@ void Position::set(int color, int piece, int sq)
     _key ^= zobrist::key(color, piece, sq);
 }
 
+void Position::finish()
+{
+    if (turn() == BLACK)
+        _key ^= zobrist::turn();
+
+    _key ^= zobrist::en_passant(ep_square());
+    _key ^= zobrist::castling(castlable_rooks());
+
+    _attacked = _checkers = INVALID;
+
+    assert(key_ok());
+}
+
 void Position::set(const std::string& fen)
 {
     clear();
@@ -197,14 +210,7 @@ void Position::set(const std::string& fen)
     _epSquare = string_to_square(s);
     is >> _rule50;
 
-    if (turn() == BLACK)
-        _key ^= zobrist::turn();
-    _key ^= zobrist::en_passant(ep_square());
-    _key ^= zobrist::castling(castlable_rooks());
-
-    _attacked = _checkers = INVALID;
-
-    assert(key_ok());
+    finish();
 }
 
 std::string Position::get() const
@@ -497,4 +503,152 @@ void Position::print() const
             std::cout << ' ' << square_to_string(bb::pop_lsb(b));
         std::cout << std::endl;
     }
+}
+
+void Position::random(zobrist::PRNG& prng, int pieces)
+{
+    // Piece frequency
+    #define NB_PIECE_FREQ 8 + 2 * 3 + 1
+    const int PieceFrequency[NB_PIECE_FREQ] = {
+        PAWN, PAWN, PAWN, PAWN, PAWN, PAWN, PAWN, PAWN,
+        KNIGHT, KNIGHT, BISHOP, BISHOP, ROOK, ROOK,
+        QUEEN
+    };
+
+    // Rank frequency
+    #define NB_RANK_FREQ 8 * (8 + 1) / 2
+    const int RankFrequency[NB_RANK_FREQ] = {
+        RANK_1, RANK_1, RANK_1, RANK_1, RANK_1, RANK_1, RANK_1, RANK_1,
+        RANK_2, RANK_2, RANK_2, RANK_2, RANK_2, RANK_2, RANK_2,
+        RANK_3, RANK_3, RANK_3, RANK_3, RANK_3, RANK_3,
+        RANK_4, RANK_4, RANK_4, RANK_4, RANK_4,
+        RANK_5, RANK_5, RANK_5, RANK_5,
+        RANK_6, RANK_6, RANK_6,
+        RANK_7, RANK_7,
+        RANK_8
+    };
+
+again:
+    clear();
+
+    // White King on a random square
+    set(WHITE, KING, prng.rand() % NB_SQUARE);
+
+    int sq;
+
+    // Black King on an empty random square
+    while (bb::test(occ(), sq = prng.rand() % NB_SQUARE));
+        set(BLACK, KING, sq);
+
+    // Pieces
+    for (int i = 0; i < pieces; i++) {
+        // Random color and piece. Skew the dice to the same relative piece frequency
+        // as in the starting position.
+        const int color = prng.rand() % NB_COLOR;
+        const int piece = PieceFrequency[prng.rand() % NB_PIECE_FREQ];
+
+        // Choose a random empty square. Pawns: skew the dice to get 3x more 2nd rank.
+        do {
+            const int f = prng.rand() % NB_FILE;
+            int r = RankFrequency[prng.rand() % NB_RANK_FREQ];
+
+            if (piece == PAWN && (r == RANK_1 || r == RANK_8))
+                r = color ? RANK_7 : RANK_2;
+
+            sq = square(color ? RANK_8 - r : r, f);
+        } while (bb::test(occ(), sq));
+
+        set(color, piece, sq);
+    }
+
+    // Determine turn, considering checks
+    _turn = prng.rand() % NB_COLOR;
+    bool checked[NB_COLOR];
+
+    for (int color = 0; color < NB_COLOR; color++) {
+        checked[color] = bb::test(attacked_by(opp_color(color)), king_square(color));
+
+        // The side in check, if any, must have the move
+        if (checked[color])
+            _turn = color;
+    }
+
+    // Both sides can't be in check at the same time
+    if (checked[WHITE] && checked[BLACK])
+        goto again;
+
+    // En passant
+    _epSquare = NB_SQUARE;
+
+    // Find possible en-passant squares
+    int them = opp_color(turn());
+    bitboard_t b = bb::rank(them ? RANK_5 : RANK_4) & occ(them, PAWN);
+    b = bb::shift(b, them ? 8 : -8) & ~occ();
+    b &= ~bb::shift(occ(), them ? -8 : 8);
+
+    // Choose an en-passant square
+    if (b) {
+        // There are possible en-passant squares to choose from. With 50% probability,
+        // we choose a one of them at random, and with 50% probability we choose no
+        // en-passant square.
+        do {
+            b &= prng.rand();
+        } while (bb::several(b));
+
+        if (b) {
+            assert(bb::count(b) == 1);
+            _epSquare = bb::lsb(b);
+        }
+    }
+
+    // Castling
+    for (int color = 0; color < NB_COLOR; color++) {
+        const int ksq = king_square(color);
+        const int r = color ? RANK_8 : RANK_1;
+
+        if (rank_of(ksq) != r && (Chess960 || file_of(ksq) != FILE_E))
+            continue;
+
+        const int edgeFile[2] = {FILE_A, FILE_H};
+        const int direction[2] = {-1, +1};
+
+        for (int i = 0; i < 2; i++) {
+
+            if (file_of(ksq) != edgeFile[i]) {
+
+                if (Chess960)
+                    b = bb::ray(ksq, ksq + direction[i]) & occ(color, ROOK);
+                else
+                    b = (1ULL << square(r, edgeFile[i])) & occ(color, ROOK);
+
+                do {
+                    b &= prng.rand();
+                } while (bb::several(b));
+
+                _castlableRooks |= b;
+            }
+        }
+    }
+
+    _rule50 = prng.rand() % 100;
+    finish();
+
+    // Filter out positions with no legal move (ie. mate or stalemate)
+    move_t emList[MAX_MOVES], *m, *end;
+
+    end = gen::all_moves(*this, emList);
+
+    if (emList == end)
+        // no pseudo-legal moves
+        goto again;
+
+    const PinInfo pi(*this);
+
+    for (m = emList; m != end; m++)
+        if (Move(*m).pseudo_is_legal(*this, pi))
+            break;
+
+    if (m == end)
+        // all pseudo-legal moves are illegal (mate or stalemate)
+        goto again;
 }

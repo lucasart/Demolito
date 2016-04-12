@@ -63,21 +63,28 @@ void setoption(std::istringstream& is)
 
 void position(std::istringstream& is)
 {
+    static zobrist::PRNG prng;
+
+    Position p[NB_COLOR];
+    int idx = 0;
+
     std::string token, fen;
     is >> token;
 
     if (token == "startpos") {
         fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
         is >> token;    // consume "moves" token (if present)
+        p[idx].set(fen);
     } else if (token == "fen") {
         while (is >> token && token != "moves")
             fen += token + " ";
+        p[idx].set(fen);
+    } else if (token == "random") {
+        is >> token;    // number of pieces (excluding Kings)
+        p[idx].random(prng, std::stoi(token));
     } else
         return;
 
-    Position p[NB_COLOR];
-    int idx = 0;
-    p[idx].set(fen);
     uci::history.clear();
     uci::history.push(p[idx].key());
 
