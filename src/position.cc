@@ -353,16 +353,20 @@ bitboard_t Position::checkers() const
 {
     if (_checkers == INVALID)
         return _checkers = attackers_to(king_square(turn()), occ()) & occ(opp_color(turn()));
-    else
+    else {
+        assert(_checkers == attackers_to(king_square(turn()), occ()) & occ(opp_color(turn())));
         return _checkers;
+    }
 }
 
 bitboard_t Position::attacked() const
 {
     if (_attacked == INVALID)
         return _attacked = attacked_by(opp_color(turn()));
-    else
+    else {
+        assert(_attacked == attacked_by(opp_color(turn())));
         return _attacked;
+    }
 }
 
 bitboard_t Position::castlable_rooks() const
@@ -613,9 +617,7 @@ again:
         const int direction[2] = {-1, +1};
 
         for (int i = 0; i < 2; i++) {
-
             if (file_of(ksq) != edgeFile[i]) {
-
                 if (Chess960)
                     b = bb::ray(ksq, ksq + direction[i]) & occ(color, ROOK);
                 else
