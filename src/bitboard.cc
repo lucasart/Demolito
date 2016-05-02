@@ -152,24 +152,6 @@ bitboard_t rpattacks(int sq)
     return RPseudoAttacks[sq];
 }
 
-bitboard_t piece_attacks(int color, int piece, int sq, bitboard_t occ)
-{
-    assert(color_ok(color) && piece_ok(piece) && square_ok(sq));
-
-    if (piece == PAWN)
-        return pattacks(color, sq);
-    else if (piece == KNIGHT)
-        return nattacks(sq);
-    else if (piece == BISHOP)
-        return battacks(sq, occ);
-    else if (piece == ROOK)
-        return rattacks(sq, occ);
-    else if (piece == QUEEN)
-        return rattacks(sq, occ) | battacks(sq, occ);
-    else
-        return kattacks(sq);
-}
-
 bitboard_t segment(int sq1, int sq2)
 {
     assert(square_ok(sq1) && square_ok(sq2));
