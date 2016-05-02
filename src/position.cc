@@ -145,16 +145,9 @@ void Position::set(int color, int piece, int sq)
 
 void Position::finish()
 {
-    if (turn() == BLACK)
-        _key ^= zobrist::turn();
-
-    _key ^= zobrist::en_passant(ep_square());
-    _key ^= zobrist::castling(castlable_rooks());
-
+    assert(key_ok());
     _attacked = attacked_by(opp_color(turn()));
     _checkers = attackers_to(king_square(turn()), occ()) & occ(opp_color(turn()));
-
-    assert(key_ok());
 }
 
 void Position::set(const std::string& fen)
@@ -182,7 +175,13 @@ void Position::set(const std::string& fen)
 
     // Turn of play
     is >> s;
-    _turn = s == "w" ? WHITE : BLACK;
+
+    if (s == "w")
+        _turn = WHITE;
+    else {
+        _turn = BLACK;
+        _key ^= zobrist::turn();
+    }
 
     // Castling rights
     is >> s;
@@ -201,11 +200,14 @@ void Position::set(const std::string& fen)
 
             bb::set(_castlableRooks, sq);
         }
+
+        _key ^= zobrist::castling(castlable_rooks());
     }
 
     // En passant and 50 move
     is >> s;
     _epSquare = string_to_square(s);
+    _key ^= zobrist::en_passant(ep_square());
     is >> _rule50;
 
     finish();
@@ -470,10 +472,7 @@ void Position::set(const Position& before, Move m)
     _key ^= zobrist::en_passant(before.ep_square()) ^ zobrist::en_passant(ep_square());
     _key ^= zobrist::castling(before.castlable_rooks() ^ castlable_rooks());
 
-    _attacked = attacked_by(opp_color(turn()));
-    _checkers = attackers_to(king_square(turn()), occ()) & occ(opp_color(turn()));
-
-    assert(key_ok());
+    finish();
 }
 
 void Position::print() const
@@ -623,6 +622,13 @@ again:
     }
 
     _rule50 = prng.rand() % 100;
+
+    if (turn() == BLACK)
+        _key ^= zobrist::turn();
+
+    _key ^= zobrist::en_passant(ep_square());
+    _key ^= zobrist::castling(castlable_rooks());
+
     finish();
 
     // Filter out positions with no legal move (ie. mate or stalemate)
