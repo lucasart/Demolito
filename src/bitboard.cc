@@ -31,6 +31,7 @@ bitboard_t RPseudoAttacks[NB_SQUARE];
 
 bitboard_t Segment[NB_SQUARE][NB_SQUARE];
 bitboard_t Ray[NB_SQUARE][NB_SQUARE];
+bitboard_t PawnSpan[NB_COLOR][NB_SQUARE];
 
 void safe_set_bit(bitboard_t& b, int r, int f)
 {
@@ -53,6 +54,14 @@ void init_leaper_attacks()
             safe_set_bit(PAttacks[BLACK][sq], r - PDir[d][0], f - PDir[d][1]);
         }
     }
+
+    for (int sq = H8; sq >= A1; sq--)
+        PawnSpan[WHITE][sq] = (rank_of(sq) == RANK_8 ? 0 : PawnSpan[WHITE][sq + 8])
+                              | PAttacks[WHITE][sq];
+
+    for (int sq = A1; sq <= H8; sq++)
+        PawnSpan[BLACK][sq] = (rank_of(sq) == RANK_1 ? 0 : PawnSpan[BLACK][sq - 8])
+                              | PAttacks[BLACK][sq];
 }
 
 void init_rays()
@@ -163,6 +172,12 @@ bitboard_t ray(int sq1, int sq2)
     assert(square_ok(sq1) && square_ok(sq2));
     assert(sq1 != sq2);    // Ray[sq][sq] is undefined
     return Ray[sq1][sq2];
+}
+
+bitboard_t pawn_span(int color, int sq)
+{
+    assert(color_ok(color) && square_ok(sq));
+    return PawnSpan[color][sq];
 }
 
 /* Bit manipulation */

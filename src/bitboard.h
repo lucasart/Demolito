@@ -15,6 +15,7 @@ bitboard_t relative_rank(int color, int r);
 
 // Leaper attacks
 bitboard_t pattacks(int color, int sq);
+bitboard_t pawn_span(int color, int sq);
 bitboard_t nattacks(int sq);
 bitboard_t kattacks(int sq);
 
