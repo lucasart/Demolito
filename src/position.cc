@@ -21,9 +21,6 @@
 #include "pst.h"
 #include "gen.h"
 
-// Invalid values for lazy calculation
-#define INVALID    uint64_t(-1)
-
 bool Position::key_ok() const
 {
     uint64_t k = 0;
@@ -154,7 +151,8 @@ void Position::finish()
     _key ^= zobrist::en_passant(ep_square());
     _key ^= zobrist::castling(castlable_rooks());
 
-    _attacked = _checkers = INVALID;
+    _attacked = attacked_by(opp_color(turn()));
+    _checkers = attackers_to(king_square(turn()), occ()) & occ(opp_color(turn()));
 
     assert(key_ok());
 }
@@ -351,22 +349,14 @@ int Position::rule50() const
 
 bitboard_t Position::checkers() const
 {
-    if (_checkers == INVALID)
-        return _checkers = attackers_to(king_square(turn()), occ()) & occ(opp_color(turn()));
-    else {
-        assert(_checkers == attackers_to(king_square(turn()), occ()) & occ(opp_color(turn())));
-        return _checkers;
-    }
+    assert(_checkers == (attackers_to(king_square(turn()), occ()) & occ(opp_color(turn()))));
+    return _checkers;
 }
 
 bitboard_t Position::attacked() const
 {
-    if (_attacked == INVALID)
-        return _attacked = attacked_by(opp_color(turn()));
-    else {
-        assert(_attacked == attacked_by(opp_color(turn())));
-        return _attacked;
-    }
+    assert(_attacked == attacked_by(opp_color(turn())));
+    return _attacked;
 }
 
 bitboard_t Position::castlable_rooks() const
@@ -475,13 +465,13 @@ void Position::set(const Position& before, Move m)
         }
     }
 
+    _turn = them;
     _key ^= zobrist::turn();
     _key ^= zobrist::en_passant(before.ep_square()) ^ zobrist::en_passant(ep_square());
     _key ^= zobrist::castling(before.castlable_rooks() ^ castlable_rooks());
 
-    _attacked = _checkers = INVALID;
-
-    _turn = them;
+    _attacked = attacked_by(opp_color(turn()));
+    _checkers = attackers_to(king_square(turn()), occ()) & occ(opp_color(turn()));
 
     assert(key_ok());
 }

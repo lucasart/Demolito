@@ -7,7 +7,7 @@ class Position {
     bitboard_t _byColor[NB_COLOR];
     bitboard_t _byPiece[NB_PIECE];
     bitboard_t _castlableRooks;
-    mutable bitboard_t _attacked, _checkers;    // lazy calc
+    mutable bitboard_t _attacked, _checkers;
     uint64_t _key;
     eval_t _pst;
     char _pieceOn[NB_SQUARE];
