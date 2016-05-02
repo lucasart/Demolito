@@ -108,13 +108,24 @@ uint64_t key(int color, int piece, int sq)
     return Zobrist[color][piece][sq];
 }
 
+uint64_t keys(int color, int piece, uint64_t sqs)
+{
+    bitboard_t k = 0;
+
+    while(sqs)
+        k ^= key(color, piece, bb::pop_lsb(sqs));
+
+    return k;
+}
+
 uint64_t castling(bitboard_t castlableRooks)
 {
-    bitboard_t result = 0;
-    while (castlableRooks)
-        result ^= ZobristCastling[bb::pop_lsb(castlableRooks)];
+    bitboard_t k = 0;
 
-    return result;
+    while (castlableRooks)
+        k ^= ZobristCastling[bb::pop_lsb(castlableRooks)];
+
+    return k;
 }
 
 uint64_t en_passant(int sq)

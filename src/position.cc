@@ -23,22 +23,27 @@
 
 bool Position::key_ok() const
 {
-    uint64_t k = 0;
-
-    for (int color = 0; color < NB_COLOR; color++)
-    for (int piece = 0; piece < NB_PIECE; piece++) {
-        bitboard_t b = occ(color, piece);
-        while (b)
-            k ^= zobrist::key(color, piece, bb::pop_lsb(b));
-    }
-
+    uint64_t k = turn() ? zobrist::turn() : 0;
     k ^= zobrist::en_passant(ep_square());
     k ^= zobrist::castling(castlable_rooks());
 
-    if (turn() == BLACK)
-        k ^= zobrist::turn();
+    for (int color = 0; color < NB_COLOR; color++)
+        for (int piece = 0; piece < NB_PIECE; piece++)
+            k ^= zobrist::keys(color, piece, occ(color, piece));
 
     return k == _key;
+}
+
+bool Position::pawn_key_ok() const
+{
+    uint64_t k = turn() ? zobrist::turn() : 0;
+
+    for (int color = 0; color < NB_COLOR; color++) {
+        k ^= zobrist::keys(color, PAWN, occ(color, PAWN));
+        k ^= zobrist::keys(color, KING, occ(color, KING));
+    }
+
+    return k == _pawnKey;
 }
 
 bool Position::pst_ok() const
@@ -127,6 +132,9 @@ void Position::clear(int color, int piece, int sq)
         _pieceMaterial[color] -= Material[piece];
 
     _key ^= zobrist::key(color, piece, sq);
+
+    if (piece == KING || piece == PAWN)
+        _pawnKey ^= zobrist::key(color, piece, sq);
 }
 
 void Position::set(int color, int piece, int sq)
@@ -141,11 +149,13 @@ void Position::set(int color, int piece, int sq)
         _pieceMaterial[color] += Material[piece];
 
     _key ^= zobrist::key(color, piece, sq);
+
+    if (piece == KING || piece == PAWN)
+        _pawnKey ^= zobrist::key(color, piece, sq);
 }
 
 void Position::finish()
 {
-    assert(key_ok());
     _attacked = attacked_by(opp_color(turn()));
     _checkers = attackers_to(king_square(turn()), occ()) & occ(opp_color(turn()));
 }
@@ -181,6 +191,7 @@ void Position::set(const std::string& fen)
     else {
         _turn = BLACK;
         _key ^= zobrist::turn();
+        _pawnKey ^= zobrist::turn();
     }
 
     // Castling rights
@@ -373,6 +384,12 @@ uint64_t Position::key() const
     return _key;
 }
 
+uint64_t Position::pawn_key() const
+{
+    assert(pawn_key_ok());
+    return _pawnKey;
+}
+
 eval_t Position::pst() const
 {
     assert(pst_ok());
@@ -469,6 +486,7 @@ void Position::set(const Position& before, Move m)
 
     _turn = them;
     _key ^= zobrist::turn();
+    _pawnKey ^= zobrist::turn();
     _key ^= zobrist::en_passant(before.ep_square()) ^ zobrist::en_passant(ep_square());
     _key ^= zobrist::castling(before.castlable_rooks() ^ castlable_rooks());
 
@@ -623,8 +641,10 @@ again:
 
     _rule50 = prng.rand() % 100;
 
-    if (turn() == BLACK)
+    if (turn() == BLACK) {
         _key ^= zobrist::turn();
+        _pawnKey ^= zobrist::turn();
+    }
 
     _key ^= zobrist::en_passant(ep_square());
     _key ^= zobrist::castling(castlable_rooks());
