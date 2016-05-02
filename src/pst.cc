@@ -36,8 +36,8 @@ eval_t bishop(int r, int f)
     const eval_t BackRankWeight = {-20, 0};
 
     return CenterWeight * (Center[r] + Center[f])
-        + DiagonalWeight * (7 == r + f || r == f)
-        + BackRankWeight * (r == RANK_1);
+           + DiagonalWeight * (7 == r + f || r == f)
+           + BackRankWeight * (r == RANK_1);
 }
 
 eval_t rook(int r, int f)
@@ -46,7 +46,7 @@ eval_t rook(int r, int f)
     const eval_t SeventhWeight = {16, 16};
 
     return FileWeight * Center[f]
-        + SeventhWeight * (r == RANK_7);
+           + SeventhWeight * (r == RANK_7);
 }
 
 eval_t queen(int r, int f)
@@ -55,7 +55,7 @@ eval_t queen(int r, int f)
     const eval_t BackRankWeight = {-10, 0};
 
     return CenterWeight * (Center[r] + Center[f])
-        + BackRankWeight * (r == RANK_1);
+           + BackRankWeight * (r == RANK_1);
 }
 
 eval_t king(int r, int f)
@@ -68,8 +68,8 @@ eval_t king(int r, int f)
     const eval_t RankWeight = {14, 0};
 
     return CenterWeight * (Center[r] + Center[f])
-        + FileWeight * FileShape[f]
-        + RankWeight * RankShape[r];
+           + FileWeight * FileShape[f]
+           + RankWeight * RankShape[r];
 }
 
 eval_t pawn(int r, int f)
@@ -98,25 +98,27 @@ void init(int verbosity)
 
     // Calculate PST, based on specialized functions for each piece
     for (int color = 0; color < NB_COLOR; color++)
-    for (int piece = 0; piece < NB_PIECE; piece++)
-    for (int sq = 0; sq < NB_SQUARE; sq++) {
-        const int rr = rank_of(sq) ^ (RANK_8 * color), f = file_of(sq);
-        table[color][piece][sq] = (Material[piece] + (*PstFn[piece])(rr, f))
-            * (color == WHITE ? 1 : -1);
-    }
+        for (int piece = 0; piece < NB_PIECE; piece++)
+            for (int sq = 0; sq < NB_SQUARE; sq++) {
+                const int rr = rank_of(sq) ^ (RANK_8 * color), f = file_of(sq);
+                table[color][piece][sq] = (Material[piece] + (*PstFn[piece])(rr, f))
+                                          * (color == WHITE ? 1 : -1);
+            }
 
     // Display, based on verbosity level
     for (int phase = 0; phase < NB_PHASE; phase++)
-    for (int color = 0; color < verbosity; color++)
-    for (int piece = 0; piece < NB_PIECE; piece++) {
-        std::cout << (phase == OPENING ? "opening" : "endgame")
-            << PieceLabel[WHITE][piece] << std::endl;
-        for (int r = RANK_8; r >= RANK_1; r--) {
-            for (int f = FILE_A; f <= FILE_H; f++)
-                std::cout << table[color][piece][square(r, f)][phase] << '\t';
-            std::cout << std::endl;
-        }
-    }
+        for (int color = 0; color < verbosity; color++)
+            for (int piece = 0; piece < NB_PIECE; piece++) {
+                std::cout << (phase == OPENING ? "opening" : "endgame")
+                          << PieceLabel[WHITE][piece] << std::endl;
+
+                for (int r = RANK_8; r >= RANK_1; r--) {
+                    for (int f = FILE_A; f <= FILE_H; f++)
+                        std::cout << table[color][piece][square(r, f)][phase] << '\t';
+
+                    std::cout << std::endl;
+                }
+            }
 }
 
 }    // namespace pst

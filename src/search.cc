@@ -46,8 +46,10 @@ namespace search {
 uint64_t nodes()
 {
     uint64_t total = 0;
+
     for (uint64_t n : nodeCount)
         total += n;
+
     return total;
 }
 
@@ -70,6 +72,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
     move_t bestMove = 0;
 
     const uint64_t s = signal.load(std::memory_order_relaxed);
+
     if (s) {
         if (s == STOP)
             throw ABORT_STOP;
@@ -78,6 +81,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
     }
 
     std::vector<move_t> childPv;
+
     if (pvNode) {
         childPv.reserve(MAX_PLY - ply);
         pv[0] = 0;
@@ -88,8 +92,10 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 
     // TT probe
     tt::Entry tte;
+
     if (tt::read(pos.key(), tte)) {
         tte.score = tt::score_from_tt(tte.score, ply);
+
         if (tte.depth >= depth && ply >= 1) {
             if (tte.score <= alpha && tte.bound >= tt::EXACT)
                 return tte.score;
@@ -98,8 +104,10 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
             else if (alpha < tte.score && tte.score < beta && tte.bound == tt::EXACT)
                 return tte.score;
         }
+
         if (depth > 0 && tte.depth <= 0)
             tte.move = 0;
+
         ss[ply].eval = tte.eval + Tempo;
     } else {
         tte.move = 0;
@@ -107,14 +115,17 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
     }
 
     nodeCount[ThreadId]++;
+
     if (ply >= MAX_PLY)
         return ss[ply].eval;
 
     // QSearch stand pat
     if (depth <= 0 && !pos.checkers()) {
         bestScore = ss[ply].eval;
+
         if (bestScore > alpha) {
             alpha = bestScore;
+
             if (bestScore >= beta)
                 return bestScore;
         }
@@ -130,8 +141,10 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
     while (!S.done() && alpha < beta) {
         int see;
         ss[ply].m = S.select(pos, see);
+
         if (!ss[ply].m.pseudo_is_legal(pos, pi))
             continue;
+
         moveCount++;
 
         // Prune losing captures in the qsearch
@@ -148,7 +161,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 
         // Prune losing captures in the search, near the leaves
         if (depth > 0 && depth <= 4 && see < 0
-        && !pvNode && !pos.checkers() && !nextPos.checkers())
+                && !pvNode && !pos.checkers() && !nextPos.checkers())
             continue;
 
         history[ThreadId].push(nextPos.key());
@@ -158,6 +171,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 
         // Recursion
         int score;
+
         if (nextDepth <= 0) {
             // Qsearch recursion (plain alpha/beta)
             if (depth <= MIN_DEPTH && !pos.checkers())
@@ -170,6 +184,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
                 score = -recurse(nextPos, ply+1, nextDepth, -beta, -alpha, childPv);
             else {
                 int reduction = 0;
+
                 if (!pos.checkers() && !nextPos.checkers())
                     reduction = !ss[ply].m.is_capture(pos) + (see < 0);
 
@@ -192,12 +207,15 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
         // New best score
         if (score > bestScore) {
             bestScore = score;
+
             // New alpha
             if (score > alpha) {
                 alpha = score;
                 bestMove = ss[ply].m;
+
                 if (pvNode) {
                     pv[0] = ss[ply].m;
+
                     for (int i = 0; i < MAX_PLY - ply; i++)
                         if (!(pv[i + 1] = childPv[i]))
                             break;
@@ -243,7 +261,7 @@ int aspirate(const Position& pos, int depth, std::vector<move_t>& pv, int score)
 }
 
 void iterate(const Position& pos, const Limits& lim, uci::Info& ui, std::vector<int>& iteration,
-    int threadId)
+             int threadId)
 {
     ThreadId = threadId;
     std::vector<move_t> pv(MAX_PLY + 1);
@@ -259,22 +277,26 @@ void iterate(const Position& pos, const Limits& lim, uci::Info& ui, std::vector<
             // depth == lim.depth: there is no next iteration.
             if (lim.threads >= 2 && depth >= 2 && depth < lim.depth) {
                 int cnt = 0;
+
                 for (int i = 0; i < lim.threads; i++)
                     cnt += i != ThreadId && iteration[i] == depth;
+
                 if (cnt >= lim.threads / 2 && depth < lim.depth)
                     continue;
             }
 
             iteration[ThreadId] = depth;
+
             if (signal == STOP)
                 return;
+
             signal &= ~(1ULL << ThreadId);
         }
 
         try {
             score = depth <= 1
-                ? recurse(pos, 0, depth, -INF, +INF, pv)
-                : aspirate(pos, depth, pv, score);
+                    ? recurse(pos, 0, depth, -INF, +INF, pv)
+                    : aspirate(pos, depth, pv, score);
 
             // Iteration was completed normally. Now we need to see who is working on
             // obsolete iterations, and raise the appropriate signal, to make them move
@@ -283,14 +305,17 @@ void iterate(const Position& pos, const Limits& lim, uci::Info& ui, std::vector<
                 std::lock_guard<std::mutex> lk(mtxSchedule);
                 assert(!bb::test(signal, ThreadId));
                 uint64_t s = 0;
+
                 for (int i = 0; i < lim.threads; i++)
                     if (i != ThreadId && iteration[i] == depth)
                         bb::set(s, i);
+
                 signal |= s;
             }
         } catch (const Abort e) {
             assert(bb::test(signal, ThreadId));
             history[ThreadId] = uci::history;    // Restore an orderly state
+
             if (e == ABORT_STOP)
                 break;
             else {
@@ -298,6 +323,7 @@ void iterate(const Position& pos, const Limits& lim, uci::Info& ui, std::vector<
                 continue;
             }
         }
+
         ui.update(pos, depth, score, nodes(), pv);
     }
 
@@ -319,6 +345,7 @@ void bestmove(const Position& pos, const Limits& lim)
     nodeCount.resize(lim.threads);
 
     std::vector<std::thread> threads;
+
     for (int i = 0; i < lim.threads; i++) {
         // Initialize per-thread data
         history[i] = uci::history;
@@ -326,7 +353,7 @@ void bestmove(const Position& pos, const Limits& lim)
 
         // Start searching thread
         threads.emplace_back(iterate, std::cref(pos), std::cref(lim), std::ref(ui),
-            std::ref(iteration), i);
+                             std::ref(iteration), i);
     }
 
     do {
@@ -339,7 +366,7 @@ void bestmove(const Position& pos, const Limits& lim)
                 std::lock_guard<std::mutex> lk(mtxSchedule);
                 signal = STOP;
             } else if (lim.movetime && duration_cast<milliseconds>
-            (high_resolution_clock::now() - start).count() >= lim.movetime) {
+                       (high_resolution_clock::now() - start).count() >= lim.movetime) {
                 std::lock_guard<std::mutex> lk(mtxSchedule);
                 signal = STOP;
             }

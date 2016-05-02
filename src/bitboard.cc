@@ -59,16 +59,19 @@ void init_rays()
 {
     for (int sq1 = 0; sq1 < NB_SQUARE; sq1++) {
         int r1 = rank_of(sq1), f1 = file_of(sq1);
+
         for (int d = 0; d < 8; d++) {
             bitboard_t mask = 0;
+
             for (int r2 = r1, f2 = f1; rank_ok(r2) && file_ok(f2);
-            r2 += KDir[d][0], f2 += KDir[d][1]) {
+                    r2 += KDir[d][0], f2 += KDir[d][1]) {
                 int sq2 = square(r2, f2);
                 bb::set(mask, sq2);
                 Segment[sq1][sq2] = mask;
             }
 
             bitboard_t sqs = mask;
+
             while (sqs) {
                 int sq2 = bb::pop_lsb(sqs);
                 Ray[sq1][sq2] = mask;
@@ -241,12 +244,15 @@ void print(bitboard_t b)
 {
     for (int r = RANK_8; r >= RANK_1; r--) {
         char line[] = ". . . . . . . .";
+
         for (int f = FILE_A; f <= FILE_H; f++) {
             if (test(b, square(r, f)))
                 line[2 * f] = 'X';
         }
+
         std::cout << line << '\n';
     }
+
     std::cout << std::endl;
 }
 

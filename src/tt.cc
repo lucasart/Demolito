@@ -22,15 +22,15 @@ std::vector<Entry> table(1024 * 1024 / sizeof(Entry), 0);    // default=1MB (min
 int score_to_tt(int score, int ply)
 {
     return score >= mate_in(MAX_PLY) ? score + ply
-        : score <= mated_in(MAX_PLY) ? score - ply
-        : score;
+           : score <= mated_in(MAX_PLY) ? score - ply
+           : score;
 }
 
 int score_from_tt(int ttScore, int ply)
 {
     return ttScore >= mate_in(MAX_PLY) ? ttScore - ply
-        : ttScore <= mated_in(MAX_PLY) ? ttScore + ply
-        : ttScore;
+           : ttScore <= mated_in(MAX_PLY) ? ttScore + ply
+           : ttScore;
 }
 
 bool read(uint64_t key, Entry& p)

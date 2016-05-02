@@ -34,10 +34,10 @@ int Threads = 1;
 void intro()
 {
     std::cout << "id name Demolito\nid author lucasart\n" << std::boolalpha
-        << "option name UCI_Chess960 type check default " << Chess960 << '\n'
-        << "option name Hash type spin default " << Hash << " min 1 max 1048576\n"
-        << "option name Threads type spin default " << Threads << " min 1 max 64\n"
-        << "uciok" << std::endl;
+              << "option name UCI_Chess960 type check default " << Chess960 << '\n'
+              << "option name Hash type spin default " << Hash << " min 1 max 1048576\n"
+              << "option name Threads type spin default " << Threads << " min 1 max 64\n"
+              << "uciok" << std::endl;
 }
 
 void setoption(std::istringstream& is)
@@ -45,6 +45,7 @@ void setoption(std::istringstream& is)
     std::string token, name;
 
     is >> token;
+
     if (token != "name")
         return;
 
@@ -57,7 +58,7 @@ void setoption(std::istringstream& is)
         is >> Hash;
         Hash = 1ULL << bb::msb(Hash);    // must be a power of two
         tt::table.resize(Hash * 1024 * (1024 / sizeof(tt::Entry)), 0);
-    } if (name == "Threads")
+    } else if (name == "Threads")
         is >> Threads;
 }
 
@@ -78,6 +79,7 @@ void position(std::istringstream& is)
     } else if (token == "fen") {
         while (is >> token && token != "moves")
             fen += token + " ";
+
         p[idx].set(fen);
     } else if (token == "random") {
         is >> token;    // number of pieces (excluding Kings)
@@ -168,6 +170,7 @@ void loop()
 void Info::update(const Position& pos, int depth, int score, int nodes, std::vector<move_t>& pv)
 {
     std::lock_guard<std::mutex> lk(mtx);
+
     if (depth > lastDepth) {
         lastDepth = depth;
         best = pv[0];
@@ -175,7 +178,8 @@ void Info::update(const Position& pos, int depth, int score, int nodes, std::vec
 
         std::ostringstream os;
         os << "info depth " << depth << " score " << format_score(score)
-            << " nodes " << nodes << " pv";
+           << " nodes " << nodes << " pv";
+
         for (int i = 0; pv[i]; i++)
             os << ' ' << Move(pv[i]).to_string(pos);
 
@@ -187,7 +191,7 @@ void Info::print_bestmove(const Position& pos) const
 {
     std::lock_guard<std::mutex> lk(mtx);
     std::cout << "bestmove " << best.to_string(pos)
-        << " ponder " << ponder.to_string(pos) << std::endl;
+              << " ponder " << ponder.to_string(pos) << std::endl;
 }
 
 std::string format_score(int score)
@@ -196,8 +200,8 @@ std::string format_score(int score)
 
     if (is_mate_score(score)) {
         const int dtm = score > 0
-            ? (MATE - score + 1) / 2
-            : (score - MATE + 1) / 2;
+                        ? (MATE - score + 1) / 2
+                        : (score - MATE + 1) / 2;
         os << "mate " << dtm;
     } else
         os << "cp " << score * 100 / EP;

@@ -25,6 +25,7 @@ move_t *serialize_moves(Move& m, bitboard_t tss, move_t *emList, bool subPromoti
 {
     while (tss) {
         m.tsq = bb::pop_lsb(tss);
+
         if (Promotion) {
             if (subPromotions) {
                 for (m.prom = QUEEN; m.prom >= KNIGHT; m.prom--)
@@ -53,16 +54,19 @@ move_t *pawn_moves(const Position& pos, move_t *emList, bitboard_t targets, bool
 
     // Non promotions
     fss = pos.occ(us, PAWN) & ~bb::relative_rank(us, RANK_7);
+
     while (fss) {
         m.fsq = bb::pop_lsb(fss);
 
         // Calculate to squares: captures, single pushes and double pushes
         tss = bb::pattacks(us, m.fsq) & capturable & targets;
+
         if (bb::test(~pos.occ(), m.fsq + push)) {
             if (bb::test(targets, m.fsq + push))
                 bb::set(tss, m.fsq + push);
+
             if (relative_rank(us, m.fsq) == RANK_2
-            && bb::test(targets & ~pos.occ(), m.fsq + 2 * push))
+                    && bb::test(targets & ~pos.occ(), m.fsq + 2 * push))
                 bb::set(tss, m.fsq + 2 * push);
         }
 
@@ -73,11 +77,13 @@ move_t *pawn_moves(const Position& pos, move_t *emList, bitboard_t targets, bool
 
     // Promotions
     fss = pos.occ(us, PAWN) & bb::relative_rank(us, RANK_7);
+
     while (fss) {
         m.fsq = bb::pop_lsb(fss);
 
         // Calculate to squares: captures and single pushes
         tss = bb::pattacks(us, m.fsq) & capturable & targets;
+
         if (bb::test(targets & ~pos.occ(), m.fsq + push))
             bb::set(tss, m.fsq + push);
 
@@ -105,6 +111,7 @@ move_t *piece_moves(const Position& pos, move_t *emList, bitboard_t targets, boo
 
     // Knight moves
     fss = pos.occ(us, KNIGHT);
+
     while (fss) {
         m.fsq = bb::pop_lsb(fss);
         tss = bb::nattacks(m.fsq) & targets;
@@ -113,6 +120,7 @@ move_t *piece_moves(const Position& pos, move_t *emList, bitboard_t targets, boo
 
     // Rook moves
     fss = pos.occ_RQ(us);
+
     while (fss) {
         m.fsq = bb::pop_lsb(fss);
         tss = bb::rattacks(m.fsq, pos.occ()) & targets;
@@ -121,6 +129,7 @@ move_t *piece_moves(const Position& pos, move_t *emList, bitboard_t targets, boo
 
     // Bishop moves
     fss = pos.occ_BQ(us);
+
     while (fss) {
         m.fsq = bb::pop_lsb(fss);
         tss = bb::battacks(m.fsq, pos.occ()) & targets;
@@ -138,10 +147,12 @@ move_t *castling_moves(const Position& pos, move_t *emList)
     m.prom = NB_PIECE;
 
     bitboard_t tss = pos.castlable_rooks() & pos.occ(pos.turn());
+
     while (tss) {
         m.tsq = bb::pop_lsb(tss);
         const int ktsq = square(rank_of(m.tsq), m.tsq > m.fsq ? FILE_G : FILE_C);
         const bitboard_t s = bb::segment(m.fsq, m.tsq) | bb::segment(m.fsq, ktsq);
+
         if (bb::count(s & pos.occ()) == 2)
             *emList++ = m;
     }
@@ -171,8 +182,8 @@ move_t *check_escapes(const Position& pos, move_t *emList, bool subPromotions)
         // Piece moves must cover the checking segment for a sliding check, or capture the
         // checker otherwise.
         tss = BISHOP <= checkerPiece && checkerPiece <= QUEEN
-            ? bb::segment(ksq, checkerSquare)
-            : pos.checkers();
+              ? bb::segment(ksq, checkerSquare)
+              : pos.checkers();
 
         emList = piece_moves(pos, emList, tss & ~ours, false);
 
@@ -218,6 +229,7 @@ uint64_t perft(const Position& pos, int depth)
 
     for (move_t *em = emList; em != end; em++) {
         const Move m(*em);
+
         if (!m.pseudo_is_legal(pos, pi))
             continue;
 

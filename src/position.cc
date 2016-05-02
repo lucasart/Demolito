@@ -51,11 +51,12 @@ bool Position::pst_ok() const
     eval_t sum = {0, 0};
 
     for (int color = 0; color < NB_COLOR; color++)
-    for (int piece = 0; piece < NB_PIECE; piece++) {
-        bitboard_t b = occ(color, piece);
-        while (b)
-            sum += pst::table[color][piece][bb::pop_lsb(b)];
-    }
+        for (int piece = 0; piece < NB_PIECE; piece++) {
+            bitboard_t b = occ(color, piece);
+
+            while (b)
+                sum += pst::table[color][piece][bb::pop_lsb(b)];
+        }
 
     return _pst == sum;
 }
@@ -67,6 +68,7 @@ bool Position::material_ok() const
     for (int color = 0; color < NB_COLOR; color++) {
         for (int piece = KNIGHT; piece <= QUEEN; piece++)
             npm[color] += Material[piece] * bb::count(occ(color, piece));
+
         if (npm[color] != _pieceMaterial[color])
             return false;
     }
@@ -77,11 +79,11 @@ bool Position::material_ok() const
 bitboard_t Position::attackers_to(int sq, bitboard_t _occ) const
 {
     return (occ(WHITE, PAWN) & bb::pattacks(BLACK, sq))
-        | (occ(BLACK, PAWN) & bb::pattacks(WHITE, sq))
-        | (bb::nattacks(sq) & by_piece(KNIGHT))
-        | (bb::kattacks(sq) & by_piece(KING))
-        | (bb::rattacks(sq, _occ) & (by_piece(ROOK) | by_piece(QUEEN)))
-        | (bb::battacks(sq, _occ) & (by_piece(BISHOP) | by_piece(QUEEN)));
+           | (occ(BLACK, PAWN) & bb::pattacks(WHITE, sq))
+           | (bb::nattacks(sq) & by_piece(KNIGHT))
+           | (bb::kattacks(sq) & by_piece(KING))
+           | (bb::rattacks(sq, _occ) & (by_piece(ROOK) | by_piece(QUEEN)))
+           | (bb::battacks(sq, _occ) & (by_piece(BISHOP) | by_piece(QUEEN)));
 }
 
 bitboard_t Position::attacked_by(int color) const
@@ -92,6 +94,7 @@ bitboard_t Position::attacked_by(int color) const
     // King and Knight attacks
     result = bb::kattacks(king_square(color));
     fss = occ(color, KNIGHT);
+
     while (fss)
         result |= bb::nattacks(bb::pop_lsb(fss));
 
@@ -104,9 +107,12 @@ bitboard_t Position::attacked_by(int color) const
     // Sliders
     bitboard_t _occ = occ() ^ occ(opp_color(color), KING);
     fss = occ_RQ(color);
+
     while (fss)
         result |= bb::rattacks(bb::pop_lsb(fss), _occ);
+
     fss = occ_BQ(color);
+
     while (fss)
         result |= bb::battacks(bb::pop_lsb(fss), _occ);
 
@@ -116,6 +122,7 @@ bitboard_t Position::attacked_by(int color) const
 void Position::clear()
 {
     std::memset(this, 0, sizeof(*this));
+
     for (int sq = 0; sq < NB_SQUARE; sq++)
         _pieceOn[sq] = NB_PIECE;
 }
@@ -128,6 +135,7 @@ void Position::clear(int color, int piece, int sq)
 
     _pieceOn[sq] = NB_PIECE;
     _pst -= pst::table[color][piece][sq];
+
     if (piece <= QUEEN)
         _pieceMaterial[color] -= Material[piece];
 
@@ -145,6 +153,7 @@ void Position::set(int color, int piece, int sq)
 
     _pieceOn[sq] = piece;
     _pst += pst::table[color][piece][sq];
+
     if (piece <= QUEEN)
         _pieceMaterial[color] += Material[piece];
 
@@ -169,6 +178,7 @@ void Position::set(const std::string& fen)
     // Piece placement
     is >> s;
     int sq = A8;
+
     for (char c : s) {
         if (isdigit(c))
             sq += c - '0';
@@ -177,6 +187,7 @@ void Position::set(const std::string& fen)
         else {
             for (int color = 0; color < NB_COLOR; color++) {
                 const int piece = PieceLabel[color].find(c);
+
                 if (piece_ok(piece))
                     set(color, piece, sq++);
             }
@@ -196,6 +207,7 @@ void Position::set(const std::string& fen)
 
     // Castling rights
     is >> s;
+
     if (s != "-") {
         for (char c : s) {
             int color = isupper(c) ? WHITE : BLACK;
@@ -237,8 +249,10 @@ std::string Position::get() const
 
             if (bb::test(occ(), sq)) {
                 const int color = color_on(sq), piece = piece_on(sq);
+
                 if (cnt)
                     os << char(cnt + '0');
+
                 cnt = 0;
                 os << PieceLabel[color][piece];
             } else
@@ -247,6 +261,7 @@ std::string Position::get() const
 
         if (cnt)
             os << char(cnt + '0');
+
         os << (r == RANK_1 ? ' ' : '/');
     }
 
@@ -259,6 +274,7 @@ std::string Position::get() const
     else {
         for (int color = WHITE; color <= BLACK; color++) {
             const bitboard_t sqs = castlable_rooks() & occ(color);
+
             if (!sqs)
                 continue;
 
@@ -273,7 +289,7 @@ std::string Position::get() const
             if (sqs & bb::ray(ksq, ksq + 1)) {
                 if (Chess960)
                     os << char(file_of(bb::lsb(sqs & bb::ray(ksq, ksq + 1)))
-                        + (color == WHITE ? 'A' : 'a'));
+                               + (color == WHITE ? 'A' : 'a'));
                 else
                     os << PieceLabel[color][KING];
             }
@@ -282,12 +298,13 @@ std::string Position::get() const
             if (sqs & bb::ray(ksq, ksq - 1)) {
                 if (Chess960)
                     os << char(file_of(bb::msb(sqs & bb::ray(ksq, ksq - 1)))
-                        + (color == WHITE ? 'A' : 'a'));
+                               + (color == WHITE ? 'A' : 'a'));
                 else
                     os << PieceLabel[color][QUEEN];
             }
         }
     }
+
     os << ' ';
 
     // En passant and 50 move
@@ -301,7 +318,7 @@ bitboard_t Position::occ() const
 {
     assert(!(_byColor[WHITE] & _byColor[BLACK]));
     assert((_byColor[WHITE] | _byColor[BLACK]) == (by_piece(KNIGHT) | by_piece(BISHOP)
-        | by_piece(ROOK) | by_piece(QUEEN) | by_piece(KING) | by_piece(PAWN)));
+            | by_piece(ROOK) | by_piece(QUEEN) | by_piece(KING) | by_piece(PAWN)));
     return _byColor[WHITE] | _byColor[BLACK];
 }
 
@@ -497,21 +514,27 @@ void Position::print() const
 {
     for (int r = RANK_8; r >= RANK_1; r--) {
         char line[] = ". . . . . . . .";
+
         for (int f = FILE_A; f <= FILE_H; f++) {
             const int sq = square(r, f);
             line[2 * f] = bb::test(occ(), sq)
-                ? PieceLabel[color_on(sq)][piece_on(sq)]
-                : sq == ep_square() ? '*' : '.';
+                          ? PieceLabel[color_on(sq)][piece_on(sq)]
+                          : sq == ep_square() ? '*' : '.';
         }
+
         std::cout << line << '\n';
     }
+
     std::cout << get() << std::endl;
 
     bitboard_t b = checkers();
+
     if (b) {
         std::cout << "checkers:";
+
         while (b)
             std::cout << ' ' << square_to_string(bb::pop_lsb(b));
+
         std::cout << std::endl;
     }
 }
@@ -519,7 +542,7 @@ void Position::print() const
 void Position::random(zobrist::PRNG& prng, int pieces)
 {
     // Piece frequency
-    #define NB_PIECE_FREQ 8 + 2 * 3 + 1
+#define NB_PIECE_FREQ 8 + 2 * 3 + 1
     const int PieceFrequency[NB_PIECE_FREQ] = {
         PAWN, PAWN, PAWN, PAWN, PAWN, PAWN, PAWN, PAWN,
         KNIGHT, KNIGHT, BISHOP, BISHOP, ROOK, ROOK,
@@ -527,7 +550,7 @@ void Position::random(zobrist::PRNG& prng, int pieces)
     };
 
     // Rank frequency
-    #define NB_RANK_FREQ 8 * (8 + 1) / 2
+#define NB_RANK_FREQ 8 * (8 + 1) / 2
     const int RankFrequency[NB_RANK_FREQ] = {
         RANK_1, RANK_1, RANK_1, RANK_1, RANK_1, RANK_1, RANK_1, RANK_1,
         RANK_2, RANK_2, RANK_2, RANK_2, RANK_2, RANK_2, RANK_2,
@@ -549,7 +572,8 @@ again:
 
     // Black King on an empty random square
     while (bb::test(occ(), sq = prng.rand() % NB_SQUARE));
-        set(BLACK, KING, sq);
+
+    set(BLACK, KING, sq);
 
     // Pieces
     for (int i = 0; i < pieces; i++) {

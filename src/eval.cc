@@ -21,7 +21,7 @@ bitboard_t pawn_attacks(const Position& pos, int color)
 {
     bitboard_t pawns = pos.occ(color, PAWN);
     return bb::shift(pawns & ~bb::file(FILE_A), color == WHITE ? 7 : -9)
-        | bb::shift(pawns & ~bb::file(FILE_H), color == WHITE ? 9 : -7);
+           | bb::shift(pawns & ~bb::file(FILE_H), color == WHITE ? 9 : -7);
 }
 
 eval_t score_mobility(int p0, int p, bitboard_t tss)
@@ -48,6 +48,7 @@ eval_t mobility(const Position& pos, int us)
 
     // Knight mobility
     fss = pos.occ(us, KNIGHT);
+
     while (fss) {
         tss = bb::nattacks(bb::pop_lsb(fss)) & targets;
         result += score_mobility(KNIGHT, KNIGHT, tss);
@@ -56,6 +57,7 @@ eval_t mobility(const Position& pos, int us)
     // Lateral mobility
     fss = pos.occ_RQ(us);
     occ = pos.occ() ^ fss;    // RQ see through each other
+
     while (fss) {
         fsq = bb::pop_lsb(fss);
         piece = pos.piece_on(fsq);
@@ -66,6 +68,7 @@ eval_t mobility(const Position& pos, int us)
     // Diagonal mobility
     fss = pos.occ_BQ(us);
     occ = pos.occ() ^ fss;    // BQ see through each other
+
     while (fss) {
         fsq = bb::pop_lsb(fss);
         piece = pos.piece_on(fsq);
@@ -79,7 +82,8 @@ eval_t mobility(const Position& pos, int us)
 eval_t bishop_pair(const Position& pos, int us)
 {
     // FIXME: verify that both B are indeed on different color squares
-    return bb::several(pos.occ(us, BISHOP)) ? eval_t{80, 100} : eval_t{0, 0};
+    return bb::several(pos.occ(us, BISHOP)) ? eval_t {80, 100} :
+           eval_t {0, 0};
 }
 
 int blend(const Position& pos, eval_t e)

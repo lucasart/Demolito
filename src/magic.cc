@@ -120,10 +120,10 @@ bitboard_t RMagicDB[0x19000], BMagicDB[0x1480];
 const size_t BMagicIndex[NB_SQUARE] = {
     4992, 2624,  256,  896, 1280, 1664, 4800, 5120,
     2560, 2656,  288,  928, 1312, 1696, 4832, 4928,
-       0,  128,  320,  960, 1344, 1728, 2304, 2432,
-      32,  160,  448, 2752, 3776, 1856, 2336, 2464,
-      64,  192,  576, 3264, 4288, 1984, 2368, 2496,
-      96,  224,  704, 1088, 1472, 2112, 2400, 2528,
+    0,  128,  320,  960, 1344, 1728, 2304, 2432,
+    32,  160,  448, 2752, 3776, 1856, 2336, 2464,
+    64,  192,  576, 3264, 4288, 1984, 2368, 2496,
+    96,  224,  704, 1088, 1472, 2112, 2400, 2528,
     2592, 2688,  832, 1216, 1600, 2240, 4864, 4960,
     5056, 2720,  864, 1248, 1632, 2272, 4896, 5184
 };
@@ -151,6 +151,7 @@ bitboard_t calc_sliding_attacks(int sq, bitboard_t occ, const int dir[4][2])
         for (_r = r + dr, _f = f + df; rank_ok(_r) && file_ok(_f); _r += dr, _f += df) {
             int _sq = square(_r, _f);
             bb::set(result, _sq);
+
             if (bb::test(occ, _sq))
                 break;
         }
@@ -171,12 +172,13 @@ bitboard_t init_magic_occ(const int* sq, int squareCount, bitboard_t lineOcc)
 }
 
 void init_helper(int sq, const bitboard_t mask[], const bitboard_t magic[], const int shift[],
-    bitboard_t magicDb[], const size_t magicIndex[], const int dir[4][2])
+                 bitboard_t magicDb[], const size_t magicIndex[], const int dir[4][2])
 {
     int squares[NB_SQUARE];
     int squareCount = 0;
 
     bitboard_t temp = mask[sq];
+
     while (temp)
         squares[squareCount++] = bb::pop_lsb(temp);
 

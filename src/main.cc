@@ -28,6 +28,7 @@ int main(int argc, char **argv)
 
     if (argc >= 2) {
         const std::string cmd(argv[1]);
+
         if (cmd == "see")
             std::cout << "\nSEE: " << (test::see(true) ? "ok" : "failed") << std::endl;
         else if ((cmd == "perft" || cmd == "search") && argc >= 4) {

@@ -114,6 +114,7 @@ bool see(bool verbose)
             std::cout << t.fen << '\t';
 
         std::cout << t.move << '\t' << "SEE = " << s << std::endl;
+
         if (s != t.value)
             return false;
     }
