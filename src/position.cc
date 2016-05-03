@@ -80,10 +80,10 @@ bitboard_t Position::attackers_to(int sq, bitboard_t _occ) const
 {
     return (occ(WHITE, PAWN) & bb::pattacks(BLACK, sq))
            | (occ(BLACK, PAWN) & bb::pattacks(WHITE, sq))
-           | (bb::nattacks(sq) & by_piece(KNIGHT))
-           | (bb::kattacks(sq) & by_piece(KING))
-           | (bb::rattacks(sq, _occ) & (by_piece(ROOK) | by_piece(QUEEN)))
-           | (bb::battacks(sq, _occ) & (by_piece(BISHOP) | by_piece(QUEEN)));
+           | (bb::nattacks(sq) & occ(KNIGHT))
+           | (bb::kattacks(sq) & occ(KING))
+           | (bb::rattacks(sq, _occ) & (occ(ROOK) | occ(QUEEN)))
+           | (bb::battacks(sq, _occ) & (occ(BISHOP) | occ(QUEEN)));
 }
 
 bitboard_t Position::attacked_by(Color c) const
@@ -308,10 +308,10 @@ std::string Position::get() const
 
 bitboard_t Position::occ() const
 {
-    assert(!(_byColor[WHITE] & _byColor[BLACK]));
-    assert((_byColor[WHITE] | _byColor[BLACK]) == (by_piece(KNIGHT) | by_piece(BISHOP)
-            | by_piece(ROOK) | by_piece(QUEEN) | by_piece(KING) | by_piece(PAWN)));
-    return _byColor[WHITE] | _byColor[BLACK];
+    assert(!(occ(WHITE) & occ(BLACK)));
+    assert((occ(WHITE) | occ(BLACK)) == (occ(KNIGHT) | occ(BISHOP) | occ(ROOK) | occ(QUEEN) | occ(
+            KING) | occ(PAWN)));
+    return occ(WHITE) | occ(BLACK);
 }
 
 bitboard_t Position::occ(Color c) const
@@ -322,10 +322,10 @@ bitboard_t Position::occ(Color c) const
 bitboard_t Position::occ(Color c, int piece) const
 {
     assert(piece_ok(piece));
-    return occ(c) & by_piece(piece);
+    return occ(c) & occ(piece);
 }
 
-bitboard_t Position::by_piece(int piece) const
+bitboard_t Position::occ(int piece) const
 {
     assert(piece_ok(piece));
     return _byPiece[piece];
@@ -333,12 +333,12 @@ bitboard_t Position::by_piece(int piece) const
 
 bitboard_t Position::occ_RQ(Color c) const
 {
-    return occ(c) & (by_piece(ROOK) | by_piece(QUEEN));
+    return occ(c) & (occ(ROOK) | occ(QUEEN));
 }
 
 bitboard_t Position::occ_BQ(Color c) const
 {
-    return occ(c) & (by_piece(BISHOP) | by_piece(QUEEN));
+    return occ(c) & (occ(BISHOP) | occ(QUEEN));
 }
 
 Color Position::turn() const

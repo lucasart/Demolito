@@ -207,9 +207,9 @@ int Move::see(const Position& pos) const
 
         // Scan for new X-ray attacks through the LVA
         if (piece != KNIGHT) {
-            attackers |= (pos.by_piece(BISHOP) | pos.by_piece(QUEEN))
+            attackers |= (pos.occ(BISHOP) | pos.occ(QUEEN))
                          & bb::bpattacks(tsq) & bb::battacks(tsq, occ);
-            attackers |= (pos.by_piece(ROOK) | pos.by_piece(QUEEN))
+            attackers |= (pos.occ(ROOK) | pos.occ(QUEEN))
                          & bb::rpattacks(tsq) & bb::rattacks(tsq, occ);
         }
 

@@ -35,7 +35,7 @@ public:
 
     bitboard_t occ() const;
     bitboard_t occ(Color c) const;
-    bitboard_t by_piece(int piece) const;
+    bitboard_t occ(int piece) const;
     bitboard_t occ(Color c, int piece) const;
     bitboard_t occ_RQ(Color c) const;
     bitboard_t occ_BQ(Color c) const;
