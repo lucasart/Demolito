@@ -5,14 +5,18 @@
 
 extern bool Chess960;
 
+#define ENABLE_OPERATORS_ON(T) \
+inline T& operator++(T& d) { return d = T(int(d) + 1); }
+
 /* Color, Piece */
 
-enum {WHITE, BLACK, NB_COLOR};
+enum Color {WHITE, BLACK, NB_COLOR};
 enum {KNIGHT, BISHOP, ROOK, QUEEN, KING, PAWN, NB_PIECE};
 
-bool color_ok(int color);
+ENABLE_OPERATORS_ON(Color)
+
 bool piece_ok(int piece);
-int opp_color(int color);
+Color opp_color(Color c);
 
 /* Rank, File, Square */
 
@@ -35,7 +39,7 @@ bool file_ok(int f);
 bool square_ok(int sq);
 int rank_of(int sq);
 int file_of(int sq);
-int relative_rank(int color, int sq);
+int relative_rank(Color c, int sq);
 int square(int r, int f);
 
 std::string square_to_string(int sq);
@@ -45,7 +49,7 @@ int string_to_square(const std::string& s);
 
 enum {UP = 8, DOWN = -8, LEFT = -1, RIGHT = 1};
 
-int push_inc(int color);    // pawn push increment
+int push_inc(Color c);    // pawn push increment
 
 /* Material values */
 

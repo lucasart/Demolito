@@ -97,24 +97,23 @@ void init(int verbosity)
     const pst_fn PstFn[NB_PIECE] = {&knight, &bishop, &rook, &queen, &king, &pawn};
 
     // Calculate PST, based on specialized functions for each piece
-    for (int color = 0; color < NB_COLOR; color++)
+    for (Color c = WHITE; c <= BLACK; ++c)
         for (int piece = 0; piece < NB_PIECE; piece++)
             for (int sq = 0; sq < NB_SQUARE; sq++) {
-                const int rr = rank_of(sq) ^ (RANK_8 * color), f = file_of(sq);
-                table[color][piece][sq] = (Material[piece] + (*PstFn[piece])(rr, f))
-                                          * (color == WHITE ? 1 : -1);
+                const int rr = rank_of(sq) ^ (RANK_8 * c), f = file_of(sq);
+                table[c][piece][sq] = (Material[piece] + (*PstFn[piece])(rr, f)) * (c == WHITE ? 1 : -1);
             }
 
     // Display, based on verbosity level
     for (int phase = 0; phase < NB_PHASE; phase++)
-        for (int color = 0; color < verbosity; color++)
+        for (Color c = WHITE; c < Color(verbosity); ++c)
             for (int piece = 0; piece < NB_PIECE; piece++) {
                 std::cout << (phase == OPENING ? "opening" : "endgame")
                           << PieceLabel[WHITE][piece] << std::endl;
 
                 for (int r = RANK_8; r >= RANK_1; r--) {
                     for (int f = FILE_A; f <= FILE_H; f++)
-                        std::cout << table[color][piece][square(r, f)][phase] << '\t';
+                        std::cout << table[c][piece][square(r, f)][phase] << '\t';
 
                     std::cout << std::endl;
                 }

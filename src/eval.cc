@@ -17,11 +17,11 @@
 
 namespace {
 
-bitboard_t pawn_attacks(const Position& pos, int color)
+bitboard_t pawn_attacks(const Position& pos, Color c)
 {
-    bitboard_t pawns = pos.occ(color, PAWN);
-    return bb::shift(pawns & ~bb::file(FILE_A), color == WHITE ? 7 : -9)
-           | bb::shift(pawns & ~bb::file(FILE_H), color == WHITE ? 9 : -7);
+    bitboard_t pawns = pos.occ(c, PAWN);
+    return bb::shift(pawns & ~bb::file(FILE_A), c == WHITE ? 7 : -9)
+           | bb::shift(pawns & ~bb::file(FILE_H), c == WHITE ? 9 : -7);
 }
 
 eval_t score_mobility(int p0, int p, bitboard_t tss)
@@ -37,9 +37,9 @@ eval_t score_mobility(int p0, int p, bitboard_t tss)
     return Weight[p] * cnt;
 }
 
-eval_t mobility(const Position& pos, int us)
+eval_t mobility(const Position& pos, Color us)
 {
-    const int them = opp_color(us);
+    const Color them = opp_color(us);
     const bitboard_t targets = ~(pos.occ(us, PAWN) | pos.occ(us, KING) | pawn_attacks(pos, them));
 
     bitboard_t fss, tss, occ;
@@ -79,7 +79,7 @@ eval_t mobility(const Position& pos, int us)
     return result;
 }
 
-eval_t bishop_pair(const Position& pos, int us)
+eval_t bishop_pair(const Position& pos, Color us)
 {
     // FIXME: verify that both B are indeed on different color squares
     return bb::several(pos.occ(us, BISHOP)) ? eval_t {80, 100} :
@@ -100,11 +100,11 @@ int evaluate(const Position& pos)
     assert(!pos.checkers());
     eval_t e[NB_COLOR] = {pos.pst(), {0, 0}};
 
-    for (int color = 0; color < NB_COLOR; color++) {
-        e[color] += bishop_pair(pos, color);
-        e[color] += mobility(pos, color);
+    for (Color c = WHITE; c <= BLACK; ++c) {
+        e[c] += bishop_pair(pos, c);
+        e[c] += mobility(pos, c);
     }
 
-    const int us = pos.turn(), them = opp_color(us);
+    const Color us = pos.turn(), them = opp_color(us);
     return blend(pos, e[us] - e[them]);
 }

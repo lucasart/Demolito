@@ -25,8 +25,8 @@ public:
 
 void init();
 
-uint64_t key(int color, int piece, int sq);
-uint64_t keys(int color, int piece, uint64_t sqs);
+uint64_t key(Color c, int piece, int sq);
+uint64_t keys(Color c, int piece, uint64_t sqs);
 
 uint64_t castling(bitboard_t castlableRooks);
 uint64_t en_passant(int sq);

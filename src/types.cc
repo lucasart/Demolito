@@ -19,20 +19,14 @@ bool Chess960 = false;
 
 /* Color, Piece */
 
-bool color_ok(int c)
-{
-    return 0 <= c && c < NB_COLOR;
-}
-
 bool piece_ok(int p)
 {
     return 0 <= p && p < NB_PIECE;
 }
 
-int opp_color(int c)
+Color opp_color(Color c)
 {
-    assert(color_ok(c));
-    return c ^ BLACK;
+    return Color(c ^ BLACK);
 }
 
 /* Rank, File, Square */
@@ -64,10 +58,10 @@ int file_of(int sq)
     return sq % NB_FILE;
 }
 
-int relative_rank(int color, int sq)
+int relative_rank(Color c, int sq)
 {
-    assert(color_ok(color) && square_ok(sq));
-    return rank_of(sq) ^ (7 * color);
+    assert(square_ok(sq));
+    return rank_of(sq) ^ (7 * c);
 }
 
 int square(int r, int f)
@@ -90,10 +84,9 @@ int string_to_square(const std::string& s)
 
 /* Directions */
 
-int push_inc(int color)
+int push_inc(Color c)
 {
-    assert(color_ok(color));
-    return color == WHITE ? UP : DOWN;
+    return c == WHITE ? UP : DOWN;
 }
 
 /* Eval */

@@ -88,10 +88,10 @@ void init()
 {
     PRNG prng;
 
-    for (int color = 0; color < NB_COLOR; color++)
+    for (Color c = WHITE; c <= BLACK; ++c)
         for (int piece = 0; piece < NB_PIECE; piece++)
             for (int sq = 0; sq < NB_SQUARE; sq++)
-                Zobrist[color][piece][sq] = prng.rand();
+                Zobrist[c][piece][sq] = prng.rand();
 
     for (int sq = 0; sq < NB_SQUARE; sq++)
         ZobristCastling[sq] = prng.rand();
@@ -102,18 +102,19 @@ void init()
     ZobristTurn = prng.rand();
 }
 
-uint64_t key(int color, int piece, int sq)
+uint64_t key(Color c, int piece, int sq)
 {
-    assert(color_ok(color) && piece_ok(piece) && square_ok(sq));
-    return Zobrist[color][piece][sq];
+    assert(piece_ok(piece) && square_ok(sq));
+    return Zobrist[c][piece][sq];
 }
 
-uint64_t keys(int color, int piece, uint64_t sqs)
+uint64_t keys(Color c, int piece, uint64_t sqs)
 {
+    assert(piece_ok(piece));
     bitboard_t k = 0;
 
     while(sqs)
-        k ^= key(color, piece, bb::pop_lsb(sqs));
+        k ^= key(c, piece, bb::pop_lsb(sqs));
 
     return k;
 }

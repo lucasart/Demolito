@@ -125,16 +125,16 @@ bitboard_t file(int f)
     return 0x0101010101010101ULL << f;
 }
 
-bitboard_t relative_rank(int color, int r)
+bitboard_t relative_rank(Color c, int r)
 {
-    assert(color_ok(color) && rank_ok(r));
-    return rank(color == WHITE ? r : RANK_8 - r);
+    assert(rank_ok(r));
+    return rank(c == WHITE ? r : RANK_8 - r);
 }
 
-bitboard_t pattacks(int color, int sq)
+bitboard_t pattacks(Color c, int sq)
 {
-    assert(color_ok(color) && square_ok(sq));
-    return PAttacks[color][sq];
+    assert(square_ok(sq));
+    return PAttacks[c][sq];
 }
 
 bitboard_t nattacks(int sq)
@@ -174,10 +174,10 @@ bitboard_t ray(int sq1, int sq2)
     return Ray[sq1][sq2];
 }
 
-bitboard_t pawn_span(int color, int sq)
+bitboard_t pawn_span(Color c, int sq)
 {
-    assert(color_ok(color) && square_ok(sq));
-    return PawnSpan[color][sq];
+    assert(square_ok(sq));
+    return PawnSpan[c][sq];
 }
 
 /* Bit manipulation */

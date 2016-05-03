@@ -27,9 +27,9 @@ bool Position::key_ok() const
     k ^= zobrist::en_passant(ep_square());
     k ^= zobrist::castling(castlable_rooks());
 
-    for (int color = 0; color < NB_COLOR; color++)
+    for (Color c = WHITE; c <= BLACK; ++c)
         for (int piece = 0; piece < NB_PIECE; piece++)
-            k ^= zobrist::keys(color, piece, occ(color, piece));
+            k ^= zobrist::keys(c, piece, occ(c, piece));
 
     return k == _key;
 }
@@ -38,9 +38,9 @@ bool Position::pawn_key_ok() const
 {
     uint64_t k = turn() ? zobrist::turn() : 0;
 
-    for (int color = 0; color < NB_COLOR; color++) {
-        k ^= zobrist::keys(color, PAWN, occ(color, PAWN));
-        k ^= zobrist::keys(color, KING, occ(color, KING));
+    for (Color c = WHITE; c <= BLACK; ++c) {
+        k ^= zobrist::keys(c, PAWN, occ(c, PAWN));
+        k ^= zobrist::keys(c, KING, occ(c, KING));
     }
 
     return k == _pawnKey;
@@ -50,12 +50,12 @@ bool Position::pst_ok() const
 {
     eval_t sum = {0, 0};
 
-    for (int color = 0; color < NB_COLOR; color++)
+    for (Color c = WHITE; c <= BLACK; ++c)
         for (int piece = 0; piece < NB_PIECE; piece++) {
-            bitboard_t b = occ(color, piece);
+            bitboard_t b = occ(c, piece);
 
             while (b)
-                sum += pst::table[color][piece][bb::pop_lsb(b)];
+                sum += pst::table[c][piece][bb::pop_lsb(b)];
         }
 
     return _pst == sum;
@@ -65,11 +65,11 @@ bool Position::material_ok() const
 {
     eval_t npm[NB_COLOR] = {{0,0}, {0,0}};
 
-    for (int color = 0; color < NB_COLOR; color++) {
+    for (Color c = WHITE; c <= BLACK; ++c) {
         for (int piece = KNIGHT; piece <= QUEEN; piece++)
-            npm[color] += Material[piece] * bb::count(occ(color, piece));
+            npm[c] += Material[piece] * bb::count(occ(c, piece));
 
-        if (npm[color] != _pieceMaterial[color])
+        if (npm[c] != _pieceMaterial[c])
             return false;
     }
 
@@ -86,32 +86,31 @@ bitboard_t Position::attackers_to(int sq, bitboard_t _occ) const
            | (bb::battacks(sq, _occ) & (by_piece(BISHOP) | by_piece(QUEEN)));
 }
 
-bitboard_t Position::attacked_by(int color) const
+bitboard_t Position::attacked_by(Color c) const
 {
-    assert(color_ok(color));
     bitboard_t fss, result;
 
     // King and Knight attacks
-    result = bb::kattacks(king_square(color));
-    fss = occ(color, KNIGHT);
+    result = bb::kattacks(king_square(c));
+    fss = occ(c, KNIGHT);
 
     while (fss)
         result |= bb::nattacks(bb::pop_lsb(fss));
 
     // Pawn captures
-    fss = occ(color, PAWN) & ~bb::file(FILE_A);
-    result |= bb::shift(fss, push_inc(color) + LEFT);
-    fss = occ(color, PAWN) & ~bb::file(FILE_H);
-    result |= bb::shift(fss, push_inc(color) + RIGHT);
+    fss = occ(c, PAWN) & ~bb::file(FILE_A);
+    result |= bb::shift(fss, push_inc(c) + LEFT);
+    fss = occ(c, PAWN) & ~bb::file(FILE_H);
+    result |= bb::shift(fss, push_inc(c) + RIGHT);
 
     // Sliders
-    bitboard_t _occ = occ() ^ occ(opp_color(color), KING);
-    fss = occ_RQ(color);
+    bitboard_t _occ = occ() ^ occ(opp_color(c), KING);
+    fss = occ_RQ(c);
 
     while (fss)
         result |= bb::rattacks(bb::pop_lsb(fss), _occ);
 
-    fss = occ_BQ(color);
+    fss = occ_BQ(c);
 
     while (fss)
         result |= bb::battacks(bb::pop_lsb(fss), _occ);
@@ -127,40 +126,36 @@ void Position::clear()
         _pieceOn[sq] = NB_PIECE;
 }
 
-void Position::clear(int color, int piece, int sq)
+void Position::clear(Color c, int piece, int sq)
 {
-    assert(color_ok(color) && piece_ok(piece) && square_ok(sq));
-    bb::clear(_byColor[color], sq);
+    assert(piece_ok(piece) && square_ok(sq));
+    bb::clear(_byColor[c], sq);
     bb::clear(_byPiece[piece], sq);
 
     _pieceOn[sq] = NB_PIECE;
-    _pst -= pst::table[color][piece][sq];
+    _pst -= pst::table[c][piece][sq];
+    _key ^= zobrist::key(c, piece, sq);
 
     if (piece <= QUEEN)
-        _pieceMaterial[color] -= Material[piece];
-
-    _key ^= zobrist::key(color, piece, sq);
-
-    if (piece == KING || piece == PAWN)
-        _pawnKey ^= zobrist::key(color, piece, sq);
+        _pieceMaterial[c] -= Material[piece];
+    else
+        _pawnKey ^= zobrist::key(c, piece, sq);
 }
 
-void Position::set(int color, int piece, int sq)
+void Position::set(Color c, int piece, int sq)
 {
-    assert(color_ok(color) && piece_ok(piece) && square_ok(sq));
-    bb::set(_byColor[color], sq);
+    assert(piece_ok(piece) && square_ok(sq));
+    bb::set(_byColor[c], sq);
     bb::set(_byPiece[piece], sq);
 
     _pieceOn[sq] = piece;
-    _pst += pst::table[color][piece][sq];
+    _pst += pst::table[c][piece][sq];
+    _key ^= zobrist::key(c, piece, sq);
 
     if (piece <= QUEEN)
-        _pieceMaterial[color] += Material[piece];
-
-    _key ^= zobrist::key(color, piece, sq);
-
-    if (piece == KING || piece == PAWN)
-        _pawnKey ^= zobrist::key(color, piece, sq);
+        _pieceMaterial[c] += Material[piece];
+    else
+        _pawnKey ^= zobrist::key(c, piece, sq);
 }
 
 void Position::finish()
@@ -185,11 +180,11 @@ void Position::set(const std::string& fen)
         else if (c == '/')
             sq += 2 * DOWN;
         else {
-            for (int color = 0; color < NB_COLOR; color++) {
-                const int piece = PieceLabel[color].find(c);
+            for (Color col = WHITE; col <= BLACK; ++col) {
+                const int piece = PieceLabel[col].find(c);
 
                 if (piece_ok(piece))
-                    set(color, piece, sq++);
+                    set(col, piece, sq++);
             }
         }
     }
@@ -210,8 +205,7 @@ void Position::set(const std::string& fen)
 
     if (s != "-") {
         for (char c : s) {
-            int color = isupper(c) ? WHITE : BLACK;
-            int r = RANK_8 * color;
+            const int r = isupper(c) ? RANK_1 : RANK_8;
             c = toupper(c);
 
             if (c == 'K')
@@ -248,13 +242,11 @@ std::string Position::get() const
             const int sq = square(r, f);
 
             if (bb::test(occ(), sq)) {
-                const int color = color_on(sq), piece = piece_on(sq);
-
                 if (cnt)
                     os << char(cnt + '0');
 
+                os << PieceLabel[color_on(sq)][piece_on(sq)];
                 cnt = 0;
-                os << PieceLabel[color][piece];
             } else
                 cnt++;
         }
@@ -272,8 +264,8 @@ std::string Position::get() const
     if (!castlable_rooks())
         os << '-';
     else {
-        for (int color = WHITE; color <= BLACK; color++) {
-            const bitboard_t sqs = castlable_rooks() & occ(color);
+        for (Color c = WHITE; c <= BLACK; ++c) {
+            const bitboard_t sqs = castlable_rooks() & occ(c);
 
             if (!sqs)
                 continue;
@@ -281,26 +273,26 @@ std::string Position::get() const
             // Because we have castlable rooks, king has to be on the first rank and not
             // in a corner, which allows using bb::ray(ksq, ksq +/- 1) to search for the
             // castle rook in Chess960.
-            const int ksq = king_square(color);
-            assert(rank_of(ksq) == (color == WHITE ? RANK_1 : RANK_8));
+            const int ksq = king_square(c);
+            assert(rank_of(ksq) == (c == WHITE ? RANK_1 : RANK_8));
             assert(file_of(ksq) != FILE_A && file_of(ksq) != FILE_H);
 
             // Right side castling
             if (sqs & bb::ray(ksq, ksq + 1)) {
                 if (Chess960)
                     os << char(file_of(bb::lsb(sqs & bb::ray(ksq, ksq + 1)))
-                               + (color == WHITE ? 'A' : 'a'));
+                               + (c == WHITE ? 'A' : 'a'));
                 else
-                    os << PieceLabel[color][KING];
+                    os << PieceLabel[c][KING];
             }
 
             // Left side castling
             if (sqs & bb::ray(ksq, ksq - 1)) {
                 if (Chess960)
                     os << char(file_of(bb::msb(sqs & bb::ray(ksq, ksq - 1)))
-                               + (color == WHITE ? 'A' : 'a'));
+                               + (c == WHITE ? 'A' : 'a'));
                 else
-                    os << PieceLabel[color][QUEEN];
+                    os << PieceLabel[c][QUEEN];
             }
         }
     }
@@ -322,16 +314,15 @@ bitboard_t Position::occ() const
     return _byColor[WHITE] | _byColor[BLACK];
 }
 
-bitboard_t Position::occ(int color) const
+bitboard_t Position::occ(Color c) const
 {
-    assert(color_ok(color));
-    return _byColor[color];
+    return _byColor[c];
 }
 
-bitboard_t Position::occ(int color, int piece) const
+bitboard_t Position::occ(Color c, int piece) const
 {
-    assert(color_ok(color) && piece_ok(piece));
-    return occ(color) & by_piece(piece);
+    assert(piece_ok(piece));
+    return occ(c) & by_piece(piece);
 }
 
 bitboard_t Position::by_piece(int piece) const
@@ -340,21 +331,18 @@ bitboard_t Position::by_piece(int piece) const
     return _byPiece[piece];
 }
 
-bitboard_t Position::occ_RQ(int color) const
+bitboard_t Position::occ_RQ(Color c) const
 {
-    assert(color_ok(color));
-    return occ(color) & (by_piece(ROOK) | by_piece(QUEEN));
+    return occ(c) & (by_piece(ROOK) | by_piece(QUEEN));
 }
 
-bitboard_t Position::occ_BQ(int color) const
+bitboard_t Position::occ_BQ(Color c) const
 {
-    assert(color_ok(color));
-    return occ(color) & (by_piece(BISHOP) | by_piece(QUEEN));
+    return occ(c) & (by_piece(BISHOP) | by_piece(QUEEN));
 }
 
-int Position::turn() const
+Color Position::turn() const
 {
-    assert(color_ok(_turn));
     return _turn;
 }
 
@@ -419,18 +407,18 @@ eval_t Position::piece_material() const
     return piece_material(WHITE) + piece_material(BLACK);
 }
 
-eval_t Position::piece_material(int color) const
+eval_t Position::piece_material(Color c) const
 {
     assert(material_ok());
-    return _pieceMaterial[color];
+    return _pieceMaterial[c];
 }
 
-int Position::king_square(int color) const
+int Position::king_square(Color c) const
 {
-    return bb::lsb(occ(color, KING));
+    return bb::lsb(occ(c, KING));
 }
 
-int Position::color_on(int sq) const
+Color Position::color_on(int sq) const
 {
     assert(bb::test(occ(), sq));
     return bb::test(occ(WHITE), sq) ? WHITE : BLACK;
@@ -446,7 +434,7 @@ void Position::set(const Position& before, Move m)
     *this = before;
     _rule50++;
 
-    const int us = turn(), them = opp_color(us);
+    const Color us = turn(), them = opp_color(us);
     const int piece = piece_on(m.fsq);
     const int capture = piece_on(m.tsq);
 
@@ -579,7 +567,7 @@ again:
     for (int i = 0; i < pieces; i++) {
         // Random color and piece. Skew the dice to the same relative piece frequency
         // as in the starting position.
-        const int color = prng.rand() % NB_COLOR;
+        const Color c = Color(prng.rand() % NB_COLOR);
         const int piece = PieceFrequency[prng.rand() % NB_PIECE_FREQ];
 
         // Choose a random empty square. Pawns: skew the dice to get 3x more 2nd rank.
@@ -588,24 +576,24 @@ again:
             int r = RankFrequency[prng.rand() % NB_RANK_FREQ];
 
             if (piece == PAWN && (r == RANK_1 || r == RANK_8))
-                r = color ? RANK_7 : RANK_2;
+                r = c ? RANK_7 : RANK_2;
 
-            sq = square(color ? RANK_8 - r : r, f);
+            sq = square(c ? RANK_8 - r : r, f);
         } while (bb::test(occ(), sq));
 
-        set(color, piece, sq);
+        set(c, piece, sq);
     }
 
     // Determine turn, considering checks
-    _turn = prng.rand() % NB_COLOR;
+    _turn = Color(prng.rand() % NB_COLOR);
     bool checked[NB_COLOR];
 
-    for (int color = 0; color < NB_COLOR; color++) {
-        checked[color] = bb::test(attacked_by(opp_color(color)), king_square(color));
+    for (Color c = WHITE; c <= BLACK; ++c) {
+        checked[c] = bb::test(attacked_by(opp_color(c)), king_square(c));
 
         // The side in check, if any, must have the move
-        if (checked[color])
-            _turn = color;
+        if (checked[c])
+            _turn = c;
     }
 
     // Both sides can't be in check at the same time
@@ -616,7 +604,7 @@ again:
     _epSquare = NB_SQUARE;
 
     // Find possible en-passant squares
-    int them = opp_color(turn());
+    const Color them = opp_color(turn());
     bitboard_t b = bb::rank(them ? RANK_5 : RANK_4) & occ(them, PAWN);
     b = bb::shift(b, them ? 8 : -8) & ~occ();
     b &= ~bb::shift(occ(), them ? -8 : 8);
@@ -637,9 +625,9 @@ again:
     }
 
     // Castling
-    for (int color = 0; color < NB_COLOR; color++) {
-        const int ksq = king_square(color);
-        const int r = color ? RANK_8 : RANK_1;
+    for (Color c = WHITE; c <= BLACK; ++c) {
+        const int ksq = king_square(c);
+        const int r = c ? RANK_8 : RANK_1;
 
         if (rank_of(ksq) != r && (Chess960 || file_of(ksq) != FILE_E))
             continue;
@@ -650,9 +638,9 @@ again:
         for (int i = 0; i < 2; i++) {
             if (file_of(ksq) != edgeFile[i]) {
                 if (Chess960)
-                    b = bb::ray(ksq, ksq + direction[i]) & occ(color, ROOK);
+                    b = bb::ray(ksq, ksq + direction[i]) & occ(c, ROOK);
                 else
-                    b = (1ULL << square(r, edgeFile[i])) & occ(color, ROOK);
+                    b = (1ULL << square(r, edgeFile[i])) & occ(c, ROOK);
 
                 do {
                     b &= prng.rand();

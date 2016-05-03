@@ -17,9 +17,8 @@
 #include "bitboard.h"
 #include "position.h"
 
-bitboard_t PinInfo::hidden_checkers(const Position& pos, int attacker, int blocker) const
+bitboard_t PinInfo::hidden_checkers(const Position& pos, Color attacker, Color blocker) const
 {
-    assert(color_ok(attacker) && color_ok(blocker));
     const int ksq = pos.king_square(opp_color(attacker));
     bitboard_t pinners = (pos.occ_RQ(attacker) & bb::rpattacks(ksq))
                          | (pos.occ_BQ(attacker) & bb::bpattacks(ksq));
@@ -41,7 +40,7 @@ bitboard_t PinInfo::hidden_checkers(const Position& pos, int attacker, int block
 
 PinInfo::PinInfo(const Position& pos)
 {
-    const int us = pos.turn(), them = opp_color(us);
+    const Color us = pos.turn(), them = opp_color(us);
     pinned = hidden_checkers(pos, them, us);
     discoCheckers = hidden_checkers(pos, us, us);
 }
@@ -74,7 +73,7 @@ Move Move::operator =(move_t em)
 
 bool Move::is_capture(const Position& pos) const
 {
-    const int us = pos.turn(), them = opp_color(us);
+    const Color us = pos.turn(), them = opp_color(us);
     return (bb::test(pos.occ(them), tsq))
            || ((tsq == pos.ep_square() || relative_rank(us, tsq) == RANK_8)
                && pos.piece_on(fsq) == PAWN);
@@ -149,7 +148,7 @@ bool Move::pseudo_is_legal(const Position& pos, const PinInfo& pi) const
         // En-passant special case: also illegal if self-check through the en-passant
         // captured pawn
         if (tsq == pos.ep_square() && piece == PAWN) {
-            const int us = pos.turn(), them = opp_color(us);
+            const Color us = pos.turn(), them = opp_color(us);
             bitboard_t occ = pos.occ();
             bb::clear(occ, fsq);
             bb::set(occ, tsq);
@@ -165,7 +164,7 @@ int Move::see(const Position& pos) const
 {
     const int see_value[NB_PIECE+1] = {N, B, R, Q, MATE, P, 0};
 
-    int us = pos.turn();
+    Color us = pos.turn();
     bitboard_t occ = pos.occ();
 
     // General case
