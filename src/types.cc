@@ -17,18 +17,6 @@
 
 bool Chess960 = false;
 
-/* Color, Piece */
-
-bool piece_ok(int p)
-{
-    return 0 <= p && p < NB_PIECE;
-}
-
-Color opp_color(Color c)
-{
-    return Color(c ^ BLACK);
-}
-
 /* Rank, File, Square */
 
 bool rank_ok(int r)

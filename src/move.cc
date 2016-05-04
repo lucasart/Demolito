@@ -19,7 +19,7 @@
 
 bitboard_t PinInfo::hidden_checkers(const Position& pos, Color attacker, Color blocker) const
 {
-    const int ksq = pos.king_square(opp_color(attacker));
+    const int ksq = pos.king_square(~attacker);
     bitboard_t pinners = (pos.occ_RQ(attacker) & bb::rpattacks(ksq))
                          | (pos.occ_BQ(attacker) & bb::bpattacks(ksq));
 
@@ -40,7 +40,7 @@ bitboard_t PinInfo::hidden_checkers(const Position& pos, Color attacker, Color b
 
 PinInfo::PinInfo(const Position& pos)
 {
-    const Color us = pos.turn(), them = opp_color(us);
+    const Color us = pos.turn(), them = ~us;
     pinned = hidden_checkers(pos, them, us);
     discoCheckers = hidden_checkers(pos, us, us);
 }
@@ -53,7 +53,8 @@ bool Move::ok() const
 
 void Move::clear()
 {
-    fsq = tsq = prom = 0;    // IOW, null move is encoded as a1a1N
+    fsq = tsq = 0;
+    prom = KNIGHT;
 }
 
 Move::operator move_t() const
@@ -66,14 +67,14 @@ Move Move::operator =(move_t em)
 {
     fsq = em & 077;
     tsq = (em >> 6) & 077;
-    prom = em >> 12;
+    prom = Piece(em >> 12);
     assert(ok());
     return *this;
 }
 
 bool Move::is_capture(const Position& pos) const
 {
-    const Color us = pos.turn(), them = opp_color(us);
+    const Color us = pos.turn(), them = ~us;
     return (bb::test(pos.occ(them), tsq))
            || ((tsq == pos.ep_square() || relative_rank(us, tsq) == RANK_8)
                && pos.piece_on(fsq) == PAWN);
@@ -102,7 +103,7 @@ std::string Move::to_string(const Position& pos) const
     s += file_of(_tsq) + 'a';
     s += rank_of(_tsq) + '1';
 
-    if (piece_ok(prom))
+    if (prom < NB_PIECE)
         s += PieceLabel[BLACK][prom];
 
     return s;
@@ -112,13 +113,13 @@ void Move::from_string(const Position& pos, const std::string& s)
 {
     fsq = square(s[1] - '1', s[0] - 'a');
     tsq = square(s[3] - '1', s[2] - 'a');
-    prom = s[4] ? (int)PieceLabel[BLACK].find(s[4]) : NB_PIECE;
+    prom = s[4] ? (Piece)PieceLabel[BLACK].find(s[4]) : NB_PIECE;
 
     if (!Chess960 && pos.piece_on(fsq) == KING) {
-        if (tsq == fsq + 2)        // e1g1
-            tsq++;            // -> e1h1
-        else if (tsq == fsq - 2)    // e1c1
-            tsq -= 2;        // -> e1a1
+        if (tsq == fsq + 2)      // e1g1
+            tsq++;               // -> e1h1
+        else if (tsq == fsq - 2) // e1c1
+            tsq -= 2;            // -> e1a1
     }
 
     assert(ok());
@@ -126,10 +127,10 @@ void Move::from_string(const Position& pos, const std::string& s)
 
 bool Move::pseudo_is_legal(const Position& pos, const PinInfo& pi) const
 {
-    const int piece = pos.piece_on(fsq);
+    const Piece p = pos.piece_on(fsq);
     const int ksq = pos.king_square(pos.turn());
 
-    if (piece == KING) {
+    if (p == KING) {
         if (bb::test(pos.occ(pos.turn()), tsq)) {
             // Castling: king must not move through attacked square, and rook must not
             // be pinned
@@ -147,8 +148,8 @@ bool Move::pseudo_is_legal(const Position& pos, const PinInfo& pi) const
 
         // En-passant special case: also illegal if self-check through the en-passant
         // captured pawn
-        if (tsq == pos.ep_square() && piece == PAWN) {
-            const Color us = pos.turn(), them = opp_color(us);
+        if (tsq == pos.ep_square() && p == PAWN) {
+            const Color us = pos.turn(), them = ~us;
             bitboard_t occ = pos.occ();
             bb::clear(occ, fsq);
             bb::set(occ, tsq);
@@ -169,7 +170,7 @@ int Move::see(const Position& pos) const
 
     // General case
     int gain[32] = {see_value[pos.piece_on(tsq)]};
-    int capture = pos.piece_on(fsq);
+    Piece capture = pos.piece_on(fsq);
     bb::clear(occ, fsq);
 
     // Special cases
@@ -191,22 +192,22 @@ int Move::see(const Position& pos) const
 
     int idx = 0;
 
-    while (us = opp_color(us), our_attackers = attackers & pos.occ(us)) {
+    while (us = ~us, our_attackers = attackers & pos.occ(us)) {
         // Find least valuable attacker (LVA)
-        int piece = PAWN;
+        Piece p = PAWN;
 
         if (!(our_attackers & pos.occ(us, PAWN))) {
-            for (piece = KNIGHT; piece <= KING; piece++) {
-                if (our_attackers & pos.occ(us, piece))
+            for (p = KNIGHT; p <= KING; ++p) {
+                if (our_attackers & pos.occ(us, p))
                     break;
             }
         }
 
         // Remove the LVA
-        bb::clear(occ, bb::lsb(our_attackers & pos.occ(us, piece)));
+        bb::clear(occ, bb::lsb(our_attackers & pos.occ(us, p)));
 
         // Scan for new X-ray attacks through the LVA
-        if (piece != KNIGHT) {
+        if (p != KNIGHT) {
             attackers |= (pos.occ(BISHOP) | pos.occ(QUEEN))
                          & bb::bpattacks(tsq) & bb::battacks(tsq, occ);
             attackers |= (pos.occ(ROOK) | pos.occ(QUEEN))
@@ -221,11 +222,11 @@ int Move::see(const Position& pos) const
         assert(idx < 32);
         gain[idx] = see_value[capture] - gain[idx-1];
 
-        if (piece == PAWN && relative_rank(us, tsq) == RANK_8) {
+        if (p == PAWN && relative_rank(us, tsq) == RANK_8) {
             gain[idx] += see_value[QUEEN] - see_value[PAWN];
             capture = QUEEN;
         } else
-            capture = piece;
+            capture = p;
     }
 
     do {

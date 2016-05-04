@@ -98,22 +98,22 @@ void init(int verbosity)
 
     // Calculate PST, based on specialized functions for each piece
     for (Color c = WHITE; c <= BLACK; ++c)
-        for (int piece = 0; piece < NB_PIECE; piece++)
+        for (Piece p = KNIGHT; p < NB_PIECE; ++p)
             for (int sq = 0; sq < NB_SQUARE; sq++) {
                 const int rr = rank_of(sq) ^ (RANK_8 * c), f = file_of(sq);
-                table[c][piece][sq] = (Material[piece] + (*PstFn[piece])(rr, f)) * (c == WHITE ? 1 : -1);
+                table[c][p][sq] = (Material[p] + (*PstFn[p])(rr, f)) * (c == WHITE ? 1 : -1);
             }
 
     // Display, based on verbosity level
     for (int phase = 0; phase < NB_PHASE; phase++)
         for (Color c = WHITE; c < Color(verbosity); ++c)
-            for (int piece = 0; piece < NB_PIECE; piece++) {
+            for (Piece p = KNIGHT; p < NB_PIECE; ++p) {
                 std::cout << (phase == OPENING ? "opening" : "endgame")
-                          << PieceLabel[WHITE][piece] << std::endl;
+                          << PieceLabel[WHITE][p] << std::endl;
 
                 for (int r = RANK_8; r >= RANK_1; r--) {
                     for (int f = FILE_A; f <= FILE_H; f++)
-                        std::cout << table[c][piece][square(r, f)][phase] << '\t';
+                        std::cout << table[c][p][square(r, f)][phase] << '\t';
 
                     std::cout << std::endl;
                 }

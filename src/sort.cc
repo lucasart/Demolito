@@ -24,7 +24,7 @@ void Selector::generate(const Position& pos, int depth)
     if (pos.checkers())
         it = gen::check_escapes(pos, it, depth > 0);
     else {
-        const Color us = pos.turn(), them = opp_color(us);
+        const Color us = pos.turn(), them = ~us;
         const bitboard_t pieceTargets = depth > 0 ? ~pos.occ(us) : pos.occ(them);
         const bitboard_t pawnTargets = pieceTargets | pos.ep_square_bb()
                                        | bb::rank(us == WHITE ? RANK_8 : RANK_1);

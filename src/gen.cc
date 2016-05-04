@@ -28,7 +28,7 @@ move_t *serialize_moves(Move& m, bitboard_t tss, move_t *emList, bool subPromoti
 
         if (Promotion) {
             if (subPromotions) {
-                for (m.prom = QUEEN; m.prom >= KNIGHT; m.prom--)
+                for (m.prom = QUEEN; m.prom >= KNIGHT; --m.prom)
                     *emList++ = m;
             } else {
                 m.prom = QUEEN;
@@ -47,7 +47,7 @@ namespace gen {
 
 move_t *pawn_moves(const Position& pos, move_t *emList, bitboard_t targets, bool subPromotions)
 {
-    const Color us = pos.turn(), them = opp_color(us);
+    const Color us = pos.turn(), them = ~us;
     const int push = push_inc(us);
     const bitboard_t capturable = pos.occ(them) | pos.ep_square_bb();
     bitboard_t fss, tss;

@@ -39,7 +39,7 @@ eval_t score_mobility(int p0, int p, bitboard_t tss)
 
 eval_t mobility(const Position& pos, Color us)
 {
-    const Color them = opp_color(us);
+    const Color them = ~us;
     const bitboard_t targets = ~(pos.occ(us, PAWN) | pos.occ(us, KING) | pawn_attacks(pos, them));
 
     bitboard_t fss, tss, occ;
@@ -105,6 +105,6 @@ int evaluate(const Position& pos)
         e[c] += mobility(pos, c);
     }
 
-    const Color us = pos.turn(), them = opp_color(us);
+    const Color us = pos.turn(), them = ~us;
     return blend(pos, e[us] - e[them]);
 }

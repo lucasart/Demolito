@@ -15,7 +15,8 @@ struct PinInfo {
 typedef uint16_t move_t;    // fsq:6, tsq:6, prom: 3 (NB_PIECE if none)
 
 struct Move {
-    int fsq, tsq, prom;
+    int fsq, tsq;
+    Piece prom;
 
     bool ok() const;
     void clear();

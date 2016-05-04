@@ -5,18 +5,19 @@
 
 extern bool Chess960;
 
-#define ENABLE_OPERATORS_ON(T) \
-inline T& operator++(T& d) { return d = T(int(d) + 1); }
+#define ENABLE_OPERATORS(T, UB) \
+inline T& operator++(T& v) { assert(0 <= v && v < UB); return v = T(v + 1); } \
+inline T& operator--(T& v) { assert(0 <= v && v < UB); return v = T(v - 1); }
 
 /* Color, Piece */
 
 enum Color {WHITE, BLACK, NB_COLOR};
-enum {KNIGHT, BISHOP, ROOK, QUEEN, KING, PAWN, NB_PIECE};
+enum Piece {KNIGHT, BISHOP, ROOK, QUEEN, KING, PAWN, NB_PIECE};
 
-ENABLE_OPERATORS_ON(Color)
+ENABLE_OPERATORS(Color, NB_COLOR)
+ENABLE_OPERATORS(Piece, NB_PIECE)
 
-bool piece_ok(int piece);
-Color opp_color(Color c);
+inline Color operator~(Color c) { return Color(c ^ BLACK); }
 
 /* Rank, File, Square */
 
