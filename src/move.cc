@@ -51,12 +51,6 @@ bool Move::ok() const
            && ((KNIGHT <= prom && prom <= QUEEN) || prom == NB_PIECE);
 }
 
-void Move::clear()
-{
-    fsq = tsq = 0;
-    prom = KNIGHT;
-}
-
 Move::operator move_t() const
 {
     assert(ok());

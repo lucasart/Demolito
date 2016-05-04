@@ -19,7 +19,6 @@ struct Move {
     Piece prom;
 
     bool ok() const;
-    void clear();
 
     Move() = default;
     Move(move_t em) { *this = em; }
