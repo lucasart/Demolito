@@ -213,7 +213,7 @@ void Position::set(const std::string& fen)
             else if (c == 'Q')
                 sq = square(r, FILE_A);
             else if ('A' <= c && c <= 'H')
-                sq = square(r, c - 'A');
+                sq = square(r, File(c - 'A'));
 
             bb::set(_castlableRooks, sq);
         }
@@ -238,7 +238,7 @@ std::string Position::get() const
     for (Rank r = RANK_8; r >= RANK_1; --r) {
         int cnt = 0;
 
-        for (int f = FILE_A; f <= FILE_H; f++) {
+        for (File f = FILE_A; f <= FILE_H; ++f) {
             const int sq = square(r, f);
 
             if (bb::test(occ(), sq)) {
@@ -501,7 +501,7 @@ void Position::print() const
     for (Rank r = RANK_8; r >= RANK_1; --r) {
         char line[] = ". . . . . . . .";
 
-        for (int f = FILE_A; f <= FILE_H; f++) {
+        for (File f = FILE_A; f <= FILE_H; ++f) {
             const int sq = square(r, f);
             line[2 * f] = bb::test(occ(), sq)
                           ? PieceLabel[color_on(sq)][piece_on(sq)]
@@ -570,7 +570,7 @@ again:
 
         // Choose a random empty square. Pawns: skew the dice to get 3x more 2nd rank.
         do {
-            const int f = prng.rand() % NB_FILE;
+            const File f = File(prng.rand() % NB_FILE);
             Rank r = RankFrequency[prng.rand() % NB_RANK_FREQ];
 
             if (p == PAWN && (r == RANK_1 || r == RANK_8))
@@ -630,7 +630,7 @@ again:
         if (rank_of(ksq) != r && (Chess960 || file_of(ksq) != FILE_E))
             continue;
 
-        const int edgeFile[2] = {FILE_A, FILE_H};
+        const File edgeFile[2] = {FILE_A, FILE_H};
         const int direction[2] = {-1, +1};
 
         for (int i = 0; i < 2; i++) {

@@ -33,9 +33,9 @@ bitboard_t Segment[NB_SQUARE][NB_SQUARE];
 bitboard_t Ray[NB_SQUARE][NB_SQUARE];
 bitboard_t PawnSpan[NB_COLOR][NB_SQUARE];
 
-void safe_set_bit(bitboard_t& b, Rank r, int f)
+void safe_set_bit(bitboard_t& b, Rank r, File f)
 {
-    if (0 <= r && r < NB_RANK && file_ok(f))
+    if (0 <= r && r < NB_RANK && 0 <= f && f < NB_FILE)
         bb::set(b, square(r, f));
 }
 
@@ -43,7 +43,7 @@ void init_leaper_attacks()
 {
     for (int sq = 0; sq < NB_SQUARE; sq++) {
         const Rank r = rank_of(sq);
-        const int f = file_of(sq);
+        const File f = file_of(sq);
 
         for (int d = 0; d < 8; d++) {
             safe_set_bit(NAttacks[sq], r + NDir[d][0], f + NDir[d][1]);
@@ -69,14 +69,14 @@ void init_rays()
 {
     for (int sq1 = 0; sq1 < NB_SQUARE; sq1++) {
         const Rank r1 = rank_of(sq1);
-        const int f1 = file_of(sq1);
+        const File f1 = file_of(sq1);
 
         for (int d = 0; d < 8; d++) {
             bitboard_t mask = 0;
             Rank r2 = r1;
-            int f2 = f1;
+            File f2 = f1;
 
-            while (0 <= r2 && r2 < NB_RANK && file_ok(f2)) {
+            while (0 <= r2 && r2 < NB_RANK && 0 <= f2 && f2 < NB_FILE) {
                 const int sq2 = square(r2, f2);
                 bb::set(mask, sq2);
                 Segment[sq1][sq2] = mask;
@@ -122,9 +122,8 @@ bitboard_t rank(Rank r)
     return 0xFFULL << (8 * r);
 }
 
-bitboard_t file(int f)
+bitboard_t file(File f)
 {
-    assert(file_ok(f));
     return 0x0101010101010101ULL << f;
 }
 
@@ -244,7 +243,7 @@ void print(bitboard_t b)
     for (Rank r = RANK_8; r >= RANK_1; --r) {
         char line[] = ". . . . . . . .";
 
-        for (int f = FILE_A; f <= FILE_H; f++) {
+        for (File f = FILE_A; f <= FILE_H; ++f) {
             if (test(b, square(r, f)))
                 line[2 * f] = 'X';
         }

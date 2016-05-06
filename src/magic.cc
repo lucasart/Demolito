@@ -142,15 +142,15 @@ const size_t RMagicIndex[64] = {
 bitboard_t calc_sliding_attacks(int sq, bitboard_t occ, const int dir[4][2])
 {
     const Rank r = rank_of(sq);
-    const int f = file_of(sq);
+    const File f = file_of(sq);
     bitboard_t result = 0;
 
     for (int i = 0; i < 4; ++i) {
         int dr = dir[i][0], df = dir[i][1];
         Rank _r = r + dr;
-        int _f = f + df;
+        File _f = f + df;
 
-        while (0 <= _r && _r < NB_RANK && file_ok(_f)) {
+        while (0 <= _r && _r < NB_RANK && 0 <= _f && _f < NB_FILE) {
             const int _sq = square(_r, _f);
             bb::set(result, _sq);
 

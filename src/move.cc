@@ -105,8 +105,8 @@ std::string Move::to_string(const Position& pos) const
 
 void Move::from_string(const Position& pos, const std::string& s)
 {
-    fsq = square(Rank(s[1] - '1'), s[0] - 'a');
-    tsq = square(Rank(s[3] - '1'), s[2] - 'a');
+    fsq = square(Rank(s[1] - '1'), File(s[0] - 'a'));
+    tsq = square(Rank(s[3] - '1'), File(s[2] - 'a'));
     prom = s[4] ? (Piece)PieceLabel[BLACK].find(s[4]) : NB_PIECE;
 
     if (!Chess960 && pos.piece_on(fsq) == KING) {
