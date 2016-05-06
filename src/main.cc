@@ -14,7 +14,7 @@
  * not, see <http://www.gnu.org/licenses/>.
 */
 #include <iostream>
-#include "position.h"
+#include "bitboard.h"
 #include "zobrist.h"
 #include "test.h"
 #include "pst.h"
@@ -35,18 +35,6 @@ int main(int argc, char **argv)
             const int depth = std::stoi(argv[2]), threads = std::stoi(argv[3]);
             const uint64_t nodes = test::bench(cmd == "perft", depth, threads);
             std::cout << "total = " << nodes << std::endl;
-        } else if (cmd == "random" && argc >= 4) {
-            const int pieces = std::stoi(argv[2]), iterations = std::stoi(argv[3]);
-            Chess960 = argc > 4 && std::string(argv[4]) == "true";
-            Position pos;
-            zobrist::PRNG prng;
-
-            for (int i = 0; i < iterations; i++) {
-                pos.random(prng, pieces);
-                pos.print();
-            }
-
-            std::cout.flush();
         }
     } else
         uci::loop();

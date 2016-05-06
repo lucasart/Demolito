@@ -75,18 +75,13 @@ void position(std::istringstream& is)
     if (token == "startpos") {
         fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
         is >> token;    // consume "moves" token (if present)
-        p[idx].set(fen);
     } else if (token == "fen") {
         while (is >> token && token != "moves")
             fen += token + " ";
-
-        p[idx].set(fen);
-    } else if (token == "random") {
-        is >> token;    // number of pieces (excluding Kings)
-        p[idx].random(prng, std::stoi(token));
     } else
         return;
 
+    p[idx].set(fen);
     uci::history.clear();
     uci::history.push(p[idx].key());
 
