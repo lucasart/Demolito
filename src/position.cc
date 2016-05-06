@@ -205,7 +205,7 @@ void Position::set(const std::string& fen)
 
     if (s != "-") {
         for (char c : s) {
-            const int r = isupper(c) ? RANK_1 : RANK_8;
+            const Rank r = isupper(c) ? RANK_1 : RANK_8;
             c = toupper(c);
 
             if (c == 'K')
@@ -235,7 +235,7 @@ std::string Position::get() const
     std::ostringstream os;
 
     // Piece placement
-    for (int r = RANK_8; r >= RANK_1; r--) {
+    for (Rank r = RANK_8; r >= RANK_1; --r) {
         int cnt = 0;
 
         for (int f = FILE_A; f <= FILE_H; f++) {
@@ -472,13 +472,13 @@ void Position::set(const Position& before, Move m)
             _castlableRooks &= ~(1ULL << m.fsq);
         else if (p == KING) {
             // Lose all castling rights
-            _castlableRooks &= ~bb::rank(us * RANK_8);
+            _castlableRooks &= ~bb::rank(Rank(us * RANK_8));
 
             // Castling
             if (bb::test(before.occ(us), m.tsq)) {
                 // Capturing our own piece can only be a castling move, encoded KxR
                 assert(before.piece_on(m.tsq) == ROOK);
-                const int r = rank_of(m.fsq);
+                const Rank r = rank_of(m.fsq);
 
                 clear(us, KING, m.tsq);
                 set(us, KING, m.tsq > m.fsq ? square(r, FILE_G) : square(r, FILE_C));
@@ -498,7 +498,7 @@ void Position::set(const Position& before, Move m)
 
 void Position::print() const
 {
-    for (int r = RANK_8; r >= RANK_1; r--) {
+    for (Rank r = RANK_8; r >= RANK_1; --r) {
         char line[] = ". . . . . . . .";
 
         for (int f = FILE_A; f <= FILE_H; f++) {
@@ -529,7 +529,7 @@ void Position::random(zobrist::PRNG& prng, int pieces)
 {
     // Piece frequency
 #define NB_PIECE_FREQ 8 + 2 * 3 + 1
-    const int PieceFrequency[NB_PIECE_FREQ] = {
+    const Piece PieceFrequency[NB_PIECE_FREQ] = {
         PAWN, PAWN, PAWN, PAWN, PAWN, PAWN, PAWN, PAWN,
         KNIGHT, KNIGHT, BISHOP, BISHOP, ROOK, ROOK,
         QUEEN
@@ -537,7 +537,7 @@ void Position::random(zobrist::PRNG& prng, int pieces)
 
     // Rank frequency
 #define NB_RANK_FREQ 8 * (8 + 1) / 2
-    const int RankFrequency[NB_RANK_FREQ] = {
+    const Rank RankFrequency[NB_RANK_FREQ] = {
         RANK_1, RANK_1, RANK_1, RANK_1, RANK_1, RANK_1, RANK_1, RANK_1,
         RANK_2, RANK_2, RANK_2, RANK_2, RANK_2, RANK_2, RANK_2,
         RANK_3, RANK_3, RANK_3, RANK_3, RANK_3, RANK_3,
@@ -566,12 +566,12 @@ again:
         // Random color and piece. Skew the dice to the same relative piece frequency
         // as in the starting position.
         const Color c = Color(prng.rand() % NB_COLOR);
-        const Piece p = Piece(PieceFrequency[prng.rand() % NB_PIECE_FREQ]);
+        const Piece p = PieceFrequency[prng.rand() % NB_PIECE_FREQ];
 
         // Choose a random empty square. Pawns: skew the dice to get 3x more 2nd rank.
         do {
             const int f = prng.rand() % NB_FILE;
-            int r = RankFrequency[prng.rand() % NB_RANK_FREQ];
+            Rank r = RankFrequency[prng.rand() % NB_RANK_FREQ];
 
             if (p == PAWN && (r == RANK_1 || r == RANK_8))
                 r = c ? RANK_7 : RANK_2;
@@ -625,7 +625,7 @@ again:
     // Castling
     for (Color c = WHITE; c <= BLACK; ++c) {
         const int ksq = king_square(c);
-        const int r = c ? RANK_8 : RANK_1;
+        const Rank r = c ? RANK_8 : RANK_1;
 
         if (rank_of(ksq) != r && (Chess960 || file_of(ksq) != FILE_E))
             continue;

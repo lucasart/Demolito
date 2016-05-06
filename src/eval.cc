@@ -26,7 +26,7 @@ bitboard_t pawn_attacks(const Position& pos, Color c)
 
 eval_t score_mobility(int p0, int p, bitboard_t tss)
 {
-    const int AdjustCount[ROOK + 1][15] = {
+    const int AdjustCount[][15] = {
         {-3, -2, -1, 0, 1, 2, 3, 4, 4},
         {-4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 5, 6, 6, 7},
         {-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 6, 7, 7}

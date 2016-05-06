@@ -6,8 +6,12 @@
 extern bool Chess960;
 
 #define ENABLE_OPERATORS(T, UB) \
-inline T& operator++(T& v) { assert(0 <= v && v < UB); return v = T(v + 1); } \
-inline T& operator--(T& v) { assert(0 <= v && v < UB); return v = T(v - 1); }
+inline T operator+(T v, int i) { assert(0 <= v && v < UB); return T(int(v) + i); } \
+inline T operator-(T v, int i) { assert(0 <= v && v < UB); return T(int(v) - i); } \
+inline T operator+=(T& v, int i) { assert(0 <= v && v < UB); return v = T(int(v) + i); } \
+inline T operator-=(T& v, int i) { assert(0 <= v && v < UB); return v = T(int(v) - i); } \
+inline T operator++(T& v) { assert(0 <= v && v < UB); return v = T(int(v) + 1); } \
+inline T operator--(T& v) { assert(0 <= v && v < UB); return v = T(int(v) - 1); }
 
 /* Color, Piece */
 
@@ -21,7 +25,7 @@ inline Color operator~(Color c) { return Color(c ^ BLACK); }
 
 /* Rank, File, Square */
 
-enum {RANK_1, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8, NB_RANK};
+enum Rank {RANK_1, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8, NB_RANK};
 enum {FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H, NB_FILE};
 enum {
     A1, B1, C1, D1, E1, F1, G1, H1,
@@ -35,13 +39,14 @@ enum {
     NB_SQUARE
 };
 
-bool rank_ok(int r);
+ENABLE_OPERATORS(Rank, NB_RANK)
+
 bool file_ok(int f);
 bool square_ok(int sq);
-int rank_of(int sq);
+Rank rank_of(int sq);
 int file_of(int sq);
-int relative_rank(Color c, int sq);
-int square(int r, int f);
+Rank relative_rank(Color c, int sq);
+int square(Rank r, int f);
 
 std::string square_to_string(int sq);
 int string_to_square(const std::string& s);

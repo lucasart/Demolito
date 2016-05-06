@@ -141,19 +141,23 @@ const size_t RMagicIndex[64] = {
 
 bitboard_t calc_sliding_attacks(int sq, bitboard_t occ, const int dir[4][2])
 {
-    const int r = rank_of(sq), f = file_of(sq);
+    const Rank r = rank_of(sq);
+    const int f = file_of(sq);
     bitboard_t result = 0;
 
     for (int i = 0; i < 4; ++i) {
         int dr = dir[i][0], df = dir[i][1];
-        int _r, _f;
+        Rank _r = r + dr;
+        int _f = f + df;
 
-        for (_r = r + dr, _f = f + df; rank_ok(_r) && file_ok(_f); _r += dr, _f += df) {
-            int _sq = square(_r, _f);
+        while (0 <= _r && _r < NB_RANK && file_ok(_f)) {
+            const int _sq = square(_r, _f);
             bb::set(result, _sq);
 
             if (bb::test(occ, _sq))
                 break;
+
+            _r += dr, _f += df;
         }
     }
 

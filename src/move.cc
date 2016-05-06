@@ -105,8 +105,8 @@ std::string Move::to_string(const Position& pos) const
 
 void Move::from_string(const Position& pos, const std::string& s)
 {
-    fsq = square(s[1] - '1', s[0] - 'a');
-    tsq = square(s[3] - '1', s[2] - 'a');
+    fsq = square(Rank(s[1] - '1'), s[0] - 'a');
+    tsq = square(Rank(s[3] - '1'), s[2] - 'a');
     prom = s[4] ? (Piece)PieceLabel[BLACK].find(s[4]) : NB_PIECE;
 
     if (!Chess960 && pos.piece_on(fsq) == KING) {
@@ -157,7 +157,7 @@ bool Move::pseudo_is_legal(const Position& pos, const PinInfo& pi) const
 
 int Move::see(const Position& pos) const
 {
-    const int see_value[NB_PIECE+1] = {N, B, R, Q, MATE, P, 0};
+    const int see_value[] = {N, B, R, Q, MATE, P, 0};
 
     Color us = pos.turn();
     bitboard_t occ = pos.occ();

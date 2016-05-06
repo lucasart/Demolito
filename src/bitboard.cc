@@ -33,16 +33,17 @@ bitboard_t Segment[NB_SQUARE][NB_SQUARE];
 bitboard_t Ray[NB_SQUARE][NB_SQUARE];
 bitboard_t PawnSpan[NB_COLOR][NB_SQUARE];
 
-void safe_set_bit(bitboard_t& b, int r, int f)
+void safe_set_bit(bitboard_t& b, Rank r, int f)
 {
-    if (rank_ok(r) && file_ok(f))
+    if (0 <= r && r < NB_RANK && file_ok(f))
         bb::set(b, square(r, f));
 }
 
 void init_leaper_attacks()
 {
     for (int sq = 0; sq < NB_SQUARE; sq++) {
-        int r = rank_of(sq), f = file_of(sq);
+        const Rank r = rank_of(sq);
+        const int f = file_of(sq);
 
         for (int d = 0; d < 8; d++) {
             safe_set_bit(NAttacks[sq], r + NDir[d][0], f + NDir[d][1]);
@@ -67,16 +68,19 @@ void init_leaper_attacks()
 void init_rays()
 {
     for (int sq1 = 0; sq1 < NB_SQUARE; sq1++) {
-        int r1 = rank_of(sq1), f1 = file_of(sq1);
+        const Rank r1 = rank_of(sq1);
+        const int f1 = file_of(sq1);
 
         for (int d = 0; d < 8; d++) {
             bitboard_t mask = 0;
+            Rank r2 = r1;
+            int f2 = f1;
 
-            for (int r2 = r1, f2 = f1; rank_ok(r2) && file_ok(f2);
-                    r2 += KDir[d][0], f2 += KDir[d][1]) {
-                int sq2 = square(r2, f2);
+            while (0 <= r2 && r2 < NB_RANK && file_ok(f2)) {
+                const int sq2 = square(r2, f2);
                 bb::set(mask, sq2);
                 Segment[sq1][sq2] = mask;
+                r2 += KDir[d][0], f2 += KDir[d][1];
             }
 
             bitboard_t sqs = mask;
@@ -113,9 +117,8 @@ void init()
 
 /* Bitboard Accessors */
 
-bitboard_t rank(int r)
+bitboard_t rank(Rank r)
 {
-    assert(rank_ok(r));
     return 0xFFULL << (8 * r);
 }
 
@@ -125,9 +128,8 @@ bitboard_t file(int f)
     return 0x0101010101010101ULL << f;
 }
 
-bitboard_t relative_rank(Color c, int r)
+bitboard_t relative_rank(Color c, Rank r)
 {
-    assert(rank_ok(r));
     return rank(c == WHITE ? r : RANK_8 - r);
 }
 
@@ -239,7 +241,7 @@ int count(bitboard_t b)
 
 void print(bitboard_t b)
 {
-    for (int r = RANK_8; r >= RANK_1; r--) {
+    for (Rank r = RANK_8; r >= RANK_1; --r) {
         char line[] = ". . . . . . . .";
 
         for (int f = FILE_A; f <= FILE_H; f++) {

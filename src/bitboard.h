@@ -9,9 +9,9 @@ void init();
 
 /* Bitboard Accessors */
 
-bitboard_t rank(int r);
+bitboard_t rank(Rank r);
 bitboard_t file(int f);
-bitboard_t relative_rank(Color c, int r);
+bitboard_t relative_rank(Color c, Rank r);
 
 // Leaper attacks
 bitboard_t pattacks(Color c, int sq);
