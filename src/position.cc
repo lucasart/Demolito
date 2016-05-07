@@ -76,16 +76,16 @@ bool Position::material_ok() const
     return true;
 }
 
-bitboard_t Position::attackers_to(int sq, bitboard_t _occ) const
+bitboard_t Position::attackers_to(int s, bitboard_t _occ) const
 {
-    BOUNDS(sq, NB_SQUARE);
+    BOUNDS(s, NB_SQUARE);
 
-    return (occ(WHITE, PAWN) & bb::pattacks(BLACK, sq))
-           | (occ(BLACK, PAWN) & bb::pattacks(WHITE, sq))
-           | (bb::nattacks(sq) & occ(KNIGHT))
-           | (bb::kattacks(sq) & occ(KING))
-           | (bb::rattacks(sq, _occ) & (occ(ROOK) | occ(QUEEN)))
-           | (bb::battacks(sq, _occ) & (occ(BISHOP) | occ(QUEEN)));
+    return (occ(WHITE, PAWN) & bb::pattacks(BLACK, s))
+           | (occ(BLACK, PAWN) & bb::pattacks(WHITE, s))
+           | (bb::nattacks(s) & occ(KNIGHT))
+           | (bb::kattacks(s) & occ(KING))
+           | (bb::rattacks(s, _occ) & (occ(ROOK) | occ(QUEEN)))
+           | (bb::battacks(s, _occ) & (occ(BISHOP) | occ(QUEEN)));
 }
 
 bitboard_t Position::attacked_by(Color c) const
@@ -126,46 +126,46 @@ void Position::clear()
 {
     std::memset(this, 0, sizeof(*this));
 
-    for (int sq = A1; sq <= H8; ++sq)
-        _pieceOn[sq] = NB_PIECE;
+    for (int s = A1; s <= H8; ++s)
+        _pieceOn[s] = NB_PIECE;
 }
 
-void Position::clear(Color c, Piece p, int sq)
+void Position::clear(Color c, Piece p, int s)
 {
     BOUNDS(c, NB_COLOR);
     BOUNDS(p, NB_PIECE);
-    BOUNDS(sq, NB_SQUARE);
+    BOUNDS(s, NB_SQUARE);
 
-    bb::clear(_byColor[c], sq);
-    bb::clear(_byPiece[p], sq);
+    bb::clear(_byColor[c], s);
+    bb::clear(_byPiece[p], s);
 
-    _pieceOn[sq] = NB_PIECE;
-    _pst -= pst::table[c][p][sq];
-    _key ^= zobrist::key(c, p, sq);
+    _pieceOn[s] = NB_PIECE;
+    _pst -= pst::table[c][p][s];
+    _key ^= zobrist::key(c, p, s);
 
     if (p <= QUEEN)
         _pieceMaterial[c] -= Material[p];
     else
-        _pawnKey ^= zobrist::key(c, p, sq);
+        _pawnKey ^= zobrist::key(c, p, s);
 }
 
-void Position::set(Color c, Piece p, int sq)
+void Position::set(Color c, Piece p, int s)
 {
     BOUNDS(c, NB_COLOR);
     BOUNDS(p, NB_PIECE);
-    BOUNDS(sq, NB_SQUARE);
+    BOUNDS(s, NB_SQUARE);
 
-    bb::set(_byColor[c], sq);
-    bb::set(_byPiece[p], sq);
+    bb::set(_byColor[c], s);
+    bb::set(_byPiece[p], s);
 
-    _pieceOn[sq] = p;
-    _pst += pst::table[c][p][sq];
-    _key ^= zobrist::key(c, p, sq);
+    _pieceOn[s] = p;
+    _pst += pst::table[c][p][s];
+    _key ^= zobrist::key(c, p, s);
 
     if (p <= QUEEN)
         _pieceMaterial[c] += Material[p];
     else
-        _pawnKey ^= zobrist::key(c, p, sq);
+        _pawnKey ^= zobrist::key(c, p, s);
 }
 
 void Position::finish()
@@ -178,31 +178,33 @@ void Position::set(const std::string& fen)
 {
     clear();
     std::istringstream is(fen);
-    std::string s;
+    std::string token;
 
     // Piece placement
-    is >> s;
-    int sq = A8;
+    is >> token;
+    int s = A8;
 
-    for (char c : s) {
+    for (char c : token) {
         if (isdigit(c))
-            sq += c - '0';
+            s += c - '0';
         else if (c == '/')
-            sq += 2 * DOWN;
+            s += 2 * DOWN;
         else {
             for (Color col = WHITE; col <= BLACK; ++col) {
                 const Piece p = Piece(PieceLabel[col].find(c));
 
-                if (0 <= p && p < NB_PIECE)
-                    set(col, p, sq++);
+                if (unsigned(p) < NB_PIECE) {
+                    set(col, p, s);
+                    ++s;
+                }
             }
         }
     }
 
     // Turn of play
-    is >> s;
+    is >> token;
 
-    if (s == "w")
+    if (token == "w")
         _turn = WHITE;
     else {
         _turn = BLACK;
@@ -211,29 +213,29 @@ void Position::set(const std::string& fen)
     }
 
     // Castling rights
-    is >> s;
+    is >> token;
 
-    if (s != "-") {
-        for (char c : s) {
+    if (token != "-") {
+        for (char c : token) {
             const Rank r = isupper(c) ? RANK_1 : RANK_8;
             c = toupper(c);
 
             if (c == 'K')
-                sq = square(r, FILE_H);
+                s = square(r, FILE_H);
             else if (c == 'Q')
-                sq = square(r, FILE_A);
+                s = square(r, FILE_A);
             else if ('A' <= c && c <= 'H')
-                sq = square(r, File(c - 'A'));
+                s = square(r, File(c - 'A'));
 
-            bb::set(_castlableRooks, sq);
+            bb::set(_castlableRooks, s);
         }
 
         _key ^= zobrist::castling(castlable_rooks());
     }
 
     // En passant and 50 move
-    is >> s;
-    _epSquare = string_to_square(s);
+    is >> token;
+    _epSquare = string_to_square(token);
     _key ^= zobrist::en_passant(ep_square());
     is >> _rule50;
 
@@ -249,13 +251,13 @@ std::string Position::get() const
         int cnt = 0;
 
         for (File f = FILE_A; f <= FILE_H; ++f) {
-            const int sq = square(r, f);
+            const int s = square(r, f);
 
-            if (bb::test(occ(), sq)) {
+            if (bb::test(occ(), s)) {
                 if (cnt)
                     os << char(cnt + '0');
 
-                os << PieceLabel[color_on(sq)][piece_on(sq)];
+                os << PieceLabel[color_on(s)][piece_on(s)];
                 cnt = 0;
             } else
                 cnt++;
@@ -281,25 +283,25 @@ std::string Position::get() const
                 continue;
 
             // Because we have castlable rooks, king has to be on the first rank and not
-            // in a corner, which allows using bb::ray(ksq, ksq +/- 1) to search for the
+            // in a corner, which allows using bb::ray(king, king +/- 1) to search for the
             // castle rook in Chess960.
-            const int ksq = king_square(c);
-            assert(rank_of(ksq) == (c == WHITE ? RANK_1 : RANK_8));
-            assert(file_of(ksq) != FILE_A && file_of(ksq) != FILE_H);
+            const int king = king_square(c);
+            assert(rank_of(king) == (c == WHITE ? RANK_1 : RANK_8));
+            assert(file_of(king) != FILE_A && file_of(king) != FILE_H);
 
             // Right side castling
-            if (sqs & bb::ray(ksq, ksq + 1)) {
+            if (sqs & bb::ray(king, king + 1)) {
                 if (Chess960)
-                    os << char(file_of(bb::lsb(sqs & bb::ray(ksq, ksq + 1)))
+                    os << char(file_of(bb::lsb(sqs & bb::ray(king, king + 1)))
                                + (c == WHITE ? 'A' : 'a'));
                 else
                     os << PieceLabel[c][KING];
             }
 
             // Left side castling
-            if (sqs & bb::ray(ksq, ksq - 1)) {
+            if (sqs & bb::ray(king, king - 1)) {
                 if (Chess960)
-                    os << char(file_of(bb::msb(sqs & bb::ray(ksq, ksq - 1)))
+                    os << char(file_of(bb::msb(sqs & bb::ray(king, king - 1)))
                                + (c == WHITE ? 'A' : 'a'));
                 else
                     os << PieceLabel[c][QUEEN];
@@ -432,17 +434,17 @@ int Position::king_square(Color c) const
     return bb::lsb(occ(c, KING));
 }
 
-Color Position::color_on(int sq) const
+Color Position::color_on(int s) const
 {
-    assert(bb::test(occ(), sq));
+    assert(bb::test(occ(), s));
 
-    return bb::test(occ(WHITE), sq) ? WHITE : BLACK;
+    return bb::test(occ(WHITE), s) ? WHITE : BLACK;
 }
 
-Piece Position::piece_on(int sq) const
+Piece Position::piece_on(int s) const
 {
-    BOUNDS(sq, NB_SQUARE);
-    return Piece(_pieceOn[sq]);
+    BOUNDS(s, NB_SQUARE);
+    return Piece(_pieceOn[s]);
 }
 
 void Position::set(const Position& before, Move m)
@@ -451,56 +453,56 @@ void Position::set(const Position& before, Move m)
     _rule50++;
 
     const Color us = turn(), them = ~us;
-    const Piece p = piece_on(m.fsq);
-    const Piece capture = piece_on(m.tsq);
+    const Piece p = piece_on(m.from);
+    const Piece capture = piece_on(m.to);
 
     // Capture piece on to square (if any)
     if (capture != NB_PIECE) {
         _rule50 = 0;
         // Use color_on() instead of them, because we could be playing a KxR castling here
-        clear(color_on(m.tsq), capture, m.tsq);
+        clear(color_on(m.to), capture, m.to);
 
         // Capturing a rook alters corresponding castling right
         if (capture == ROOK)
-            _castlableRooks &= ~(1ULL << m.tsq);
+            _castlableRooks &= ~(1ULL << m.to);
     }
 
     // Move our piece
-    clear(us, p, m.fsq);
-    set(us, p, m.tsq);
+    clear(us, p, m.from);
+    set(us, p, m.to);
 
     if (p == PAWN) {
         // reset rule50, and set epSquare
         const int push = push_inc(us);
         _rule50 = 0;
-        _epSquare = m.tsq == m.fsq + 2 * push ? m.fsq + push : NB_SQUARE;
+        _epSquare = m.to == m.from + 2 * push ? m.from + push : NB_SQUARE;
 
         // handle ep-capture and promotion
-        if (m.tsq == before.ep_square())
-            clear(them, p, m.tsq - push);
-        else if (rank_of(m.tsq) == RANK_8 || rank_of(m.tsq) == RANK_1) {
-            clear(us, p, m.tsq);
-            set(us, m.prom, m.tsq);
+        if (m.to == before.ep_square())
+            clear(them, p, m.to - push);
+        else if (rank_of(m.to) == RANK_8 || rank_of(m.to) == RANK_1) {
+            clear(us, p, m.to);
+            set(us, m.prom, m.to);
         }
     } else {
         _epSquare = NB_SQUARE;
 
         if (p == ROOK)
             // remove corresponding castling right
-            _castlableRooks &= ~(1ULL << m.fsq);
+            _castlableRooks &= ~(1ULL << m.from);
         else if (p == KING) {
             // Lose all castling rights
             _castlableRooks &= ~bb::rank(Rank(us * RANK_8));
 
             // Castling
-            if (bb::test(before.occ(us), m.tsq)) {
+            if (bb::test(before.occ(us), m.to)) {
                 // Capturing our own piece can only be a castling move, encoded KxR
-                assert(before.piece_on(m.tsq) == ROOK);
-                const Rank r = rank_of(m.fsq);
+                assert(before.piece_on(m.to) == ROOK);
+                const Rank r = rank_of(m.from);
 
-                clear(us, KING, m.tsq);
-                set(us, KING, m.tsq > m.fsq ? square(r, FILE_G) : square(r, FILE_C));
-                set(us, ROOK, m.tsq > m.fsq ? square(r, FILE_F) : square(r, FILE_D));
+                clear(us, KING, m.to);
+                set(us, KING, m.to > m.from ? square(r, FILE_G) : square(r, FILE_C));
+                set(us, ROOK, m.to > m.from ? square(r, FILE_F) : square(r, FILE_D));
             }
         }
     }
@@ -520,10 +522,10 @@ void Position::print() const
         char line[] = ". . . . . . . .";
 
         for (File f = FILE_A; f <= FILE_H; ++f) {
-            const int sq = square(r, f);
-            line[2 * f] = bb::test(occ(), sq)
-                          ? PieceLabel[color_on(sq)][piece_on(sq)]
-                          : sq == ep_square() ? '*' : '.';
+            const int s = square(r, f);
+            line[2 * f] = bb::test(occ(), s)
+                          ? PieceLabel[color_on(s)][piece_on(s)]
+                          : s == ep_square() ? '*' : '.';
         }
 
         std::cout << line << '\n';

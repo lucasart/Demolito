@@ -21,8 +21,8 @@ class Position {
     bitboard_t attacked_by(Color c) const;
 
     void clear();
-    void clear(Color c, Piece p, int sq);
-    void set(Color c, Piece p, int sq);
+    void clear(Color c, Piece p, int s);
+    void set(Color c, Piece p, int s);
 
 public:
     void set(const std::string& fen);
@@ -53,10 +53,10 @@ public:
     eval_t piece_material(Color c) const;
 
     int king_square(Color c) const;
-    Color color_on(int sq) const;
-    Piece piece_on(int sq) const;
+    Color color_on(int s) const;
+    Piece piece_on(int s) const;
 
-    bitboard_t attackers_to(int sq, bitboard_t _occ) const;
+    bitboard_t attackers_to(int s, bitboard_t _occ) const;
 
     void print() const;
 };

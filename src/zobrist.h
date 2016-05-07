@@ -25,11 +25,11 @@ public:
 
 void init();
 
-uint64_t key(Color c, Piece p, int sq);
+uint64_t key(Color c, Piece p, int s);
 uint64_t keys(Color c, Piece p, uint64_t sqs);
 
 uint64_t castling(bitboard_t castlableRooks);
-uint64_t en_passant(int sq);
+uint64_t en_passant(int s);
 uint64_t turn();
 
 }    // namespace zobrist

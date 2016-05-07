@@ -99,10 +99,10 @@ void init(int verbosity)
     // Calculate PST, based on specialized functions for each piece
     for (Color c = WHITE; c <= BLACK; ++c)
         for (Piece p = KNIGHT; p < NB_PIECE; ++p)
-            for (int sq = A1; sq <= H8; ++sq) {
-                const Rank rr = Rank(rank_of(sq) ^ (RANK_8 * c));
-                const File f = file_of(sq);
-                table[c][p][sq] = (Material[p] + (*PstFn[p])(rr, f)) * (c == WHITE ? 1 : -1);
+            for (int s = A1; s <= H8; ++s) {
+                const Rank rr = Rank(rank_of(s) ^ (RANK_8 * c));
+                const File f = file_of(s);
+                table[c][p][s] = (Material[p] + (*PstFn[p])(rr, f)) * (c == WHITE ? 1 : -1);
             }
 
     // Display, based on verbosity level

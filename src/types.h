@@ -44,12 +44,12 @@ enum {
 ENABLE_OPERATORS(Rank)
 ENABLE_OPERATORS(File)
 
-Rank rank_of(int sq);
-File file_of(int sq);
-Rank relative_rank(Color c, int sq);
+Rank rank_of(int s);
+File file_of(int s);
+Rank relative_rank(Color c, int s);
 int square(Rank r, File f);
 
-std::string square_to_string(int sq);
+std::string square_to_string(int s);
 int string_to_square(const std::string& s);
 
 /* Directions */

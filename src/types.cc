@@ -19,26 +19,26 @@ bool Chess960 = false;
 
 /* Rank, File, Square */
 
-Rank rank_of(int sq)
+Rank rank_of(int s)
 {
-    BOUNDS(sq, NB_SQUARE);
+    BOUNDS(s, NB_SQUARE);
 
-    return Rank(sq / NB_FILE);
+    return Rank(s / NB_FILE);
 }
 
-File file_of(int sq)
+File file_of(int s)
 {
-    BOUNDS(sq, NB_SQUARE);
+    BOUNDS(s, NB_SQUARE);
 
-    return File(sq % NB_FILE);
+    return File(s % NB_FILE);
 }
 
-Rank relative_rank(Color c, int sq)
+Rank relative_rank(Color c, int s)
 {
     BOUNDS(c, NB_COLOR);
-    BOUNDS(sq, NB_SQUARE);
+    BOUNDS(s, NB_SQUARE);
 
-    return Rank(rank_of(sq) ^ (7 * c));
+    return Rank(rank_of(s) ^ (7 * c));
 }
 
 int square(Rank r, File f)
@@ -49,13 +49,11 @@ int square(Rank r, File f)
     return NB_FILE * r + f;
 }
 
-std::string square_to_string(int sq)
+std::string square_to_string(int s)
 {
-    BOUNDS(sq, NB_SQUARE);
+    BOUNDS(s, NB_SQUARE);
 
-    const char s[3] = {char(file_of(sq) + 'a'), char(rank_of(sq) + '1'), '\0'};
-
-    return std::string(s);
+    return std::string({char(file_of(s) + 'a'), char(rank_of(s) + '1'), '\0'});
 }
 
 int string_to_square(const std::string& s)

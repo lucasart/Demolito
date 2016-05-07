@@ -43,7 +43,7 @@ eval_t mobility(const Position& pos, Color us)
     const bitboard_t targets = ~(pos.occ(us, PAWN) | pos.occ(us, KING) | pawn_attacks(pos, them));
 
     bitboard_t fss, tss, occ;
-    int fsq, piece;
+    int from, piece;
     eval_t result = {0, 0};
 
     // Knight mobility
@@ -59,9 +59,9 @@ eval_t mobility(const Position& pos, Color us)
     occ = pos.occ() ^ fss;    // RQ see through each other
 
     while (fss) {
-        fsq = bb::pop_lsb(fss);
-        piece = pos.piece_on(fsq);
-        tss = bb::rattacks(fsq, occ) & targets;
+        from = bb::pop_lsb(fss);
+        piece = pos.piece_on(from);
+        tss = bb::rattacks(from, occ) & targets;
         result += score_mobility(ROOK, piece, tss);
     }
 
@@ -70,9 +70,9 @@ eval_t mobility(const Position& pos, Color us)
     occ = pos.occ() ^ fss;    // BQ see through each other
 
     while (fss) {
-        fsq = bb::pop_lsb(fss);
-        piece = pos.piece_on(fsq);
-        tss = bb::battacks(fsq, occ) & targets;
+        from = bb::pop_lsb(fss);
+        piece = pos.piece_on(from);
+        tss = bb::battacks(from, occ) & targets;
         result += score_mobility(BISHOP, piece, tss);
     }
 

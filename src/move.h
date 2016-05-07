@@ -12,10 +12,10 @@ struct PinInfo {
     PinInfo(const Position& pos);
 };
 
-typedef uint16_t move_t;    // fsq:6, tsq:6, prom: 3 (NB_PIECE if none)
+typedef uint16_t move_t;    // from:6, to:6, prom: 3 (NB_PIECE if none)
 
 struct Move {
-    int fsq, tsq;
+    int from, to;
     Piece prom;
 
     bool ok() const;
@@ -27,7 +27,7 @@ struct Move {
     operator move_t() const;
     Move operator =(move_t em);
 
-    bool null() const { return (fsq | tsq | prom) == 0; }
+    bool null() const { return (from | to | prom) == 0; }
     bool is_capture(const Position& pos) const;
     bool is_castling(const Position& pos) const;
 

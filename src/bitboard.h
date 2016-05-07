@@ -14,25 +14,25 @@ bitboard_t file(File f);
 bitboard_t relative_rank(Color c, Rank r);
 
 // Leaper attacks
-bitboard_t pattacks(Color c, int sq);
-bitboard_t pawn_span(Color c, int sq);
-bitboard_t nattacks(int sq);
-bitboard_t kattacks(int sq);
+bitboard_t pattacks(Color c, int s);
+bitboard_t pawn_span(Color c, int s);
+bitboard_t nattacks(int s);
+bitboard_t kattacks(int s);
 
 // Slider attacks
-bitboard_t battacks(int sq, bitboard_t occ);
-bitboard_t rattacks(int sq, bitboard_t occ);
-bitboard_t bpattacks(int sq);    // pseudo-attacks (empty board)
-bitboard_t rpattacks(int sq);    // pseudo-attacks (empty board)
+bitboard_t battacks(int s, bitboard_t occ);
+bitboard_t rattacks(int s, bitboard_t occ);
+bitboard_t bpattacks(int s);    // pseudo-attacks (empty board)
+bitboard_t rpattacks(int s);    // pseudo-attacks (empty board)
 
-bitboard_t segment(int sq1, int sq2);
-bitboard_t ray(int sq1, int sq2);
+bitboard_t segment(int s1, int s2);
+bitboard_t ray(int s1, int s2);
 
 /* Bit manipulation */
 
-bool test(bitboard_t b, int sq);
-void clear(bitboard_t& b, int sq);
-void set(bitboard_t& b, int sq);
+bool test(bitboard_t b, int s);
+void clear(bitboard_t& b, int s);
+void set(bitboard_t& b, int s);
 bitboard_t shift(bitboard_t b, int i);
 
 int lsb(bitboard_t b);

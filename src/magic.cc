@@ -139,10 +139,10 @@ const size_t RMagicIndex[64] = {
     90112, 75776, 40960, 45056, 49152, 55296, 79872, 98304
 };
 
-bitboard_t calc_sliding_attacks(int sq, bitboard_t occ, const int dir[4][2])
+bitboard_t calc_sliding_attacks(int s, bitboard_t occ, const int dir[4][2])
 {
-    const Rank r = rank_of(sq);
-    const File f = file_of(sq);
+    const Rank r = rank_of(s);
+    const File f = file_of(s);
     bitboard_t result = 0;
 
     for (int i = 0; i < 4; ++i) {
@@ -164,33 +164,33 @@ bitboard_t calc_sliding_attacks(int sq, bitboard_t occ, const int dir[4][2])
     return result;
 }
 
-bitboard_t init_magic_occ(const int* sq, int squareCount, bitboard_t lineOcc)
+bitboard_t init_magic_occ(const int* s, int squareCount, bitboard_t lineOcc)
 {
     bitboard_t result = 0;
 
     for (int i = 0; i < squareCount; ++i)
         if (bb::test(lineOcc, i))
-            bb::set(result, sq[i]);
+            bb::set(result, s[i]);
 
     return result;
 }
 
-void init_helper(int sq, const bitboard_t mask[], const bitboard_t magic[], const int shift[],
+void init_helper(int s, const bitboard_t mask[], const bitboard_t magic[], const int shift[],
                  bitboard_t magicDb[], const size_t magicIndex[], const int dir[4][2])
 {
     int squares[NB_SQUARE];
     int squareCount = 0;
 
-    bitboard_t temp = mask[sq];
+    bitboard_t temp = mask[s];
 
     while (temp)
         squares[squareCount++] = bb::pop_lsb(temp);
 
     for (temp = 0; temp < (1ULL << squareCount); temp++) {
         bitboard_t occ = init_magic_occ(squares, squareCount, temp);
-        const int idx = (occ * magic[sq]) >> shift[sq];
-        bitboard_t *p = magicDb + magicIndex[sq];
-        p[idx] = calc_sliding_attacks(sq, occ, dir);
+        const int idx = (occ * magic[s]) >> shift[s];
+        bitboard_t *p = magicDb + magicIndex[s];
+        p[idx] = calc_sliding_attacks(s, occ, dir);
     }
 }
 
@@ -209,18 +209,18 @@ void init_slider_attacks()
     }
 }
 
-bitboard_t battacks(int sq, bitboard_t occ)
+bitboard_t battacks(int s, bitboard_t occ)
 {
-    BOUNDS(sq, NB_SQUARE);
-    const int idx = ((occ & BMask[sq]) * BMagic[sq]) >> BShift[sq];
-    return (BMagicDB + BMagicIndex[sq])[idx];
+    BOUNDS(s, NB_SQUARE);
+    const int idx = ((occ & BMask[s]) * BMagic[s]) >> BShift[s];
+    return (BMagicDB + BMagicIndex[s])[idx];
 }
 
-bitboard_t rattacks(int sq, bitboard_t occ)
+bitboard_t rattacks(int s, bitboard_t occ)
 {
-    BOUNDS(sq, NB_SQUARE);
-    const int idx = ((occ & RMask[sq]) * RMagic[sq]) >> RShift[sq];
-    return (RMagicDB + RMagicIndex[sq])[idx];
+    BOUNDS(s, NB_SQUARE);
+    const int idx = ((occ & RMask[s]) * RMagic[s]) >> RShift[s];
+    return (RMagicDB + RMagicIndex[s])[idx];
 }
 
 }    // namespace bb
