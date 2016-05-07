@@ -139,7 +139,7 @@ const size_t RMagicIndex[64] = {
     90112, 75776, 40960, 45056, 49152, 55296, 79872, 98304
 };
 
-bitboard_t calc_sliding_attacks(int s, bitboard_t occ, const int dir[4][2])
+bitboard_t calc_sliding_attacks(Square s, bitboard_t occ, const int dir[4][2])
 {
     const Rank r = rank_of(s);
     const File f = file_of(s);
@@ -151,7 +151,7 @@ bitboard_t calc_sliding_attacks(int s, bitboard_t occ, const int dir[4][2])
         File _f = f + df;
 
         while (0 <= _r && _r < NB_RANK && 0 <= _f && _f < NB_FILE) {
-            const int _sq = square(_r, _f);
+            const Square _sq = square(_r, _f);
             bb::set(result, _sq);
 
             if (bb::test(occ, _sq))
@@ -164,21 +164,21 @@ bitboard_t calc_sliding_attacks(int s, bitboard_t occ, const int dir[4][2])
     return result;
 }
 
-bitboard_t init_magic_occ(const int* s, int squareCount, bitboard_t lineOcc)
+bitboard_t init_magic_occ(const Square* s, int squareCount, bitboard_t lineOcc)
 {
     bitboard_t result = 0;
 
     for (int i = 0; i < squareCount; ++i)
-        if (bb::test(lineOcc, i))
+        if (lineOcc & (1ULL << i))
             bb::set(result, s[i]);
 
     return result;
 }
 
-void init_helper(int s, const bitboard_t mask[], const bitboard_t magic[], const int shift[],
+void init_helper(Square s, const bitboard_t mask[], const bitboard_t magic[], const int shift[],
                  bitboard_t magicDb[], const size_t magicIndex[], const int dir[4][2])
 {
-    int squares[NB_SQUARE];
+    Square squares[NB_SQUARE];
     int squareCount = 0;
 
     bitboard_t temp = mask[s];
@@ -203,20 +203,20 @@ void init_slider_attacks()
     const int Bdir[4][2] = {{-1,-1},{-1,1},{1,-1},{1,1}};
     const int Rdir[4][2] = {{-1,0},{0,-1},{0,1},{1,0}};
 
-    for (int i = A1; i <= H8; i++) {
-        init_helper(i, BMask, BMagic, BShift, BMagicDB, BMagicIndex, Bdir);
-        init_helper(i, RMask, RMagic, RShift, RMagicDB, RMagicIndex, Rdir);
+    for (Square s = A1; s <= H8; ++s) {
+        init_helper(s, BMask, BMagic, BShift, BMagicDB, BMagicIndex, Bdir);
+        init_helper(s, RMask, RMagic, RShift, RMagicDB, RMagicIndex, Rdir);
     }
 }
 
-bitboard_t battacks(int s, bitboard_t occ)
+bitboard_t battacks(Square s, bitboard_t occ)
 {
     BOUNDS(s, NB_SQUARE);
     const int idx = ((occ & BMask[s]) * BMagic[s]) >> BShift[s];
     return (BMagicDB + BMagicIndex[s])[idx];
 }
 
-bitboard_t rattacks(int s, bitboard_t occ)
+bitboard_t rattacks(Square s, bitboard_t occ)
 {
     BOUNDS(s, NB_SQUARE);
     const int idx = ((occ & RMask[s]) * RMagic[s]) >> RShift[s];

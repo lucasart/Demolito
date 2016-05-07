@@ -20,7 +20,7 @@ namespace {
 
 uint64_t Zobrist[NB_COLOR][NB_PIECE][NB_SQUARE];
 uint64_t ZobristCastling[NB_SQUARE];
-uint64_t ZobristEnPassant[NB_SQUARE+1];
+uint64_t ZobristEnPassant[(int)NB_SQUARE+1];
 uint64_t ZobristTurn;
 
 uint64_t rotate(uint64_t x, int k)
@@ -90,19 +90,21 @@ void init()
 
     for (Color c = WHITE; c <= BLACK; ++c)
         for (Piece p = KNIGHT; p < NB_PIECE; ++p)
-            for (int s = A1; s <= H8; ++s)
+            for (Square s = A1; s <= H8; ++s)
                 Zobrist[c][p][s] = prng.rand();
 
-    for (int s = A1; s <= H8; ++s)
+    for (Square s = A1; s <= H8; ++s)
         ZobristCastling[s] = prng.rand();
 
-    for (int s = 0; s <= NB_SQUARE; ++s)
+    for (Square s = A1; s <= H8; ++s)
         ZobristEnPassant[s] = prng.rand();
+
+    ZobristEnPassant[NB_SQUARE] = prng.rand();
 
     ZobristTurn = prng.rand();
 }
 
-uint64_t key(Color c, Piece p, int s)
+uint64_t key(Color c, Piece p, Square s)
 {
     BOUNDS(c, NB_COLOR);
     BOUNDS(p, NB_PIECE);
@@ -134,7 +136,7 @@ uint64_t castling(bitboard_t castlableRooks)
     return k;
 }
 
-uint64_t en_passant(int s)
+uint64_t en_passant(Square s)
 {
     assert(unsigned(s) <= NB_SQUARE);
 

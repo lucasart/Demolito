@@ -76,7 +76,7 @@ bool Position::material_ok() const
     return true;
 }
 
-bitboard_t Position::attackers_to(int s, bitboard_t _occ) const
+bitboard_t Position::attackers_to(Square s, bitboard_t _occ) const
 {
     BOUNDS(s, NB_SQUARE);
 
@@ -126,11 +126,11 @@ void Position::clear()
 {
     std::memset(this, 0, sizeof(*this));
 
-    for (int s = A1; s <= H8; ++s)
+    for (Square s = A1; s <= H8; ++s)
         _pieceOn[s] = NB_PIECE;
 }
 
-void Position::clear(Color c, Piece p, int s)
+void Position::clear(Color c, Piece p, Square s)
 {
     BOUNDS(c, NB_COLOR);
     BOUNDS(p, NB_PIECE);
@@ -149,7 +149,7 @@ void Position::clear(Color c, Piece p, int s)
         _pawnKey ^= zobrist::key(c, p, s);
 }
 
-void Position::set(Color c, Piece p, int s)
+void Position::set(Color c, Piece p, Square s)
 {
     BOUNDS(c, NB_COLOR);
     BOUNDS(p, NB_PIECE);
@@ -182,7 +182,7 @@ void Position::set(const std::string& fen)
 
     // Piece placement
     is >> token;
-    int s = A8;
+    Square s = A8;
 
     for (char c : token) {
         if (isdigit(c))
@@ -251,7 +251,7 @@ std::string Position::get() const
         int cnt = 0;
 
         for (File f = FILE_A; f <= FILE_H; ++f) {
-            const int s = square(r, f);
+            const Square s = square(r, f);
 
             if (bb::test(occ(), s)) {
                 if (cnt)
@@ -285,7 +285,7 @@ std::string Position::get() const
             // Because we have castlable rooks, king has to be on the first rank and not
             // in a corner, which allows using bb::ray(king, king +/- 1) to search for the
             // castle rook in Chess960.
-            const int king = king_square(c);
+            const Square king = king_square(c);
             assert(rank_of(king) == (c == WHITE ? RANK_1 : RANK_8));
             assert(file_of(king) != FILE_A && file_of(king) != FILE_H);
 
@@ -361,7 +361,7 @@ Color Position::turn() const
     return _turn;
 }
 
-int Position::ep_square() const
+Square Position::ep_square() const
 {
     assert(unsigned(_epSquare) <= NB_SQUARE);
     return _epSquare;
@@ -429,19 +429,19 @@ eval_t Position::piece_material(Color c) const
     return _pieceMaterial[c];
 }
 
-int Position::king_square(Color c) const
+Square Position::king_square(Color c) const
 {
     return bb::lsb(occ(c, KING));
 }
 
-Color Position::color_on(int s) const
+Color Position::color_on(Square s) const
 {
     assert(bb::test(occ(), s));
 
     return bb::test(occ(WHITE), s) ? WHITE : BLACK;
 }
 
-Piece Position::piece_on(int s) const
+Piece Position::piece_on(Square s) const
 {
     BOUNDS(s, NB_SQUARE);
     return Piece(_pieceOn[s]);
@@ -522,7 +522,7 @@ void Position::print() const
         char line[] = ". . . . . . . .";
 
         for (File f = FILE_A; f <= FILE_H; ++f) {
-            const int s = square(r, f);
+            const Square s = square(r, f);
             line[2 * f] = bb::test(occ(), s)
                           ? PieceLabel[color_on(s)][piece_on(s)]
                           : s == ep_square() ? '*' : '.';

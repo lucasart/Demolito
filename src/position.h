@@ -11,7 +11,8 @@ class Position {
     eval_t _pst;
     char _pieceOn[NB_SQUARE];
     Color _turn;
-    int _epSquare, _rule50;
+    Square _epSquare;
+    int _rule50;
     eval_t _pieceMaterial[NB_COLOR];
 
     bool key_ok() const;
@@ -21,8 +22,8 @@ class Position {
     bitboard_t attacked_by(Color c) const;
 
     void clear();
-    void clear(Color c, Piece p, int s);
-    void set(Color c, Piece p, int s);
+    void clear(Color c, Piece p, Square s);
+    void set(Color c, Piece p, Square s);
 
 public:
     void set(const std::string& fen);
@@ -39,7 +40,7 @@ public:
     bitboard_t occ_BQ(Color c) const;
 
     Color turn() const;
-    int ep_square() const;
+    Square ep_square() const;
     bitboard_t ep_square_bb() const;
     int rule50() const;
     bitboard_t checkers() const;
@@ -52,11 +53,11 @@ public:
     eval_t piece_material() const;
     eval_t piece_material(Color c) const;
 
-    int king_square(Color c) const;
-    Color color_on(int s) const;
-    Piece piece_on(int s) const;
+    Square king_square(Color c) const;
+    Color color_on(Square s) const;
+    Piece piece_on(Square s) const;
 
-    bitboard_t attackers_to(int s, bitboard_t _occ) const;
+    bitboard_t attackers_to(Square s, bitboard_t _occ) const;
 
     void print() const;
 };

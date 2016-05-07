@@ -43,7 +43,7 @@ eval_t mobility(const Position& pos, Color us)
     const bitboard_t targets = ~(pos.occ(us, PAWN) | pos.occ(us, KING) | pawn_attacks(pos, them));
 
     bitboard_t fss, tss, occ;
-    int from, piece;
+    Square from;
     eval_t result = {0, 0};
 
     // Knight mobility
@@ -60,9 +60,8 @@ eval_t mobility(const Position& pos, Color us)
 
     while (fss) {
         from = bb::pop_lsb(fss);
-        piece = pos.piece_on(from);
         tss = bb::rattacks(from, occ) & targets;
-        result += score_mobility(ROOK, piece, tss);
+        result += score_mobility(ROOK, pos.piece_on(from), tss);
     }
 
     // Diagonal mobility
@@ -71,9 +70,8 @@ eval_t mobility(const Position& pos, Color us)
 
     while (fss) {
         from = bb::pop_lsb(fss);
-        piece = pos.piece_on(from);
         tss = bb::battacks(from, occ) & targets;
-        result += score_mobility(BISHOP, piece, tss);
+        result += score_mobility(BISHOP, pos.piece_on(from), tss);
     }
 
     return result;

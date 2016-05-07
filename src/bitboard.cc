@@ -41,7 +41,7 @@ void safe_set_bit(bitboard_t& b, Rank r, File f)
 
 void init_leaper_attacks()
 {
-    for (int s = A1; s <= H8; ++s) {
+    for (Square s = A1; s <= H8; ++s) {
         const Rank r = rank_of(s);
         const File f = file_of(s);
 
@@ -56,18 +56,18 @@ void init_leaper_attacks()
         }
     }
 
-    for (int s = H8; s >= A1; --s)
+    for (Square s = H8; s >= A1; --s)
         PawnSpan[WHITE][s] = (rank_of(s) == RANK_8 ? 0 : PawnSpan[WHITE][s + 8])
                              | PAttacks[WHITE][s];
 
-    for (int s = A1; s <= H8; ++s)
+    for (Square s = A1; s <= H8; ++s)
         PawnSpan[BLACK][s] = (rank_of(s) == RANK_1 ? 0 : PawnSpan[BLACK][s - 8])
                              | PAttacks[BLACK][s];
 }
 
 void init_rays()
 {
-    for (int s1 = A1; s1 <= H8; ++s1) {
+    for (Square s1 = A1; s1 <= H8; ++s1) {
         const Rank r1 = rank_of(s1);
         const File f1 = file_of(s1);
 
@@ -77,7 +77,7 @@ void init_rays()
             File f2 = f1;
 
             while (0 <= r2 && r2 < NB_RANK && 0 <= f2 && f2 < NB_FILE) {
-                const int s2 = square(r2, f2);
+                const Square s2 = square(r2, f2);
                 bb::set(mask, s2);
                 Segment[s1][s2] = mask;
                 r2 += KDir[d][0], f2 += KDir[d][1];
@@ -86,7 +86,7 @@ void init_rays()
             bitboard_t sqs = mask;
 
             while (sqs) {
-                int s2 = bb::pop_lsb(sqs);
+                Square s2 = bb::pop_lsb(sqs);
                 Ray[s1][s2] = mask;
             }
         }
@@ -95,7 +95,7 @@ void init_rays()
 
 void init_slider_pseudo_attacks()
 {
-    for (int s = A1; s <= H8; ++s) {
+    for (Square s = A1; s <= H8; ++s) {
         BPseudoAttacks[s] = bb::battacks(s, 0);
         RPseudoAttacks[s] = bb::rattacks(s, 0);
     }
@@ -132,42 +132,42 @@ bitboard_t relative_rank(Color c, Rank r)
     return rank(c == WHITE ? r : RANK_8 - r);
 }
 
-bitboard_t pattacks(Color c, int s)
+bitboard_t pattacks(Color c, Square s)
 {
     BOUNDS(s, NB_SQUARE);
 
     return PAttacks[c][s];
 }
 
-bitboard_t nattacks(int s)
+bitboard_t nattacks(Square s)
 {
     BOUNDS(s, NB_SQUARE);
 
     return NAttacks[s];
 }
 
-bitboard_t kattacks(int s)
+bitboard_t kattacks(Square s)
 {
     BOUNDS(s, NB_SQUARE);
 
     return KAttacks[s];
 }
 
-bitboard_t bpattacks(int s)
+bitboard_t bpattacks(Square s)
 {
     BOUNDS(s, NB_SQUARE);
 
     return BPseudoAttacks[s];
 }
 
-bitboard_t rpattacks(int s)
+bitboard_t rpattacks(Square s)
 {
     BOUNDS(s, NB_SQUARE);
 
     return RPseudoAttacks[s];
 }
 
-bitboard_t segment(int s1, int s2)
+bitboard_t segment(Square s1, Square s2)
 {
     BOUNDS(s1, NB_SQUARE);
     BOUNDS(s2, NB_SQUARE);
@@ -175,7 +175,7 @@ bitboard_t segment(int s1, int s2)
     return Segment[s1][s2];
 }
 
-bitboard_t ray(int s1, int s2)
+bitboard_t ray(Square s1, Square s2)
 {
     BOUNDS(s1, NB_SQUARE);
     BOUNDS(s2, NB_SQUARE);
@@ -184,7 +184,7 @@ bitboard_t ray(int s1, int s2)
     return Ray[s1][s2];
 }
 
-bitboard_t pawn_span(Color c, int s)
+bitboard_t pawn_span(Color c, Square s)
 {
     BOUNDS(s, NB_SQUARE);
 
@@ -193,14 +193,14 @@ bitboard_t pawn_span(Color c, int s)
 
 /* Bit manipulation */
 
-bool test(bitboard_t b, int s)
+bool test(bitboard_t b, Square s)
 {
     BOUNDS(s, NB_SQUARE);
 
     return b & (1ULL << s);
 }
 
-void clear(bitboard_t& b, int s)
+void clear(bitboard_t& b, Square s)
 {
     BOUNDS(s, NB_SQUARE);
     assert(test(b, s));
@@ -208,7 +208,7 @@ void clear(bitboard_t& b, int s)
     b ^= 1ULL << s;
 }
 
-void set(bitboard_t& b, int s)
+void set(bitboard_t& b, Square s)
 {
     BOUNDS(s, NB_SQUARE);
     assert(!test(b, s));
@@ -223,21 +223,21 @@ bitboard_t shift(bitboard_t b, int i)
     return i > 0 ? b << i : b >> -i;
 }
 
-int lsb(bitboard_t b)
+Square lsb(bitboard_t b)
 {
     assert(b);
-    return __builtin_ffsll(b) - 1;
+    return Square(__builtin_ffsll(b) - 1);
 }
 
-int msb(bitboard_t b)
+Square msb(bitboard_t b)
 {
     assert(b);
-    return 63 - __builtin_clzll(b);
+    return Square(63 - __builtin_clzll(b));
 }
 
-int pop_lsb(bitboard_t& b)
+Square pop_lsb(bitboard_t& b)
 {
-    int s = lsb(b);
+    Square s = lsb(b);
     b &= b - 1;
     return s;
 }

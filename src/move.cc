@@ -19,14 +19,14 @@
 
 bitboard_t PinInfo::hidden_checkers(const Position& pos, Color attacker, Color blocker) const
 {
-    const int king = pos.king_square(~attacker);
+    const Square king = pos.king_square(~attacker);
     bitboard_t pinners = (pos.occ_RQ(attacker) & bb::rpattacks(king))
                          | (pos.occ_BQ(attacker) & bb::bpattacks(king));
 
     bitboard_t result = 0;
 
     while (pinners) {
-        const int s = bb::pop_lsb(pinners);
+        const Square s = bb::pop_lsb(pinners);
         bitboard_t skewered = bb::segment(king, s) & pos.occ();
         bb::clear(skewered, king);
         bb::clear(skewered, s);
@@ -59,8 +59,8 @@ Move::operator move_t() const
 
 Move Move::operator =(move_t em)
 {
-    from = em & 077;
-    to = (em >> 6) & 077;
+    from = Square(em & 077);
+    to = Square((em >> 6) & 077);
     prom = Piece(em >> 12);
     assert(ok());
     return *this;
@@ -88,9 +88,9 @@ std::string Move::to_string(const Position& pos) const
     if (null())
         return "0000";
 
-    const int _tsq = !Chess960 && is_castling(pos)
-                     ? (to > from ? from + 2 : from - 2)    // e1h1 -> e1g1, e1c1 -> e1a1
-                     : to;
+    const Square _tsq = !Chess960 && is_castling(pos)
+                        ? (to > from ? from + 2 : from - 2)    // e1h1 -> e1g1, e1c1 -> e1a1
+                        : to;
 
     s += file_of(from) + 'a';
     s += rank_of(from) + '1';
@@ -111,7 +111,7 @@ void Move::from_string(const Position& pos, const std::string& s)
 
     if (!Chess960 && pos.piece_on(from) == KING) {
         if (to == from + 2)      // e1g1
-            to++;               // -> e1h1
+            ++to;               // -> e1h1
         else if (to == from - 2) // e1c1
             to -= 2;            // -> e1a1
     }
@@ -122,14 +122,14 @@ void Move::from_string(const Position& pos, const std::string& s)
 bool Move::pseudo_is_legal(const Position& pos, const PinInfo& pi) const
 {
     const Piece p = pos.piece_on(from);
-    const int king = pos.king_square(pos.turn());
+    const Square king = pos.king_square(pos.turn());
 
     if (p == KING) {
         if (bb::test(pos.occ(pos.turn()), to)) {
             // Castling: king must not move through attacked square, and rook must not
             // be pinned
             assert(pos.piece_on(to) == ROOK);
-            const int _tsq = square(rank_of(from), from < to ? FILE_G : FILE_C);
+            const Square _tsq = square(rank_of(from), from < to ? FILE_G : FILE_C);
             return !(pos.attacked() & bb::segment(from, _tsq))
                    && !bb::test(pi.pinned, to);
         } else

@@ -76,7 +76,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
     if (s) {
         if (s == STOP)
             throw ABORT_STOP;
-        else if (bb::test(s, ThreadId))
+        else if (s & (1ULL << ThreadId))
             throw ABORT_NEXT;
     }
 
@@ -303,17 +303,17 @@ void iterate(const Position& pos, const Limits& lim, uci::Info& ui, std::vector<
             // on to the next iteration.
             {
                 std::lock_guard<std::mutex> lk(mtxSchedule);
-                assert(!bb::test(signal, ThreadId));
+                assert(!(signal & (1ULL << ThreadId)));
                 uint64_t s = 0;
 
                 for (int i = 0; i < lim.threads; i++)
                     if (i != ThreadId && iteration[i] == depth)
-                        bb::set(s, i);
+                        s |= 1ULL << i;
 
                 signal |= s;
             }
         } catch (const Abort e) {
-            assert(bb::test(signal, ThreadId));
+            assert(signal & (1ULL << ThreadId));
             history[ThreadId] = uci::history;    // Restore an orderly state
 
             if (e == ABORT_STOP)

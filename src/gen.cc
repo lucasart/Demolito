@@ -151,8 +151,8 @@ move_t *castling_moves(const Position& pos, move_t *emList)
 
     while (tss) {
         m.to = bb::pop_lsb(tss);
-        const int ktsq = square(rank_of(m.to), m.to > m.from ? FILE_G : FILE_C);
-        const bitboard_t s = bb::segment(m.from, m.to) | bb::segment(m.from, ktsq);
+        const Square kto = square(rank_of(m.to), m.to > m.from ? FILE_G : FILE_C);
+        const bitboard_t s = bb::segment(m.from, m.to) | bb::segment(m.from, kto);
 
         if (bb::count(s & pos.occ()) == 2)
             *emList++ = m;
@@ -165,7 +165,7 @@ move_t *check_escapes(const Position& pos, move_t *emList, bool subPromotions)
 {
     assert(pos.checkers());
     bitboard_t ours = pos.occ(pos.turn());
-    const int king = pos.king_square(pos.turn());
+    const Square king = pos.king_square(pos.turn());
     bitboard_t tss;
     Move m;
 
@@ -177,8 +177,8 @@ move_t *check_escapes(const Position& pos, move_t *emList, bool subPromotions)
 
     if (!bb::several(pos.checkers())) {
         // Single checker
-        const int checkerSquare = bb::lsb(pos.checkers());
-        const int checkerPiece = pos.piece_on(checkerSquare);
+        const Square checkerSquare = bb::lsb(pos.checkers());
+        const Piece checkerPiece = pos.piece_on(checkerSquare);
 
         // Piece moves must cover the checking segment for a sliding check, or capture the
         // checker otherwise.

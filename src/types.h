@@ -29,7 +29,7 @@ inline Color operator~(Color c) { return Color(c ^ BLACK); }
 
 enum Rank {RANK_1, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8, NB_RANK};
 enum File {FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H, NB_FILE};
-enum {
+enum Square {
     A1, B1, C1, D1, E1, F1, G1, H1,
     A2, B2, C2, D2, E2, F2, G2, H2,
     A3, B3, C3, D3, E3, F3, G3, H3,
@@ -43,14 +43,15 @@ enum {
 
 ENABLE_OPERATORS(Rank)
 ENABLE_OPERATORS(File)
+ENABLE_OPERATORS(Square)
 
-Rank rank_of(int s);
-File file_of(int s);
-Rank relative_rank(Color c, int s);
-int square(Rank r, File f);
+Rank rank_of(Square s);
+File file_of(Square s);
+Rank relative_rank(Color c, Square s);
+Square square(Rank r, File f);
 
-std::string square_to_string(int s);
-int string_to_square(const std::string& s);
+std::string square_to_string(Square s);
+Square string_to_square(const std::string& s);
 
 /* Directions */
 

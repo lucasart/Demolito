@@ -105,7 +105,7 @@ bool see(bool verbose)
     for (auto& t : test) {
         pos.set(t.fen);
         const Move m(pos, t.move);
-        const int s = m.see(pos);
+        const int value = m.see(pos);
 
         if (verbose) {
             std::cout << '\n';
@@ -113,9 +113,9 @@ bool see(bool verbose)
         } else
             std::cout << t.fen << '\t';
 
-        std::cout << t.move << '\t' << "SEE = " << s << std::endl;
+        std::cout << t.move << '\t' << "SEE = " << value << std::endl;
 
-        if (s != t.value)
+        if (value != t.value)
             return false;
     }
 
