@@ -78,6 +78,8 @@ bool Position::material_ok() const
 
 bitboard_t Position::attackers_to(int sq, bitboard_t _occ) const
 {
+    BOUNDS(sq, NB_SQUARE);
+
     return (occ(WHITE, PAWN) & bb::pattacks(BLACK, sq))
            | (occ(BLACK, PAWN) & bb::pattacks(WHITE, sq))
            | (bb::nattacks(sq) & occ(KNIGHT))
@@ -88,6 +90,8 @@ bitboard_t Position::attackers_to(int sq, bitboard_t _occ) const
 
 bitboard_t Position::attacked_by(Color c) const
 {
+    BOUNDS(c, NB_COLOR);
+
     bitboard_t fss, result;
 
     // King and Knight attacks
@@ -122,13 +126,16 @@ void Position::clear()
 {
     std::memset(this, 0, sizeof(*this));
 
-    for (int sq = 0; sq < NB_SQUARE; sq++)
+    for (int sq = A1; sq <= H8; ++sq)
         _pieceOn[sq] = NB_PIECE;
 }
 
 void Position::clear(Color c, Piece p, int sq)
 {
-    assert(square_ok(sq));
+    BOUNDS(c, NB_COLOR);
+    BOUNDS(p, NB_PIECE);
+    BOUNDS(sq, NB_SQUARE);
+
     bb::clear(_byColor[c], sq);
     bb::clear(_byPiece[p], sq);
 
@@ -144,7 +151,10 @@ void Position::clear(Color c, Piece p, int sq)
 
 void Position::set(Color c, Piece p, int sq)
 {
-    assert(square_ok(sq));
+    BOUNDS(c, NB_COLOR);
+    BOUNDS(p, NB_PIECE);
+    BOUNDS(sq, NB_SQUARE);
+
     bb::set(_byColor[c], sq);
     bb::set(_byPiece[p], sq);
 
@@ -300,7 +310,7 @@ std::string Position::get() const
     os << ' ';
 
     // En passant and 50 move
-    os << (square_ok(ep_square()) ? square_to_string(ep_square()) : "-") << ' ';
+    os << (ep_square() < NB_SQUARE ? square_to_string(ep_square()) : "-") << ' ';
     os << rule50();
 
     return os.str();
@@ -311,22 +321,27 @@ bitboard_t Position::occ() const
     assert(!(occ(WHITE) & occ(BLACK)));
     assert((occ(WHITE) | occ(BLACK)) == (occ(KNIGHT) | occ(BISHOP) | occ(ROOK) | occ(QUEEN) | occ(
             KING) | occ(PAWN)));
+
     return occ(WHITE) | occ(BLACK);
 }
 
 bitboard_t Position::occ(Color c) const
 {
+    BOUNDS(c, NB_COLOR);
+
     return _byColor[c];
+}
+
+bitboard_t Position::occ(Piece p) const
+{
+    BOUNDS(p, NB_PIECE);
+
+    return _byPiece[p];
 }
 
 bitboard_t Position::occ(Color c, Piece p) const
 {
     return occ(c) & occ(p);
-}
-
-bitboard_t Position::occ(Piece p) const
-{
-    return _byPiece[p];
 }
 
 bitboard_t Position::occ_RQ(Color c) const
@@ -346,14 +361,13 @@ Color Position::turn() const
 
 int Position::ep_square() const
 {
-    assert(square_ok(_epSquare) || _epSquare == NB_SQUARE);
+    assert(unsigned(_epSquare) <= NB_SQUARE);
     return _epSquare;
 }
 
 bitboard_t Position::ep_square_bb() const
 {
-    // Guard against oversized shift
-    return square_ok(ep_square()) ? 1ULL << ep_square() : 0;
+    return ep_square() < NB_SQUARE ? 1ULL << ep_square() : 0;
 }
 
 int Position::rule50() const
@@ -407,7 +421,9 @@ eval_t Position::piece_material() const
 
 eval_t Position::piece_material(Color c) const
 {
+    BOUNDS(c, NB_COLOR);
     assert(material_ok());
+
     return _pieceMaterial[c];
 }
 
@@ -419,11 +435,13 @@ int Position::king_square(Color c) const
 Color Position::color_on(int sq) const
 {
     assert(bb::test(occ(), sq));
+
     return bb::test(occ(WHITE), sq) ? WHITE : BLACK;
 }
 
 Piece Position::piece_on(int sq) const
 {
+    BOUNDS(sq, NB_SQUARE);
     return Piece(_pieceOn[sq]);
 }
 

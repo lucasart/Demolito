@@ -211,14 +211,14 @@ void init_slider_attacks()
 
 bitboard_t battacks(int sq, bitboard_t occ)
 {
-    assert(square_ok(sq));
+    BOUNDS(sq, NB_SQUARE);
     const int idx = ((occ & BMask[sq]) * BMagic[sq]) >> BShift[sq];
     return (BMagicDB + BMagicIndex[sq])[idx];
 }
 
 bitboard_t rattacks(int sq, bitboard_t occ)
 {
-    assert(square_ok(sq));
+    BOUNDS(sq, NB_SQUARE);
     const int idx = ((occ & RMask[sq]) * RMagic[sq]) >> RShift[sq];
     return (RMagicDB + RMagicIndex[sq])[idx];
 }

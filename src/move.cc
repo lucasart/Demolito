@@ -47,7 +47,7 @@ PinInfo::PinInfo(const Position& pos)
 
 bool Move::ok() const
 {
-    return square_ok(fsq) && square_ok(tsq)
+    return unsigned(fsq) < NB_SQUARE && unsigned(tsq) < NB_SQUARE
            && ((KNIGHT <= prom && prom <= QUEEN) || prom == NB_PIECE);
 }
 

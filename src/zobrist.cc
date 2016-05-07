@@ -90,13 +90,13 @@ void init()
 
     for (Color c = WHITE; c <= BLACK; ++c)
         for (Piece p = KNIGHT; p < NB_PIECE; ++p)
-            for (int sq = 0; sq < NB_SQUARE; sq++)
+            for (int sq = A1; sq <= H8; ++sq)
                 Zobrist[c][p][sq] = prng.rand();
 
-    for (int sq = 0; sq < NB_SQUARE; sq++)
+    for (int sq = A1; sq <= H8; ++sq)
         ZobristCastling[sq] = prng.rand();
 
-    for (int sq = 0; sq <= NB_SQUARE; sq++)
+    for (int sq = 0; sq <= NB_SQUARE; ++sq)
         ZobristEnPassant[sq] = prng.rand();
 
     ZobristTurn = prng.rand();
@@ -104,12 +104,18 @@ void init()
 
 uint64_t key(Color c, Piece p, int sq)
 {
-    assert(square_ok(sq));
+    BOUNDS(c, NB_COLOR);
+    BOUNDS(p, NB_PIECE);
+    BOUNDS(sq, NB_SQUARE);
+
     return Zobrist[c][p][sq];
 }
 
 uint64_t keys(Color c, Piece p, uint64_t sqs)
 {
+    BOUNDS(c, NB_COLOR);
+    BOUNDS(p, NB_PIECE);
+
     bitboard_t k = 0;
 
     while(sqs)
@@ -130,7 +136,8 @@ uint64_t castling(bitboard_t castlableRooks)
 
 uint64_t en_passant(int sq)
 {
-    assert(square_ok(sq) || sq == NB_SQUARE);
+    assert(unsigned(sq) <= NB_SQUARE);
+
     return ZobristEnPassant[sq];
 }
 

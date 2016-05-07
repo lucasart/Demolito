@@ -41,7 +41,7 @@ void safe_set_bit(bitboard_t& b, Rank r, File f)
 
 void init_leaper_attacks()
 {
-    for (int sq = 0; sq < NB_SQUARE; sq++) {
+    for (int sq = A1; sq <= H8; ++sq) {
         const Rank r = rank_of(sq);
         const File f = file_of(sq);
 
@@ -67,7 +67,7 @@ void init_leaper_attacks()
 
 void init_rays()
 {
-    for (int sq1 = 0; sq1 < NB_SQUARE; sq1++) {
+    for (int sq1 = A1; sq1 <= H8; ++sq1) {
         const Rank r1 = rank_of(sq1);
         const File f1 = file_of(sq1);
 
@@ -95,7 +95,7 @@ void init_rays()
 
 void init_slider_pseudo_attacks()
 {
-    for (int sq = 0; sq < NB_SQUARE; sq++) {
+    for (int sq = A1; sq <= H8; ++sq) {
         BPseudoAttacks[sq] = bb::battacks(sq, 0);
         RPseudoAttacks[sq] = bb::rattacks(sq, 0);
     }
@@ -134,50 +134,60 @@ bitboard_t relative_rank(Color c, Rank r)
 
 bitboard_t pattacks(Color c, int sq)
 {
-    assert(square_ok(sq));
+    BOUNDS(sq, NB_SQUARE);
+
     return PAttacks[c][sq];
 }
 
 bitboard_t nattacks(int sq)
 {
-    assert(square_ok(sq));
+    BOUNDS(sq, NB_SQUARE);
+
     return NAttacks[sq];
 }
 
 bitboard_t kattacks(int sq)
 {
-    assert(square_ok(sq));
+    BOUNDS(sq, NB_SQUARE);
+
     return KAttacks[sq];
 }
 
 bitboard_t bpattacks(int sq)
 {
-    assert(square_ok(sq));
+    BOUNDS(sq, NB_SQUARE);
+
     return BPseudoAttacks[sq];
 }
 
 bitboard_t rpattacks(int sq)
 {
-    assert(square_ok(sq));
+    BOUNDS(sq, NB_SQUARE);
+
     return RPseudoAttacks[sq];
 }
 
 bitboard_t segment(int sq1, int sq2)
 {
-    assert(square_ok(sq1) && square_ok(sq2));
+    BOUNDS(sq1, NB_SQUARE);
+    BOUNDS(sq2, NB_SQUARE);
+
     return Segment[sq1][sq2];
 }
 
 bitboard_t ray(int sq1, int sq2)
 {
-    assert(square_ok(sq1) && square_ok(sq2));
+    BOUNDS(sq1, NB_SQUARE);
+    BOUNDS(sq2, NB_SQUARE);
     assert(sq1 != sq2);    // Ray[sq][sq] is undefined
+
     return Ray[sq1][sq2];
 }
 
 bitboard_t pawn_span(Color c, int sq)
 {
-    assert(square_ok(sq));
+    BOUNDS(sq, NB_SQUARE);
+
     return PawnSpan[c][sq];
 }
 
@@ -185,25 +195,31 @@ bitboard_t pawn_span(Color c, int sq)
 
 bool test(bitboard_t b, int sq)
 {
-    assert(square_ok(sq));
+    BOUNDS(sq, NB_SQUARE);
+
     return b & (1ULL << sq);
 }
 
 void clear(bitboard_t& b, int sq)
 {
-    assert(square_ok(sq) && test(b, sq));
+    BOUNDS(sq, NB_SQUARE);
+    assert(test(b, sq));
+
     b ^= 1ULL << sq;
 }
 
 void set(bitboard_t& b, int sq)
 {
-    assert(square_ok(sq) && !test(b, sq));
+    BOUNDS(sq, NB_SQUARE);
+    assert(!test(b, sq));
+
     b ^= 1ULL << sq;
 }
 
 bitboard_t shift(bitboard_t b, int i)
 {
-    assert(-63 <= i && i <= 63);    // prevent oversized shift (undefined behaviour)
+    assert(-63 <= i && i <= 63);    // forbid oversized shift (undefined behaviour)
+
     return i > 0 ? b << i : b >> -i;
 }
 

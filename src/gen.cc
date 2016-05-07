@@ -191,7 +191,7 @@ move_t *check_escapes(const Position& pos, move_t *emList, bool subPromotions)
         // if checked by a Pawn and epsq is available, then the check must result from a
         // pawn double push, and we also need to consider capturing it en-passant to solve
         // the check.
-        if (checkerPiece == PAWN && square_ok(pos.ep_square()))
+        if (checkerPiece == PAWN && pos.ep_square() < NB_SQUARE)
             bb::set(tss, pos.ep_square());
 
         emList = pawn_moves(pos, emList, tss, subPromotions);
