@@ -23,6 +23,7 @@ const int NDir[8][2] = {{-2,-1},{-2,1},{-1,-2},{-1,2},{1,-2},{1,2},{2,-1},{2,1}}
 const int KDir[8][2] = {{-1,-1},{-1,0},{-1,1},{0,-1},{0,1},{1,-1},{1,0},{1,1}};
 
 bitboard_t PAttacks[NB_COLOR][NB_SQUARE];
+bitboard_t PawnSpan[NB_COLOR][NB_SQUARE];
 bitboard_t NAttacks[NB_SQUARE];
 bitboard_t KAttacks[NB_SQUARE];
 
@@ -31,7 +32,7 @@ bitboard_t RPseudoAttacks[NB_SQUARE];
 
 bitboard_t Segment[NB_SQUARE][NB_SQUARE];
 bitboard_t Ray[NB_SQUARE][NB_SQUARE];
-bitboard_t PawnSpan[NB_COLOR][NB_SQUARE];
+int KingDistance[NB_SQUARE][NB_SQUARE];
 
 void safe_set_bit(bitboard_t& b, Rank r, File f)
 {
@@ -113,6 +114,11 @@ void init()
     init_leaper_attacks();
     init_slider_attacks();
     init_slider_pseudo_attacks();
+
+    for (Square s1 = A1; s1 <= H8; ++s1)
+        for (Square s2 = A1; s2 <= H8; ++s2)
+            KingDistance[s1][s2] = std::max(std::abs(rank_of(s1) - rank_of(s2)),
+                                            std::abs(file_of(s1) - file_of(s2)));
 }
 
 /* Bitboard Accessors */
@@ -189,6 +195,14 @@ bitboard_t pawn_span(Color c, Square s)
     BOUNDS(s, NB_SQUARE);
 
     return PawnSpan[c][s];
+}
+
+int king_distance(Square s1, Square s2)
+{
+    BOUNDS(s1, NB_SQUARE);
+    BOUNDS(s2, NB_SQUARE);
+
+    return KingDistance[s1][s2];
 }
 
 /* Bit manipulation */
