@@ -242,6 +242,9 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 
 int aspirate(const Position& pos, int depth, std::vector<move_t>& pv, int score)
 {
+    if (depth <= 1)
+        return recurse(pos, 0, depth, -INF, +INF, pv);
+
     int delta = 32;
     int alpha = score - delta;
     int beta = score + delta;
@@ -294,9 +297,7 @@ void iterate(const Position& pos, const Limits& lim, uci::Info& ui, std::vector<
         }
 
         try {
-            score = depth <= 1
-                    ? recurse(pos, 0, depth, -INF, +INF, pv)
-                    : aspirate(pos, depth, pv, score);
+            score = aspirate(pos, depth, pv, score);
 
             // Iteration was completed normally. Now we need to see who is working on
             // obsolete iterations, and raise the appropriate signal, to make them move

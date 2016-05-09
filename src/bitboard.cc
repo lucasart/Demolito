@@ -125,17 +125,16 @@ void init()
 
 bitboard_t rank(Rank r)
 {
+    BOUNDS(r, NB_RANK);
+
     return 0xFFULL << (8 * r);
 }
 
 bitboard_t file(File f)
 {
-    return 0x0101010101010101ULL << f;
-}
+    BOUNDS(f, NB_FILE);
 
-bitboard_t relative_rank(Color c, Rank r)
-{
-    return rank(c == WHITE ? r : RANK_8 - r);
+    return 0x0101010101010101ULL << f;
 }
 
 bitboard_t pattacks(Color c, Square s)
@@ -225,6 +224,7 @@ void clear(bitboard_t& b, Square s)
 void set(bitboard_t& b, Square s)
 {
     BOUNDS(s, NB_SQUARE);
+
     assert(!test(b, s));
 
     b ^= 1ULL << s;
@@ -240,12 +240,14 @@ bitboard_t shift(bitboard_t b, int i)
 Square lsb(bitboard_t b)
 {
     assert(b);
+
     return Square(__builtin_ffsll(b) - 1);
 }
 
 Square msb(bitboard_t b)
 {
     assert(b);
+
     return Square(63 - __builtin_clzll(b));
 }
 

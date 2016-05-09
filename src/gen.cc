@@ -54,7 +54,7 @@ move_t *pawn_moves(const Position& pos, move_t *emList, bitboard_t targets, bool
     Move m;
 
     // Non promotions
-    fss = pos.occ(us, PAWN) & ~bb::relative_rank(us, RANK_7);
+    fss = pos.occ(us, PAWN) & ~bb::rank(relative_rank(us, RANK_7));
 
     while (fss) {
         m.from = bb::pop_lsb(fss);
@@ -77,7 +77,7 @@ move_t *pawn_moves(const Position& pos, move_t *emList, bitboard_t targets, bool
     }
 
     // Promotions
-    fss = pos.occ(us, PAWN) & bb::relative_rank(us, RANK_7);
+    fss = pos.occ(us, PAWN) & bb::rank(relative_rank(us, RANK_7));
 
     while (fss) {
         m.from = bb::pop_lsb(fss);

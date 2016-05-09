@@ -77,7 +77,7 @@ bool Position::castlable_rooks_ok() const
 
         const Square k = king_square(c);
 
-        if (rank_of(k) != (c == WHITE ? RANK_1 : RANK_8))
+        if (rank_of(k) != relative_rank(c, RANK_1))
             return false;    // king must be on first rank
 
         // There can be at most one castlable rook on each side of the king
@@ -312,11 +312,12 @@ std::string Position::get() const
             if (!sqs)
                 continue;
 
-            // Because we have castlable rooks, king has to be on the first rank and not
-            // in a corner, which allows using bb::ray(king, king +/- 1) to search for the
-            // castle rook in Chess960.
             const Square king = king_square(c);
-            assert(rank_of(king) == (c == WHITE ? RANK_1 : RANK_8));
+
+            // Because we have castlable rooks, the king has to be on the first rank and
+            // cannot be in a corner, which allows using bb::ray(king, king +/- 1) to
+            // search for the castle rook in Chess960.
+            assert(rank_of(king) == relative_rank(c, RANK_1));
             assert(file_of(king) != FILE_A && file_of(king) != FILE_H);
 
             // Right side castling
@@ -353,18 +354,21 @@ bitboard_t Position::occ() const
     assert(!(occ(WHITE) & occ(BLACK)));
     assert((occ(WHITE) | occ(BLACK)) == (occ(KNIGHT) | occ(BISHOP) | occ(ROOK) | occ(QUEEN) | occ(
             KING) | occ(PAWN)));
+
     return occ(WHITE) | occ(BLACK);
 }
 
 bitboard_t Position::occ(Color c) const
 {
     BOUNDS(c, NB_COLOR);
+
     return _byColor[c];
 }
 
 bitboard_t Position::occ(Piece p) const
 {
     BOUNDS(p, NB_PIECE);
+
     return _byPiece[p];
 }
 
@@ -391,6 +395,7 @@ Color Position::turn() const
 Square Position::ep_square() const
 {
     assert(unsigned(_epSquare) <= NB_SQUARE);
+
     return _epSquare;
 }
 
@@ -402,48 +407,56 @@ bitboard_t Position::ep_square_bb() const
 int Position::rule50() const
 {
     assert(0 <= _rule50 && _rule50 <= 100);
+
     return _rule50;
 }
 
 bitboard_t Position::checkers() const
 {
     assert(_checkers == (attackers_to(king_square(turn()), occ()) & occ(~turn())));
+
     return _checkers;
 }
 
 bitboard_t Position::attacked() const
 {
     assert(_attacked == attacked_by(~turn()));
+
     return _attacked;
 }
 
 bitboard_t Position::castlable_rooks() const
 {
     assert(castlable_rooks_ok());
+
     return _castlableRooks;
 }
 
 uint64_t Position::key() const
 {
     assert(key_ok());
+
     return _key;
 }
 
 uint64_t Position::pawn_key() const
 {
     assert(pawn_key_ok());
+
     return _pawnKey;
 }
 
 eval_t Position::pst() const
 {
     assert(pst_ok());
+
     return _pst;
 }
 
 eval_t Position::piece_material() const
 {
     assert(material_ok());
+
     return piece_material(WHITE) + piece_material(BLACK);
 }
 
@@ -451,6 +464,7 @@ eval_t Position::piece_material(Color c) const
 {
     BOUNDS(c, NB_COLOR);
     assert(material_ok());
+
     return _pieceMaterial[c];
 }
 
@@ -462,12 +476,14 @@ Square Position::king_square(Color c) const
 Color Position::color_on(Square s) const
 {
     assert(bb::test(occ(), s));
+
     return bb::test(occ(WHITE), s) ? WHITE : BLACK;
 }
 
 Piece Position::piece_on(Square s) const
 {
     BOUNDS(s, NB_SQUARE);
+
     return Piece(_pieceOn[s]);
 }
 
@@ -525,8 +541,8 @@ void Position::set(const Position& before, Move m)
                 const Rank r = rank_of(m.from);
 
                 clear(us, KING, m.to);
-                set(us, KING, m.to > m.from ? square(r, FILE_G) : square(r, FILE_C));
-                set(us, ROOK, m.to > m.from ? square(r, FILE_F) : square(r, FILE_D));
+                set(us, KING, square(r, m.to > m.from ? FILE_G : FILE_C));
+                set(us, ROOK, square(r, m.to > m.from ? FILE_F : FILE_D));
             }
         }
     }

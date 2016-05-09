@@ -33,12 +33,19 @@ File file_of(Square s)
     return File(s % NB_FILE);
 }
 
-Rank relative_rank(Color c, Square s)
+Rank relative_rank(Color c, Rank r)
 {
     BOUNDS(c, NB_COLOR);
+    BOUNDS(r, NB_RANK);
+
+    return Rank(r ^ (7 * c));
+}
+
+Rank relative_rank(Color c, Square s)
+{
     BOUNDS(s, NB_SQUARE);
 
-    return Rank(rank_of(s) ^ (7 * c));
+    return relative_rank(c, rank_of(s));
 }
 
 Square square(Rank r, File f)

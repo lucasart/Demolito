@@ -11,7 +11,6 @@ void init();
 
 bitboard_t rank(Rank r);
 bitboard_t file(File f);
-bitboard_t relative_rank(Color c, Rank r);
 
 // Leaper attacks
 bitboard_t pattacks(Color c, Square s);

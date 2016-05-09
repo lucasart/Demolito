@@ -47,6 +47,7 @@ ENABLE_OPERATORS(Square)
 
 Rank rank_of(Square s);
 File file_of(Square s);
+Rank relative_rank(Color c, Rank r);
 Rank relative_rank(Color c, Square s);
 Square square(Rank r, File f);
 

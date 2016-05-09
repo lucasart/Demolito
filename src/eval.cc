@@ -20,8 +20,8 @@ namespace {
 bitboard_t pawn_attacks(const Position& pos, Color c)
 {
     bitboard_t pawns = pos.occ(c, PAWN);
-    return bb::shift(pawns & ~bb::file(FILE_A), c == WHITE ? 7 : -9)
-           | bb::shift(pawns & ~bb::file(FILE_H), c == WHITE ? 9 : -7);
+    return bb::shift(pawns & ~bb::file(FILE_A), push_inc(c) + LEFT)
+           | bb::shift(pawns & ~bb::file(FILE_H), push_inc(c) + RIGHT);
 }
 
 eval_t score_mobility(int p0, int p, bitboard_t tss)
