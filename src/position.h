@@ -39,8 +39,7 @@ public:
     bitboard_t occ(Color c) const;
     bitboard_t occ(Piece p) const;
     bitboard_t occ(Color c, Piece p) const;
-    bitboard_t occ_RQ(Color c) const;
-    bitboard_t occ_BQ(Color c) const;
+    bitboard_t occ(Color c, Piece p1, Piece p2) const;
 
     Color turn() const;
     Square ep_square() const;

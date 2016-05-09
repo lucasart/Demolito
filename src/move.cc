@@ -20,8 +20,8 @@
 bitboard_t PinInfo::hidden_checkers(const Position& pos, Color attacker, Color blocker) const
 {
     const Square king = pos.king_square(~attacker);
-    bitboard_t pinners = (pos.occ_RQ(attacker) & bb::rpattacks(king))
-                         | (pos.occ_BQ(attacker) & bb::bpattacks(king));
+    bitboard_t pinners = (pos.occ(attacker, ROOK, QUEEN) & bb::rpattacks(king))
+                         | (pos.occ(attacker, BISHOP, QUEEN) & bb::bpattacks(king));
 
     bitboard_t result = 0;
 
@@ -111,9 +111,9 @@ void Move::from_string(const Position& pos, const std::string& s)
 
     if (!Chess960 && pos.piece_on(from) == KING) {
         if (to == from + 2)      // e1g1
-            ++to;               // -> e1h1
+            ++to;                // -> e1h1
         else if (to == from - 2) // e1c1
-            to -= 2;            // -> e1a1
+            to -= 2;             // -> e1a1
     }
 
     assert(ok());
@@ -148,8 +148,8 @@ bool Move::pseudo_is_legal(const Position& pos, const PinInfo& pi) const
             bb::clear(occ, from);
             bb::set(occ, to);
             bb::clear(occ, to + push_inc(them));
-            return !(bb::rattacks(king, occ) & pos.occ_RQ(them))
-                   && !(bb::battacks(king, occ) & pos.occ_BQ(them));
+            return !(bb::rattacks(king, occ) & pos.occ(them, ROOK, QUEEN))
+                   && !(bb::battacks(king, occ) & pos.occ(them, BISHOP, QUEEN));
         } else
             return true;
     }

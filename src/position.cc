@@ -139,12 +139,12 @@ bitboard_t Position::attacked_by(Color c) const
 
     // Sliders
     bitboard_t _occ = occ() ^ occ(~c, KING);
-    fss = occ_RQ(c);
+    fss = occ(c, ROOK, QUEEN);
 
     while (fss)
         result |= bb::rattacks(bb::pop_lsb(fss), _occ);
 
-    fss = occ_BQ(c);
+    fss = occ(c, BISHOP, QUEEN);
 
     while (fss)
         result |= bb::battacks(bb::pop_lsb(fss), _occ);
@@ -377,14 +377,9 @@ bitboard_t Position::occ(Color c, Piece p) const
     return occ(c) & occ(p);
 }
 
-bitboard_t Position::occ_RQ(Color c) const
+bitboard_t Position::occ(Color c, Piece p1, Piece p2) const
 {
-    return occ(c) & (occ(ROOK) | occ(QUEEN));
-}
-
-bitboard_t Position::occ_BQ(Color c) const
-{
-    return occ(c) & (occ(BISHOP) | occ(QUEEN));
+    return occ(c) & (occ(p1) | occ(p2));
 }
 
 Color Position::turn() const

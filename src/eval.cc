@@ -55,7 +55,7 @@ eval_t mobility(const Position& pos, Color us)
     }
 
     // Lateral mobility
-    fss = pos.occ_RQ(us);
+    fss = pos.occ(us, ROOK, QUEEN);
     occ = pos.occ() ^ fss;    // RQ see through each other
 
     while (fss) {
@@ -65,7 +65,7 @@ eval_t mobility(const Position& pos, Color us)
     }
 
     // Diagonal mobility
-    fss = pos.occ_BQ(us);
+    fss = pos.occ(us, BISHOP, QUEEN);
     occ = pos.occ() ^ fss;    // BQ see through each other
 
     while (fss) {

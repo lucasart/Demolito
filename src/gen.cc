@@ -120,7 +120,7 @@ move_t *piece_moves(const Position& pos, move_t *emList, bitboard_t targets, boo
     }
 
     // Rook moves
-    fss = pos.occ_RQ(us);
+    fss = pos.occ(us, ROOK, QUEEN);
 
     while (fss) {
         m.from = bb::pop_lsb(fss);
@@ -129,7 +129,7 @@ move_t *piece_moves(const Position& pos, move_t *emList, bitboard_t targets, boo
     }
 
     // Bishop moves
-    fss = pos.occ_BQ(us);
+    fss = pos.occ(us, BISHOP, QUEEN);
 
     while (fss) {
         m.from = bb::pop_lsb(fss);

@@ -71,13 +71,15 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
     int bestScore = -INF;
     move_t bestMove = 0;
 
-    const uint64_t s = signal.load(std::memory_order_relaxed);
+    if (depth > 0) {
+        const uint64_t s = signal.load(std::memory_order_relaxed);
 
-    if (s) {
-        if (s == STOP)
-            throw ABORT_STOP;
-        else if (s & (1ULL << ThreadId))
-            throw ABORT_NEXT;
+        if (s) {
+            if (s == STOP)
+                throw ABORT_STOP;
+            else if (s & (1ULL << ThreadId))
+                throw ABORT_NEXT;
+        }
     }
 
     std::vector<move_t> childPv;
