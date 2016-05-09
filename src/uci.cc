@@ -175,8 +175,16 @@ void Info::update(const Position& pos, int depth, int score, int nodes, std::vec
         os << "info depth " << depth << " score " << format_score(score)
            << " nodes " << nodes << " pv";
 
-        for (int i = 0; pv[i]; i++)
-            os << ' ' << Move(pv[i]).to_string(pos);
+        Position p[2];
+        int idx = 0;
+        p[idx] = pos;
+
+        for (int i = 0; pv[i]; i++) {
+            Move m(pv[i]);
+            os << ' ' << m.to_string(p[idx]);
+            p[idx ^ 1].set(p[idx], m);
+            idx ^= 1;
+        }
 
         std::cout << os.str() << std::endl;
     }
