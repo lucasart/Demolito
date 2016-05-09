@@ -6,7 +6,7 @@ class Position {
     bitboard_t _byColor[NB_COLOR];
     bitboard_t _byPiece[NB_PIECE];
     bitboard_t _castlableRooks;
-    mutable bitboard_t _attacked, _checkers;
+    bitboard_t _attacked, _checkers;
     uint64_t _key, _pawnKey;
     eval_t _pst;
     char _pieceOn[NB_SQUARE];
@@ -15,10 +15,13 @@ class Position {
     int _rule50;
     eval_t _pieceMaterial[NB_COLOR];
 
+    // Sanity check (helpers for assert)
     bool key_ok() const;
     bool pawn_key_ok() const;
     bool pst_ok() const;
     bool material_ok() const;
+    bool castlable_rooks_ok() const;
+
     bitboard_t attacked_by(Color c) const;
 
     void clear();

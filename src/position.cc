@@ -61,6 +61,36 @@ bool Position::pst_ok() const
     return _pst == sum;
 }
 
+bool Position::castlable_rooks_ok() const
+{
+    const bitboard_t b[2] = {_castlableRooks & bb::rank(RANK_1), _castlableRooks & bb::rank(RANK_8)};
+
+    if ((b[0] | b[1]) != _castlableRooks)
+        return false;
+
+    for (Color c = WHITE; c <= BLACK; ++c) {
+        if (!b[c])
+            continue;    // nothing to verify
+
+        if (b[c] & ~occ(c, ROOK))
+            return false;    // castlable rooks on RANK_1/8 must be white/black rooks
+
+        const Square k = king_square(c);
+
+        if (rank_of(k) != (c == WHITE ? RANK_1 : RANK_8))
+            return false;    // king must be on first rank
+
+        // There can be at most one castlable rook on each side of the king
+        if (file_of(k) > FILE_A && bb::several(_castlableRooks & bb::ray(k, k + 1)))
+            return false;
+
+        if (file_of(k) < FILE_H && bb::several(_castlableRooks & bb::ray(k, k - 1)))
+            return false;
+    }
+
+    return true;
+}
+
 bool Position::material_ok() const
 {
     eval_t npm[NB_COLOR] = {{0,0}, {0,0}};
@@ -323,21 +353,18 @@ bitboard_t Position::occ() const
     assert(!(occ(WHITE) & occ(BLACK)));
     assert((occ(WHITE) | occ(BLACK)) == (occ(KNIGHT) | occ(BISHOP) | occ(ROOK) | occ(QUEEN) | occ(
             KING) | occ(PAWN)));
-
     return occ(WHITE) | occ(BLACK);
 }
 
 bitboard_t Position::occ(Color c) const
 {
     BOUNDS(c, NB_COLOR);
-
     return _byColor[c];
 }
 
 bitboard_t Position::occ(Piece p) const
 {
     BOUNDS(p, NB_PIECE);
-
     return _byPiece[p];
 }
 
@@ -374,7 +401,6 @@ bitboard_t Position::ep_square_bb() const
 
 int Position::rule50() const
 {
-    // NB: rule50() = 100 is ok, if (and only if) position is check mate
     assert(0 <= _rule50 && _rule50 <= 100);
     return _rule50;
 }
@@ -393,7 +419,7 @@ bitboard_t Position::attacked() const
 
 bitboard_t Position::castlable_rooks() const
 {
-    // TODO: verify _castlableRooks
+    assert(castlable_rooks_ok());
     return _castlableRooks;
 }
 
@@ -425,7 +451,6 @@ eval_t Position::piece_material(Color c) const
 {
     BOUNDS(c, NB_COLOR);
     assert(material_ok());
-
     return _pieceMaterial[c];
 }
 
@@ -437,7 +462,6 @@ Square Position::king_square(Color c) const
 Color Position::color_on(Square s) const
 {
     assert(bb::test(occ(), s));
-
     return bb::test(occ(WHITE), s) ? WHITE : BLACK;
 }
 
