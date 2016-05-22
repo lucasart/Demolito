@@ -19,8 +19,9 @@
 #include "uci.h"
 #include "eval.h"
 #include "search.h"
-#include "zobrist.h"
 #include "tt.h"
+
+zobrist::History history;
 
 namespace {
 
@@ -64,8 +65,6 @@ void setoption(std::istringstream& is)
 
 void position(std::istringstream& is)
 {
-    static zobrist::PRNG prng;
-
     Position p[NB_COLOR];
     int idx = 0;
 
@@ -82,15 +81,15 @@ void position(std::istringstream& is)
         return;
 
     p[idx].set(fen);
-    uci::history.clear();
-    uci::history.push(p[idx].key());
+    history.clear();
+    history.push(p[idx].key());
 
     // Parse moves (if any)
     while (is >> token) {
         const Move m(p[idx], token);
         p[idx ^ 1].set(p[idx], m);
         idx ^= 1;
-        uci::history.push(p[idx].key());
+        history.push(p[idx].key());
     }
 
     pos = p[idx];
@@ -113,7 +112,7 @@ void go(std::istringstream& is)
         Timer.join();
 
     lim.threads = Threads;
-    Timer = std::thread(search::bestmove, std::cref(pos), std::cref(lim));
+    Timer = std::thread(search::bestmove, std::cref(pos), std::cref(lim), std::cref(history));
 }
 
 void eval()
@@ -125,8 +124,6 @@ void eval()
 }    // namespace
 
 namespace uci {
-
-zobrist::History history;
 
 void loop()
 {

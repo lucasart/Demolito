@@ -2,11 +2,8 @@
 #include <vector>
 #include <mutex>
 #include "move.h"
-#include "zobrist.h"
 
 namespace uci {
-
-extern zobrist::History history;
 
 void loop();
 

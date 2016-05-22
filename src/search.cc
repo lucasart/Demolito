@@ -29,7 +29,7 @@ namespace {
 thread_local int ThreadId;
 
 // Per thread data
-std::vector<zobrist::History> history;
+std::vector<zobrist::History> threadHistory;
 std::vector<uint64_t> nodeCount;
 
 // Search stack, per thread
@@ -63,7 +63,7 @@ const int Tempo = 16;
 
 int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::vector<move_t>& pv)
 {
-    assert(history[ThreadId].back() == pos.key());
+    assert(threadHistory[ThreadId].back() == pos.key());
     assert(alpha < beta);
 
     const bool pvNode = beta > alpha + 1;
@@ -89,7 +89,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
         pv[0] = 0;
     }
 
-    if (ply > 0 && history[ThreadId].repetition(pos.rule50()))
+    if (ply > 0 && threadHistory[ThreadId].repetition(pos.rule50()))
         return 0;
 
     // TT probe
@@ -166,7 +166,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
                 && !pvNode && !pos.checkers() && !nextPos.checkers())
             continue;
 
-        history[ThreadId].push(nextPos.key());
+        threadHistory[ThreadId].push(nextPos.key());
 
         const int ext = see >= 0 && nextPos.checkers();
         const int nextDepth = depth - 1 + ext;
@@ -204,7 +204,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
         }
 
         // Undo move
-        history[ThreadId].pop();
+        threadHistory[ThreadId].pop();
 
         // New best score
         if (score > bestScore) {
@@ -265,8 +265,8 @@ int aspirate(const Position& pos, int depth, std::vector<move_t>& pv, int score)
     }
 }
 
-void iterate(const Position& pos, const Limits& lim, uci::Info& ui, std::vector<int>& iteration,
-             int threadId)
+void iterate(const Position& pos, const Limits& lim, const zobrist::History& history,
+             uci::Info& ui, std::vector<int>& iteration, int threadId)
 {
     ThreadId = threadId;
     std::vector<move_t> pv(MAX_PLY + 1);
@@ -316,7 +316,7 @@ void iterate(const Position& pos, const Limits& lim, uci::Info& ui, std::vector<
             }
         } catch (const Abort e) {
             assert(signal & (1ULL << ThreadId));
-            history[ThreadId] = uci::history;    // Restore an orderly state
+            threadHistory[ThreadId] = history;    // Restore an orderly state
 
             if (e == ABORT_STOP)
                 break;
@@ -334,7 +334,7 @@ void iterate(const Position& pos, const Limits& lim, uci::Info& ui, std::vector<
     signal = STOP;
 }
 
-void bestmove(const Position& pos, const Limits& lim)
+void bestmove(const Position& pos, const Limits& lim, const zobrist::History& history)
 {
     using namespace std::chrono;
     const auto start = high_resolution_clock::now();
@@ -343,19 +343,19 @@ void bestmove(const Position& pos, const Limits& lim)
 
     signal = 0;
     std::vector<int> iteration(lim.threads, 0);
-    history.resize(lim.threads);
+    threadHistory.resize(lim.threads);
     nodeCount.resize(lim.threads);
 
     std::vector<std::thread> threads;
 
     for (int i = 0; i < lim.threads; i++) {
         // Initialize per-thread data
-        history[i] = uci::history;
+        threadHistory[i] = history;
         nodeCount[i] = 0;
 
         // Start searching thread
-        threads.emplace_back(iterate, std::cref(pos), std::cref(lim), std::ref(ui),
-                             std::ref(iteration), i);
+        threads.emplace_back(iterate, std::cref(pos), std::cref(lim), std::cref(history),
+                             std::ref(ui), std::ref(iteration), i);
     }
 
     do {

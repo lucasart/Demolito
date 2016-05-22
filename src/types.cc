@@ -60,7 +60,7 @@ std::string square_to_string(Square s)
 {
     BOUNDS(s, NB_SQUARE);
 
-    return std::string({char(file_of(s) + 'a'), char(rank_of(s) + '1'), '\0'});
+    return std::string {char(file_of(s) + 'a'), char(rank_of(s) + '1')};
 }
 
 Square string_to_square(const std::string& s)

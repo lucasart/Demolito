@@ -1,6 +1,7 @@
 #pragma once
 #include <atomic>
 #include "position.h"
+#include "zobrist.h"
 
 namespace search {
 
@@ -15,6 +16,6 @@ struct Limits {
     uint64_t nodes;
 };
 
-void bestmove(const Position& pos, const Limits& lim);
+void bestmove(const Position& pos, const Limits& lim, const zobrist::History& history);
 
 }
