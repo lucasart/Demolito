@@ -88,7 +88,7 @@ std::string Move::to_string(const Position& pos) const
         return "0000";
 
     const Square _tsq = !Chess960 && is_castling(pos)
-                        ? (to > from ? from + 2 : from - 2)    // e1h1 -> e1g1, e1c1 -> e1a1
+                        ? (to > from ? from + 2 : from - 2)    // e1h1 -> e1g1, e1a1 -> e1c1
                         : to;
 
     s += file_of(from) + 'a';

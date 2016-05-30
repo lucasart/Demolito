@@ -81,10 +81,10 @@ bool Position::castlable_rooks_ok() const
             return false;    // king must be on first rank
 
         // There can be at most one castlable rook on each side of the king
-        if (file_of(k) > FILE_A && bb::several(_castlableRooks & bb::ray(k, k + 1)))
+        if (file_of(k) > FILE_A && bb::several(_castlableRooks & bb::ray(k, k - 1)))
             return false;
 
-        if (file_of(k) < FILE_H && bb::several(_castlableRooks & bb::ray(k, k - 1)))
+        if (file_of(k) < FILE_H && bb::several(_castlableRooks & bb::ray(k, k + 1)))
             return false;
     }
 
