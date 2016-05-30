@@ -5,8 +5,7 @@
 class Position;
 
 struct PinInfo {
-    bitboard_t pinned;        // pinned pieces
-    bitboard_t discoCheckers;    // discovery checkers
+    bitboard_t pinned;    // pinned pieces
 
     bitboard_t hidden_checkers(const Position& b, Color attacker, Color blocker) const;
     PinInfo(const Position& pos);

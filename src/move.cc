@@ -42,7 +42,6 @@ PinInfo::PinInfo(const Position& pos)
 {
     const Color us = pos.turn(), them = ~us;
     pinned = hidden_checkers(pos, them, us);
-    discoCheckers = hidden_checkers(pos, us, us);
 }
 
 bool Move::ok() const
