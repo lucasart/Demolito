@@ -5,6 +5,8 @@
 
 namespace search {
 
+extern int Contempt;
+
 extern std::atomic<uint64_t> signal;
 #define STOP    uint64_t(-1)
 

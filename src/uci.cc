@@ -38,6 +38,7 @@ void intro()
               << "option name UCI_Chess960 type check default " << Chess960 << '\n'
               << "option name Hash type spin default " << Hash << " min 1 max 1048576\n"
               << "option name Threads type spin default " << Threads << " min 1 max 64\n"
+              << "option name Contempt type spin default " << search::Contempt << " min -100 max 100\n"
               << "uciok" << std::endl;
 }
 
@@ -61,6 +62,8 @@ void setoption(std::istringstream& is)
         tt::table.resize(Hash * 1024 * (1024 / sizeof(tt::Entry)), 0);
     } else if (name == "Threads")
         is >> Threads;
+    else if (name == "Contempt")
+        is >> search::Contempt;
 }
 
 void position(std::istringstream& is)

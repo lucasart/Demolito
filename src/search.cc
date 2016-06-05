@@ -61,6 +61,9 @@ enum Abort {
 
 const int Tempo = 16;
 
+int Contempt = 20;
+int draw_score(int ply) { return ply & 1 ? Contempt : -Contempt; }
+
 int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::vector<move_t>& pv)
 {
     assert(threadHistory[ThreadId].back() == pos.key());
@@ -90,7 +93,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
     }
 
     if (ply > 0 && threadHistory[ThreadId].repetition(pos.rule50()))
-        return 0;
+        return draw_score(ply);
 
     // TT probe
     tt::Entry tte;
@@ -228,7 +231,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 
     // No legal move: mated or stalemated
     if ((depth > 0 || pos.checkers()) && !moveCount)
-        return pos.checkers() ? ply - MATE : 0;
+        return pos.checkers() ? ply - MATE : draw_score(ply);
 
     // TT write
     tte.key = pos.key();
