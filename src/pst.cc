@@ -75,7 +75,7 @@ eval_t king(Rank r, File f)
 eval_t pawn(Rank r, File f)
 {
     const eval_t PCenter = {36, 0};
-    const eval_t P7Rank = {100, 100};    // FIXME: replace by proper passed pawn eval
+    const int PRank[NB_RANK] = {0, 0, 0, 5, 10, 20, 100}; // FIXME: replace by proper passer eval
     eval_t e = {0, 0};
 
     if (f == FILE_D || f == FILE_E) {
@@ -85,8 +85,7 @@ eval_t pawn(Rank r, File f)
             e += PCenter;
     }
 
-    if (r == RANK_7)
-        e += P7Rank;
+    e += {PRank[r], PRank[r]};
 
     return e;
 }
