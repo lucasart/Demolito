@@ -101,6 +101,7 @@ void position(std::istringstream& is)
 void go(std::istringstream& is)
 {
     std::string token;
+    lim.movestogo = 40;
 
     while (is >> token) {
         if (token == "depth")
@@ -109,7 +110,16 @@ void go(std::istringstream& is)
             is >> lim.nodes;
         else if (token == "movetime")
             is >> lim.movetime;
+        else if (token == "movestogo")
+            is >> lim.movestogo;
+        else if ((pos.turn() == WHITE && token == "wtime") || (pos.turn() == BLACK && token == "btime"))
+            is >> lim.time;
+        else if ((pos.turn() == WHITE && token == "winc") || (pos.turn() == BLACK && token == "binc"))
+            is >> lim.inc;
     }
+
+    if (lim.time + lim.inc > 0)
+        lim.movetime = ((lim.movestogo - 1) * lim.inc + lim.time) / lim.movestogo;
 
     if (Timer.joinable())
         Timer.join();

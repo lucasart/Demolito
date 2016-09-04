@@ -224,7 +224,6 @@ void clear(bitboard_t& b, Square s)
 void set(bitboard_t& b, Square s)
 {
     BOUNDS(s, NB_SQUARE);
-
     assert(!test(b, s));
 
     b ^= 1ULL << s;

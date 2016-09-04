@@ -13,8 +13,8 @@ extern std::atomic<uint64_t> signal;
 uint64_t nodes();
 
 struct Limits {
-    Limits(): depth(MAX_DEPTH), movetime(0), threads(1), nodes(0) {}
-    int depth, movetime, threads;
+    Limits(): depth(MAX_DEPTH), movetime(0), movestogo(0), time(0), inc(0), threads(1), nodes(0) {}
+    int depth, movetime, movestogo, time, inc, threads;
     uint64_t nodes;
 };
 
