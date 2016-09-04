@@ -152,7 +152,8 @@ move_t *castling_moves(const Position& pos, move_t *emList)
     while (tss) {
         m.to = bb::pop_lsb(tss);
         const Square kto = square(rank_of(m.to), m.to > m.from ? FILE_G : FILE_C);
-        const bitboard_t s = bb::segment(m.from, m.to) | bb::segment(m.from, kto);
+        const Square rto = square(rank_of(m.to), m.to > m.from ? FILE_F : FILE_D);
+        const bitboard_t s = bb::segment(m.from, kto) | bb::segment(m.to, rto);
 
         if (bb::count(s & pos.occ()) == 2)
             *emList++ = m;
