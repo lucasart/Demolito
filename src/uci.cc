@@ -101,7 +101,7 @@ void position(std::istringstream& is)
 void go(std::istringstream& is)
 {
     std::string token;
-    lim.movestogo = 40;
+    lim.movestogo = 30;
 
     while (is >> token) {
         if (token == "depth")
