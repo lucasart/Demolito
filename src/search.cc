@@ -127,7 +127,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
         return ss[ply].eval;
 
     // Null search
-    if (depth >= 2 && !pvNode && ss[ply].eval >= beta) {
+    if (depth >= 2 && !pvNode && ss[ply].eval >= beta && pos.piece_material(pos.turn())[0]) {
         nextPos.toggle(pos);
         threadHistory[ThreadId].push(nextPos.key());
         score = -recurse(nextPos, ply+1, depth - (3 + depth/4), -beta, -(beta-1), childPv);
