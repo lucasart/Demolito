@@ -73,6 +73,8 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
     const int oldAlpha = alpha;
     int bestScore = -INF;
     move_t bestMove = 0;
+    int score;
+    Position nextPos;
 
     if (depth > 0) {
         const uint64_t s = signal.load(std::memory_order_relaxed);
@@ -124,6 +126,17 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
     if (ply >= MAX_PLY)
         return ss[ply].eval;
 
+    // Null search
+    if (depth >= 2 && !pvNode && ss[ply].eval >= beta) {
+        nextPos.toggle(pos);
+        threadHistory[ThreadId].push(nextPos.key());
+        score = -recurse(nextPos, ply+1, depth - (3 + depth/4), -beta, -(beta-1), childPv);
+        threadHistory[ThreadId].pop();
+
+        if (score >= beta)
+            return score >= mate_in(MAX_PLY) ? beta : score;
+    }
+
     // QSearch stand pat
     if (depth <= 0 && !pos.checkers()) {
         bestScore = ss[ply].eval;
@@ -161,7 +174,6 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
             continue;
 
         // Play move
-        Position nextPos;
         nextPos.set(pos, ss[ply].m);
 
         // Prune losing captures in the search, near the leaves
@@ -175,8 +187,6 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
         const int nextDepth = depth - 1 + ext;
 
         // Recursion
-        int score;
-
         if (nextDepth <= 0) {
             // Qsearch recursion (plain alpha/beta)
             if (depth <= MIN_DEPTH && !pos.checkers())

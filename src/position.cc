@@ -551,6 +551,19 @@ void Position::set(const Position& before, Move m)
     finish();
 }
 
+void Position::toggle(const Position& before)
+{
+    *this = before;
+    _epSquare = NB_SQUARE;
+
+    _turn = ~turn();
+    _key ^= zobrist::turn();
+    _pawnKey ^= zobrist::turn();
+    _key ^= zobrist::en_passant(before.ep_square()) ^ zobrist::en_passant(ep_square());
+
+    finish();
+}
+
 void Position::print() const
 {
     for (Rank r = RANK_8; r >= RANK_1; --r) {

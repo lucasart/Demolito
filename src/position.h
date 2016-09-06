@@ -33,6 +33,7 @@ public:
     void finish();
 
     void set(const Position& before, Move m);
+    void toggle(const Position& before);
     std::string get() const;
 
     bitboard_t occ() const;
