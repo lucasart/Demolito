@@ -200,8 +200,11 @@ void Position::set(Color c, Piece p, Square s)
 
 void Position::finish()
 {
-    _attacked = attacked_by(~turn());
-    _checkers = attackers_to(king_square(turn()), occ()) & occ(~turn());
+    const Color us = turn(), them = ~us;
+    const Square ksq = king_square(us);
+
+    _attacked = attacked_by(them);
+    _checkers = bb::test(_attacked, ksq) ? attackers_to(ksq, occ()) & occ(them) : 0;
 }
 
 void Position::set(const std::string& fen)
