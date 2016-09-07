@@ -37,10 +37,11 @@ eval_t score_mobility(int p0, int p, bitboard_t tss)
     return Weight[p] * cnt;
 }
 
-eval_t mobility(const Position& pos, Color us)
+eval_t mobility(const Position& pos, Color us, bitboard_t& attackedByPawns)
 {
     const Color them = ~us;
-    const bitboard_t targets = ~(pos.occ(us, PAWN) | pos.occ(us, KING) | pawn_attacks(pos, them));
+    attackedByPawns = pawn_attacks(pos, them);
+    const bitboard_t targets = ~(pos.occ(us, PAWN) | pos.occ(us, KING) | attackedByPawns);
 
     bitboard_t fss, tss, occ;
     Square from;
@@ -84,6 +85,19 @@ eval_t bishop_pair(const Position& pos, Color us)
            eval_t {0, 0};
 }
 
+eval_t tactics(const Position& pos, Color us, bitboard_t attackedByPawns)
+{
+    eval_t result = {0, 0};
+    bitboard_t b = attackedByPawns & (pos.occ(us) ^ pos.occ(us, KING, PAWN));
+
+    while (b) {
+        const Piece p = pos.piece_on(bb::pop_lsb(b));
+        result -= Material[p] / 16;
+    }
+
+    return result;
+}
+
 int blend(const Position& pos, eval_t e)
 {
     const int full = 4 * (N + B + R) + 2 * Q;
@@ -99,8 +113,11 @@ int evaluate(const Position& pos)
     eval_t e[NB_COLOR] = {pos.pst(), {0, 0}};
 
     for (Color c = WHITE; c <= BLACK; ++c) {
+        bitboard_t attackedByPawns;
+
         e[c] += bishop_pair(pos, c);
-        e[c] += mobility(pos, c);
+        e[c] += mobility(pos, c, attackedByPawns);
+        e[c] += tactics(pos, c, attackedByPawns);
     }
 
     const Color us = pos.turn(), them = ~us;
