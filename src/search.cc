@@ -115,7 +115,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
         if (depth > 0 && tte.depth <= 0)
             tte.move = 0;
 
-        ss[ply].eval = tte.eval + Tempo;
+        ss[ply].eval = tte.eval;
     } else {
         tte.move = 0;
         ss[ply].eval = pos.checkers() ? -INF : evaluate(pos) + Tempo;
@@ -247,7 +247,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
     tte.key = pos.key();
     tte.bound = bestScore <= oldAlpha ? tt::UBOUND : bestScore >= beta ? tt::LBOUND : tt::EXACT;
     tte.score = tt::score_to_tt(bestScore, ply);
-    tte.eval = pos.checkers() ? -INF : ss[ply].eval - Tempo;
+    tte.eval = pos.checkers() ? -INF : ss[ply].eval;
     tte.depth = depth;
     tte.move = bestMove;
     tt::write(tte);
