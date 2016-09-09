@@ -37,22 +37,29 @@ eval_t score_mobility(int p0, int p, bitboard_t tss)
     return Weight[p] * cnt;
 }
 
-eval_t mobility(const Position& pos, Color us, bitboard_t& attackedByPawns)
+eval_t mobility(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PIECE])
 {
-    const Color them = ~us;
-    attackedByPawns = pawn_attacks(pos, them);
-    const bitboard_t targets = ~(pos.occ(us, PAWN) | pos.occ(us, KING) | attackedByPawns);
-
     bitboard_t fss, tss, occ;
     Square from;
+    Piece piece;
+
     eval_t result = {0, 0};
+
+    attacks[us][KING] = bb::kattacks(pos.king_square(us));
+    attacks[~us][PAWN] = pawn_attacks(pos, ~us);
+
+    for (piece = KNIGHT; piece <= QUEEN; ++piece)
+        attacks[us][piece] = 0;
+
+    const bitboard_t targets = ~(pos.occ(us, PAWN) | pos.occ(us, KING) | attacks[~us][PAWN]);
 
     // Knight mobility
     fss = pos.occ(us, KNIGHT);
 
     while (fss) {
-        tss = bb::nattacks(bb::pop_lsb(fss)) & targets;
-        result += score_mobility(KNIGHT, KNIGHT, tss);
+        tss = bb::nattacks(bb::pop_lsb(fss));
+        attacks[us][KNIGHT] |= tss;
+        result += score_mobility(KNIGHT, KNIGHT, tss & targets);
     }
 
     // Lateral mobility
@@ -60,9 +67,9 @@ eval_t mobility(const Position& pos, Color us, bitboard_t& attackedByPawns)
     occ = pos.occ() ^ fss;    // RQ see through each other
 
     while (fss) {
-        from = bb::pop_lsb(fss);
-        tss = bb::rattacks(from, occ) & targets;
-        result += score_mobility(ROOK, pos.piece_on(from), tss);
+        tss = bb::rattacks(from = bb::pop_lsb(fss), occ);
+        attacks[us][piece = pos.piece_on(from)] |= tss;
+        result += score_mobility(ROOK, pos.piece_on(from), tss & targets);
     }
 
     // Diagonal mobility
@@ -70,9 +77,9 @@ eval_t mobility(const Position& pos, Color us, bitboard_t& attackedByPawns)
     occ = pos.occ() ^ fss;    // BQ see through each other
 
     while (fss) {
-        from = bb::pop_lsb(fss);
-        tss = bb::battacks(from, occ) & targets;
-        result += score_mobility(BISHOP, pos.piece_on(from), tss);
+        tss = bb::battacks(from = bb::pop_lsb(fss), occ);
+        attacks[us][piece = pos.piece_on(from)] |= tss;
+        result += score_mobility(BISHOP, pos.piece_on(from), tss & targets);
     }
 
     return result;
@@ -85,10 +92,10 @@ eval_t bishop_pair(const Position& pos, Color us)
            eval_t {0, 0};
 }
 
-eval_t tactics(const Position& pos, Color us, bitboard_t attackedByPawns)
+eval_t tactics(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PIECE])
 {
     eval_t result = {0, 0};
-    bitboard_t b = attackedByPawns & (pos.occ(us) ^ pos.occ(us, KING, PAWN));
+    bitboard_t b = attacks[~us][PAWN] & (pos.occ(us) ^ pos.occ(us, PAWN/*, KING*/));
 
     while (b) {
         const Piece p = pos.piece_on(bb::pop_lsb(b));
@@ -112,14 +119,14 @@ int evaluate(const Position& pos)
     assert(!pos.checkers());
     eval_t e[NB_COLOR] = {pos.pst(), {0, 0}};
 
-    for (Color c = WHITE; c <= BLACK; ++c) {
-        bitboard_t attackedByPawns;
+    bitboard_t attacks[NB_COLOR][NB_PIECE];
 
+    for (Color c = WHITE; c <= BLACK; ++c) {
         e[c] += bishop_pair(pos, c);
-        e[c] += mobility(pos, c, attackedByPawns);
-        e[c] += tactics(pos, c, attackedByPawns);
+        e[c] += mobility(pos, c, attacks);
+        e[c] += tactics(pos, c, attacks);
     }
 
-    const Color us = pos.turn(), them = ~us;
-    return blend(pos, e[us] - e[them]);
+    const Color us = pos.turn();
+    return blend(pos, e[us] - e[~us]);
 }
