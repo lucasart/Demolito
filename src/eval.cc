@@ -102,6 +102,13 @@ eval_t tactics(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PI
         result -= Material[p] / 16;
     }
 
+    b = attacks[~us][KNIGHT] & pos.occ(us, ROOK, QUEEN);
+
+    while (b) {
+        const Piece p = pos.piece_on(bb::pop_lsb(b));
+        result -= Material[p] / 16;
+    }
+
     return result;
 }
 
@@ -121,9 +128,12 @@ int evaluate(const Position& pos)
 
     bitboard_t attacks[NB_COLOR][NB_PIECE];
 
+    // Mobility first, because it fills in the attacks[] array
+    for (Color c = WHITE; c <= BLACK; ++c)
+        e[c] += mobility(pos, c, attacks);
+
     for (Color c = WHITE; c <= BLACK; ++c) {
         e[c] += bishop_pair(pos, c);
-        e[c] += mobility(pos, c, attacks);
         e[c] += tactics(pos, c, attacks);
     }
 
