@@ -109,7 +109,7 @@ eval_t tactics(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PI
 
 eval_t safety(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PIECE])
 {
-    static const int Weight = 10;
+    static const int Weight = 15;
 
     const bitboard_t dangerZone = bb::kattacks(pos.king_square(us)) & ~attacks[us][PAWN];
     int result = 0;
