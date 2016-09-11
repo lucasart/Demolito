@@ -107,6 +107,23 @@ eval_t tactics(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PI
     return result;
 }
 
+eval_t safety(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PIECE])
+{
+    static const int Weight = 10;
+
+    const bitboard_t dangerZone = bb::kattacks(pos.king_square(us)) & ~attacks[us][PAWN];
+    int result = 0;
+
+    for (Piece p = KNIGHT; p <= QUEEN; ++p) {
+        const bitboard_t b = attacks[~us][p] & dangerZone;
+
+        if (b)
+            result -= bb::count(b) * Weight;
+    }
+
+    return eval_t{result, 0};
+}
+
 int blend(const Position& pos, eval_t e)
 {
     const int full = 4 * (N + B + R) + 2 * Q;
@@ -130,6 +147,7 @@ int evaluate(const Position& pos)
     for (Color c = WHITE; c <= BLACK; ++c) {
         e[c] += bishop_pair(pos, c);
         e[c] += tactics(pos, c, attacks);
+        e[c] += safety(pos, c, attacks);
     }
 
     const Color us = pos.turn();
