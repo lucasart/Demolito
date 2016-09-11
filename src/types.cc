@@ -105,5 +105,5 @@ int mate_in(int ply)
 }
 
 /* Display */
-
+Time_Clock timer;
 const std::string PieceLabel[NB_COLOR] = {"NBRQKP.", "nbrqkp."};
