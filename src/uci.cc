@@ -157,7 +157,10 @@ void loop()
         else if (token == "position")
             position(is);
         else if (token == "go")
-            go(is);
+        	{
+        		timer.Start_Clock();
+            	go(is);
+            }
         else if (token == "stop")
             search::signal = STOP;
         else if (token == "eval")
@@ -183,8 +186,9 @@ void Info::update(const Position& pos, int depth, int score, int nodes, std::vec
 
         std::ostringstream os;
         os << "info depth " << depth << " score " << format_score(score)
-           << " nodes " << nodes << " pv";
-
+        	<< " time " << timer.Get_Time()
+        	<< " nodes " << nodes << " nps " << (1000 * (nodes / (timer.Get_Time() + 1))) << " pv";
+        	
         Position p[2];
         int idx = 0;
         p[idx] = pos;
