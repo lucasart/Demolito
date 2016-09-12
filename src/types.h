@@ -111,39 +111,22 @@ extern const eval_t Material[NB_PIECE];
 #define MAX_PLY        (MAX_DEPTH - MIN_DEPTH + 2)
 #define MAX_GAME_PLY    1024
 
-typedef std::chrono::milliseconds::rep TimePoint; // A value in milliseconds
-struct Time_Clock
-{
-    TimePoint begin_time;
-    TimePoint end_time;
-    Time_Clock()
-    {
-        begin_time = std::chrono::duration_cast<std::chrono::milliseconds>
-            (std::chrono::steady_clock::now().time_since_epoch()).count();
-        end_time = std::chrono::duration_cast<std::chrono::milliseconds>
-            (std::chrono::steady_clock::now().time_since_epoch()).count();
-    }
-    void Start_Clock()
-    {
-        begin_time = std::chrono::duration_cast<std::chrono::milliseconds>
-            (std::chrono::steady_clock::now().time_since_epoch()).count();
-    }
-    void Stop_Clock()
-    {
-        end_time = std::chrono::duration_cast<std::chrono::milliseconds>
-            (std::chrono::steady_clock::now().time_since_epoch()).count();
-    }
-    int Get_Time()
-    {
-        return (std::chrono::duration_cast<std::chrono::milliseconds>
-            (std::chrono::steady_clock::now().time_since_epoch()).count() - begin_time);
+struct Clock {
+    std::chrono::time_point<std::chrono::high_resolution_clock> start;
+
+    void reset() { start = std::chrono::high_resolution_clock::now(); }
+
+    auto elapsed() {
+        const auto stop = std::chrono::high_resolution_clock::now();
+        return std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count();
     }
 };
+
 bool score_ok(int score);
 bool is_mate_score(int score);
 int mated_in(int ply);
 int mate_in(int ply);
 
 /* Display */
-extern Time_Clock timer;
+
 extern const std::string PieceLabel[NB_COLOR];
