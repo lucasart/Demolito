@@ -14,7 +14,6 @@
  * not, see <http://www.gnu.org/licenses/>.
 */
 #include <iostream>
-#include <chrono>
 #include "test.h"
 #include "search.h"
 #include "gen.h"
@@ -24,8 +23,6 @@ namespace test {
 
 uint64_t bench(bool perft, int depth, int threads)
 {
-    using namespace std::chrono;
-
     const std::string fens[] = {
         "r1bqkbnr/pp1ppppp/2n5/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 0 1",
         "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",
@@ -55,7 +52,9 @@ uint64_t bench(bool perft, int depth, int threads)
     lim.depth = depth;
     Position pos;
     zobrist::History history;
-    const auto start = high_resolution_clock::now();
+
+    Clock clock;
+    clock.reset();
 
     for (const std::string& fen : fens) {
         pos.set(fen);
@@ -75,8 +74,7 @@ uint64_t bench(bool perft, int depth, int threads)
         result += nodes;
     }
 
-    const auto msec = duration_cast<milliseconds>(high_resolution_clock::now() - start).count();
-    std::cout << "kn/s: " << result / msec << std::endl;
+    std::cout << "kn/s: " << result / clock.elapsed() << std::endl;
 
     return result;
 }
