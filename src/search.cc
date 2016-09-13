@@ -61,8 +61,8 @@ enum Abort {
 
 const int Tempo = 16;
 
-int Contempt = 20;
-int draw_score(int ply) { return ply & 1 ? Contempt : -Contempt; }
+int Contempt = 10;
+int DrawScore[2];
 
 int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::vector<move_t>& pv)
 {
@@ -71,6 +71,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 
     const bool pvNode = beta > alpha + 1;
     const int oldAlpha = alpha;
+    const Color us = pos.turn();
     int bestScore = -INF;
     move_t bestMove = 0;
     int score;
@@ -95,7 +96,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
     }
 
     if (ply > 0 && threadHistory[ThreadId].repetition(pos.rule50()))
-        return draw_score(ply);
+        return DrawScore[us];
 
     // TT probe
     tt::Entry tte;
@@ -127,7 +128,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
         return ss[ply].eval;
 
     // Null search
-    if (depth >= 2 && !pvNode && ss[ply].eval >= beta && pos.piece_material(pos.turn())[0]) {
+    if (depth >= 2 && !pvNode && ss[ply].eval >= beta && pos.piece_material(us)[0]) {
         nextPos.toggle(pos);
         threadHistory[ThreadId].push(nextPos.key());
         score = -recurse(nextPos, ply+1, depth - (3 + depth/4), -beta, -(beta-1), childPv);
@@ -241,7 +242,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 
     // No legal move: mated or stalemated
     if ((depth > 0 || pos.checkers()) && !moveCount)
-        return pos.checkers() ? ply - MATE : draw_score(ply);
+        return pos.checkers() ? ply - MATE : DrawScore[us];
 
     // TT write
     tte.key = pos.key();
@@ -353,6 +354,9 @@ void bestmove(const Position& pos, const Limits& lim, const zobrist::History& hi
     const auto start = high_resolution_clock::now();
 
     uci::Info ui;
+    const Color us = pos.turn();
+    DrawScore[us] = -Contempt * EP / 100;
+    DrawScore[~us] = -DrawScore[us];
 
     signal = 0;
     std::vector<int> iteration(lim.threads, 0);
