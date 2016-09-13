@@ -51,7 +51,7 @@ eval_t mobility(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_P
     for (piece = KNIGHT; piece <= QUEEN; ++piece)
         attacks[us][piece] = 0;
 
-    const bitboard_t targets = ~(pos.occ(us, PAWN) | pos.occ(us, KING) | attacks[~us][PAWN]);
+    const bitboard_t targets = ~(pos.occ(us, KING, PAWN) | attacks[~us][PAWN]);
 
     // Knight mobility
     fss = pos.occ(us, KNIGHT);

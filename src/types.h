@@ -88,6 +88,7 @@ struct eval_t {
     int& op() { return v[OPENING]; }
     int& eg() { return v[ENDGAME]; }
 
+    operator bool() const { return op() || eg(); }
     bool operator==(eval_t e) const { return op() == e.op() && eg() == e.eg(); }
     bool operator!=(eval_t e) const { return !(*this == e); }
 
