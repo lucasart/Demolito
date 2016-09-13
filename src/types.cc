@@ -79,6 +79,20 @@ int push_inc(Color c)
     return c == WHITE ? UP : DOWN;
 }
 
+/* Clock */
+
+void Clock::reset()
+{
+    start = std::chrono::high_resolution_clock::now();
+}
+
+std::chrono::milliseconds::rep Clock::elapsed()
+{
+    const auto stop = std::chrono::high_resolution_clock::now();
+    return std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count();
+}
+
+
 /* Eval */
 
 const eval_t Material[NB_PIECE] = {{N, N}, {B, B}, {R, R}, {Q, Q}, {0, 0}, {OP, EP}};

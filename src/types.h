@@ -88,6 +88,7 @@ struct eval_t {
     int& op() { return v[OPENING]; }
     int& eg() { return v[ENDGAME]; }
 
+    operator bool() const { return op() || eg(); }
     bool operator==(eval_t e) const { return op() == e.op() && eg() == e.eg(); }
     bool operator!=(eval_t e) const { return !(*this == e); }
 
@@ -111,15 +112,13 @@ extern const eval_t Material[NB_PIECE];
 #define MAX_PLY        (MAX_DEPTH - MIN_DEPTH + 2)
 #define MAX_GAME_PLY    1024
 
-struct Clock {
+/* Clock */
+
+class Clock {
     std::chrono::time_point<std::chrono::high_resolution_clock> start;
-
-    void reset() { start = std::chrono::high_resolution_clock::now(); }
-
-    auto elapsed() {
-        const auto stop = std::chrono::high_resolution_clock::now();
-        return std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count();
-    }
+public:
+    void reset();
+    std::chrono::milliseconds::rep elapsed();
 };
 
 bool score_ok(int score);
