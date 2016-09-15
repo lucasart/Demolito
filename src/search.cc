@@ -64,6 +64,7 @@ const int Tempo = 16;
 int Contempt = 10;
 int DrawScore[2];
 
+template<bool Qsearch = false>
 int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::vector<move_t>& pv)
 {
     assert(threadHistory[ThreadId].back() == pos.key());
@@ -77,7 +78,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
     int score;
     Position nextPos;
 
-    if (depth > 0) {
+    if (!Qsearch) {
         const uint64_t s = signal.load(std::memory_order_relaxed);
 
         if (s) {
@@ -113,7 +114,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
                 return tte.score;
         }
 
-        if (depth > 0 && tte.depth <= 0)
+        if (!Qsearch && tte.depth <= 0)
             tte.move = 0;
 
         ss[ply].eval = tte.eval;
@@ -128,10 +129,14 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
         return ss[ply].eval;
 
     // Null search
-    if (depth >= 2 && !pvNode && ss[ply].eval >= beta && pos.piece_material(us)) {
+    if (!Qsearch && depth >= 2 && !pvNode
+            && ss[ply].eval >= beta && pos.piece_material(us)) {
         nextPos.toggle(pos);
         threadHistory[ThreadId].push(nextPos.key());
-        score = -recurse(nextPos, ply+1, depth - (3 + depth/4), -beta, -(beta-1), childPv);
+        const int nextDepth = depth - (3 + depth/4);
+        score = nextDepth <= 0
+                ? -recurse<true>(nextPos, ply+1, nextDepth, -beta, -(beta-1), childPv)
+                : -recurse(nextPos, ply+1, nextDepth, -beta, -(beta-1), childPv);
         threadHistory[ThreadId].pop();
 
         if (score >= beta)
@@ -139,7 +144,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
     }
 
     // QSearch stand pat
-    if (depth <= 0 && !pos.checkers()) {
+    if (Qsearch && !pos.checkers()) {
         bestScore = ss[ply].eval;
 
         if (bestScore > alpha) {
@@ -167,18 +172,18 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
         moveCount++;
 
         // Prune losing captures in the qsearch
-        if (depth <= 0 && see < 0 && !pos.checkers())
+        if (Qsearch && see < 0 && !pos.checkers())
             continue;
 
         // SEE proxy tells us we're unlikely to beat alpha
-        if (depth <= 0 && !pos.checkers() && ss[ply].eval + P/2 <= alpha && see <= 0)
+        if (Qsearch && !pos.checkers() && ss[ply].eval + P/2 <= alpha && see <= 0)
             continue;
 
         // Play move
         nextPos.set(pos, ss[ply].m);
 
         // Prune losing captures in the search, near the leaves
-        if (depth > 0 && depth <= 4 && see < 0
+        if (!Qsearch && depth <= 4 && see < 0
                 && !pvNode && !pos.checkers() && !nextPos.checkers())
             continue;
 
@@ -188,12 +193,12 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
         const int nextDepth = depth - 1 + ext;
 
         // Recursion
-        if (nextDepth <= 0) {
+        if (Qsearch || nextDepth <= 0) {
             // Qsearch recursion (plain alpha/beta)
             if (depth <= MIN_DEPTH && !pos.checkers())
                 score = ss[ply].eval + see;    // guard against QSearch explosion
             else
-                score = -recurse(nextPos, ply+1, nextDepth, -beta, -alpha, childPv);
+                score = -recurse<true>(nextPos, ply+1, nextDepth, -beta, -alpha, childPv);
         } else {
             // Search recursion (PVS + Reduction)
             if (moveCount == 1)
@@ -205,7 +210,9 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
                     reduction = !ss[ply].m.is_capture(pos) + (see < 0);
 
                 // Reduced depth, zero window
-                score = -recurse(nextPos, ply+1, nextDepth - reduction, -alpha-1, -alpha, childPv);
+                score = nextDepth - reduction <= 0
+                        ? -recurse<true>(nextPos, ply+1, nextDepth - reduction, -alpha-1, -alpha, childPv)
+                        : -recurse(nextPos, ply+1, nextDepth - reduction, -alpha-1, -alpha, childPv);
 
                 // Fail high: re-search zero window at full depth
                 if (reduction && score > alpha)
@@ -241,7 +248,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
     }
 
     // No legal move: mated or stalemated
-    if ((depth > 0 || pos.checkers()) && !moveCount)
+    if ((!Qsearch || pos.checkers()) && !moveCount)
         return pos.checkers() ? ply - MATE : DrawScore[us];
 
     // TT write
@@ -258,8 +265,10 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 
 int aspirate(const Position& pos, int depth, std::vector<move_t>& pv, int score)
 {
-    if (depth <= 1)
+    if (depth <= 1) {
+        assert(depth == 1);
         return recurse(pos, 0, depth, -INF, +INF, pv);
+    }
 
     int delta = 32;
     int alpha = score - delta;
