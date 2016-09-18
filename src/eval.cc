@@ -19,7 +19,7 @@ namespace {
 
 bitboard_t pawn_attacks(const Position& pos, Color c)
 {
-    bitboard_t pawns = pos.occ(c, PAWN);
+    const bitboard_t pawns = pos.occ(c, PAWN);
     return bb::shift(pawns & ~bb::file(FILE_A), push_inc(c) + LEFT)
            | bb::shift(pawns & ~bb::file(FILE_H), push_inc(c) + RIGHT);
 }
@@ -31,7 +31,7 @@ eval_t score_mobility(int p0, int p, bitboard_t tss)
         {-4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 5, 6, 6, 7},
         {-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 6, 7, 7}
     };
-    const eval_t Weight[QUEEN + 1] = {{8, 8}, {10, 10}, {4, 8}, {2, 4}};
+    const eval_t Weight[] = {{8, 8}, {10, 10}, {4, 8}, {2, 4}};
 
     const int cnt = AdjustCount[p0][bb::count(tss)];
     return Weight[p] * cnt;
@@ -110,8 +110,7 @@ eval_t tactics(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PI
 eval_t safety(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PIECE])
 {
     static const int Weight = 24;
-
-    const bitboard_t dangerZone = bb::kattacks(pos.king_square(us)) & ~attacks[us][PAWN];
+    const bitboard_t dangerZone = attacks[us][KING] & ~attacks[us][PAWN];
     const bitboard_t defendedByPieces = attacks[us][KNIGHT] | attacks[us][BISHOP]
                                         | attacks[us][ROOK] | attacks[us][QUEEN];
     int result = 0, cnt = 0;
@@ -131,7 +130,7 @@ eval_t safety(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PIE
 
 int blend(const Position& pos, eval_t e)
 {
-    const int full = 4 * (N + B + R) + 2 * Q;
+    static const int full = 4 * (N + B + R) + 2 * Q;
     const int total = pos.piece_material().eg();
     return e.op() * total / full + e.eg() * (full - total) / full;
 }
