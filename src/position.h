@@ -63,4 +63,5 @@ public:
     bitboard_t attackers_to(Square s, bitboard_t _occ) const;
 
     void print() const;
+    bool insufficient_material() const;
 };
