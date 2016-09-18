@@ -595,3 +595,13 @@ void Position::print() const
         std::cout << std::endl;
     }
 }
+
+bool Position::insufficient_material() const
+{
+	if(bb::count(occ()) > 3)
+		return false;
+	if(bb::count(occ(KNIGHT)) == 1)
+		return true;
+	if(bb::count(occ(BISHOP)) == 1)
+		return true;
+}
