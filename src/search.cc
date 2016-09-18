@@ -101,6 +101,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 
     // TT probe
     tt::Entry tte;
+    int refinedEval;
 
     if (tt::read(pos.key(), tte)) {
         tte.score = tt::score_from_tt(tte.score, ply);
@@ -117,16 +118,20 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
         if (!Qsearch && tte.depth <= 0)
             tte.move = 0;
 
-        ss[ply].eval = tte.eval;
+        refinedEval = ss[ply].eval = tte.eval;
+
+        if ((tte.score > refinedEval && tte.bound <= tt::EXACT)
+                || (tte.score < refinedEval && tte.bound >= tt::EXACT))
+            refinedEval = tte.score;
     } else {
         tte.move = 0;
-        ss[ply].eval = pos.checkers() ? -INF : evaluate(pos) + Tempo;
+        refinedEval = ss[ply].eval = pos.checkers() ? -INF : evaluate(pos) + Tempo;
     }
 
     nodeCount[ThreadId]++;
 
     if (ply >= MAX_PLY)
-        return ss[ply].eval;
+        return refinedEval;
 
     // Null search
     if (!Qsearch && depth >= 2 && !pvNode
@@ -145,7 +150,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 
     // QSearch stand pat
     if (Qsearch && !pos.checkers()) {
-        bestScore = ss[ply].eval;
+        bestScore = refinedEval;
 
         if (bestScore > alpha) {
             alpha = bestScore;
