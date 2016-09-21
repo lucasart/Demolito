@@ -604,5 +604,7 @@ bool Position::insufficient_material() const
 		return true;
 	if(bb::count(occ(BISHOP)) == 1)
 		return true;
+	if(bb::count(occ()) == 2)
+		return true;
 	return false;
 }
