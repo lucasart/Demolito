@@ -125,7 +125,7 @@ eval_t safety(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PIE
         }
     }
 
-    static const int CheckWeight = 27;
+    static const int CheckWeight = 50;
     const Square ks = pos.king_square(us);
     const bitboard_t checks[] = {
         bb::nattacks(ks) & attacks[~us][KNIGHT],
@@ -136,7 +136,7 @@ eval_t safety(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PIE
 
     for (Piece p = KNIGHT; p <= QUEEN; ++p)
         if (checks[p]) {
-            const bitboard_t b = checks[p] & ~(pos.occ(~us) | attacks[us][PAWN]);
+            const bitboard_t b = checks[p] & ~(pos.occ(~us) | attacks[us][PAWN] | attacks[us][KING]);
 
             if (b) {
                 cnt++;
