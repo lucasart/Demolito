@@ -125,20 +125,26 @@ eval_t safety(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PIE
         }
     }
 
-    static const int SafeCheckWeight = 24;
+    static const int CheckWeight = 27;
     const Square ks = pos.king_square(us);
-    const bitboard_t safeChecks[] = {
-        bb::nattacks(ks) & attacks[~us][KNIGHT] & ~attacks[us][PAWN],
-        bb::battacks(ks, pos.occ()) & ~attacks[us][PAWN] & attacks[~us][BISHOP],
-        bb::rattacks(ks, pos.occ()) & ~attacks[us][PAWN] & attacks[~us][ROOK],
-        (bb::battacks(ks, pos.occ()) | bb::rattacks(ks, pos.occ())) & ~attacks[us][PAWN] & attacks[~us][QUEEN]
+    const bitboard_t checks[] = {
+        bb::nattacks(ks) & attacks[~us][KNIGHT],
+        bb::battacks(ks, pos.occ()) & attacks[~us][BISHOP],
+        bb::rattacks(ks, pos.occ()) & attacks[~us][ROOK],
+        (bb::battacks(ks, pos.occ()) | bb::rattacks(ks, pos.occ())) & attacks[~us][QUEEN]
     };
 
     for (Piece p = KNIGHT; p <= QUEEN; ++p)
-        if (safeChecks[p])
-            result -= bb::count(safeChecks[p]) * SafeCheckWeight;
+        if (checks[p]) {
+            const bitboard_t b = checks[p] & ~(pos.occ(~us) | attacks[us][PAWN]);
 
-    return eval_t{result * (1 + cnt) / 2, 0};
+            if (b) {
+                cnt++;
+                result -= bb::count(b) * CheckWeight;
+            }
+        }
+
+    return eval_t{result * (2 + cnt) / 4, 0};
 }
 
 int blend(const Position& pos, eval_t e)
