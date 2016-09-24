@@ -74,6 +74,9 @@ uint64_t bench(bool perft, int depth, int threads)
         result += nodes;
     }
 
+    if (dbgCnt[1])
+        std::cout << "dbgCnt[0] = " << dbgCnt[0] << ", dbgCnt[1] = " << dbgCnt[1] << '\n';
+
     std::cout << "kn/s: " << result / clock.elapsed() << std::endl;
 
     return result;

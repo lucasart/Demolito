@@ -6,6 +6,8 @@
 
 extern bool Chess960;
 
+extern int64_t dbgCnt[2];
+
 #define BOUNDS(v, ub) assert(unsigned(v) < ub)
 
 #define ENABLE_OPERATORS(T) \

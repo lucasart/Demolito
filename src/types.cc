@@ -17,6 +17,8 @@
 
 bool Chess960 = false;
 
+int64_t dbgCnt[2] = {0, 0};
+
 /* Rank, File, Square */
 
 Rank rank_of(Square s)
