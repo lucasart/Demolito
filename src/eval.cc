@@ -109,7 +109,7 @@ eval_t tactics(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PI
 
 eval_t safety(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PIECE])
 {
-    static const int AttackWeight = 24;
+    static const int AttackWeight[2] = {18, 30};
     const bitboard_t dangerZone = attacks[us][KING] & ~attacks[us][PAWN];
     const bitboard_t defendedByPieces = attacks[us][KNIGHT] | attacks[us][BISHOP]
                                         | attacks[us][ROOK] | attacks[us][QUEEN];
@@ -120,8 +120,8 @@ eval_t safety(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PIE
 
         if (attacked) {
             cnt++;
-            result -= bb::count(attacked) * AttackWeight
-                      - bb::count(attacked & defendedByPieces) * AttackWeight / 2;
+            result -= bb::count(attacked) * AttackWeight[p/2]
+                      - bb::count(attacked & defendedByPieces) * AttackWeight[p/2] / 2;
         }
     }
 
