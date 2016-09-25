@@ -125,7 +125,7 @@ eval_t safety(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PIE
         }
     }
 
-    static const int CheckWeight = 60;
+    static const int CheckWeight = 70;
     const Square ks = pos.king_square(us);
     const bitboard_t checks[] = {
         bb::nattacks(ks) & attacks[~us][KNIGHT],
