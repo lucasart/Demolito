@@ -55,6 +55,7 @@ public:
     eval_t pst() const;
     eval_t piece_material() const;
     eval_t piece_material(Color c) const;
+    bool insufficient_material() const;
 
     Square king_square(Color c) const;
     Color color_on(Square s) const;

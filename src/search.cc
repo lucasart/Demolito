@@ -96,7 +96,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
         pv[0] = 0;
     }
 
-    if (ply > 0 && threadHistory[ThreadId].repetition(pos.rule50()))
+    if (ply > 0 && (threadHistory[ThreadId].repetition(pos.rule50()) || pos.insufficient_material()))
         return DrawScore[us];
 
     // TT probe

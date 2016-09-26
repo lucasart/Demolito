@@ -466,6 +466,11 @@ eval_t Position::piece_material(Color c) const
     return _pieceMaterial[c];
 }
 
+bool Position::insufficient_material() const
+{
+    return bb::count(occ()) <= 3 && !occ(PAWN) && !occ(ROOK) && !occ(QUEEN);
+}
+
 Square Position::king_square(Color c) const
 {
     return bb::lsb(occ(c, KING));
