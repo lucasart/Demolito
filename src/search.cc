@@ -98,7 +98,10 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 
     if (ply > 0 && threadHistory[ThreadId].repetition(pos.rule50()))
         return DrawScore[us];
-
+        
+    if(pos.insufficient_material())
+    	return DrawScore[us];
+    	
     // TT probe
     tt::Entry tte;
     int refinedEval;
