@@ -94,17 +94,19 @@ eval_t bishop_pair(const Position& pos, Color us)
 
 eval_t tactics(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PIECE])
 {
-    eval_t result = {0, 0};
+    static const int Hanging[] = {66, 66, 81, 150};
+    int result = 0;
     bitboard_t b = (attacks[~us][PAWN] & (pos.occ(us) ^ pos.occ(us, PAWN)))
                    | (attacks[~us][KNIGHT] & pos.occ(us, ROOK, QUEEN))
                    | (attacks[~us][BISHOP] & pos.occ(us, ROOK));
 
     while (b) {
         const Piece p = pos.piece_on(bb::pop_lsb(b));
-        result -= Material[p] / 16;
+        assert(KNIGHT <= p && p <= QUEEN);
+        result -= Hanging[p];
     }
 
-    return result;
+    return eval_t{result, 0};
 }
 
 eval_t safety(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PIECE])
