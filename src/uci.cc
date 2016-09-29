@@ -20,6 +20,7 @@
 #include "eval.h"
 #include "search.h"
 #include "tt.h"
+#include "gen.h"
 
 zobrist::History history;
 
@@ -134,6 +135,15 @@ void eval()
     std::cout << "score " << uci::format_score(evaluate(pos)) << std::endl;
 }
 
+void perft(std::istringstream& is)
+{
+    int depth;
+    is >> depth;
+
+    pos.print();
+    std::cout << "score " << gen::perft(pos, depth) << std::endl;
+}
+
 }    // namespace
 
 namespace uci {
@@ -162,6 +172,8 @@ void loop()
             search::signal = STOP;
         else if (token == "eval")
             eval();
+        else if (token == "perft")
+            perft(is);
         else if (token == "quit")
             break;
         else
