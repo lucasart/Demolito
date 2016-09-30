@@ -29,7 +29,7 @@ namespace {
 thread_local int ThreadId;
 
 // Per thread data
-std::vector<zobrist::History> threadHistory;
+std::vector<zobrist::GameStack> threadHistory;
 std::vector<uint64_t> nodeCount;
 
 // Search stack, per thread
@@ -293,7 +293,7 @@ int aspirate(const Position& pos, int depth, std::vector<move_t>& pv, int score)
     }
 }
 
-void iterate(const Position& pos, const Limits& lim, const zobrist::History& history,
+void iterate(const Position& pos, const Limits& lim, const zobrist::GameStack& gameStack,
              uci::Info& ui, std::vector<int>& iteration, int threadId)
 {
     ThreadId = threadId;
@@ -344,7 +344,7 @@ void iterate(const Position& pos, const Limits& lim, const zobrist::History& his
             }
         } catch (const Abort e) {
             assert(signal & (1ULL << ThreadId));
-            threadHistory[ThreadId] = history;    // Restore an orderly state
+            threadHistory[ThreadId] = gameStack;    // Restore an orderly state
 
             if (e == ABORT_STOP)
                 break;
@@ -362,7 +362,7 @@ void iterate(const Position& pos, const Limits& lim, const zobrist::History& his
     signal = STOP;
 }
 
-void bestmove(const Position& pos, const Limits& lim, const zobrist::History& history)
+void bestmove(const Position& pos, const Limits& lim, const zobrist::GameStack& gameStack)
 {
     using namespace std::chrono;
     const auto start = high_resolution_clock::now();
@@ -381,11 +381,11 @@ void bestmove(const Position& pos, const Limits& lim, const zobrist::History& hi
 
     for (int i = 0; i < lim.threads; i++) {
         // Initialize per-thread data
-        threadHistory[i] = history;
+        threadHistory[i] = gameStack;
         nodeCount[i] = 0;
 
         // Start searching thread
-        threads.emplace_back(iterate, std::cref(pos), std::cref(lim), std::cref(history),
+        threads.emplace_back(iterate, std::cref(pos), std::cref(lim), std::cref(gameStack),
                              std::ref(ui), std::ref(iteration), i);
     }
 

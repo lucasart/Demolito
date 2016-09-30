@@ -32,27 +32,27 @@ uint64_t rotate(uint64_t x, int k)
 
 namespace zobrist {
 
-thread_local History history;
+thread_local GameStack gameStack;
 
-void History::push(uint64_t key)
+void GameStack::push(uint64_t key)
 {
     assert(0 <= idx && idx < MAX_GAME_PLY);
     keys[idx++] = key;
 }
 
-void History::pop()
+void GameStack::pop()
 {
     assert(0 < idx && idx <= MAX_GAME_PLY);
     idx--;
 }
 
-uint64_t History::back() const
+uint64_t GameStack::back() const
 {
     assert(0 < idx && idx <= MAX_GAME_PLY);
     return keys[idx - 1];
 }
 
-bool History::repetition(int rule50) const
+bool GameStack::repetition(int rule50) const
 {
     // 50 move rule
     if (rule50 >= 100)

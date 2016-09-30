@@ -51,22 +51,22 @@ uint64_t bench(bool perft, int depth, int threads)
     lim.threads = threads;
     lim.depth = depth;
     Position pos;
-    zobrist::History history;
+    zobrist::GameStack gameStack;
 
     Clock clock;
     clock.reset();
 
     for (const std::string& fen : fens) {
         pos.set(fen);
-        history.clear();
-        history.push(pos.key());
+        gameStack.clear();
+        gameStack.push(pos.key());
         pos.print();
 
         if (perft) {
             nodes = gen::perft(pos, depth);
             std::cout << "perft(" << depth << ") = " << nodes << std::endl;
         } else {
-            search::bestmove(pos, lim, history);
+            search::bestmove(pos, lim, gameStack);
             nodes = search::nodes();
         }
 

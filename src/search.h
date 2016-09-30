@@ -18,6 +18,6 @@ struct Limits {
     uint64_t nodes;
 };
 
-void bestmove(const Position& pos, const Limits& lim, const zobrist::History& history);
+void bestmove(const Position& pos, const Limits& lim, const zobrist::GameStack& gameStack);
 
 }

@@ -22,7 +22,7 @@
 #include "tt.h"
 #include "gen.h"
 
-zobrist::History history;
+zobrist::GameStack gameStack;
 
 namespace {
 
@@ -85,15 +85,15 @@ void position(std::istringstream& is)
         return;
 
     p[idx].set(fen);
-    history.clear();
-    history.push(p[idx].key());
+    gameStack.clear();
+    gameStack.push(p[idx].key());
 
     // Parse moves (if any)
     while (is >> token) {
         const Move m(p[idx], token);
         p[idx ^ 1].set(p[idx], m);
         idx ^= 1;
-        history.push(p[idx].key());
+        gameStack.push(p[idx].key());
     }
 
     pos = p[idx];
@@ -126,7 +126,7 @@ void go(std::istringstream& is)
         Timer.join();
 
     lim.threads = Threads;
-    Timer = std::thread(search::bestmove, std::cref(pos), std::cref(lim), std::cref(history));
+    Timer = std::thread(search::bestmove, std::cref(pos), std::cref(lim), std::cref(gameStack));
 }
 
 void eval()

@@ -12,7 +12,7 @@ public:
     uint64_t rand();
 };
 
-class History {
+class GameStack {
     uint64_t keys[MAX_GAME_PLY];
     int idx;
 public:
