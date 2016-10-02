@@ -32,10 +32,6 @@ thread_local int ThreadId;
 std::vector<zobrist::GameStack> gameStack;
 std::vector<uint64_t> nodeCount;
 
-// Search stack, per thread
-struct Stack { Move m; int eval; };
-thread_local Stack ss[MAX_PLY+1];
-
 // Protect thread scheduling decisions
 std::mutex mtxSchedule;
 
@@ -74,7 +70,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
     const int oldAlpha = alpha;
     const Color us = pos.turn();
     int bestScore = -INF;
-    move_t bestMove = 0;
+    Move bestMove = 0;
     int score;
     Position nextPos;
 
@@ -101,7 +97,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 
     // TT probe
     tt::Entry tte;
-    int refinedEval;
+    int staticEval, refinedEval;
 
     if (tt::read(pos.key(), tte)) {
         tte.score = tt::score_from_tt(tte.score, ply);
@@ -118,14 +114,14 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
         if (!Qsearch && tte.depth <= 0)
             tte.move = 0;
 
-        refinedEval = ss[ply].eval = tte.eval;
+        refinedEval = staticEval = tte.eval;
 
         if ((tte.score > refinedEval && tte.bound <= tt::EXACT)
                 || (tte.score < refinedEval && tte.bound >= tt::EXACT))
             refinedEval = tte.score;
     } else {
         tte.move = 0;
-        refinedEval = ss[ply].eval = pos.checkers() ? -INF : evaluate(pos) + Tempo;
+        refinedEval = staticEval = pos.checkers() ? -INF : evaluate(pos) + Tempo;
     }
 
     nodeCount[ThreadId]++;
@@ -135,7 +131,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 
     // Null search
     if (!Qsearch && depth >= 2 && !pvNode
-            && ss[ply].eval >= beta && pos.piece_material(us)) {
+            && staticEval >= beta && pos.piece_material(us)) {
         nextPos.toggle(pos);
         gameStack[ThreadId].push(nextPos.key());
         const int nextDepth = depth - (3 + depth/4);
@@ -164,14 +160,15 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
     Selector S(pos, depth, tte.move);
 
     size_t moveCount = 0;
+    Move currentMove;
     PinInfo pi(pos);
 
     // Move loop
     while (!S.done() && alpha < beta) {
         int see;
-        ss[ply].m = S.select(pos, see);
+        currentMove = S.select(pos, see);
 
-        if (!ss[ply].m.pseudo_is_legal(pos, pi))
+        if (!currentMove.pseudo_is_legal(pos, pi))
             continue;
 
         moveCount++;
@@ -181,11 +178,11 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
             continue;
 
         // SEE proxy tells us we're unlikely to beat alpha
-        if (Qsearch && !pos.checkers() && ss[ply].eval + P/2 <= alpha && see <= 0)
+        if (Qsearch && !pos.checkers() && staticEval + P/2 <= alpha && see <= 0)
             continue;
 
         // Play move
-        nextPos.set(pos, ss[ply].m);
+        nextPos.set(pos, currentMove);
 
         // Prune losing captures in the search, near the leaves
         if (!Qsearch && depth <= 4 && see < 0
@@ -201,7 +198,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
         if (Qsearch || nextDepth <= 0) {
             // Qsearch recursion (plain alpha/beta)
             if (depth <= MIN_DEPTH && !pos.checkers())
-                score = ss[ply].eval + see;    // guard against QSearch explosion
+                score = staticEval + see;    // guard against QSearch explosion
             else
                 score = -recurse<true>(nextPos, ply+1, nextDepth, -beta, -alpha, childPv);
         } else {
@@ -212,7 +209,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
                 int reduction = 0;
 
                 if (!pos.checkers() && !nextPos.checkers())
-                    reduction = !ss[ply].m.is_capture(pos) + (see < 0);
+                    reduction = !currentMove.is_capture(pos) + (see < 0);
 
                 // Reduced depth, zero window
                 score = nextDepth - reduction <= 0
@@ -239,10 +236,10 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
             // New alpha
             if (score > alpha) {
                 alpha = score;
-                bestMove = ss[ply].m;
+                bestMove = currentMove;
 
                 if (pvNode) {
-                    pv[0] = ss[ply].m;
+                    pv[0] = currentMove;
 
                     for (int i = 0; i < MAX_PLY - ply; i++)
                         if (!(pv[i + 1] = childPv[i]))
@@ -260,7 +257,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
     tte.key = pos.key();
     tte.bound = bestScore <= oldAlpha ? tt::UBOUND : bestScore >= beta ? tt::LBOUND : tt::EXACT;
     tte.score = tt::score_to_tt(bestScore, ply);
-    tte.eval = pos.checkers() ? -INF : ss[ply].eval;
+    tte.eval = pos.checkers() ? -INF : staticEval;
     tte.depth = depth;
     tte.move = bestMove;
     tt::write(tte);
