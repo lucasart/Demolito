@@ -29,7 +29,7 @@ namespace {
 thread_local int ThreadId;
 
 // Per thread data
-std::vector<zobrist::GameStack> threadHistory;
+std::vector<zobrist::GameStack> gameStack;
 std::vector<uint64_t> nodeCount;
 
 // Search stack, per thread
@@ -67,7 +67,7 @@ int DrawScore[2];
 template<bool Qsearch = false>
 int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::vector<move_t>& pv)
 {
-    assert(threadHistory[ThreadId].back() == pos.key());
+    assert(gameStack[ThreadId].back() == pos.key());
     assert(alpha < beta);
 
     const bool pvNode = beta > alpha + 1;
@@ -96,7 +96,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
         pv[0] = 0;
     }
 
-    if (ply > 0 && (threadHistory[ThreadId].repetition(pos.rule50()) || pos.insufficient_material()))
+    if (ply > 0 && (gameStack[ThreadId].repetition(pos.rule50()) || pos.insufficient_material()))
         return DrawScore[us];
 
     // TT probe
@@ -137,12 +137,12 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
     if (!Qsearch && depth >= 2 && !pvNode
             && ss[ply].eval >= beta && pos.piece_material(us)) {
         nextPos.toggle(pos);
-        threadHistory[ThreadId].push(nextPos.key());
+        gameStack[ThreadId].push(nextPos.key());
         const int nextDepth = depth - (3 + depth/4);
         score = nextDepth <= 0
                 ? -recurse<true>(nextPos, ply+1, nextDepth, -beta, -(beta-1), childPv)
                 : -recurse(nextPos, ply+1, nextDepth, -beta, -(beta-1), childPv);
-        threadHistory[ThreadId].pop();
+        gameStack[ThreadId].pop();
 
         if (score >= beta)
             return score >= mate_in(MAX_PLY) ? beta : score;
@@ -192,7 +192,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
                 && !pvNode && !pos.checkers() && !nextPos.checkers())
             continue;
 
-        threadHistory[ThreadId].push(nextPos.key());
+        gameStack[ThreadId].push(nextPos.key());
 
         const int ext = see >= 0 && nextPos.checkers();
         const int nextDepth = depth - 1 + ext;
@@ -230,7 +230,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
         }
 
         // Undo move
-        threadHistory[ThreadId].pop();
+        gameStack[ThreadId].pop();
 
         // New best score
         if (score > bestScore) {
@@ -293,7 +293,7 @@ int aspirate(const Position& pos, int depth, std::vector<move_t>& pv, int score)
     }
 }
 
-void iterate(const Position& pos, const Limits& lim, const zobrist::GameStack& gameStack,
+void iterate(const Position& pos, const Limits& lim, const zobrist::GameStack& initialGameStack,
              uci::Info& ui, std::vector<int>& iteration, int threadId)
 {
     ThreadId = threadId;
@@ -344,7 +344,7 @@ void iterate(const Position& pos, const Limits& lim, const zobrist::GameStack& g
             }
         } catch (const Abort e) {
             assert(signal & (1ULL << ThreadId));
-            threadHistory[ThreadId] = gameStack;    // Restore an orderly state
+            gameStack[ThreadId] = initialGameStack;    // Restore an orderly state
 
             if (e == ABORT_STOP)
                 break;
@@ -362,7 +362,7 @@ void iterate(const Position& pos, const Limits& lim, const zobrist::GameStack& g
     signal = STOP;
 }
 
-void bestmove(const Position& pos, const Limits& lim, const zobrist::GameStack& gameStack)
+void bestmove(const Position& pos, const Limits& lim, const zobrist::GameStack& initialGameStack)
 {
     using namespace std::chrono;
     const auto start = high_resolution_clock::now();
@@ -374,18 +374,18 @@ void bestmove(const Position& pos, const Limits& lim, const zobrist::GameStack& 
 
     signal = 0;
     std::vector<int> iteration(lim.threads, 0);
-    threadHistory.resize(lim.threads);
+    gameStack.resize(lim.threads);
     nodeCount.resize(lim.threads);
 
     std::vector<std::thread> threads;
 
     for (int i = 0; i < lim.threads; i++) {
         // Initialize per-thread data
-        threadHistory[i] = gameStack;
+        gameStack[i] = initialGameStack;
         nodeCount[i] = 0;
 
         // Start searching thread
-        threads.emplace_back(iterate, std::cref(pos), std::cref(lim), std::cref(gameStack),
+        threads.emplace_back(iterate, std::cref(pos), std::cref(lim), std::cref(initialGameStack),
                              std::ref(ui), std::ref(iteration), i);
     }
 
