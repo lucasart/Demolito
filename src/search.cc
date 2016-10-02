@@ -208,8 +208,12 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
             else {
                 int reduction = 0;
 
-                if (!pos.checkers() && !nextPos.checkers())
-                    reduction = !currentMove.is_capture(pos) + (see < 0);
+                if (!pos.checkers()) {
+                    reduction = see < 0;
+
+                    if (!currentMove.is_capture(pos) && !nextPos.checkers())
+                        reduction++;
+                }
 
                 // Reduced depth, zero window
                 score = nextDepth - reduction <= 0
