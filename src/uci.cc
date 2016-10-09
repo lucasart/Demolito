@@ -32,6 +32,7 @@ std::thread Timer;
 
 size_t Hash = 1;
 int Threads = 1;
+int TimeBuffer = 30;
 
 void intro()
 {
@@ -40,6 +41,7 @@ void intro()
               << "option name Hash type spin default " << Hash << " min 1 max 1048576\n"
               << "option name Threads type spin default " << Threads << " min 1 max 64\n"
               << "option name Contempt type spin default " << search::Contempt << " min -100 max 100\n"
+              << "option name Time Buffer type spin default " << TimeBuffer << " min 0 max 1000\n"
               << "uciok" << std::endl;
 }
 
@@ -65,6 +67,8 @@ void setoption(std::istringstream& is)
         is >> Threads;
     else if (name == "Contempt")
         is >> search::Contempt;
+    else if (name == "TimeBuffer")
+        is >> TimeBuffer;
 }
 
 void position(std::istringstream& is)
@@ -109,9 +113,10 @@ void go(std::istringstream& is)
             is >> lim.depth;
         else if (token == "nodes")
             is >> lim.nodes;
-        else if (token == "movetime")
+        else if (token == "movetime") {
             is >> lim.movetime;
-        else if (token == "movestogo")
+            lim.movetime -= TimeBuffer;
+        } else if (token == "movestogo")
             is >> lim.movestogo;
         else if ((pos.turn() == WHITE && token == "wtime") || (pos.turn() == BLACK && token == "btime"))
             is >> lim.time;
@@ -119,8 +124,10 @@ void go(std::istringstream& is)
             is >> lim.inc;
     }
 
-    if (lim.time + lim.inc > 0)
+    if (lim.time || lim.inc) {
         lim.movetime = ((lim.movestogo - 1) * lim.inc + lim.time) / lim.movestogo;
+        lim.movetime = std::min(lim.movetime, lim.time - TimeBuffer);
+    }
 
     if (Timer.joinable())
         Timer.join();
