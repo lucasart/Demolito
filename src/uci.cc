@@ -198,14 +198,19 @@ void Info::clear()
     clock.reset();
 }
 
-void Info::update(const Position& pos, int depth, int score, int nodes, std::vector<move_t>& pv)
+void Info::update(const Position& pos, int depth, int score, int nodes, std::vector<move_t>& pv,
+                  bool partial)
 {
     std::lock_guard<std::mutex> lk(mtx);
 
     if (depth > lastDepth) {
-        lastDepth = depth;
         bestMove = pv[0];
         ponderMove = pv[1];
+
+        if (partial)
+            return;
+
+        lastDepth = depth;
 
         std::ostringstream os;
         const auto elapsed = clock.elapsed() + 1;  // Prevent division by zero

@@ -253,6 +253,9 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
                     for (int i = 0; i < MAX_PLY - ply; i++)
                         if (!(pv[i + 1] = childPv[i]))
                             break;
+
+                    if (ply == 0 && ui.lastDepth > 0)
+                        ui.update(pos, depth, score, nodes(), pv, true);
                 }
             }
         }

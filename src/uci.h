@@ -10,7 +10,8 @@ void loop();
 
 struct Info {
     void clear();
-    void update(const Position& pos, int depth, int score, int nodes, std::vector<move_t>& pv);
+    void update(const Position& pos, int depth, int score, int nodes, std::vector<move_t>& pv,
+                bool partial = false);
     void print_bestmove(const Position& pos) const;
 
     // Do not need synchronization
