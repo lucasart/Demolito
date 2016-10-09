@@ -191,14 +191,21 @@ void loop()
         Timer.join();
 }
 
+void Info::clear()
+{
+    lastDepth = 0;
+    bestMove = ponderMove = 0;
+    clock.reset();
+}
+
 void Info::update(const Position& pos, int depth, int score, int nodes, std::vector<move_t>& pv)
 {
     std::lock_guard<std::mutex> lk(mtx);
 
     if (depth > lastDepth) {
         lastDepth = depth;
-        best = pv[0];
-        ponder = pv[1];
+        bestMove = pv[0];
+        ponderMove = pv[1];
 
         std::ostringstream os;
         const auto elapsed = clock.elapsed() + 1;  // Prevent division by zero
@@ -225,8 +232,8 @@ void Info::update(const Position& pos, int depth, int score, int nodes, std::vec
 void Info::print_bestmove(const Position& pos) const
 {
     std::lock_guard<std::mutex> lk(mtx);
-    std::cout << "bestmove " << best.to_string(pos)
-              << " ponder " << ponder.to_string(pos) << std::endl;
+    std::cout << "bestmove " << bestMove.to_string(pos)
+              << " ponder " << ponderMove.to_string(pos) << std::endl;
 }
 
 std::string format_score(int score)
