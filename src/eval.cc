@@ -149,6 +149,29 @@ eval_t safety(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PIE
     return eval_t{result * (2 + cnt) / 4, 0};
 }
 
+eval_t pawns(const Position& pos, Color us)
+{
+    static const eval_t Isolated[2] = {{20, 40}, {40, 40}};
+
+    eval_t result = {0, 0};
+    bitboard_t b = pos.occ(us, PAWN);
+
+    while (b) {
+        const Square s = bb::pop_lsb(b);
+        const File f = file_of(s);
+        const bitboard_t adjacentFiles = (f > FILE_A ? bb::file(f - 1) : 0)
+                                         | (f < FILE_H ? bb::file(f + 1) : 0);
+
+        const bool isolated = !(adjacentFiles & pos.occ(us, PAWN));
+        const bool exposed = !(bb::pawn_path(us, s) & pos.occ(PAWN));
+
+        if (isolated)
+            result -= Isolated[exposed];
+    }
+
+    return result;
+}
+
 int blend(const Position& pos, eval_t e)
 {
     static const int full = 4 * (N + B + R) + 2 * Q;
@@ -173,6 +196,7 @@ int evaluate(const Position& pos)
         e[c] += bishop_pair(pos, c);
         e[c] += tactics(pos, c, attacks);
         e[c] += safety(pos, c, attacks);
+        e[c] += pawns(pos, c);
     }
 
     const Color us = pos.turn();
