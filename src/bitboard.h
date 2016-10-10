@@ -15,6 +15,7 @@ bitboard_t file(File f);
 // Leaper attacks
 bitboard_t pattacks(Color c, Square s);
 bitboard_t pawn_span(Color c, Square s);
+bitboard_t pawn_path(Color c, Square s);
 bitboard_t nattacks(Square s);
 bitboard_t kattacks(Square s);
 

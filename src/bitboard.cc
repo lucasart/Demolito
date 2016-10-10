@@ -24,6 +24,7 @@ const int KDir[8][2] = {{-1,-1},{-1,0},{-1,1},{0,-1},{0,1},{1,-1},{1,0},{1,1}};
 
 bitboard_t PAttacks[NB_COLOR][NB_SQUARE];
 bitboard_t PawnSpan[NB_COLOR][NB_SQUARE];
+bitboard_t PawnPath[NB_COLOR][NB_SQUARE];
 bitboard_t NAttacks[NB_SQUARE];
 bitboard_t KAttacks[NB_SQUARE];
 
@@ -57,13 +58,23 @@ void init_leaper_attacks()
         }
     }
 
-    for (Square s = H8; s >= A1; --s)
-        PawnSpan[WHITE][s] = (rank_of(s) == RANK_8 ? 0 : PawnSpan[WHITE][s + 8])
-                             | PAttacks[WHITE][s];
+    for (Square s = H8; s >= A1; --s) {
+        if (rank_of(s) == RANK_8)
+            PawnSpan[WHITE][s] = PawnPath[WHITE][s] = 0;
+        else {
+            PawnSpan[WHITE][s] = PAttacks[WHITE][s] | PawnSpan[WHITE][s + UP];
+            PawnPath[WHITE][s] = (1ULL << (s + UP)) | PawnPath[WHITE][s + UP];
+        }
+    }
 
-    for (Square s = A1; s <= H8; ++s)
-        PawnSpan[BLACK][s] = (rank_of(s) == RANK_1 ? 0 : PawnSpan[BLACK][s - 8])
-                             | PAttacks[BLACK][s];
+    for (Square s = A1; s <= H8; ++s) {
+        if (rank_of(s) == RANK_1)
+            PawnSpan[BLACK][s] = PawnPath[BLACK][s] = 0;
+        else {
+            PawnSpan[BLACK][s] = PAttacks[BLACK][s] | PawnSpan[BLACK][s + DOWN];
+            PawnPath[BLACK][s] = (1ULL << (s + DOWN)) | PawnPath[BLACK][s + DOWN];
+        }
+    }
 }
 
 void init_rays()
@@ -191,9 +202,18 @@ bitboard_t ray(Square s1, Square s2)
 
 bitboard_t pawn_span(Color c, Square s)
 {
+    BOUNDS(c, NB_COLOR);
     BOUNDS(s, NB_SQUARE);
 
     return PawnSpan[c][s];
+}
+
+bitboard_t pawn_path(Color c, Square s)
+{
+    BOUNDS(c, NB_COLOR);
+    BOUNDS(s, NB_SQUARE);
+
+    return PawnPath[c][s];
 }
 
 int king_distance(Square s1, Square s2)
