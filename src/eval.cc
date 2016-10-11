@@ -153,19 +153,29 @@ eval_t pawns(const Position& pos, Color us)
 {
     static const eval_t Isolated[2] = {{20, 40}, {40, 40}};
 
+    const bitboard_t ourPawns = pos.occ(us, PAWN);
+
     eval_t result = {0, 0};
-    bitboard_t b = pos.occ(us, PAWN);
+    bitboard_t b = ourPawns;
 
     while (b) {
-        const Square s = bb::pop_lsb(b);
+        const Square s = bb::pop_lsb(b), stop = s + push_inc(us);
+        const Rank r = rank_of(s);
         const File f = file_of(s);
         const bitboard_t adjacentFiles = (f > FILE_A ? bb::file(f - 1) : 0)
                                          | (f < FILE_H ? bb::file(f + 1) : 0);
+        const bitboard_t besides = ourPawns & adjacentFiles;
 
+        const bool chained = besides & (bb::rank(r) | bb::rank(us == WHITE ? r - 1 : r + 1));
         const bool isolated = !(adjacentFiles & pos.occ(us, PAWN));
         const bool exposed = !(bb::pawn_path(us, s) & pos.occ(PAWN));
 
-        if (isolated)
+        if (chained) {
+            const int rr = relative_rank(us, r) - RANK_2;
+            const bool support = ourPawns & bb::pattacks(~us, stop);
+            const int bonus = rr * (rr + support) * 11 / 4;
+            result += {8 + bonus / 2, bonus};
+        } else if (isolated)
             result -= Isolated[exposed];
     }
 
