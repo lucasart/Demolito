@@ -23,8 +23,6 @@ const int NDir[8][2] = {{-2,-1},{-2,1},{-1,-2},{-1,2},{1,-2},{1,2},{2,-1},{2,1}}
 const int KDir[8][2] = {{-1,-1},{-1,0},{-1,1},{0,-1},{0,1},{1,-1},{1,0},{1,1}};
 
 bitboard_t PAttacks[NB_COLOR][NB_SQUARE];
-bitboard_t PawnSpan[NB_COLOR][NB_SQUARE];
-bitboard_t PawnPath[NB_COLOR][NB_SQUARE];
 bitboard_t NAttacks[NB_SQUARE];
 bitboard_t KAttacks[NB_SQUARE];
 
@@ -34,6 +32,10 @@ bitboard_t RPseudoAttacks[NB_SQUARE];
 bitboard_t Segment[NB_SQUARE][NB_SQUARE];
 bitboard_t Ray[NB_SQUARE][NB_SQUARE];
 int KingDistance[NB_SQUARE][NB_SQUARE];
+
+bitboard_t PawnSpan[NB_COLOR][NB_SQUARE];
+bitboard_t PawnPath[NB_COLOR][NB_SQUARE];
+bitboard_t AdjacentFiles[NB_FILE];
 
 void safe_set_bit(bitboard_t& b, Rank r, File f)
 {
@@ -75,6 +77,10 @@ void init_leaper_attacks()
             PawnPath[BLACK][s] = (1ULL << (s + DOWN)) | PawnPath[BLACK][s + DOWN];
         }
     }
+
+    for (File f = FILE_A; f <= FILE_H; ++f)
+        AdjacentFiles[f] = (f > FILE_A ? bb::file(f - 1) : 0)
+                           | (f < FILE_H ? bb::file(f + 1) : 0);
 }
 
 void init_rays()
@@ -214,6 +220,13 @@ bitboard_t pawn_path(Color c, Square s)
     BOUNDS(s, NB_SQUARE);
 
     return PawnPath[c][s];
+}
+
+bitboard_t adjacent_files(File f)
+{
+    BOUNDS(f, NB_FILE);
+
+    return AdjacentFiles[f];
 }
 
 int king_distance(Square s1, Square s2)

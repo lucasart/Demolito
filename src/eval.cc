@@ -159,15 +159,16 @@ eval_t pawns(const Position& pos, Color us)
     bitboard_t b = ourPawns;
 
     while (b) {
-        const Square s = bb::pop_lsb(b), stop = s + push_inc(us);
+        const Square s = bb::pop_lsb(b);
+        const Square stop = s + push_inc(us);
         const Rank r = rank_of(s);
         const File f = file_of(s);
-        const bitboard_t adjacentFiles = (f > FILE_A ? bb::file(f - 1) : 0)
-                                         | (f < FILE_H ? bb::file(f + 1) : 0);
+
+        const bitboard_t adjacentFiles = bb::adjacent_files(f);
         const bitboard_t besides = ourPawns & adjacentFiles;
 
         const bool chained = besides & (bb::rank(r) | bb::rank(us == WHITE ? r - 1 : r + 1));
-        const bool isolated = !(adjacentFiles & pos.occ(us, PAWN));
+        const bool isolated = !(adjacentFiles & ourPawns);
         const bool exposed = !(bb::pawn_path(us, s) & pos.occ(PAWN));
 
         if (chained) {
