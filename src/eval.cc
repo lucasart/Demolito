@@ -149,9 +149,10 @@ eval_t safety(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PIE
     return eval_t{result * (2 + cnt) / 4, 0};
 }
 
-eval_t pawns(const Position& pos, Color us)
+eval_t pawns(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PIECE])
 {
     static const eval_t Isolated[2] = {{20, 40}, {40, 40}};
+    static const eval_t Hole[2] = {{16, 20}, {32, 20}};
 
     const bitboard_t ourPawns = pos.occ(us, PAWN);
 
@@ -168,6 +169,7 @@ eval_t pawns(const Position& pos, Color us)
         const bitboard_t besides = ourPawns & adjacentFiles;
 
         const bool chained = besides & (bb::rank(r) | bb::rank(us == WHITE ? r - 1 : r + 1));
+        const bool hole = !(bb::pawn_span(~us, stop) & ourPawns) && bb::test(attacks[~us][PAWN], stop);
         const bool isolated = !(adjacentFiles & ourPawns);
         const bool exposed = !(bb::pawn_path(us, s) & pos.occ(PAWN));
 
@@ -176,7 +178,9 @@ eval_t pawns(const Position& pos, Color us)
             const bool support = ourPawns & bb::pattacks(~us, stop);
             const int bonus = rr * (rr + support) * 11 / 4;
             result += {8 + bonus / 2, bonus};
-        } else if (isolated)
+        } else if (hole)
+            result -= Hole[exposed];
+        else if (isolated)
             result -= Isolated[exposed];
     }
 
@@ -207,7 +211,7 @@ int evaluate(const Position& pos)
         e[c] += bishop_pair(pos, c);
         e[c] += tactics(pos, c, attacks);
         e[c] += safety(pos, c, attacks);
-        e[c] += pawns(pos, c);
+        e[c] += pawns(pos, c, attacks);
     }
 
     const Color us = pos.turn();
