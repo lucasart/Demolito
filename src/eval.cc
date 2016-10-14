@@ -15,6 +15,8 @@
 */
 #include "eval.h"
 
+thread_local PawnEntry PawnHash[NB_PAWN_ENTRY];
+
 namespace {
 
 bitboard_t pawn_attacks(const Position& pos, Color c)
@@ -149,7 +151,7 @@ eval_t safety(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PIE
     return eval_t{result * (2 + cnt) / 4, 0};
 }
 
-eval_t pawns(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PIECE])
+eval_t do_pawns(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PIECE])
 {
     static const eval_t Isolated[2] = {{20, 40}, {40, 40}};
     static const eval_t Hole[2] = {{16, 20}, {32, 20}};
@@ -187,6 +189,21 @@ eval_t pawns(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PIEC
     return result;
 }
 
+eval_t pawns(const Position& pos, bitboard_t attacks[NB_COLOR][NB_PIECE])
+// Pawn evaluation is directly a diff, from white's pov. This reduces by half the
+// size of the pawn hash table.
+{
+    const uint64_t key = pos.pawn_key();
+    const size_t idx = key & (NB_PAWN_ENTRY - 1);
+
+    if (PawnHash[idx].key == key)
+        return PawnHash[idx].eval;
+
+    PawnHash[idx].key = key;
+    PawnHash[idx].eval = do_pawns(pos, WHITE, attacks) - do_pawns(pos, BLACK, attacks);
+    return PawnHash[idx].eval;
+}
+
 int blend(const Position& pos, eval_t e)
 {
     static const int full = 4 * (N + B + R) + 2 * Q;
@@ -211,8 +228,9 @@ int evaluate(const Position& pos)
         e[c] += bishop_pair(pos, c);
         e[c] += tactics(pos, c, attacks);
         e[c] += safety(pos, c, attacks);
-        e[c] += pawns(pos, c, attacks);
     }
+
+    e[WHITE] += pawns(pos, attacks);
 
     const Color us = pos.turn();
     return blend(pos, e[us] - e[~us]);

@@ -36,7 +36,7 @@ bool Position::key_ok() const
 
 bool Position::pawn_key_ok() const
 {
-    uint64_t k = turn() ? zobrist::turn() : 0;
+    uint64_t k = 0;
 
     for (Color c = WHITE; c <= BLACK; ++c) {
         k ^= zobrist::keys(c, PAWN, occ(c, PAWN));
@@ -242,7 +242,6 @@ void Position::set(const std::string& fen)
     else {
         _turn = BLACK;
         _key ^= zobrist::turn();
-        _pawnKey ^= zobrist::turn();
     }
 
     // Castling rights
@@ -552,7 +551,6 @@ void Position::set(const Position& before, Move m)
 
     _turn = them;
     _key ^= zobrist::turn();
-    _pawnKey ^= zobrist::turn();
     _key ^= zobrist::en_passant(before.ep_square()) ^ zobrist::en_passant(ep_square());
     _key ^= zobrist::castling(before.castlable_rooks() ^ castlable_rooks());
 
@@ -566,7 +564,6 @@ void Position::toggle(const Position& before)
 
     _turn = ~turn();
     _key ^= zobrist::turn();
-    _pawnKey ^= zobrist::turn();
     _key ^= zobrist::en_passant(before.ep_square()) ^ zobrist::en_passant(ep_square());
 
     finish();
