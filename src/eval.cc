@@ -151,12 +151,34 @@ eval_t safety(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PIE
     return eval_t{result * (2 + cnt) / 4, 0};
 }
 
+eval_t passer(Color us, Square pawn, Square ourKing, Square theirKing)
+{
+    const Rank r = relative_rank(us, pawn);
+    const int L = r - RANK_2;
+    const int Q = L * (L - 1);
+
+    // score based on rank
+    eval_t result = {11 * Q, 6 * (Q + L + 1)};
+
+    // king distance adjustment
+    if (Q) {
+        const Square stop = pawn + push_inc(us);
+        result.eg() += bb::king_distance(stop, theirKing) * 6 * Q;
+        result.eg() -= bb::king_distance(stop, ourKing) * 3 * Q;
+    }
+
+    return result;
+}
+
 eval_t do_pawns(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PIECE])
 {
     static const eval_t Isolated[2] = {{20, 40}, {40, 40}};
     static const eval_t Hole[2] = {{16, 20}, {32, 20}};
 
     const bitboard_t ourPawns = pos.occ(us, PAWN);
+    const bitboard_t theirPawns = pos.occ(~us, PAWN);
+    const Square ourKing = pos.king_square(us);
+    const Square theirKing = pos.king_square(~us);
 
     eval_t result = {0, 0};
     bitboard_t b = ourPawns;
@@ -174,6 +196,9 @@ eval_t do_pawns(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_P
         const bool hole = !(bb::pawn_span(~us, stop) & ourPawns) && bb::test(attacks[~us][PAWN], stop);
         const bool isolated = !(adjacentFiles & ourPawns);
         const bool exposed = !(bb::pawn_path(us, s) & pos.occ(PAWN));
+        const bool passed = exposed && !(bb::pawn_span(us, s) & theirPawns);
+        const bool candidate = exposed && chained && !passed
+                               && !bb::several(bb::pawn_span(us, s) & theirPawns);
 
         if (chained) {
             const int rr = relative_rank(us, r) - RANK_2;
@@ -184,6 +209,11 @@ eval_t do_pawns(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_P
             result -= Hole[exposed];
         else if (isolated)
             result -= Isolated[exposed];
+
+        if (candidate)
+            result += passer(us, s, ourKing, theirKing) / 2;
+        else if (passed)
+            result += passer(us, s, ourKing, theirKing);
     }
 
     return result;
