@@ -28,18 +28,20 @@ bitboard_t pawn_attacks(const Position& pos, Color c)
 
 eval_t score_mobility(int p0, int p, bitboard_t tss)
 {
-    const int AdjustCount[][15] = {
+    assert(KNIGHT <= p0 && p0 <= ROOK);
+    assert(KNIGHT <= p && p <= QUEEN);
+
+    static const int AdjustCount[ROOK+1][15] = {
         {-3, -2, -1, 0, 1, 2, 3, 4, 4},
         {-4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 5, 6, 6, 7},
         {-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 6, 7, 7}
     };
-    const eval_t Weight[] = {{8, 8}, {10, 10}, {4, 8}, {2, 4}};
+    static const eval_t Weight[] = {{8, 8}, {10, 10}, {4, 8}, {2, 4}};
 
-    const int cnt = AdjustCount[p0][bb::count(tss)];
-    return Weight[p] * cnt;
+    return Weight[p] * AdjustCount[p0][bb::count(tss)];
 }
 
-eval_t mobility(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PIECE])
+eval_t mobility(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PIECE+1])
 {
     bitboard_t fss, tss, occ;
     Square from;
@@ -84,6 +86,9 @@ eval_t mobility(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_P
         result += score_mobility(BISHOP, pos.piece_on(from), tss & targets);
     }
 
+    attacks[us][NB_PIECE] = attacks[us][KNIGHT] | attacks[us][BISHOP] | attacks[us][ROOK] |
+                            attacks[us][QUEEN];
+
     return result;
 }
 
@@ -94,9 +99,9 @@ eval_t bishop_pair(const Position& pos, Color us)
            eval_t {0, 0};
 }
 
-eval_t tactics(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PIECE])
+eval_t tactics(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PIECE+1])
 {
-    static const int Hanging[] = {66, 66, 81, 150};
+    static const int Hanging[QUEEN+1] = {66, 66, 81, 150};
     int result = 0;
     bitboard_t b = (attacks[~us][PAWN] & (pos.occ(us) ^ pos.occ(us, PAWN)))
                    | (attacks[~us][KNIGHT] & pos.occ(us, ROOK, QUEEN))
@@ -111,12 +116,10 @@ eval_t tactics(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PI
     return eval_t{result, 0};
 }
 
-eval_t safety(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PIECE])
+eval_t safety(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PIECE+1])
 {
     static const int AttackWeight[2] = {18, 30};
     const bitboard_t dangerZone = attacks[us][KING] & ~attacks[us][PAWN];
-    const bitboard_t defendedByPieces = attacks[us][KNIGHT] | attacks[us][BISHOP]
-                                        | attacks[us][ROOK] | attacks[us][QUEEN];
     int result = 0, cnt = 0;
 
     for (Piece p = KNIGHT; p <= QUEEN; ++p) {
@@ -125,13 +128,13 @@ eval_t safety(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PIE
         if (attacked) {
             cnt++;
             result -= bb::count(attacked) * AttackWeight[p/2]
-                      - bb::count(attacked & defendedByPieces) * AttackWeight[p/2] / 2;
+                      - bb::count(attacked & attacks[us][NB_PIECE]) * AttackWeight[p/2] / 2;
         }
     }
 
     static const int CheckWeight = 70;
     const Square ks = pos.king_square(us);
-    const bitboard_t checks[] = {
+    const bitboard_t checks[QUEEN+1] = {
         bb::nattacks(ks) & attacks[~us][KNIGHT],
         bb::battacks(ks, pos.occ()) & attacks[~us][BISHOP],
         bb::rattacks(ks, pos.occ()) & attacks[~us][ROOK],
@@ -170,7 +173,7 @@ eval_t passer(Color us, Square pawn, Square ourKing, Square theirKing)
     return result;
 }
 
-eval_t do_pawns(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PIECE])
+eval_t do_pawns(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PIECE+1])
 {
     static const eval_t Isolated[2] = {{20, 40}, {40, 40}};
     static const eval_t Hole[2] = {{16, 20}, {32, 20}};
@@ -219,7 +222,7 @@ eval_t do_pawns(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_P
     return result;
 }
 
-eval_t pawns(const Position& pos, bitboard_t attacks[NB_COLOR][NB_PIECE])
+eval_t pawns(const Position& pos, bitboard_t attacks[NB_COLOR][NB_PIECE+1])
 // Pawn evaluation is directly a diff, from white's pov. This reduces by half the
 // size of the pawn hash table.
 {
@@ -248,9 +251,9 @@ int evaluate(const Position& pos)
     assert(!pos.checkers());
     eval_t e[NB_COLOR] = {pos.pst(), {0, 0}};
 
-    bitboard_t attacks[NB_COLOR][NB_PIECE];
+    bitboard_t attacks[NB_COLOR][NB_PIECE+1];
 
-    // Mobility first, because it fills in the attacks[] array
+    // Mobility first, because it fills in the attacks array
     for (Color c = WHITE; c <= BLACK; ++c)
         e[c] += mobility(pos, c, attacks);
 

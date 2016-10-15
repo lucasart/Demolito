@@ -11,8 +11,8 @@ extern int64_t dbgCnt[2];
 #define BOUNDS(v, ub) assert(unsigned(v) < ub)
 
 #define ENABLE_OPERATORS(T) \
-inline T operator+(T v, int i) { return T(int(v) + i); } \
-inline T operator-(T v, int i) { return T(int(v) - i); } \
+inline constexpr T operator+(T v, int i) { return T(int(v) + i); } \
+inline constexpr T operator-(T v, int i) { return T(int(v) - i); } \
 inline T operator+=(T& v, int i) { return v = T(int(v) + i); } \
 inline T operator-=(T& v, int i) { return v = T(int(v) - i); } \
 inline T operator++(T& v) { return v = T(int(v) + 1); } \
