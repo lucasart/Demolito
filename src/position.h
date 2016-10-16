@@ -34,17 +34,16 @@ public:
 
     void set(const Position& before, Move m);
     void toggle(const Position& before);
-    std::string get() const;
 
     bitboard_t occ() const;
     bitboard_t occ(Color c) const;
     bitboard_t occ(Piece p) const;
+    bitboard_t occ(Piece p1, Piece p2) const;
     bitboard_t occ(Color c, Piece p) const;
     bitboard_t occ(Color c, Piece p1, Piece p2) const;
 
     Color turn() const;
     Square ep_square() const;
-    bitboard_t ep_square_bb() const;
     int rule50() const;
     bitboard_t checkers() const;
     bitboard_t attacked() const;
@@ -55,13 +54,14 @@ public:
     eval_t pst() const;
     eval_t piece_material() const;
     eval_t piece_material(Color c) const;
-    bool insufficient_material() const;
 
-    Square king_square(Color c) const;
-    Color color_on(Square s) const;
     Piece piece_on(Square s) const;
-
-    bitboard_t attackers_to(Square s, bitboard_t _occ) const;
-
-    void print() const;
 };
+
+std::string get(const Position& pos);
+bitboard_t ep_square_bb(const Position& pos);
+bool insufficient_material(const Position& pos);
+Square king_square(const Position& pos, Color c);
+Color color_on(const Position& pos, Square s);
+bitboard_t attackers_to(const Position& pos, Square s, bitboard_t occ);
+void print(const Position& pos);

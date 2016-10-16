@@ -49,7 +49,7 @@ move_t *pawn_moves(const Position& pos, move_t *emList, bitboard_t targets, bool
 {
     const Color us = pos.turn(), them = ~us;
     const int push = push_inc(us);
-    const bitboard_t capturable = pos.occ(them) | pos.ep_square_bb();
+    const bitboard_t capturable = pos.occ(them) | ep_square_bb(pos);
     bitboard_t fss, tss;
     Move m;
 
@@ -105,7 +105,7 @@ move_t *piece_moves(const Position& pos, move_t *emList, bitboard_t targets, boo
 
     // King moves
     if (kingMoves) {
-        m.from = pos.king_square(us);
+        m.from = king_square(pos, us);
         tss = bb::kattacks(m.from) & targets;
         emList = serialize_moves<false>(m, tss, emList);
     }
@@ -144,7 +144,7 @@ move_t *castling_moves(const Position& pos, move_t *emList)
 {
     assert(!pos.checkers());
     Move m;
-    m.from = pos.king_square(pos.turn());
+    m.from = king_square(pos, pos.turn());
     m.prom = NB_PIECE;
 
     bitboard_t tss = pos.castlable_rooks() & pos.occ(pos.turn());
@@ -166,7 +166,7 @@ move_t *check_escapes(const Position& pos, move_t *emList, bool subPromotions)
 {
     assert(pos.checkers());
     bitboard_t ours = pos.occ(pos.turn());
-    const Square king = pos.king_square(pos.turn());
+    const Square king = king_square(pos, pos.turn());
     bitboard_t tss;
     Move m;
 

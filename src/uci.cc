@@ -138,7 +138,7 @@ void go(std::istringstream& is)
 
 void eval()
 {
-    pos.print();
+    print(pos);
     std::cout << "score " << uci::format_score(evaluate(pos)) << std::endl;
 }
 
@@ -147,7 +147,7 @@ void perft(std::istringstream& is)
     int depth;
     is >> depth;
 
-    pos.print();
+    print(pos);
     std::cout << "score " << gen::perft(pos, depth) << std::endl;
 }
 

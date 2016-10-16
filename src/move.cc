@@ -19,7 +19,7 @@
 
 bitboard_t PinInfo::hidden_checkers(const Position& pos, Color attacker, Color blocker) const
 {
-    const Square king = pos.king_square(~attacker);
+    const Square king = king_square(pos, ~attacker);
     bitboard_t pinners = (pos.occ(attacker, ROOK, QUEEN) & bb::rpattacks(king))
                          | (pos.occ(attacker, BISHOP, QUEEN) & bb::bpattacks(king));
 
@@ -121,7 +121,7 @@ void Move::from_string(const Position& pos, const std::string& s)
 bool Move::pseudo_is_legal(const Position& pos, const PinInfo& pi) const
 {
     const Piece p = pos.piece_on(from);
-    const Square king = pos.king_square(pos.turn());
+    const Square king = king_square(pos, pos.turn());
 
     if (p == KING) {
         if (bb::test(pos.occ(pos.turn()), to)) {
@@ -180,7 +180,7 @@ int Move::see(const Position& pos) const
     if (!bb::test(pos.attacked(), to))
         return gain[0];
 
-    bitboard_t attackers = pos.attackers_to(to, occ);
+    bitboard_t attackers = attackers_to(pos, to, occ);
     bitboard_t our_attackers;
 
     int idx = 0;

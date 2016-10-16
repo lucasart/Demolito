@@ -49,7 +49,7 @@ eval_t mobility(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_P
 
     eval_t result = {0, 0};
 
-    attacks[us][KING] = bb::kattacks(pos.king_square(us));
+    attacks[us][KING] = bb::kattacks(king_square(pos, us));
     attacks[~us][PAWN] = pawn_attacks(pos, ~us);
 
     for (piece = KNIGHT; piece <= QUEEN; ++piece)
@@ -133,7 +133,7 @@ eval_t safety(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PIE
     }
 
     static const int CheckWeight = 70;
-    const Square ks = pos.king_square(us);
+    const Square ks = king_square(pos, us);
     const bitboard_t checks[QUEEN+1] = {
         bb::nattacks(ks) & attacks[~us][KNIGHT],
         bb::battacks(ks, pos.occ()) & attacks[~us][BISHOP],
@@ -180,8 +180,8 @@ eval_t do_pawns(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_P
 
     const bitboard_t ourPawns = pos.occ(us, PAWN);
     const bitboard_t theirPawns = pos.occ(~us, PAWN);
-    const Square ourKing = pos.king_square(us);
-    const Square theirKing = pos.king_square(~us);
+    const Square ourKing = king_square(pos, us);
+    const Square theirKing = king_square(pos, ~us);
 
     eval_t result = {0, 0};
     bitboard_t b = ourPawns;

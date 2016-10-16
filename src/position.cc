@@ -75,7 +75,7 @@ bool Position::castlable_rooks_ok() const
         if (b[c] & ~occ(c, ROOK))
             return false;    // castlable rooks on RANK_1/8 must be white/black rooks
 
-        const Square k = king_square(c);
+        const Square k = king_square(*this, c);
 
         if (rank_of(k) != relative_rank(c, RANK_1))
             return false;    // king must be on first rank
@@ -106,18 +106,6 @@ bool Position::material_ok() const
     return true;
 }
 
-bitboard_t Position::attackers_to(Square s, bitboard_t _occ) const
-{
-    BOUNDS(s, NB_SQUARE);
-
-    return (occ(WHITE, PAWN) & bb::pattacks(BLACK, s))
-           | (occ(BLACK, PAWN) & bb::pattacks(WHITE, s))
-           | (bb::nattacks(s) & occ(KNIGHT))
-           | (bb::kattacks(s) & occ(KING))
-           | (bb::rattacks(s, _occ) & (occ(ROOK) | occ(QUEEN)))
-           | (bb::battacks(s, _occ) & (occ(BISHOP) | occ(QUEEN)));
-}
-
 bitboard_t Position::attacked_by(Color c) const
 {
     BOUNDS(c, NB_COLOR);
@@ -125,7 +113,7 @@ bitboard_t Position::attacked_by(Color c) const
     bitboard_t fss, result;
 
     // King and Knight attacks
-    result = bb::kattacks(king_square(c));
+    result = bb::kattacks(king_square(*this, c));
     fss = occ(c, KNIGHT);
 
     while (fss)
@@ -201,10 +189,10 @@ void Position::set(Color c, Piece p, Square s)
 void Position::finish()
 {
     const Color us = turn(), them = ~us;
-    const Square ksq = king_square(us);
+    const Square ksq = king_square(*this, us);
 
     _attacked = attacked_by(them);
-    _checkers = bb::test(_attacked, ksq) ? attackers_to(ksq, occ()) & occ(them) : 0;
+    _checkers = bb::test(_attacked, ksq) ? attackers_to(*this, ksq, occ()) & occ(them) : 0;
 }
 
 void Position::set(const std::string& fen)
@@ -274,83 +262,6 @@ void Position::set(const std::string& fen)
     finish();
 }
 
-std::string Position::get() const
-{
-    std::ostringstream os;
-
-    // Piece placement
-    for (Rank r = RANK_8; r >= RANK_1; --r) {
-        int cnt = 0;
-
-        for (File f = FILE_A; f <= FILE_H; ++f) {
-            const Square s = square(r, f);
-
-            if (bb::test(occ(), s)) {
-                if (cnt)
-                    os << char(cnt + '0');
-
-                os << PieceLabel[color_on(s)][piece_on(s)];
-                cnt = 0;
-            } else
-                cnt++;
-        }
-
-        if (cnt)
-            os << char(cnt + '0');
-
-        os << (r == RANK_1 ? ' ' : '/');
-    }
-
-    // Turn of play
-    os << (turn() == WHITE ? "w " : "b ");
-
-    // Castling rights
-    if (!castlable_rooks())
-        os << '-';
-    else {
-        for (Color c = WHITE; c <= BLACK; ++c) {
-            const bitboard_t sqs = castlable_rooks() & occ(c);
-
-            if (!sqs)
-                continue;
-
-            const Square king = king_square(c);
-
-            // Because we have castlable rooks, the king has to be on the first rank and
-            // cannot be in a corner, which allows using bb::ray(king, king +/- 1) to
-            // search for the castle rook in Chess960.
-            assert(rank_of(king) == relative_rank(c, RANK_1));
-            assert(file_of(king) != FILE_A && file_of(king) != FILE_H);
-
-            // Right side castling
-            if (sqs & bb::ray(king, king + 1)) {
-                if (Chess960)
-                    os << char(file_of(bb::lsb(sqs & bb::ray(king, king + 1)))
-                               + (c == WHITE ? 'A' : 'a'));
-                else
-                    os << PieceLabel[c][KING];
-            }
-
-            // Left side castling
-            if (sqs & bb::ray(king, king - 1)) {
-                if (Chess960)
-                    os << char(file_of(bb::msb(sqs & bb::ray(king, king - 1)))
-                               + (c == WHITE ? 'A' : 'a'));
-                else
-                    os << PieceLabel[c][QUEEN];
-            }
-        }
-    }
-
-    os << ' ';
-
-    // En passant and 50 move
-    os << (ep_square() < NB_SQUARE ? square_to_string(ep_square()) : "-") << ' ';
-    os << rule50();
-
-    return os.str();
-}
-
 bitboard_t Position::occ() const
 {
     assert(!(occ(WHITE) & occ(BLACK)));
@@ -374,6 +285,11 @@ bitboard_t Position::occ(Piece p) const
     return _byPiece[p];
 }
 
+bitboard_t Position::occ(Piece p1, Piece p2) const
+{
+    return occ(p1) | occ(p2);
+}
+
 bitboard_t Position::occ(Color c, Piece p) const
 {
     return occ(c) & occ(p);
@@ -391,14 +307,9 @@ Color Position::turn() const
 
 Square Position::ep_square() const
 {
-    assert(unsigned(_epSquare) <= NB_SQUARE);
+    BOUNDS(_epSquare, NB_SQUARE+1);
 
     return _epSquare;
-}
-
-bitboard_t Position::ep_square_bb() const
-{
-    return ep_square() < NB_SQUARE ? 1ULL << ep_square() : 0;
 }
 
 int Position::rule50() const
@@ -410,7 +321,7 @@ int Position::rule50() const
 
 bitboard_t Position::checkers() const
 {
-    assert(_checkers == (attackers_to(king_square(turn()), occ()) & occ(~turn())));
+    assert(_checkers == (attackers_to(king_square(*this, turn()), occ()) & occ(~turn())));
 
     return _checkers;
 }
@@ -465,23 +376,6 @@ eval_t Position::piece_material(Color c) const
     return _pieceMaterial[c];
 }
 
-bool Position::insufficient_material() const
-{
-    return bb::count(occ()) <= 3 && !occ(PAWN) && !occ(ROOK) && !occ(QUEEN);
-}
-
-Square Position::king_square(Color c) const
-{
-    return bb::lsb(occ(c, KING));
-}
-
-Color Position::color_on(Square s) const
-{
-    assert(bb::test(occ(), s));
-
-    return bb::test(occ(WHITE), s) ? WHITE : BLACK;
-}
-
 Piece Position::piece_on(Square s) const
 {
     BOUNDS(s, NB_SQUARE);
@@ -502,7 +396,7 @@ void Position::set(const Position& before, Move m)
     if (capture != NB_PIECE) {
         _rule50 = 0;
         // Use color_on() instead of them, because we could be playing a KxR castling here
-        clear(color_on(m.to), capture, m.to);
+        clear(color_on(*this, m.to), capture, m.to);
 
         // Capturing a rook alters corresponding castling right
         if (capture == ROOK)
@@ -569,24 +463,137 @@ void Position::toggle(const Position& before)
     finish();
 }
 
-void Position::print() const
+std::string get(const Position& pos)
+{
+    std::ostringstream os;
+
+    // Piece placement
+    for (Rank r = RANK_8; r >= RANK_1; --r) {
+        int cnt = 0;
+
+        for (File f = FILE_A; f <= FILE_H; ++f) {
+            const Square s = square(r, f);
+
+            if (bb::test(pos.occ(), s)) {
+                if (cnt)
+                    os << char(cnt + '0');
+
+                os << PieceLabel[color_on(pos, s)][pos.piece_on(s)];
+                cnt = 0;
+            } else
+                cnt++;
+        }
+
+        if (cnt)
+            os << char(cnt + '0');
+
+        os << (r == RANK_1 ? ' ' : '/');
+    }
+
+    // Turn of play
+    os << (pos.turn() == WHITE ? "w " : "b ");
+
+    // Castling rights
+    if (!pos.castlable_rooks())
+        os << '-';
+    else {
+        for (Color c = WHITE; c <= BLACK; ++c) {
+            const bitboard_t sqs = pos.castlable_rooks() & pos.occ(c);
+
+            if (!sqs)
+                continue;
+
+            const Square king = king_square(pos, c);
+
+            // Because we have castlable rooks, the king has to be on the first rank and
+            // cannot be in a corner, which allows using bb::ray(king, king +/- 1) to
+            // search for the castle rook in Chess960.
+            assert(rank_of(king) == relative_rank(c, RANK_1));
+            assert(file_of(king) != FILE_A && file_of(king) != FILE_H);
+
+            // Right side castling
+            if (sqs & bb::ray(king, king + 1)) {
+                if (Chess960)
+                    os << char(file_of(bb::lsb(sqs & bb::ray(king, king + 1)))
+                               + (c == WHITE ? 'A' : 'a'));
+                else
+                    os << PieceLabel[c][KING];
+            }
+
+            // Left side castling
+            if (sqs & bb::ray(king, king - 1)) {
+                if (Chess960)
+                    os << char(file_of(bb::msb(sqs & bb::ray(king, king - 1)))
+                               + (c == WHITE ? 'A' : 'a'));
+                else
+                    os << PieceLabel[c][QUEEN];
+            }
+        }
+    }
+
+    os << ' ';
+
+    // En passant and 50 move
+    os << (pos.ep_square() < NB_SQUARE ? square_to_string(pos.ep_square()) : "-") << ' ';
+    os << pos.rule50();
+
+    return os.str();
+}
+
+bitboard_t ep_square_bb(const Position& pos)
+{
+    return pos.ep_square() < NB_SQUARE ? 1ULL << pos.ep_square() : 0;
+}
+
+bool insufficient_material(const Position& pos)
+{
+    return bb::count(pos.occ()) <= 3 && !pos.occ(PAWN) && !pos.occ(ROOK) && !pos.occ(QUEEN);
+}
+
+Square king_square(const Position& pos, Color c)
+{
+    assert(bb::count(pos.occ(c, KING)) == 1);
+
+    return bb::lsb(pos.occ(c, KING));
+}
+
+Color color_on(const Position& pos, Square s)
+{
+    assert(bb::test(pos.occ(), s));
+
+    return bb::test(pos.occ(WHITE), s) ? WHITE : BLACK;
+}
+
+bitboard_t attackers_to(const Position& pos, Square s, bitboard_t occ)
+{
+    BOUNDS(s, NB_SQUARE);
+
+    return (pos.occ(WHITE, PAWN) & bb::pattacks(BLACK, s))
+           | (pos.occ(BLACK, PAWN) & bb::pattacks(WHITE, s))
+           | (bb::nattacks(s) & pos.occ(KNIGHT))
+           | (bb::kattacks(s) & pos.occ(KING))
+           | (bb::rattacks(s, occ) & pos.occ(ROOK, QUEEN))
+           | (bb::battacks(s, occ) & pos.occ(BISHOP, QUEEN));
+}
+
+void print(const Position& pos)
 {
     for (Rank r = RANK_8; r >= RANK_1; --r) {
         char line[] = ". . . . . . . .";
 
         for (File f = FILE_A; f <= FILE_H; ++f) {
             const Square s = square(r, f);
-            line[2 * f] = bb::test(occ(), s)
-                          ? PieceLabel[color_on(s)][piece_on(s)]
-                          : s == ep_square() ? '*' : '.';
+            line[2 * f] = bb::test(pos.occ(), s)
+                          ? PieceLabel[color_on(pos, s)][pos.piece_on(s)]
+                          : s == pos.ep_square() ? '*' : '.';
         }
 
         std::cout << line << '\n';
     }
 
-    std::cout << get() << std::endl;
+    std::cout << get(pos) << std::endl;
 
-    bitboard_t b = checkers();
+    bitboard_t b = pos.checkers();
 
     if (b) {
         std::cout << "checkers:";

@@ -60,7 +60,7 @@ uint64_t bench(bool perft, int depth, int threads)
         pos.set(fen);
         gameStack.clear();
         gameStack.push(pos.key());
-        pos.print();
+        print(pos);
 
         if (perft) {
             nodes = gen::perft(pos, depth);
@@ -111,7 +111,7 @@ bool see(bool verbose)
 
         if (verbose) {
             std::cout << '\n';
-            pos.print();
+            print(pos);
         } else
             std::cout << t.fen << '\t';
 
