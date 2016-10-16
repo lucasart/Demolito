@@ -21,7 +21,7 @@ namespace {
 
 bitboard_t pawn_attacks(const Position& pos, Color c)
 {
-    const bitboard_t pawns = pos.occ(c, PAWN);
+    const bitboard_t pawns = pieces(pos, c, PAWN);
     return bb::shift(pawns & ~bb::file(FILE_A), push_inc(c) + LEFT)
            | bb::shift(pawns & ~bb::file(FILE_H), push_inc(c) + RIGHT);
 }
@@ -55,10 +55,10 @@ eval_t mobility(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_P
     for (piece = KNIGHT; piece <= QUEEN; ++piece)
         attacks[us][piece] = 0;
 
-    const bitboard_t targets = ~(pos.occ(us, KING, PAWN) | attacks[~us][PAWN]);
+    const bitboard_t targets = ~(pieces(pos, us, KING, PAWN) | attacks[~us][PAWN]);
 
     // Knight mobility
-    fss = pos.occ(us, KNIGHT);
+    fss = pieces(pos, us, KNIGHT);
 
     while (fss) {
         tss = bb::nattacks(bb::pop_lsb(fss));
@@ -67,8 +67,8 @@ eval_t mobility(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_P
     }
 
     // Lateral mobility
-    fss = pos.occ(us, ROOK, QUEEN);
-    occ = pos.occ() ^ fss;    // RQ see through each other
+    fss = pieces(pos, us, ROOK, QUEEN);
+    occ = pieces(pos) ^ fss;    // RQ see through each other
 
     while (fss) {
         tss = bb::rattacks(from = bb::pop_lsb(fss), occ);
@@ -77,8 +77,8 @@ eval_t mobility(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_P
     }
 
     // Diagonal mobility
-    fss = pos.occ(us, BISHOP, QUEEN);
-    occ = pos.occ() ^ fss;    // BQ see through each other
+    fss = pieces(pos, us, BISHOP, QUEEN);
+    occ = pieces(pos) ^ fss;    // BQ see through each other
 
     while (fss) {
         tss = bb::battacks(from = bb::pop_lsb(fss), occ);
@@ -95,17 +95,17 @@ eval_t mobility(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_P
 eval_t bishop_pair(const Position& pos, Color us)
 {
     // FIXME: verify that both B are indeed on different color squares
-    return bb::several(pos.occ(us, BISHOP)) ? eval_t {80, 100} :
-           eval_t {0, 0};
+    return bb::several(pieces(pos, us, BISHOP)) ? eval_t{80, 100} :
+           eval_t{0, 0};
 }
 
 eval_t tactics(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PIECE+1])
 {
     static const int Hanging[QUEEN+1] = {66, 66, 81, 150};
     int result = 0;
-    bitboard_t b = (attacks[~us][PAWN] & (pos.occ(us) ^ pos.occ(us, PAWN)))
-                   | (attacks[~us][KNIGHT] & pos.occ(us, ROOK, QUEEN))
-                   | (attacks[~us][BISHOP] & pos.occ(us, ROOK));
+    bitboard_t b = (attacks[~us][PAWN] & (pos.occ(us) ^ pieces(pos, us, PAWN)))
+                   | (attacks[~us][KNIGHT] & pieces(pos, us, ROOK, QUEEN))
+                   | (attacks[~us][BISHOP] & pieces(pos, us, ROOK));
 
     while (b) {
         const Piece p = pos.piece_on(bb::pop_lsb(b));
@@ -136,9 +136,9 @@ eval_t safety(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PIE
     const Square ks = king_square(pos, us);
     const bitboard_t checks[QUEEN+1] = {
         bb::nattacks(ks) & attacks[~us][KNIGHT],
-        bb::battacks(ks, pos.occ()) & attacks[~us][BISHOP],
-        bb::rattacks(ks, pos.occ()) & attacks[~us][ROOK],
-        (bb::battacks(ks, pos.occ()) | bb::rattacks(ks, pos.occ())) & attacks[~us][QUEEN]
+        bb::battacks(ks, pieces(pos)) & attacks[~us][BISHOP],
+        bb::rattacks(ks, pieces(pos)) & attacks[~us][ROOK],
+        (bb::battacks(ks, pieces(pos)) | bb::rattacks(ks, pieces(pos))) & attacks[~us][QUEEN]
     };
 
     for (Piece p = KNIGHT; p <= QUEEN; ++p)
@@ -178,8 +178,8 @@ eval_t do_pawns(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_P
     static const eval_t Isolated[2] = {{20, 40}, {40, 40}};
     static const eval_t Hole[2] = {{16, 20}, {32, 20}};
 
-    const bitboard_t ourPawns = pos.occ(us, PAWN);
-    const bitboard_t theirPawns = pos.occ(~us, PAWN);
+    const bitboard_t ourPawns = pieces(pos, us, PAWN);
+    const bitboard_t theirPawns = pieces(pos, ~us, PAWN);
     const Square ourKing = king_square(pos, us);
     const Square theirKing = king_square(pos, ~us);
 

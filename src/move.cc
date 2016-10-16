@@ -20,14 +20,14 @@
 bitboard_t PinInfo::hidden_checkers(const Position& pos, Color attacker, Color blocker) const
 {
     const Square king = king_square(pos, ~attacker);
-    bitboard_t pinners = (pos.occ(attacker, ROOK, QUEEN) & bb::rpattacks(king))
-                         | (pos.occ(attacker, BISHOP, QUEEN) & bb::bpattacks(king));
+    bitboard_t pinners = (pieces(pos, attacker, ROOK, QUEEN) & bb::rpattacks(king))
+                         | (pieces(pos, attacker, BISHOP, QUEEN) & bb::bpattacks(king));
 
     bitboard_t result = 0;
 
     while (pinners) {
         const Square s = bb::pop_lsb(pinners);
-        bitboard_t skewered = bb::segment(king, s) & pos.occ();
+        bitboard_t skewered = bb::segment(king, s) & pieces(pos);
         bb::clear(skewered, king);
         bb::clear(skewered, s);
 
@@ -143,12 +143,12 @@ bool Move::pseudo_is_legal(const Position& pos, const PinInfo& pi) const
         // captured pawn
         if (to == pos.ep_square() && p == PAWN) {
             const Color us = pos.turn(), them = ~us;
-            bitboard_t occ = pos.occ();
+            bitboard_t occ = pieces(pos);
             bb::clear(occ, from);
             bb::set(occ, to);
             bb::clear(occ, to + push_inc(them));
-            return !(bb::rattacks(king, occ) & pos.occ(them, ROOK, QUEEN))
-                   && !(bb::battacks(king, occ) & pos.occ(them, BISHOP, QUEEN));
+            return !(bb::rattacks(king, occ) & pieces(pos, them, ROOK, QUEEN))
+                   && !(bb::battacks(king, occ) & pieces(pos, them, BISHOP, QUEEN));
         } else
             return true;
     }
@@ -159,7 +159,7 @@ int Move::see(const Position& pos) const
     const int see_value[NB_PIECE+1] = {N, B, R, Q, MATE, P, 0};
 
     Color us = pos.turn();
-    bitboard_t occ = pos.occ();
+    bitboard_t occ = pieces(pos);
 
     // General case
     int gain[32] = {see_value[pos.piece_on(to)]};
@@ -189,15 +189,15 @@ int Move::see(const Position& pos) const
         // Find least valuable attacker (LVA)
         Piece p = PAWN;
 
-        if (!(our_attackers & pos.occ(us, PAWN))) {
+        if (!(our_attackers & pieces(pos, us, PAWN))) {
             for (p = KNIGHT; p <= KING; ++p) {
-                if (our_attackers & pos.occ(us, p))
+                if (our_attackers & pieces(pos, us, p))
                     break;
             }
         }
 
         // Remove the LVA
-        bb::clear(occ, bb::lsb(our_attackers & pos.occ(us, p)));
+        bb::clear(occ, bb::lsb(our_attackers & pieces(pos, us, p)));
 
         // Scan for new X-ray attacks through the LVA
         if (p != KNIGHT) {

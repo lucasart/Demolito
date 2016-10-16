@@ -29,7 +29,7 @@ bool Position::key_ok() const
 
     for (Color c = WHITE; c <= BLACK; ++c)
         for (Piece p = KNIGHT; p < NB_PIECE; ++p)
-            k ^= zobrist::keys(c, p, occ(c, p));
+            k ^= zobrist::keys(c, p, pieces(*this, c, p));
 
     return k == _key;
 }
@@ -39,8 +39,8 @@ bool Position::pawn_key_ok() const
     uint64_t k = 0;
 
     for (Color c = WHITE; c <= BLACK; ++c) {
-        k ^= zobrist::keys(c, PAWN, occ(c, PAWN));
-        k ^= zobrist::keys(c, KING, occ(c, KING));
+        k ^= zobrist::keys(c, PAWN, pieces(*this, c, PAWN));
+        k ^= zobrist::keys(c, KING, pieces(*this, c, KING));
     }
 
     return k == _pawnKey;
@@ -52,7 +52,7 @@ bool Position::pst_ok() const
 
     for (Color c = WHITE; c <= BLACK; ++c)
         for (Piece p = KNIGHT; p < NB_PIECE; ++p) {
-            bitboard_t b = occ(c, p);
+            bitboard_t b = pieces(*this, c, p);
 
             while (b)
                 sum += pst::table[c][p][bb::pop_lsb(b)];
@@ -72,7 +72,7 @@ bool Position::castlable_rooks_ok() const
         if (!b[c])
             continue;    // nothing to verify
 
-        if (b[c] & ~occ(c, ROOK))
+        if (b[c] & ~pieces(*this, c, ROOK))
             return false;    // castlable rooks on RANK_1/8 must be white/black rooks
 
         const Square k = king_square(*this, c);
@@ -97,7 +97,7 @@ bool Position::material_ok() const
 
     for (Color c = WHITE; c <= BLACK; ++c) {
         for (Piece p = KNIGHT; p <= QUEEN; ++p)
-            npm[c] += Material[p] * bb::count(occ(c, p));
+            npm[c] += Material[p] * bb::count(pieces(*this, c, p));
 
         if (npm[c] != _pieceMaterial[c])
             return false;
@@ -114,25 +114,25 @@ bitboard_t Position::attacked_by(Color c) const
 
     // King and Knight attacks
     result = bb::kattacks(king_square(*this, c));
-    fss = occ(c, KNIGHT);
+    fss = pieces(*this, c, KNIGHT);
 
     while (fss)
         result |= bb::nattacks(bb::pop_lsb(fss));
 
     // Pawn captures
-    fss = occ(c, PAWN) & ~bb::file(FILE_A);
+    fss = pieces(*this, c, PAWN) & ~bb::file(FILE_A);
     result |= bb::shift(fss, push_inc(c) + LEFT);
-    fss = occ(c, PAWN) & ~bb::file(FILE_H);
+    fss = pieces(*this, c, PAWN) & ~bb::file(FILE_H);
     result |= bb::shift(fss, push_inc(c) + RIGHT);
 
     // Sliders
-    bitboard_t _occ = occ() ^ occ(~c, KING);
-    fss = occ(c, ROOK, QUEEN);
+    bitboard_t _occ = pieces(*this) ^ pieces(*this, ~c, KING);
+    fss = pieces(*this, c, ROOK, QUEEN);
 
     while (fss)
         result |= bb::rattacks(bb::pop_lsb(fss), _occ);
 
-    fss = occ(c, BISHOP, QUEEN);
+    fss = pieces(*this, c, BISHOP, QUEEN);
 
     while (fss)
         result |= bb::battacks(bb::pop_lsb(fss), _occ);
@@ -192,7 +192,7 @@ void Position::finish()
     const Square ksq = king_square(*this, us);
 
     _attacked = attacked_by(them);
-    _checkers = bb::test(_attacked, ksq) ? attackers_to(*this, ksq, occ()) & occ(them) : 0;
+    _checkers = bb::test(_attacked, ksq) ? attackers_to(*this, ksq, pieces(*this)) & occ(them) : 0;
 }
 
 void Position::set(const std::string& fen)
@@ -262,15 +262,6 @@ void Position::set(const std::string& fen)
     finish();
 }
 
-bitboard_t Position::occ() const
-{
-    assert(!(occ(WHITE) & occ(BLACK)));
-    assert((occ(WHITE) | occ(BLACK)) == (occ(KNIGHT) | occ(BISHOP) | occ(ROOK) | occ(QUEEN) | occ(
-            KING) | occ(PAWN)));
-
-    return occ(WHITE) | occ(BLACK);
-}
-
 bitboard_t Position::occ(Color c) const
 {
     BOUNDS(c, NB_COLOR);
@@ -283,21 +274,6 @@ bitboard_t Position::occ(Piece p) const
     BOUNDS(p, NB_PIECE);
 
     return _byPiece[p];
-}
-
-bitboard_t Position::occ(Piece p1, Piece p2) const
-{
-    return occ(p1) | occ(p2);
-}
-
-bitboard_t Position::occ(Color c, Piece p) const
-{
-    return occ(c) & occ(p);
-}
-
-bitboard_t Position::occ(Color c, Piece p1, Piece p2) const
-{
-    return occ(c) & (occ(p1) | occ(p2));
 }
 
 Color Position::turn() const
@@ -321,7 +297,8 @@ int Position::rule50() const
 
 bitboard_t Position::checkers() const
 {
-    assert(_checkers == (attackers_to(king_square(*this, turn()), occ()) & occ(~turn())));
+    assert(_checkers == (attackers_to(*this, king_square(*this, turn()),
+                                      pieces(*this)) & occ(~turn())));
 
     return _checkers;
 }
@@ -463,6 +440,28 @@ void Position::toggle(const Position& before)
     finish();
 }
 
+bitboard_t pieces(const Position& pos, Color c, Piece p)
+{
+    return pos.occ(c) & pos.occ(p);
+}
+
+bitboard_t pieces(const Position& pos, Piece p1, Piece p2)
+{
+    return pos.occ(p1) | pos.occ(p2);
+}
+
+bitboard_t pieces(const Position& pos)
+{
+    assert(!(pos.occ(WHITE) & pos.occ(BLACK)));
+
+    return pos.occ(WHITE) | pos.occ(BLACK);
+}
+
+bitboard_t pieces(const Position& pos, Color c, Piece p1, Piece p2)
+{
+    return pos.occ(c) & (pos.occ(p1) | pos.occ(p2));
+}
+
 std::string get(const Position& pos)
 {
     std::ostringstream os;
@@ -474,7 +473,7 @@ std::string get(const Position& pos)
         for (File f = FILE_A; f <= FILE_H; ++f) {
             const Square s = square(r, f);
 
-            if (bb::test(pos.occ(), s)) {
+            if (bb::test(pieces(pos), s)) {
                 if (cnt)
                     os << char(cnt + '0');
 
@@ -547,19 +546,19 @@ bitboard_t ep_square_bb(const Position& pos)
 
 bool insufficient_material(const Position& pos)
 {
-    return bb::count(pos.occ()) <= 3 && !pos.occ(PAWN) && !pos.occ(ROOK) && !pos.occ(QUEEN);
+    return bb::count(pieces(pos)) <= 3 && !pos.occ(PAWN) && !pos.occ(ROOK) && !pos.occ(QUEEN);
 }
 
 Square king_square(const Position& pos, Color c)
 {
-    assert(bb::count(pos.occ(c, KING)) == 1);
+    assert(bb::count(pieces(pos, c, KING)) == 1);
 
-    return bb::lsb(pos.occ(c, KING));
+    return bb::lsb(pieces(pos, c, KING));
 }
 
 Color color_on(const Position& pos, Square s)
 {
-    assert(bb::test(pos.occ(), s));
+    assert(bb::test(pieces(pos), s));
 
     return bb::test(pos.occ(WHITE), s) ? WHITE : BLACK;
 }
@@ -568,12 +567,12 @@ bitboard_t attackers_to(const Position& pos, Square s, bitboard_t occ)
 {
     BOUNDS(s, NB_SQUARE);
 
-    return (pos.occ(WHITE, PAWN) & bb::pattacks(BLACK, s))
-           | (pos.occ(BLACK, PAWN) & bb::pattacks(WHITE, s))
+    return (pieces(pos, WHITE, PAWN) & bb::pattacks(BLACK, s))
+           | (pieces(pos, BLACK, PAWN) & bb::pattacks(WHITE, s))
            | (bb::nattacks(s) & pos.occ(KNIGHT))
            | (bb::kattacks(s) & pos.occ(KING))
-           | (bb::rattacks(s, occ) & pos.occ(ROOK, QUEEN))
-           | (bb::battacks(s, occ) & pos.occ(BISHOP, QUEEN));
+           | (bb::rattacks(s, occ) & pieces(pos, ROOK, QUEEN))
+           | (bb::battacks(s, occ) & pieces(pos, BISHOP, QUEEN));
 }
 
 void print(const Position& pos)
@@ -583,7 +582,7 @@ void print(const Position& pos)
 
         for (File f = FILE_A; f <= FILE_H; ++f) {
             const Square s = square(r, f);
-            line[2 * f] = bb::test(pos.occ(), s)
+            line[2 * f] = bb::test(pieces(pos), s)
                           ? PieceLabel[color_on(pos, s)][pos.piece_on(s)]
                           : s == pos.ep_square() ? '*' : '.';
         }

@@ -35,12 +35,8 @@ public:
     void set(const Position& before, Move m);
     void toggle(const Position& before);
 
-    bitboard_t occ() const;
     bitboard_t occ(Color c) const;
     bitboard_t occ(Piece p) const;
-    bitboard_t occ(Piece p1, Piece p2) const;
-    bitboard_t occ(Color c, Piece p) const;
-    bitboard_t occ(Color c, Piece p1, Piece p2) const;
 
     Color turn() const;
     Square ep_square() const;
@@ -57,6 +53,11 @@ public:
 
     Piece piece_on(Square s) const;
 };
+
+bitboard_t pieces(const Position& pos);
+bitboard_t pieces(const Position& pos, Piece p1, Piece p2);
+bitboard_t pieces(const Position& pos, Color c, Piece p);
+bitboard_t pieces(const Position& pos, Color c, Piece p1, Piece p2);
 
 std::string get(const Position& pos);
 bitboard_t ep_square_bb(const Position& pos);

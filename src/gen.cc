@@ -54,7 +54,7 @@ move_t *pawn_moves(const Position& pos, move_t *emList, bitboard_t targets, bool
     Move m;
 
     // Non promotions
-    fss = pos.occ(us, PAWN) & ~bb::rank(relative_rank(us, RANK_7));
+    fss = pieces(pos, us, PAWN) & ~bb::rank(relative_rank(us, RANK_7));
 
     while (fss) {
         m.from = bb::pop_lsb(fss);
@@ -62,12 +62,12 @@ move_t *pawn_moves(const Position& pos, move_t *emList, bitboard_t targets, bool
         // Calculate to squares: captures, single pushes and double pushes
         tss = bb::pattacks(us, m.from) & capturable & targets;
 
-        if (bb::test(~pos.occ(), m.from + push)) {
+        if (bb::test(~pieces(pos), m.from + push)) {
             if (bb::test(targets, m.from + push))
                 bb::set(tss, m.from + push);
 
             if (relative_rank(us, m.from) == RANK_2
-                    && bb::test(targets & ~pos.occ(), m.from + 2 * push))
+                    && bb::test(targets & ~pieces(pos), m.from + 2 * push))
                 bb::set(tss, m.from + 2 * push);
         }
 
@@ -77,7 +77,7 @@ move_t *pawn_moves(const Position& pos, move_t *emList, bitboard_t targets, bool
     }
 
     // Promotions
-    fss = pos.occ(us, PAWN) & bb::rank(relative_rank(us, RANK_7));
+    fss = pieces(pos, us, PAWN) & bb::rank(relative_rank(us, RANK_7));
 
     while (fss) {
         m.from = bb::pop_lsb(fss);
@@ -85,7 +85,7 @@ move_t *pawn_moves(const Position& pos, move_t *emList, bitboard_t targets, bool
         // Calculate to squares: captures and single pushes
         tss = bb::pattacks(us, m.from) & capturable & targets;
 
-        if (bb::test(targets & ~pos.occ(), m.from + push))
+        if (bb::test(targets & ~pieces(pos), m.from + push))
             bb::set(tss, m.from + push);
 
         // Generate moves (or promotions)
@@ -111,7 +111,7 @@ move_t *piece_moves(const Position& pos, move_t *emList, bitboard_t targets, boo
     }
 
     // Knight moves
-    fss = pos.occ(us, KNIGHT);
+    fss = pieces(pos, us, KNIGHT);
 
     while (fss) {
         m.from = bb::pop_lsb(fss);
@@ -120,20 +120,20 @@ move_t *piece_moves(const Position& pos, move_t *emList, bitboard_t targets, boo
     }
 
     // Rook moves
-    fss = pos.occ(us, ROOK, QUEEN);
+    fss = pieces(pos, us, ROOK, QUEEN);
 
     while (fss) {
         m.from = bb::pop_lsb(fss);
-        tss = bb::rattacks(m.from, pos.occ()) & targets;
+        tss = bb::rattacks(m.from, pieces(pos)) & targets;
         emList = serialize_moves<false>(m, tss, emList);
     }
 
     // Bishop moves
-    fss = pos.occ(us, BISHOP, QUEEN);
+    fss = pieces(pos, us, BISHOP, QUEEN);
 
     while (fss) {
         m.from = bb::pop_lsb(fss);
-        tss = bb::battacks(m.from, pos.occ()) & targets;
+        tss = bb::battacks(m.from, pieces(pos)) & targets;
         emList = serialize_moves<false>(m, tss, emList);
     }
 
@@ -155,7 +155,7 @@ move_t *castling_moves(const Position& pos, move_t *emList)
         const Square rto = square(rank_of(m.to), m.to > m.from ? FILE_F : FILE_D);
         const bitboard_t s = bb::segment(m.from, kto) | bb::segment(m.to, rto);
 
-        if (bb::count(s & pos.occ()) == 2)
+        if (bb::count(s & pieces(pos)) == 2)
             *emList++ = m;
     }
 
