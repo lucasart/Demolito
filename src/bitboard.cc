@@ -31,11 +31,11 @@ bitboard_t RPseudoAttacks[NB_SQUARE];
 
 bitboard_t Segment[NB_SQUARE][NB_SQUARE];
 bitboard_t Ray[NB_SQUARE][NB_SQUARE];
-int KingDistance[NB_SQUARE][NB_SQUARE];
 
 bitboard_t PawnSpan[NB_COLOR][NB_SQUARE];
 bitboard_t PawnPath[NB_COLOR][NB_SQUARE];
 bitboard_t AdjacentFiles[NB_FILE];
+int KingDistance[NB_SQUARE][NB_SQUARE];
 
 void safe_set_bit(bitboard_t& b, Rank r, File f)
 {
@@ -59,7 +59,10 @@ void init_leaper_attacks()
             safe_set_bit(PAttacks[BLACK][s], r - PDir[d][0], f - PDir[d][1]);
         }
     }
+}
 
+void init_eval()
+{
     for (Square s = H8; s >= A1; --s) {
         if (rank_of(s) == RANK_8)
             PawnSpan[WHITE][s] = PawnPath[WHITE][s] = 0;
@@ -81,6 +84,11 @@ void init_leaper_attacks()
     for (File f = FILE_A; f <= FILE_H; ++f)
         AdjacentFiles[f] = (f > FILE_A ? bb::file(f - 1) : 0)
                            | (f < FILE_H ? bb::file(f + 1) : 0);
+
+    for (Square s1 = A1; s1 <= H8; ++s1)
+        for (Square s2 = A1; s2 <= H8; ++s2)
+            KingDistance[s1][s2] = std::max(std::abs(rank_of(s1) - rank_of(s2)),
+                                            std::abs(file_of(s1) - file_of(s2)));
 }
 
 void init_rays()
@@ -131,11 +139,7 @@ void init()
     init_leaper_attacks();
     init_slider_attacks();
     init_slider_pseudo_attacks();
-
-    for (Square s1 = A1; s1 <= H8; ++s1)
-        for (Square s2 = A1; s2 <= H8; ++s2)
-            KingDistance[s1][s2] = std::max(std::abs(rank_of(s1) - rank_of(s2)),
-                                            std::abs(file_of(s1) - file_of(s2)));
+    init_eval();
 }
 
 /* Bitboard Accessors */

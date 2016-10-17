@@ -25,12 +25,12 @@ bitboard_t rpattacks(Square s);    // pseudo-attacks (empty board)
 
 bitboard_t segment(Square s1, Square s2);
 bitboard_t ray(Square s1, Square s2);
-int king_distance(Square s1, Square s2);
 
-// Special bitboards for pawn evaluation
+// Precalculated arrays for evaluation
 bitboard_t pawn_span(Color c, Square s);
 bitboard_t pawn_path(Color c, Square s);
 bitboard_t adjacent_files(File f);
+int king_distance(Square s1, Square s2);
 
 /* Bit manipulation */
 
