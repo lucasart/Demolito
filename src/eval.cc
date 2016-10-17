@@ -200,22 +200,18 @@ eval_t do_pawns(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_P
         const bool isolated = !(adjacentFiles & ourPawns);
         const bool exposed = !(bb::pawn_path(us, s) & pos.occ(PAWN));
         const bool passed = exposed && !(bb::pawn_span(us, s) & theirPawns);
-        const bool candidate = exposed && chained && !passed
-                               && !bb::several(bb::pawn_span(us, s) & theirPawns);
 
         if (chained) {
             const int rr = relative_rank(us, r) - RANK_2;
             const bool support = ourPawns & bb::pattacks(~us, stop);
-            const int bonus = rr * (rr + support) * 11 / 4;
+            const int bonus = rr * (rr + support) * 3;
             result += {8 + bonus / 2, bonus};
         } else if (hole)
             result -= Hole[exposed];
         else if (isolated)
             result -= Isolated[exposed];
 
-        if (candidate)
-            result += passer(us, s, ourKing, theirKing) / 2;
-        else if (passed)
+        if (passed)
             result += passer(us, s, ourKing, theirKing);
     }
 
