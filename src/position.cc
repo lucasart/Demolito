@@ -21,125 +21,6 @@
 #include "pst.h"
 #include "zobrist.h"
 
-bool Position::key_ok() const
-{
-    uint64_t k = turn() ? zobrist::turn() : 0;
-    k ^= zobrist::en_passant(ep_square());
-    k ^= zobrist::castling(castlable_rooks());
-
-    for (Color c = WHITE; c <= BLACK; ++c)
-        for (Piece p = KNIGHT; p < NB_PIECE; ++p)
-            k ^= zobrist::keys(c, p, pieces(*this, c, p));
-
-    return k == _key;
-}
-
-bool Position::pawn_key_ok() const
-{
-    uint64_t k = 0;
-
-    for (Color c = WHITE; c <= BLACK; ++c) {
-        k ^= zobrist::keys(c, PAWN, pieces(*this, c, PAWN));
-        k ^= zobrist::keys(c, KING, pieces(*this, c, KING));
-    }
-
-    return k == _pawnKey;
-}
-
-bool Position::pst_ok() const
-{
-    eval_t sum = {0, 0};
-
-    for (Color c = WHITE; c <= BLACK; ++c)
-        for (Piece p = KNIGHT; p < NB_PIECE; ++p) {
-            bitboard_t b = pieces(*this, c, p);
-
-            while (b)
-                sum += pst::table[c][p][bb::pop_lsb(b)];
-        }
-
-    return _pst == sum;
-}
-
-bool Position::castlable_rooks_ok() const
-{
-    const bitboard_t b[2] = {_castlableRooks & bb::rank(RANK_1), _castlableRooks & bb::rank(RANK_8)};
-
-    if ((b[0] | b[1]) != _castlableRooks)
-        return false;
-
-    for (Color c = WHITE; c <= BLACK; ++c) {
-        if (!b[c])
-            continue;    // nothing to verify
-
-        if (b[c] & ~pieces(*this, c, ROOK))
-            return false;    // castlable rooks on RANK_1/8 must be white/black rooks
-
-        const Square k = king_square(*this, c);
-
-        if (rank_of(k) != relative_rank(c, RANK_1))
-            return false;    // king must be on first rank
-
-        // There can be at most one castlable rook on each side of the king
-        if (file_of(k) > FILE_A && bb::several(_castlableRooks & bb::ray(k, k - 1)))
-            return false;
-
-        if (file_of(k) < FILE_H && bb::several(_castlableRooks & bb::ray(k, k + 1)))
-            return false;
-    }
-
-    return true;
-}
-
-bool Position::material_ok() const
-{
-    eval_t npm[NB_COLOR] = {{0,0}, {0,0}};
-
-    for (Color c = WHITE; c <= BLACK; ++c) {
-        for (Piece p = KNIGHT; p <= QUEEN; ++p)
-            npm[c] += Material[p] * bb::count(pieces(*this, c, p));
-
-        if (npm[c] != _pieceMaterial[c])
-            return false;
-    }
-
-    return true;
-}
-
-bitboard_t Position::attacked_by(Color c) const
-{
-    BOUNDS(c, NB_COLOR);
-
-    bitboard_t fss, result;
-
-    // King and Knight attacks
-    result = bb::kattacks(king_square(*this, c));
-    fss = pieces(*this, c, KNIGHT);
-
-    while (fss)
-        result |= bb::nattacks(bb::pop_lsb(fss));
-
-    // Pawn captures
-    fss = pieces(*this, c, PAWN) & ~bb::file(FILE_A);
-    result |= bb::shift(fss, push_inc(c) + LEFT);
-    fss = pieces(*this, c, PAWN) & ~bb::file(FILE_H);
-    result |= bb::shift(fss, push_inc(c) + RIGHT);
-
-    // Sliders
-    bitboard_t _occ = pieces(*this) ^ pieces(*this, ~c, KING);
-    fss = pieces(*this, c, ROOK, QUEEN);
-
-    while (fss)
-        result |= bb::rattacks(bb::pop_lsb(fss), _occ);
-
-    fss = pieces(*this, c, BISHOP, QUEEN);
-
-    while (fss)
-        result |= bb::battacks(bb::pop_lsb(fss), _occ);
-
-    return result;
-}
-
 void Position::clear()
 {
     std::memset(this, 0, sizeof(*this));
@@ -191,7 +72,7 @@ void Position::finish()
     const Color us = turn(), them = ~us;
     const Square ksq = king_square(*this, us);
 
-    _attacked = attacked_by(them);
+    _attacked = attacked_by(*this, them);
     _checkers = bb::test(_attacked, ksq) ? attackers_to(*this, ksq, pieces(*this)) & occ(them) : 0;
 }
 
@@ -305,50 +186,41 @@ bitboard_t Position::checkers() const
 
 bitboard_t Position::attacked() const
 {
-    assert(_attacked == attacked_by(~turn()));
+    assert(_attacked == attacked_by(*this, ~turn()));
 
     return _attacked;
 }
 
 bitboard_t Position::castlable_rooks() const
 {
-    assert(castlable_rooks_ok());
-
     return _castlableRooks;
 }
 
 uint64_t Position::key() const
 {
-    assert(key_ok());
+    assert(calc_key(*this) == _key);
 
     return _key;
 }
 
 uint64_t Position::pawn_key() const
 {
-    assert(pawn_key_ok());
+    assert(calc_pawn_key(*this) == _pawnKey);
 
     return _pawnKey;
 }
 
 eval_t Position::pst() const
 {
-    assert(pst_ok());
+    assert(calc_pst(*this) == _pst);
 
     return _pst;
-}
-
-eval_t Position::piece_material() const
-{
-    assert(material_ok());
-
-    return piece_material(WHITE) + piece_material(BLACK);
 }
 
 eval_t Position::piece_material(Color c) const
 {
     BOUNDS(c, NB_COLOR);
-    assert(material_ok());
+    assert(calc_piece_material(*this, c) == _pieceMaterial[c]);
 
     return _pieceMaterial[c];
 }
@@ -438,6 +310,88 @@ void Position::toggle(const Position& before)
     _key ^= zobrist::en_passant(before.ep_square()) ^ zobrist::en_passant(ep_square());
 
     finish();
+}
+
+bitboard_t attacked_by(const Position& pos, Color c)
+{
+    BOUNDS(c, NB_COLOR);
+
+    // King and Knight attacks
+    bitboard_t result = bb::kattacks(king_square(pos, c));
+    bitboard_t fss = pieces(pos, c, KNIGHT);
+
+    while (fss)
+        result |= bb::nattacks(bb::pop_lsb(fss));
+
+    // Pawn captures
+    fss = pieces(pos, c, PAWN) & ~bb::file(FILE_A);
+    result |= bb::shift(fss, push_inc(c) + LEFT);
+    fss = pieces(pos, c, PAWN) & ~bb::file(FILE_H);
+    result |= bb::shift(fss, push_inc(c) + RIGHT);
+
+    // Sliders
+    bitboard_t _occ = pieces(pos) ^ pieces(pos, ~c, KING);
+    fss = pieces(pos, c, ROOK, QUEEN);
+
+    while (fss)
+        result |= bb::rattacks(bb::pop_lsb(fss), _occ);
+
+    fss = pieces(pos, c, BISHOP, QUEEN);
+
+    while (fss)
+        result |= bb::battacks(bb::pop_lsb(fss), _occ);
+
+    return result;
+}
+
+uint64_t calc_key(const Position& pos)
+{
+    uint64_t key = (pos.turn() ? zobrist::turn() : 0)
+                   ^ zobrist::en_passant(pos.ep_square())
+                   ^ zobrist::castling(pos.castlable_rooks());
+
+    for (Color c = WHITE; c <= BLACK; ++c)
+        for (Piece p = KNIGHT; p < NB_PIECE; ++p)
+            key ^= zobrist::keys(c, p, pieces(pos, c, p));
+
+    return key;
+}
+
+uint64_t calc_pawn_key(const Position& pos)
+{
+    uint64_t key = 0;
+
+    for (Color c = WHITE; c <= BLACK; ++c) {
+        key ^= zobrist::keys(c, PAWN, pieces(pos, c, PAWN));
+        key ^= zobrist::keys(c, KING, pieces(pos, c, KING));
+    }
+
+    return key;
+}
+
+eval_t calc_pst(const Position& pos)
+{
+    eval_t result {0, 0};
+
+    for (Color c = WHITE; c <= BLACK; ++c)
+        for (Piece p = KNIGHT; p < NB_PIECE; ++p) {
+            bitboard_t b = pieces(pos, c, p);
+
+            while (b)
+                result += pst::table[c][p][bb::pop_lsb(b)];
+        }
+
+    return result;
+}
+
+eval_t calc_piece_material(const Position& pos, Color c)
+{
+    eval_t result {0, 0};
+
+    for (Piece p = KNIGHT; p <= QUEEN; ++p)
+        result += Material[p] * bb::count(pieces(pos, c, p));
+
+    return result;
 }
 
 bitboard_t pieces(const Position& pos, Color c, Piece p)

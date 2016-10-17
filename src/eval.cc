@@ -240,7 +240,7 @@ eval_t pawns(const Position& pos, bitboard_t attacks[NB_COLOR][NB_PIECE+1])
 int blend(const Position& pos, eval_t e)
 {
     static const int full = 4 * (N + B + R) + 2 * Q;
-    const int total = pos.piece_material().eg();
+    const int total = (pos.piece_material(WHITE) + pos.piece_material(BLACK)).eg();
     return e.op() * total / full + e.eg() * (full - total) / full;
 }
 
