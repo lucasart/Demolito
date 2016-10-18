@@ -17,11 +17,12 @@
 #include "bitboard.h"
 #include "position.h"
 
-bitboard_t PinInfo::hidden_checkers(const Position& pos, Color attacker, Color blocker) const
+bitboard_t pinned_pieces(const Position& pos)
 {
-    const Square king = king_square(pos, ~attacker);
-    bitboard_t pinners = (pieces(pos, attacker, ROOK, QUEEN) & bb::rpattacks(king))
-                         | (pieces(pos, attacker, BISHOP, QUEEN) & bb::bpattacks(king));
+    const Color us = pos.turn();
+    const Square king = king_square(pos, us);
+    bitboard_t pinners = (pieces(pos, ~us, ROOK, QUEEN) & bb::rpattacks(king))
+                         | (pieces(pos, ~us, BISHOP, QUEEN) & bb::bpattacks(king));
 
     bitboard_t result = 0;
 
@@ -31,17 +32,11 @@ bitboard_t PinInfo::hidden_checkers(const Position& pos, Color attacker, Color b
         bb::clear(skewered, king);
         bb::clear(skewered, s);
 
-        if (!bb::several(skewered) && (skewered & pos.occ(blocker)))
+        if (!bb::several(skewered) && (skewered & pos.occ(us)))
             result |= skewered;
     }
 
     return result;
-}
-
-PinInfo::PinInfo(const Position& pos)
-{
-    const Color us = pos.turn(), them = ~us;
-    pinned = hidden_checkers(pos, them, us);
 }
 
 bool Move::ok() const
@@ -118,7 +113,7 @@ void Move::from_string(const Position& pos, const std::string& s)
     assert(ok());
 }
 
-bool Move::pseudo_is_legal(const Position& pos, const PinInfo& pi) const
+bool Move::pseudo_is_legal(const Position& pos, bitboard_t pinned) const
 {
     const Piece p = pos.piece_on(from);
     const Square king = king_square(pos, pos.turn());
@@ -130,13 +125,13 @@ bool Move::pseudo_is_legal(const Position& pos, const PinInfo& pi) const
             assert(pos.piece_on(to) == ROOK);
             const Square _tsq = square(rank_of(from), from < to ? FILE_G : FILE_C);
             return !(pos.attacked() & bb::segment(from, _tsq))
-                   && !bb::test(pi.pinned, to);
+                   && !bb::test(pinned, to);
         } else
             // Normal king move: do not land on an attacked square
             return !bb::test(pos.attacked(), to);
     } else {
         // Normal case: illegal if pinned, and moves out of pin-ray
-        if (bb::test(pi.pinned, from) && !bb::test(bb::ray(king, from), to))
+        if (bb::test(pinned, from) && !bb::test(bb::ray(king, from), to))
             return false;
 
         // En-passant special case: also illegal if self-check through the en-passant

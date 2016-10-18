@@ -4,12 +4,7 @@
 
 class Position;
 
-struct PinInfo {
-    bitboard_t pinned;    // pinned pieces
-
-    bitboard_t hidden_checkers(const Position& b, Color attacker, Color blocker) const;
-    PinInfo(const Position& pos);
-};
+bitboard_t pinned_pieces(const Position& pos);
 
 typedef uint16_t move_t;    // from:6, to:6, prom: 3 (NB_PIECE if none)
 
@@ -33,6 +28,6 @@ struct Move {
     std::string to_string(const Position& pos) const;
     void from_string(const Position& pos, const std::string& s);
 
-    bool pseudo_is_legal(const Position& pos, const PinInfo& pi) const;
+    bool pseudo_is_legal(const Position& pos, bitboard_t pinned) const;
     int see(const Position& pos) const;
 };

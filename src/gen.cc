@@ -225,14 +225,14 @@ uint64_t perft(const Position& pos, int depth)
 
     uint64_t result = 0;
     Position after;
-    const PinInfo pi(pos);
+    const bitboard_t pinned = pinned_pieces(pos);
     move_t emList[MAX_MOVES];
     move_t *end = all_moves(pos, emList);
 
     for (move_t *em = emList; em != end; em++) {
         const Move m(*em);
 
-        if (!m.pseudo_is_legal(pos, pi))
+        if (!m.pseudo_is_legal(pos, pinned))
             continue;
 
         after.set(pos, m);
