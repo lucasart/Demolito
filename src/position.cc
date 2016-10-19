@@ -74,6 +74,7 @@ void Position::finish()
 
     _attacked = attacked_by(*this, them);
     _checkers = bb::test(_attacked, ksq) ? attackers_to(*this, ksq, pieces(*this)) & occ(them) : 0;
+    _pins = calc_pins(*this);
 }
 
 void Position::set(const std::string& fen)
@@ -189,6 +190,13 @@ bitboard_t Position::attacked() const
     assert(_attacked == attacked_by(*this, ~turn()));
 
     return _attacked;
+}
+
+bitboard_t Position::pins() const
+{
+    assert(_pins == calc_pins(*this));
+
+    return _pins;
 }
 
 bitboard_t Position::castlable_rooks() const
@@ -340,6 +348,27 @@ bitboard_t attacked_by(const Position& pos, Color c)
 
     while (fss)
         result |= bb::battacks(bb::pop_lsb(fss), _occ);
+
+    return result;
+}
+
+bitboard_t calc_pins(const Position& pos)
+{
+    const Color us = pos.turn();
+    const Square king = king_square(pos, us);
+    bitboard_t pinners = (pieces(pos, ~us, ROOK, QUEEN) & bb::rpattacks(king))
+                         | (pieces(pos, ~us, BISHOP, QUEEN) & bb::bpattacks(king));
+    bitboard_t result = 0;
+
+    while (pinners) {
+        const Square s = bb::pop_lsb(pinners);
+        bitboard_t skewered = bb::segment(king, s) & pieces(pos);
+        bb::clear(skewered, king);
+        bb::clear(skewered, s);
+
+        if (!bb::several(skewered) && (skewered & pos.occ(us)))
+            result |= skewered;
+    }
 
     return result;
 }

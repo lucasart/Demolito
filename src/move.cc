@@ -17,28 +17,6 @@
 #include "bitboard.h"
 #include "position.h"
 
-bitboard_t pinned_pieces(const Position& pos)
-{
-    const Color us = pos.turn();
-    const Square king = king_square(pos, us);
-    bitboard_t pinners = (pieces(pos, ~us, ROOK, QUEEN) & bb::rpattacks(king))
-                         | (pieces(pos, ~us, BISHOP, QUEEN) & bb::bpattacks(king));
-
-    bitboard_t result = 0;
-
-    while (pinners) {
-        const Square s = bb::pop_lsb(pinners);
-        bitboard_t skewered = bb::segment(king, s) & pieces(pos);
-        bb::clear(skewered, king);
-        bb::clear(skewered, s);
-
-        if (!bb::several(skewered) && (skewered & pos.occ(us)))
-            result |= skewered;
-    }
-
-    return result;
-}
-
 bool Move::ok() const
 {
     return unsigned(from) < NB_SQUARE && unsigned(to) < NB_SQUARE
@@ -113,7 +91,7 @@ void Move::from_string(const Position& pos, const std::string& s)
     assert(ok());
 }
 
-bool Move::pseudo_is_legal(const Position& pos, bitboard_t pinned) const
+bool Move::pseudo_is_legal(const Position& pos) const
 {
     const Piece p = pos.piece_on(from);
     const Square king = king_square(pos, pos.turn());
@@ -125,13 +103,13 @@ bool Move::pseudo_is_legal(const Position& pos, bitboard_t pinned) const
             assert(pos.piece_on(to) == ROOK);
             const Square _tsq = square(rank_of(from), from < to ? FILE_G : FILE_C);
             return !(pos.attacked() & bb::segment(from, _tsq))
-                   && !bb::test(pinned, to);
+                   && !bb::test(pos.pins(), to);
         } else
             // Normal king move: do not land on an attacked square
             return !bb::test(pos.attacked(), to);
     } else {
         // Normal case: illegal if pinned, and moves out of pin-ray
-        if (bb::test(pinned, from) && !bb::test(bb::ray(king, from), to))
+        if (bb::test(pos.pins(), from) && !bb::test(bb::ray(king, from), to))
             return false;
 
         // En-passant special case: also illegal if self-check through the en-passant

@@ -6,7 +6,7 @@ class Position {
     bitboard_t _byColor[NB_COLOR];
     bitboard_t _byPiece[NB_PIECE];
     bitboard_t _castlableRooks;
-    bitboard_t _attacked, _checkers;
+    bitboard_t _attacked, _checkers, _pins;
     uint64_t _key, _pawnKey;
     eval_t _pst;
     char _pieceOn[NB_SQUARE];
@@ -32,6 +32,7 @@ public:
     int rule50() const;
     bitboard_t checkers() const;
     bitboard_t attacked() const;
+    bitboard_t pins() const;
     bitboard_t castlable_rooks() const;
     uint64_t key() const;
     uint64_t pawn_key() const;
@@ -41,6 +42,7 @@ public:
 };
 
 bitboard_t attacked_by(const Position& pos, Color c);
+bitboard_t calc_pins(const Position& pos);
 
 uint64_t calc_key(const Position& pos);
 uint64_t calc_pawn_key(const Position& pos);

@@ -171,14 +171,13 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 
     size_t moveCount = 0;
     Move currentMove;
-    const bitboard_t pinned = pinned_pieces(pos);
 
     // Move loop
     while (!S.done() && alpha < beta) {
         int see;
         currentMove = S.select(pos, see);
 
-        if (!currentMove.pseudo_is_legal(pos, pinned))
+        if (!currentMove.pseudo_is_legal(pos))
             continue;
 
         moveCount++;
