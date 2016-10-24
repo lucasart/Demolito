@@ -19,8 +19,8 @@ struct Entry {
 int score_to_tt(int score, int ply);
 int score_from_tt(int ttScore, int ply);
 
-bool read(uint64_t key, Entry& p);
-void write(const Entry& p);
+bool read(uint64_t key, Entry& e);
+void write(const Entry& e);
 
 extern std::vector<Entry> table;
 

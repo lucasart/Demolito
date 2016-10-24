@@ -33,17 +33,19 @@ int score_from_tt(int ttScore, int ply)
            : ttScore;
 }
 
-bool read(uint64_t key, Entry& p)
+bool read(uint64_t key, Entry& e)
 {
     const size_t idx = key & (table.size() - 1);
-    p = table[idx];
-    return p.key == key;
+    e = table[idx];
+    return e.key == key;
 }
 
-void write(const Entry& p)
+void write(const Entry& e)
 {
-    const size_t idx = p.key & (table.size() - 1);
-    table[idx] = p;
+    Entry& replace = table[e.key & (table.size() - 1)];
+
+    if (e.key != replace.key || e.depth >= replace.depth)
+        replace = e;
 }
 
 }    // namespace tt
