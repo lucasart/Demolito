@@ -62,7 +62,11 @@ const int Tempo = 16;
 
 int Threads = 1;
 int Contempt = 10;
-int DrawScore[2];
+
+int draw_score(int ply)
+{
+    return (ply & 1 ? Contempt : -Contempt) * EP / 100;
+}
 
 template<bool Qsearch = false>
 int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::vector<move_t>& pv)
@@ -97,7 +101,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
     }
 
     if (ply > 0 && (gameStack[ThreadId].repetition(pos.rule50()) || insufficient_material(pos)))
-        return DrawScore[us];
+        return draw_score(ply);
 
     // TT probe
     tt::Entry tte;
@@ -264,7 +268,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 
     // No legal move: mated or stalemated
     if ((!Qsearch || pos.checkers()) && !moveCount)
-        return pos.checkers() ? ply - MATE : DrawScore[us];
+        return pos.checkers() ? mated_in(ply) : draw_score(ply);
 
     // TT write
     tte.key = pos.key();
@@ -378,10 +382,6 @@ void bestmove(const Position& pos, const Limits& lim, const zobrist::GameStack& 
 {
     using namespace std::chrono;
     const auto start = high_resolution_clock::now();
-
-    const Color us = pos.turn();
-    DrawScore[us] = -Contempt * EP / 100;
-    DrawScore[~us] = -DrawScore[us];
 
     ui.clear();
     signal = 0;
