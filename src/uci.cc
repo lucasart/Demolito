@@ -31,7 +31,6 @@ search::Limits lim;
 std::thread Timer;
 
 size_t Hash = 1;
-int Threads = 1;
 int TimeBuffer = 30;
 
 void intro()
@@ -39,7 +38,7 @@ void intro()
     std::cout << "id name Demolito\nid author lucasart\n" << std::boolalpha
               << "option name UCI_Chess960 type check default " << Chess960 << '\n'
               << "option name Hash type spin default " << Hash << " min 1 max 1048576\n"
-              << "option name Threads type spin default " << Threads << " min 1 max 64\n"
+              << "option name Threads type spin default " << search::Threads << " min 1 max 64\n"
               << "option name Contempt type spin default " << search::Contempt << " min -100 max 100\n"
               << "option name Time Buffer type spin default " << TimeBuffer << " min 0 max 1000\n"
               << "uciok" << std::endl;
@@ -64,7 +63,7 @@ void setoption(std::istringstream& is)
         Hash = 1ULL << bb::msb(Hash);    // must be a power of two
         tt::table.resize(Hash * 1024 * (1024 / sizeof(tt::Entry)), 0);
     } else if (name == "Threads")
-        is >> Threads;
+        is >> search::Threads;
     else if (name == "Contempt")
         is >> search::Contempt;
     else if (name == "TimeBuffer")
@@ -132,7 +131,6 @@ void go(std::istringstream& is)
     if (Timer.joinable())
         Timer.join();
 
-    lim.threads = Threads;
     Timer = std::thread(search::bestmove, std::cref(pos), std::cref(lim), std::cref(gameStack));
 }
 

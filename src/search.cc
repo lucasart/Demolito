@@ -60,6 +60,7 @@ enum Abort {
 
 const int Tempo = 16;
 
+int Threads = 1;
 int Contempt = 10;
 int DrawScore[2];
 
@@ -105,7 +106,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
     if (tt::read(pos.key(), tte)) {
         tte.score = tt::score_from_tt(tte.score, ply);
 
-        if (tte.depth >= depth && ply >= 1) {
+        if (tte.depth >= depth && ply > 0) {
             if (tte.score <= alpha && tte.bound >= tt::EXACT)
                 return tte.score;
             else if (tte.score >= beta && tte.bound <= tt::EXACT)
@@ -129,7 +130,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 
     // At Root, ensure that the last best move is searched first. This is not guaranteed,
     // as the TT entry could have got overriden by other search threads.
-    if (ply == 0 && ui.lastDepth > 0) {
+    if (!Qsearch && ply == 0 && ui.lastDepth > 0) {
         std::lock_guard<std::mutex> lk(ui.mtx);
         tte.move = ui.bestMove;
     }
@@ -254,7 +255,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
                         if (!(pv[i + 1] = childPv[i]))
                             break;
 
-                    if (ply == 0 && ui.lastDepth > 0)
+                    if (!Qsearch && ply == 0 && ui.lastDepth > 0)
                         ui.update(pos, depth, score, nodes(), pv, true);
                 }
             }
@@ -319,13 +320,13 @@ void iterate(const Position& pos, const Limits& lim, const zobrist::GameStack& i
             // Special cases where this does not apply:
             // depth == 1: we want all threads to finish depth == 1 asap.
             // depth == lim.depth: there is no next iteration.
-            if (lim.threads >= 2 && depth >= 2 && depth < lim.depth) {
+            if (Threads >= 2 && depth >= 2 && depth < lim.depth) {
                 int cnt = 0;
 
-                for (int i = 0; i < lim.threads; i++)
+                for (int i = 0; i < Threads; i++)
                     cnt += i != ThreadId && iteration[i] >= depth;
 
-                if (cnt >= lim.threads / 2)
+                if (cnt >= Threads / 2)
                     continue;
             }
 
@@ -347,7 +348,7 @@ void iterate(const Position& pos, const Limits& lim, const zobrist::GameStack& i
                 std::lock_guard<std::mutex> lk(mtxSchedule);
                 uint64_t s = 0;
 
-                for (int i = 0; i < lim.threads; i++)
+                for (int i = 0; i < Threads; i++)
                     if (i != ThreadId && iteration[i] == depth)
                         s |= 1ULL << i;
 
@@ -384,13 +385,13 @@ void bestmove(const Position& pos, const Limits& lim, const zobrist::GameStack& 
 
     ui.clear();
     signal = 0;
-    std::vector<int> iteration(lim.threads, 0);
-    gameStack.resize(lim.threads);
-    nodeCount.resize(lim.threads);
+    std::vector<int> iteration(Threads, 0);
+    gameStack.resize(Threads);
+    nodeCount.resize(Threads);
 
     std::vector<std::thread> threads;
 
-    for (int i = 0; i < lim.threads; i++) {
+    for (int i = 0; i < Threads; i++) {
         // Initialize per-thread data
         gameStack[i] = initialGameStack;
         nodeCount[i] = 0;

@@ -48,8 +48,8 @@ uint64_t bench(bool perft, int depth, int threads)
 
     uint64_t result = 0, nodes;
     search::Limits lim;
-    lim.threads = threads;
     lim.depth = depth;
+    search::Threads = threads;
     Position pos;
     zobrist::GameStack gameStack;
 
