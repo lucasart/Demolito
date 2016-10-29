@@ -21,6 +21,7 @@
 #include "search.h"
 #include "tt.h"
 #include "gen.h"
+#include "tune.h"
 
 zobrist::GameStack gameStack;
 
@@ -179,7 +180,10 @@ void loop()
             eval();
         else if (token == "perft")
             perft(is);
-        else if (token == "quit")
+        else if (token == "load") {
+            is >> token;
+            tune::load_file(token);
+        } else if (token == "quit")
             break;
         else
             std::cout << "unknown command: " << command << std::endl;
