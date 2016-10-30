@@ -19,6 +19,7 @@ struct Entry {
 int score_to_tt(int score, int ply);
 int score_from_tt(int ttScore, int ply);
 
+void clear();
 bool read(uint64_t key, Entry& e);
 void write(const Entry& e);
 

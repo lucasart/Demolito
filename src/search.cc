@@ -28,19 +28,19 @@ namespace {
 
 uci::Info ui;  // Helps centralize and synchronize threads->ui communication
 
-// Set at thread creation, so each thread can know its unique id
-thread_local int ThreadId;
-
-// Per thread data
-std::vector<zobrist::GameStack> gameStack;
-std::vector<uint64_t> nodeCount;
-
 // Protect thread scheduling decisions
 std::mutex mtxSchedule;
 
 }    // namespace
 
 namespace search {
+
+// Set at thread creation, so each thread can know its unique id
+thread_local int ThreadId;
+
+// Per thread data
+std::vector<zobrist::GameStack> gameStack;
+std::vector<uint64_t> nodeCount;
 
 uint64_t nodes()
 {

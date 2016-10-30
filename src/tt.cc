@@ -33,6 +33,11 @@ int score_from_tt(int ttScore, int ply)
            : ttScore;
 }
 
+void clear()
+{
+    std::fill(table.begin(), table.end(), Entry(0));
+}
+
 bool read(uint64_t key, Entry& e)
 {
     const size_t idx = key & (table.size() - 1);

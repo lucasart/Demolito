@@ -169,7 +169,7 @@ void loop()
         else if (token == "isready")
             std::cout << "readyok" << std::endl;
         else if (token == "ucinewgame")
-            ;
+            tt::clear();
         else if (token == "position")
             position(is);
         else if (token == "go")
@@ -183,6 +183,12 @@ void loop()
         else if (token == "load") {
             is >> token;
             tune::load_file(token);
+        } else if (token == "run")
+            tune::run();
+        else if (token == "error") {
+            double lambda = 0.00107;
+            is >> lambda;
+            std::cout << tune::error(lambda) << std::endl;
         } else if (token == "quit")
             break;
         else
