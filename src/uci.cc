@@ -183,13 +183,11 @@ void loop()
         else if (token == "load") {
             is >> token;
             tune::load_file(token);
-        } else if (token == "run")
-            tune::run();
-        else if (token == "error") {
-            double lambda = 0.00107;
-            is >> lambda;
-            std::cout << tune::error(lambda) << std::endl;
-        } else if (token == "quit")
+        } else if (token == "qsearch")
+            tune::qsearch();
+        else if (token == "logistic")
+            tune::logistic();
+        else if (token == "quit")
             break;
         else
             std::cout << "unknown command: " << command << std::endl;

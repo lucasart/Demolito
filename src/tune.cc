@@ -72,7 +72,7 @@ void load_file(const std::string& fileName)
               << "ms" << std::endl;
 }
 
-void run()
+void qsearch()
 {
     Clock c;
     c.reset();
@@ -107,6 +107,22 @@ double error(double lambda)
     }
 
     return sum / fens.size();
+}
+
+void logistic()
+{
+    double lambda0 = 0.0013;
+    double h = lambda0 / 100;
+
+    const double e0 = error(lambda0);
+    const double ep = error(lambda0 + h);
+    const double em = error(lambda0 - h);
+    const double e1 = (ep - em) / (2 * h);
+    const double e2 = (ep - 2 * e0 + em) / (h * h);
+    const double lambda = (e2 * lambda0 - e1) / e2;
+
+    std::cout << "lambda0 = " << lambda0 << ", error(lambda0) = " << e0 << '\n'
+              << "lambda = " << lambda << ", error(lambda) = " << error(lambda) << std::endl;
 }
 
 }    // namespace tune

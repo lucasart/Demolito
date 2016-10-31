@@ -5,7 +5,7 @@
 namespace tune {
 
 void load_file(const std::string& fileName);
-void run();
-double error(double lambda);
+void qsearch();
+void logistic();
 
 }    // namespace tune
