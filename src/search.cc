@@ -26,8 +26,6 @@
 
 namespace {
 
-uci::Info ui;  // Helps centralize and synchronize threads->ui communication
-
 // Protect thread scheduling decisions
 std::mutex mtxSchedule;
 
@@ -134,9 +132,9 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 
     // At Root, ensure that the last best move is searched first. This is not guaranteed,
     // as the TT entry could have got overriden by other search threads.
-    if (!Qsearch && ply == 0 && ui.lastDepth > 0) {
-        std::lock_guard<std::mutex> lk(ui.mtx);
-        tte.move = ui.bestMove;
+    if (!Qsearch && ply == 0 && uci::ui.lastDepth > 0) {
+        std::lock_guard<std::mutex> lk(uci::ui.mtx);
+        tte.move = uci::ui.bestMove;
     }
 
     nodeCount[ThreadId]++;
@@ -259,8 +257,8 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
                         if (!(pv[i + 1] = childPv[i]))
                             break;
 
-                    if (!Qsearch && ply == 0 && ui.lastDepth > 0)
-                        ui.update(pos, depth, score, nodes(), pv, true);
+                    if (!Qsearch && ply == 0 && uci::ui.lastDepth > 0)
+                        uci::ui.update(pos, depth, score, nodes(), pv, true);
                 }
             }
         }
@@ -370,7 +368,7 @@ void iterate(const Position& pos, const Limits& lim, const zobrist::GameStack& i
             }
         }
 
-        ui.update(pos, depth, score, nodes(), pv);
+        uci::ui.update(pos, depth, score, nodes(), pv);
     }
 
     // Max depth completed by current thread. All threads should stop.
@@ -383,7 +381,7 @@ void bestmove(const Position& pos, const Limits& lim, const zobrist::GameStack& 
     using namespace std::chrono;
     const auto start = high_resolution_clock::now();
 
-    ui.clear();
+    uci::ui.clear();
     signal = 0;
     std::vector<int> iteration(Threads, 0);
     gameStack.resize(Threads);
@@ -406,7 +404,7 @@ void bestmove(const Position& pos, const Limits& lim, const zobrist::GameStack& 
 
         // Check for search termination conditions, but only after depth 1 has been
         // completed, to make sure we do not return an illegal move.
-        if (ui.lastDepth > 0) {
+        if (uci::ui.lastDepth > 0) {
             if (lim.nodes && nodes() >= lim.nodes) {
                 std::lock_guard<std::mutex> lk(mtxSchedule);
                 signal = STOP;
@@ -421,7 +419,7 @@ void bestmove(const Position& pos, const Limits& lim, const zobrist::GameStack& 
     for (auto& t : threads)
         t.join();
 
-    ui.print_bestmove(pos);
+    uci::ui.print_bestmove(pos);
 }
 
 }    // namespace search

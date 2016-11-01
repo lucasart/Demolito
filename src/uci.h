@@ -23,6 +23,8 @@ struct Info {
     mutable std::mutex mtx;
 };
 
+extern Info ui;
+
 std::string format_score(int score);
 
 }    // namespace UCI

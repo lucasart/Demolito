@@ -154,6 +154,8 @@ void perft(std::istringstream& is)
 
 namespace uci {
 
+Info ui;
+
 void loop()
 {
     std::string command, token;

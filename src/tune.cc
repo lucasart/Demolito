@@ -23,6 +23,7 @@
 #include "tt.h"
 #include "tune.h"
 #include "types.h"
+#include "uci.h"
 
 namespace {
 
@@ -70,7 +71,7 @@ void load(const std::string& fileName)
         }
     }
 
-    std::cout << "loaded " << fens.size() << " positions in " << c.elapsed() / 1000.0 << "s\n";
+    std::cout << "** loaded " << fens.size() << " positions in " << c.elapsed() / 1000.0 << "s\n";
 }
 
 void qsearch()
@@ -80,6 +81,7 @@ void qsearch()
 
     qsearches.resize(fens.size());
 
+    uci::ui.clear();
     tt::clear();
     search::signal = 0;
     search::gameStack.resize(search::Threads);
@@ -94,30 +96,33 @@ void qsearch()
     for (auto& t : threads)
         t.join();
 
-    std::cout << "qsearched " << fens.size() << " positions in " << c.elapsed() / 1000.0 << "s\n";
+    std::cout << "** qsearched " << fens.size() << " positions in " << c.elapsed() / 1000.0 << "s\n";
 }
 
-double error(double lambda)
+double error(double lambda, double test)
 {
     double sum = 0;
 
-    for (size_t i = 0; i < fens.size(); i++) {
+    size_t i0 = test ? 0 : fens.size() / 4;
+    size_t i1 = test ? fens.size() / 4 : fens.size();
+
+    for (auto i = i0; i < i1; i++) {
         const double logistic = 1 / (1.0 + std::exp(-lambda * qsearches[i]));
         sum += (scores[i] - logistic) * (scores[i] - logistic);
     }
 
-    return sum / fens.size();
+    return sum / (i1 - i0);
 }
 
-void logistic()
+void newton_raphson(bool test = false)
 {
-    double lambda = 0.4, e0 = error(lambda);
+    double lambda = 0.4, e0 = error(lambda, test);
     double h = 0.01;
 
     while (true) {
         // Compute function in 3 points
-        const double ep = error(lambda + h);
-        const double em = error(lambda - h);
+        const double ep = error(lambda + h, test);
+        const double em = error(lambda - h, test);
 
         // Deduce first and second order derivative estimates
         const double e1 = (ep - em) / (2 * h);
@@ -127,7 +132,7 @@ void logistic()
         const double newLambda = (e2 * lambda - e1) / e2;
 
         // Error and difference for the next iteration
-        e0 = error(newLambda);
+        e0 = error(newLambda, test);
         h = (newLambda - lambda) / 10;
 
         std::cout << "lambda = " << newLambda << ", error(lambda) = " << e0 << '\n';
@@ -137,6 +142,15 @@ void logistic()
 
         lambda = newLambda;
     }
+}
+
+void logistic()
+{
+    std::cout << "** 75% sample\n";
+    newton_raphson();
+
+    std::cout << "** 25% sample (verification)\n";
+    newton_raphson(true);
 }
 
 }    // namespace tune
