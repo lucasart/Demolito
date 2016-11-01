@@ -182,7 +182,7 @@ void loop()
             perft(is);
         else if (token == "load") {
             is >> token;
-            tune::load_file(token);
+            tune::load(token);
         } else if (token == "qsearch")
             tune::qsearch();
         else if (token == "logistic")

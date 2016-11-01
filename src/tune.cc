@@ -42,8 +42,7 @@ void idle_loop(int threadId)
         pos.set(fens[i]);
         search::gameStack[threadId].clear();
         search::gameStack[threadId].push(pos.key());
-
-        qsearches[i] = search::recurse<true>(pos, 0, 0, -INF, INF, pv);
+        qsearches[i] = search::recurse<true>(pos, 0, 0, -INF, INF, pv) / EP;
     }
 }
 
@@ -51,10 +50,13 @@ void idle_loop(int threadId)
 
 namespace tune {
 
-void load_file(const std::string& fileName)
+void load(const std::string& fileName)
 {
     Clock c;
     c.reset();
+
+    fens.clear();
+    scores.clear();
 
     std::ifstream f(fileName);
     std::string s;
@@ -68,8 +70,7 @@ void load_file(const std::string& fileName)
         }
     }
 
-    std::cout << "loaded " << fens.size() << " training positions in " << c.elapsed()
-              << "ms" << std::endl;
+    std::cout << "loaded " << fens.size() << " positions in " << c.elapsed() / 1000.0 << "s\n";
 }
 
 void qsearch()
@@ -93,8 +94,7 @@ void qsearch()
     for (auto& t : threads)
         t.join();
 
-    std::cout << "qsearched " << fens.size() << " positions in " << c.elapsed()
-              << "ms" << std::endl;
+    std::cout << "qsearched " << fens.size() << " positions in " << c.elapsed() / 1000.0 << "s\n";
 }
 
 double error(double lambda)
@@ -111,18 +111,32 @@ double error(double lambda)
 
 void logistic()
 {
-    double lambda0 = 0.0013;
-    double h = lambda0 / 100;
+    double lambda = 0.4, e0 = error(lambda);
+    double h = 0.01;
 
-    const double e0 = error(lambda0);
-    const double ep = error(lambda0 + h);
-    const double em = error(lambda0 - h);
-    const double e1 = (ep - em) / (2 * h);
-    const double e2 = (ep - 2 * e0 + em) / (h * h);
-    const double lambda = (e2 * lambda0 - e1) / e2;
+    while (true) {
+        // Compute function in 3 points
+        const double ep = error(lambda + h);
+        const double em = error(lambda - h);
 
-    std::cout << "lambda0 = " << lambda0 << ", error(lambda0) = " << e0 << '\n'
-              << "lambda = " << lambda << ", error(lambda) = " << error(lambda) << std::endl;
+        // Deduce first and second order derivative estimates
+        const double e1 = (ep - em) / (2 * h);
+        const double e2 = (ep - 2 * e0 + em) / (h * h);
+
+        // New Lambda is the minimum of the tangent parabola
+        const double newLambda = (e2 * lambda - e1) / e2;
+
+        // Error and difference for the next iteration
+        e0 = error(newLambda);
+        h = (newLambda - lambda) / 10;
+
+        std::cout << "lambda = " << newLambda << ", error(lambda) = " << e0 << '\n';
+
+        if (std::abs(newLambda - lambda) < 0.00001)
+            break;
+
+        lambda = newLambda;
+    }
 }
 
 }    // namespace tune
