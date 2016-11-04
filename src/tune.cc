@@ -111,7 +111,7 @@ double error(double lambda, double test)
 
     for (auto i = i0; i < i1; i++) {
         const double logistic = 1 / (1.0 + std::exp(-lambda * qsearches[i]));
-        sum += (scores[i] - logistic) * (scores[i] - logistic);
+        sum += std::abs(scores[i] - logistic);
     }
 
     return sum / (i1 - i0);
