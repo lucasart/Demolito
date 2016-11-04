@@ -182,11 +182,10 @@ void loop()
             eval();
         else if (token == "perft")
             perft(is);
-        else if (token == "load") {
-            is >> token;
+        else if (token == "load" && (is >> token))
             tune::load(token);
-        } else if (token == "qsearch")
-            tune::qsearch();
+        else if (token == "search" && (is >> token))
+            tune::search(std::stoi(token));
         else if (token == "logistic")
             tune::logistic();
         else if (token == "quit")

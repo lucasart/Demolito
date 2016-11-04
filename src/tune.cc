@@ -31,7 +31,7 @@ std::vector<std::string> fens;
 std::vector<double> scores;
 std::vector<double> qsearches;
 
-void idle_loop(int threadId)
+void idle_loop(int depth, int threadId)
 {
     search::ThreadId = threadId;
     std::memset(PawnHash, 0, sizeof(PawnHash));
@@ -43,7 +43,10 @@ void idle_loop(int threadId)
         pos.set(fens[i]);
         search::gameStack[threadId].clear();
         search::gameStack[threadId].push(pos.key());
-        qsearches[i] = search::recurse<true>(pos, 0, 0, -INF, INF, pv) / EP;
+        qsearches[i] = depth <= 0
+                       ? search::recurse<true>(pos, 0, depth, -INF, INF, pv)
+                       : search::recurse(pos, 0, depth, -INF, INF, pv);
+        qsearches[i] /= double(EP);    // Rescale to Pawn = 1.0
     }
 }
 
@@ -74,7 +77,7 @@ void load(const std::string& fileName)
     std::cout << "** loaded " << fens.size() << " positions in " << c.elapsed() / 1000.0 << "s\n";
 }
 
-void qsearch()
+void search(int depth)
 {
     Clock c;
     c.reset();
@@ -90,7 +93,7 @@ void qsearch()
 
     for (int i = 0; i < search::Threads; i++) {
         search::nodeCount[i] = 0;
-        threads.emplace_back(idle_loop, i);
+        threads.emplace_back(idle_loop, depth, i);
     }
 
     for (auto& t : threads)
