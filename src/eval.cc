@@ -36,7 +36,7 @@ eval_t score_mobility(int p0, int p, bitboard_t tss)
         {-4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 5, 6, 6, 7},
         {-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 6, 7, 7}
     };
-    static const eval_t Weight[] = {{8, 8}, {10, 10}, {4, 8}, {2, 4}};
+    static const eval_t Weight[] = {{6, 10}, {11, 12}, {6, 6}, {4, 6}};
 
     return Weight[p] * AdjustCount[p0][bb::count(tss)];
 }
