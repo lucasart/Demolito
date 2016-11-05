@@ -118,7 +118,7 @@ eval_t tactics(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PI
 
 eval_t safety(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PIECE+1])
 {
-    static const int AttackWeight[2] = {18, 30};
+    static const int AttackWeight[2] = {38, 54};
     const bitboard_t dangerZone = attacks[us][KING] & ~attacks[us][PAWN];
     int result = 0, cnt = 0;
 
@@ -132,7 +132,7 @@ eval_t safety(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PIE
         }
     }
 
-    static const int CheckWeight = 70;
+    static const int CheckWeight = 56;
     const Square ks = king_square(pos, us);
     const bitboard_t checks[QUEEN+1] = {
         bb::nattacks(ks) & attacks[~us][KNIGHT],
