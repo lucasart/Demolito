@@ -21,7 +21,6 @@
 #include "search.h"
 #include "tt.h"
 #include "gen.h"
-#include "tune.h"
 
 zobrist::GameStack gameStack;
 
@@ -182,12 +181,6 @@ void loop()
             eval();
         else if (token == "perft")
             perft(is);
-        else if (token == "load" && (is >> token))
-            tune::load(token);
-        else if (token == "search" && (is >> token))
-            tune::search(std::stoi(token));
-        else if (token == "logistic")
-            tune::logistic();
         else if (token == "quit")
             break;
         else

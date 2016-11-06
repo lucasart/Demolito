@@ -77,26 +77,30 @@ void load(const std::string& fileName)
     std::cout << "** loaded " << fens.size() << " positions in " << c.elapsed() / 1000.0 << "s\n";
 }
 
-void search(int depth)
+void search(int depth, int threads, int hash)
 {
     Clock c;
     c.reset();
 
     qsearches.resize(fens.size());
 
-    uci::ui.clear();
+    tt::table.resize(hash * 1024 * (1024 / sizeof(tt::Entry)), 0);
     tt::clear();
-    search::signal = 0;
-    search::gameStack.resize(search::Threads);
-    search::nodeCount.resize(search::Threads);
-    std::vector<std::thread> threads;
 
-    for (int i = 0; i < search::Threads; i++) {
+    search::Threads = threads;
+    search::gameStack.resize(threads);
+    search::nodeCount.resize(threads);
+    std::vector<std::thread> workers;
+
+    uci::ui.clear();
+    search::signal = 0;
+
+    for (int i = 0; i < threads; i++) {
         search::nodeCount[i] = 0;
-        threads.emplace_back(idle_loop, depth, i);
+        workers.emplace_back(idle_loop, depth, i);
     }
 
-    for (auto& t : threads)
+    for (auto& t : workers)
         t.join();
 
     std::cout << "** qsearched " << fens.size() << " positions in " << c.elapsed() / 1000.0 << "s\n";

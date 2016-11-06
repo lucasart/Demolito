@@ -19,6 +19,7 @@
 #include "test.h"
 #include "pst.h"
 #include "uci.h"
+#include "tune.h"
 
 int main(int argc, char **argv)
 {
@@ -35,6 +36,10 @@ int main(int argc, char **argv)
             const int depth = std::stoi(argv[2]), threads = std::stoi(argv[3]);
             const uint64_t nodes = test::bench(cmd == "perft", depth, threads);
             std::cout << "total = " << nodes << std::endl;
+        } else if (cmd == "logistic" && argc == 5) {
+            tune::load(argv[2]);
+            tune::search(0, std::stoi(argv[3]), std::stoi(argv[4]));
+            tune::logistic();
         }
     } else
         uci::loop();
