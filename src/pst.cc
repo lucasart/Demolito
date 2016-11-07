@@ -60,16 +60,14 @@ eval_t queen(Rank r, File f)
 
 eval_t king(Rank r, File f)
 {
-    const int FileShape[NB_FILE] = { 3, 4, 2, 0, 0, 2, 4, 3};
-    const int RankShape[NB_RANK] = { 1, 0,-2,-3,-4,-5,-5,-5};
+    static const int FileWeight[NB_FILE] = {54, 84, 40, 0, 0, 40, 84, 54};
+    static const int RankWeight[NB_RANK] = {28, 0,-28,-46,-58,-70,-70,-70};
+    static const int CenterWeight = 14;
 
-    const eval_t CenterWeight = {0, 14};
-    const eval_t FileWeight = {20, 0};
-    const eval_t RankWeight = {14, 0};
-
-    return CenterWeight * (Center[r] + Center[f])
-           + FileWeight * FileShape[f]
-           + RankWeight * RankShape[r];
+    return eval_t {
+        FileWeight[f] + RankWeight[r],
+        CenterWeight * (Center[r] + Center[f])
+    };
 }
 
 eval_t pawn(Rank r, File f)
