@@ -106,30 +106,27 @@ void search(int depth, int threads, int hash)
     std::cout << "** qsearched " << fens.size() << " positions in " << c.elapsed() / 1000.0 << "s\n";
 }
 
-double error(double lambda, double test)
+double error(double lambda)
 {
     double sum = 0;
 
-    size_t i0 = test ? 0 : fens.size() / 4;
-    size_t i1 = test ? fens.size() / 4 : fens.size();
-
-    for (auto i = i0; i < i1; i++) {
+    for (size_t i = 0; i < fens.size(); i++) {
         const double logistic = 1 / (1.0 + std::exp(-lambda * qsearches[i]));
         sum += std::abs(scores[i] - logistic);
     }
 
-    return sum / (i1 - i0);
+    return sum / fens.size();
 }
 
-void newton_raphson(bool test = false)
+void logistic()
 {
-    double lambda = 0.4, e0 = error(lambda, test);
+    double lambda = 0.4, e0 = error(lambda);
     double h = 0.01;
 
     while (true) {
         // Compute function in 3 points
-        const double ep = error(lambda + h, test);
-        const double em = error(lambda - h, test);
+        const double ep = error(lambda + h);
+        const double em = error(lambda - h);
 
         // Deduce first and second order derivative estimates
         const double e1 = (ep - em) / (2 * h);
@@ -139,7 +136,7 @@ void newton_raphson(bool test = false)
         const double newLambda = (e2 * lambda - e1) / e2;
 
         // Error and difference for the next iteration
-        e0 = error(newLambda, test);
+        e0 = error(newLambda);
         h = (newLambda - lambda) / 10;
 
         std::cout << "lambda = " << newLambda << ", error(lambda) = " << e0 << '\n';
@@ -149,15 +146,6 @@ void newton_raphson(bool test = false)
 
         lambda = newLambda;
     }
-}
-
-void logistic()
-{
-    std::cout << "** 75% sample\n";
-    newton_raphson();
-
-    std::cout << "** 25% sample (verification)\n";
-    newton_raphson(true);
 }
 
 }    // namespace tune
