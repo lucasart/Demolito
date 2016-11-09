@@ -184,7 +184,25 @@ eval_t do_pawns(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_P
     const Square theirKing = king_square(pos, ~us);
 
     eval_t result = {0, 0};
-    bitboard_t b = ourPawns;
+    bitboard_t b;
+
+    // Pawn shield
+
+    static const int shieldBonus[NB_RANK] = {0, 28, 11, 6, 2, 2};
+
+    b = ourPawns & bb::pawn_path(us, ourKing);
+
+    while (b)
+        result.op() += shieldBonus[relative_rank(us, bb::pop_lsb(b))];
+
+    b = ourPawns & bb::pawn_span(us, ourKing);
+
+    while (b)
+        result.op() += shieldBonus[relative_rank(us, bb::pop_lsb(b))] / 2;
+
+    // Pawn structure
+
+    b = ourPawns;
 
     while (b) {
         const Square s = bb::pop_lsb(b);
