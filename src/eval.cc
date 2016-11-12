@@ -116,7 +116,7 @@ eval_t tactics(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PI
     return eval_t{result, 0};
 }
 
-eval_t safety(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PIECE+1])
+int safety(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PIECE+1])
 {
     static const int AttackWeight[2] = {38, 54};
     const bitboard_t dangerZone = attacks[us][KING] & ~attacks[us][PAWN];
@@ -151,7 +151,7 @@ eval_t safety(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PIE
             }
         }
 
-    return eval_t{result * (2 + cnt) / 4, 0};
+    return result * (2 + cnt) / 4;
 }
 
 eval_t passer(Color us, Square pawn, Square ourKing, Square theirKing)
@@ -177,6 +177,7 @@ eval_t do_pawns(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_P
 {
     static const eval_t Isolated[2] = {{20, 40}, {40, 40}};
     static const eval_t Hole[2] = {{16, 20}, {32, 20}};
+    static const int shieldBonus[NB_RANK] = {0, 28, 11, 6, 2, 2};
 
     const bitboard_t ourPawns = pieces(pos, us, PAWN);
     const bitboard_t theirPawns = pieces(pos, ~us, PAWN);
@@ -184,13 +185,10 @@ eval_t do_pawns(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_P
     const Square theirKing = king_square(pos, ~us);
 
     eval_t result = {0, 0};
-    bitboard_t b;
 
     // Pawn shield
 
-    static const int shieldBonus[NB_RANK] = {0, 28, 11, 6, 2, 2};
-
-    b = ourPawns & bb::pawn_path(us, ourKing);
+    bitboard_t b = ourPawns & bb::pawn_path(us, ourKing);
 
     while (b)
         result.op() += shieldBonus[relative_rank(us, bb::pop_lsb(b))];
@@ -274,7 +272,7 @@ int evaluate(const Position& pos)
     for (Color c = WHITE; c <= BLACK; ++c) {
         e[c] += bishop_pair(pos, c);
         e[c] += tactics(pos, c, attacks);
-        e[c] += safety(pos, c, attacks);
+        e[c].op() += safety(pos, c, attacks);
     }
 
     e[WHITE] += pawns(pos, attacks);

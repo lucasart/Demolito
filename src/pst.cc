@@ -13,7 +13,6 @@
  * You should have received a copy of the GNU General Public License along with this program. If
  * not, see <http://www.gnu.org/licenses/>.
 */
-#include <iostream>
 #include <algorithm>
 #include "pst.h"
 
@@ -85,7 +84,7 @@ eval_t pawn(Rank r, File f)
     return e;
 }
 
-void init(int verbosity)
+void init()
 {
     typedef eval_t (*pst_fn)(Rank, File);
     const pst_fn PstFn[NB_PIECE] = {&knight, &bishop, &rook, &queen, &king, &pawn};
@@ -97,21 +96,6 @@ void init(int verbosity)
                 const Rank rr = Rank(rank_of(s) ^ (RANK_8 * c));
                 const File f = file_of(s);
                 table[c][p][s] = (Material[p] + (*PstFn[p])(rr, f)) * (c == WHITE ? 1 : -1);
-            }
-
-    // Display, based on verbosity level
-    for (int phase = 0; phase < NB_PHASE; phase++)
-        for (Color c = WHITE; c < Color(verbosity); ++c)
-            for (Piece p = KNIGHT; p < NB_PIECE; ++p) {
-                std::cout << (phase == OPENING ? "opening" : "endgame")
-                          << PieceLabel[WHITE][p] << std::endl;
-
-                for (Rank r = RANK_8; r >= RANK_1; --r) {
-                    for (File f = FILE_A; f <= FILE_H; ++f)
-                        std::cout << table[c][p][square(r, f)][phase] << '\t';
-
-                    std::cout << std::endl;
-                }
             }
 }
 
