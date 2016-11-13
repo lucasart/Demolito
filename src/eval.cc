@@ -119,20 +119,26 @@ eval_t tactics(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PI
 int safety(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PIECE+1])
 {
     static const int AttackWeight[2] = {38, 54};
-    const bitboard_t dangerZone = attacks[us][KING] & ~attacks[us][PAWN];
+    static const int CheckWeight = 56;
+
     int result = 0, cnt = 0;
+
+    // Attacks around the King
+
+    const bitboard_t dangerZone = attacks[us][KING] & ~attacks[us][PAWN];
 
     for (Piece p = KNIGHT; p <= QUEEN; ++p) {
         const bitboard_t attacked = attacks[~us][p] & dangerZone;
 
         if (attacked) {
             cnt++;
-            result -= bb::count(attacked) * AttackWeight[p/2]
-                      - bb::count(attacked & attacks[us][NB_PIECE]) * AttackWeight[p/2] / 2;
+            result -= bb::count(attacked) * AttackWeight[p / 2]
+                      - bb::count(attacked & attacks[us][NB_PIECE]) * AttackWeight[p / 2] / 2;
         }
     }
 
-    static const int CheckWeight = 56;
+    // Check threats
+
     const Square ks = king_square(pos, us);
     const bitboard_t checks[QUEEN+1] = {
         bb::nattacks(ks) & attacks[~us][KNIGHT],
@@ -154,18 +160,21 @@ int safety(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PIECE+
     return result * (2 + cnt) / 4;
 }
 
-eval_t passer(Color us, Square pawn, Square ourKing, Square theirKing)
+eval_t passer(Color us, Square pawn, Square ourKing, Square theirKing, bool phalanx)
 {
-    const Rank r = relative_rank(us, pawn);
-    const int L = r - RANK_2;
-    const int Q = L * (L - 1);
+    static const eval_t bonus[7] = {{0, 6}, {0, 12}, {22, 30}, {66, 60}, {132, 102},
+        {220, 156}, {330, 222}
+    };
+
+    const int n = relative_rank(us, pawn) - RANK_2;
 
     // score based on rank
-    eval_t result = {11 * Q, 6 * (Q + L + 1)};
+    eval_t result = phalanx ? bonus[n] : (bonus[n] + bonus[n + 1]) / 2;
 
     // king distance adjustment
-    if (Q) {
+    if (n > 1) {
         const Square stop = pawn + push_inc(us);
+        const int Q = n * (n - 1);
         result.eg() += bb::king_distance(stop, theirKing) * 6 * Q;
         result.eg() -= bb::king_distance(stop, ourKing) * 3 * Q;
     }
@@ -212,6 +221,7 @@ eval_t do_pawns(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_P
         const bitboard_t besides = ourPawns & adjacentFiles;
 
         const bool chained = besides & (bb::rank(r) | bb::rank(us == WHITE ? r - 1 : r + 1));
+        const bool phalanx = chained && (ourPawns & bb::pattacks(~us, stop));
         const bool hole = !(bb::pawn_span(~us, stop) & ourPawns) && bb::test(attacks[~us][PAWN], stop);
         const bool isolated = !(adjacentFiles & ourPawns);
         const bool exposed = !(bb::pawn_path(us, s) & pos.occ(PAWN));
@@ -219,8 +229,7 @@ eval_t do_pawns(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_P
 
         if (chained) {
             const int rr = relative_rank(us, r) - RANK_2;
-            const bool support = ourPawns & bb::pattacks(~us, stop);
-            const int bonus = rr * (rr + support) * 3;
+            const int bonus = rr * (rr + phalanx) * 3;
             result += {8 + bonus / 2, bonus};
         } else if (hole)
             result -= Hole[exposed];
@@ -228,7 +237,7 @@ eval_t do_pawns(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_P
             result -= Isolated[exposed];
 
         if (passed)
-            result += passer(us, s, ourKing, theirKing);
+            result += passer(us, s, ourKing, theirKing, phalanx);
     }
 
     return result;
