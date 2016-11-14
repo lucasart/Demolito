@@ -14,6 +14,7 @@
  * not, see <http://www.gnu.org/licenses/>.
 */
 #include "sort.h"
+#include "pst.h"
 
 namespace search {
 
@@ -46,7 +47,21 @@ void Selector::score(const Position& pos, move_t ttMove)
             scores[i] = +INF;
         else {
             const Move m(moves[i]);
-            scores[i] = m.is_capture(pos) ? m.see(pos) : 0;
+
+            if (m.is_capture(pos))
+                scores[i] = m.see(pos);
+            else {
+                const int us = pos.turn();
+                const Piece p = pos.piece_on(m.to);
+
+                if (p != KING) {
+                    scores[i] = pst::table[us][p][m.to].op() - pst::table[us][p][m.from].op();
+
+                    if (us == BLACK)
+                        scores[i] = -scores[i];
+                } else
+                    scores[i] = 0;
+            }
         }
     }
 }
