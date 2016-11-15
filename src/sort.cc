@@ -15,6 +15,7 @@
 */
 #include "sort.h"
 #include "pst.h"
+#include "eval.h"
 
 namespace search {
 
@@ -42,6 +43,8 @@ void Selector::generate(const Position& pos, int depth)
 
 void Selector::score(const Position& pos, move_t ttMove)
 {
+    const Color us = pos.turn();
+
     for (size_t i = 0; i < cnt; i++) {
         if (moves[i] == ttMove)
             scores[i] = +INF;
@@ -51,16 +54,11 @@ void Selector::score(const Position& pos, move_t ttMove)
             if (m.is_capture(pos))
                 scores[i] = m.see(pos);
             else {
-                const int us = pos.turn();
                 const Piece p = pos.piece_on(m.to);
-
-                if (p != KING) {
-                    scores[i] = pst::table[us][p][m.to].op() - pst::table[us][p][m.from].op();
-
-                    if (us == BLACK)
-                        scores[i] = -scores[i];
-                } else
-                    scores[i] = 0;
+                const eval_t delta = us == WHITE
+                                     ? pst::table[us][p][m.to] - pst::table[us][p][m.from]
+                                     : pst::table[us][p][m.from] - pst::table[us][p][m.to];
+                scores[i] = blend(pos, delta);
             }
         }
     }
