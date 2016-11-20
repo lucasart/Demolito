@@ -209,9 +209,12 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
         // Recursion
         if (Qsearch || nextDepth <= 0) {
             // Qsearch recursion (plain alpha/beta)
-            if (depth <= MIN_DEPTH && !pos.checkers())
+            if (depth <= MIN_DEPTH && !pos.checkers()) {
                 score = staticEval + see;    // guard against QSearch explosion
-            else
+
+                if (pvNode)
+                    childPv[0] = 0;
+            } else
                 score = -recurse<true>(nextPos, ply+1, nextDepth, -beta, -alpha, childPv);
         } else {
             // Search recursion (PVS + Reduction)
