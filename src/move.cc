@@ -41,14 +41,14 @@ Move Move::operator =(move_t em)
 bool Move::is_capture(const Position& pos) const
 {
     const Color us = pos.turn(), them = ~us;
-    return (bb::test(pos.occ(them), to))
+    return (bb::test(pos.by_color(them), to))
            || ((to == pos.ep_square() || relative_rank(us, to) == RANK_8)
                && pos.piece_on(from) == PAWN);
 }
 
 bool Move::is_castling(const Position& pos) const
 {
-    return bb::test(pos.occ(pos.turn()), to);
+    return bb::test(pos.by_color(pos.turn()), to);
 }
 
 std::string Move::to_string(const Position& pos) const
@@ -97,7 +97,7 @@ bool Move::pseudo_is_legal(const Position& pos) const
     const Square king = king_square(pos, pos.turn());
 
     if (p == KING) {
-        if (bb::test(pos.occ(pos.turn()), to)) {
+        if (bb::test(pos.by_color(pos.turn()), to)) {
             // Castling: king must not move through attacked square, and rook must not
             // be pinned
             assert(pos.piece_on(to) == ROOK);
@@ -158,7 +158,7 @@ int Move::see(const Position& pos) const
 
     int idx = 0;
 
-    while (us = ~us, our_attackers = attackers & pos.occ(us)) {
+    while (us = ~us, our_attackers = attackers & pos.by_color(us)) {
         // Find least valuable attacker (LVA)
         Piece p = PAWN;
 
@@ -174,9 +174,9 @@ int Move::see(const Position& pos) const
 
         // Scan for new X-ray attacks through the LVA
         if (p != KNIGHT) {
-            attackers |= (pos.occ(BISHOP) | pos.occ(QUEEN))
+            attackers |= (pos.by_piece(BISHOP) | pos.by_piece(QUEEN))
                          & bb::bpattacks(to) & bb::battacks(to, occ);
-            attackers |= (pos.occ(ROOK) | pos.occ(QUEEN))
+            attackers |= (pos.by_piece(ROOK) | pos.by_piece(QUEEN))
                          & bb::rpattacks(to) & bb::rattacks(to, occ);
         }
 

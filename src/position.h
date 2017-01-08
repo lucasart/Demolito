@@ -25,8 +25,8 @@ public:
     void set(const Position& before, Move m);
     void toggle(const Position& before);
 
-    bitboard_t occ(Color c) const;
-    bitboard_t occ(Piece p) const;
+    bitboard_t by_color(Color c) const;
+    bitboard_t by_piece(Piece p) const;
     Color turn() const;
     Square ep_square() const;
     int rule50() const;

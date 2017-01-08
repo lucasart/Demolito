@@ -49,7 +49,7 @@ move_t *pawn_moves(const Position& pos, move_t *emList, bitboard_t targets, bool
 {
     const Color us = pos.turn(), them = ~us;
     const int push = push_inc(us);
-    const bitboard_t capturable = pos.occ(them) | ep_square_bb(pos);
+    const bitboard_t capturable = pos.by_color(them) | ep_square_bb(pos);
     bitboard_t fss, tss;
     Move m;
 
@@ -147,7 +147,7 @@ move_t *castling_moves(const Position& pos, move_t *emList)
     m.from = king_square(pos, pos.turn());
     m.prom = NB_PIECE;
 
-    bitboard_t tss = pos.castlable_rooks() & pos.occ(pos.turn());
+    bitboard_t tss = pos.castlable_rooks() & pos.by_color(pos.turn());
 
     while (tss) {
         m.to = bb::pop_lsb(tss);
@@ -165,7 +165,7 @@ move_t *castling_moves(const Position& pos, move_t *emList)
 move_t *check_escapes(const Position& pos, move_t *emList, bool subPromotions)
 {
     assert(pos.checkers());
-    bitboard_t ours = pos.occ(pos.turn());
+    bitboard_t ours = pos.by_color(pos.turn());
     const Square king = king_square(pos, pos.turn());
     bitboard_t tss;
     Move m;
@@ -206,7 +206,7 @@ move_t *all_moves(const Position& pos, move_t *emList)
     if (pos.checkers())
         return check_escapes(pos, emList);
     else {
-        bitboard_t targets = ~pos.occ(pos.turn());
+        bitboard_t targets = ~pos.by_color(pos.turn());
         move_t *em = emList;
 
         em = pawn_moves(pos, em, targets);

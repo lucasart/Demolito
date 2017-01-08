@@ -103,7 +103,7 @@ eval_t tactics(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PI
 {
     static const int Hanging[QUEEN+1] = {66, 66, 81, 150};
     int result = 0;
-    bitboard_t b = (attacks[~us][PAWN] & (pos.occ(us) ^ pieces(pos, us, PAWN)))
+    bitboard_t b = (attacks[~us][PAWN] & (pos.by_color(us) ^ pieces(pos, us, PAWN)))
                    | (attacks[~us][KNIGHT] & pieces(pos, us, ROOK, QUEEN))
                    | (attacks[~us][BISHOP] & pieces(pos, us, ROOK));
 
@@ -149,7 +149,7 @@ int safety(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PIECE+
 
     for (Piece p = KNIGHT; p <= QUEEN; ++p)
         if (checks[p]) {
-            const bitboard_t b = checks[p] & ~(pos.occ(~us) | attacks[us][PAWN] | attacks[us][KING]);
+            const bitboard_t b = checks[p] & ~(pos.by_color(~us) | attacks[us][PAWN] | attacks[us][KING]);
 
             if (b) {
                 cnt++;
@@ -224,7 +224,7 @@ eval_t do_pawns(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_P
         const bool phalanx = chained && (ourPawns & bb::pattacks(~us, stop));
         const bool hole = !(bb::pawn_span(~us, stop) & ourPawns) && bb::test(attacks[~us][PAWN], stop);
         const bool isolated = !(adjacentFiles & ourPawns);
-        const bool exposed = !(bb::pawn_path(us, s) & pos.occ(PAWN));
+        const bool exposed = !(bb::pawn_path(us, s) & pos.by_piece(PAWN));
         const bool passed = exposed && !(bb::pawn_span(us, s) & theirPawns);
 
         if (chained) {

@@ -73,7 +73,7 @@ void Position::finish()
     const Square ksq = king_square(*this, us);
 
     _attacked = attacked_by(*this, them);
-    _checkers = bb::test(_attacked, ksq) ? attackers_to(*this, ksq, pieces(*this)) & occ(them) : 0;
+    _checkers = bb::test(_attacked, ksq) ? attackers_to(*this, ksq, pieces(*this)) & by_color(them) : 0;
     _pins = calc_pins(*this);
 }
 
@@ -144,14 +144,14 @@ void Position::set(const std::string& fen)
     finish();
 }
 
-bitboard_t Position::occ(Color c) const
+bitboard_t Position::by_color(Color c) const
 {
     BOUNDS(c, NB_COLOR);
 
     return _byColor[c];
 }
 
-bitboard_t Position::occ(Piece p) const
+bitboard_t Position::by_piece(Piece p) const
 {
     BOUNDS(p, NB_PIECE);
 
@@ -180,7 +180,7 @@ int Position::rule50() const
 bitboard_t Position::checkers() const
 {
     assert(_checkers == (attackers_to(*this, king_square(*this, turn()),
-                                      pieces(*this)) & occ(~turn())));
+                                      pieces(*this)) & by_color(~turn())));
 
     return _checkers;
 }
@@ -288,7 +288,7 @@ void Position::set(const Position& before, Move m)
             _castlableRooks &= ~bb::rank(Rank(us * RANK_8));
 
             // Castling
-            if (bb::test(before.occ(us), m.to)) {
+            if (bb::test(before.by_color(us), m.to)) {
                 // Capturing our own piece can only be a castling move, encoded KxR
                 assert(before.piece_on(m.to) == ROOK);
                 const Rank r = rank_of(m.from);
@@ -366,7 +366,7 @@ bitboard_t calc_pins(const Position& pos)
         bb::clear(skewered, king);
         bb::clear(skewered, s);
 
-        if (!bb::several(skewered) && (skewered & pos.occ(us)))
+        if (!bb::several(skewered) && (skewered & pos.by_color(us)))
             result |= skewered;
     }
 
@@ -425,24 +425,24 @@ eval_t calc_piece_material(const Position& pos, Color c)
 
 bitboard_t pieces(const Position& pos, Color c, Piece p)
 {
-    return pos.occ(c) & pos.occ(p);
+    return pos.by_color(c) & pos.by_piece(p);
 }
 
 bitboard_t pieces(const Position& pos, Piece p1, Piece p2)
 {
-    return pos.occ(p1) | pos.occ(p2);
+    return pos.by_piece(p1) | pos.by_piece(p2);
 }
 
 bitboard_t pieces(const Position& pos)
 {
-    assert(!(pos.occ(WHITE) & pos.occ(BLACK)));
+    assert(!(pos.by_color(WHITE) & pos.by_color(BLACK)));
 
-    return pos.occ(WHITE) | pos.occ(BLACK);
+    return pos.by_color(WHITE) | pos.by_color(BLACK);
 }
 
 bitboard_t pieces(const Position& pos, Color c, Piece p1, Piece p2)
 {
-    return pos.occ(c) & (pos.occ(p1) | pos.occ(p2));
+    return pos.by_color(c) & (pos.by_piece(p1) | pos.by_piece(p2));
 }
 
 std::string get(const Position& pos)
@@ -480,7 +480,7 @@ std::string get(const Position& pos)
         os << '-';
     else {
         for (Color c = WHITE; c <= BLACK; ++c) {
-            const bitboard_t sqs = pos.castlable_rooks() & pos.occ(c);
+            const bitboard_t sqs = pos.castlable_rooks() & pos.by_color(c);
 
             if (!sqs)
                 continue;
@@ -529,7 +529,8 @@ bitboard_t ep_square_bb(const Position& pos)
 
 bool insufficient_material(const Position& pos)
 {
-    return bb::count(pieces(pos)) <= 3 && !pos.occ(PAWN) && !pos.occ(ROOK) && !pos.occ(QUEEN);
+    return bb::count(pieces(pos)) <= 3 && !pos.by_piece(PAWN) && !pos.by_piece(ROOK)
+           && !pos.by_piece(QUEEN);
 }
 
 Square king_square(const Position& pos, Color c)
@@ -543,7 +544,7 @@ Color color_on(const Position& pos, Square s)
 {
     assert(bb::test(pieces(pos), s));
 
-    return bb::test(pos.occ(WHITE), s) ? WHITE : BLACK;
+    return bb::test(pos.by_color(WHITE), s) ? WHITE : BLACK;
 }
 
 bitboard_t attackers_to(const Position& pos, Square s, bitboard_t occ)
@@ -552,8 +553,8 @@ bitboard_t attackers_to(const Position& pos, Square s, bitboard_t occ)
 
     return (pieces(pos, WHITE, PAWN) & bb::pattacks(BLACK, s))
            | (pieces(pos, BLACK, PAWN) & bb::pattacks(WHITE, s))
-           | (bb::nattacks(s) & pos.occ(KNIGHT))
-           | (bb::kattacks(s) & pos.occ(KING))
+           | (bb::nattacks(s) & pos.by_piece(KNIGHT))
+           | (bb::kattacks(s) & pos.by_piece(KING))
            | (bb::rattacks(s, occ) & pieces(pos, ROOK, QUEEN))
            | (bb::battacks(s, occ) & pieces(pos, BISHOP, QUEEN));
 }
