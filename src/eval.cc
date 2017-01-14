@@ -99,13 +99,14 @@ eval_t bishop_pair(const Position& pos, Color us)
            eval_t{0, 0};
 }
 
-eval_t tactics(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PIECE+1])
+int tactics(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PIECE+1])
 {
-    static const int Hanging[QUEEN+1] = {66, 66, 81, 150};
+    static const int Hanging[QUEEN+1] = {66, 66, 81, 130};
+
+    bitboard_t b = attacks[~us][PAWN] & (pos.by_color(us) ^ pieces(pos, us, PAWN));
+    b |= (attacks[~us][KNIGHT] | attacks[~us][BISHOP]) & pieces(pos, us, ROOK, QUEEN);
+
     int result = 0;
-    bitboard_t b = (attacks[~us][PAWN] & (pos.by_color(us) ^ pieces(pos, us, PAWN)))
-                   | (attacks[~us][KNIGHT] & pieces(pos, us, ROOK, QUEEN))
-                   | (attacks[~us][BISHOP] & pieces(pos, us, ROOK));
 
     while (b) {
         const Piece p = pos.piece_on(bb::pop_lsb(b));
@@ -113,7 +114,7 @@ eval_t tactics(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PI
         result -= Hanging[p];
     }
 
-    return eval_t{result, 0};
+    return result;
 }
 
 int safety(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PIECE+1])
@@ -280,7 +281,7 @@ int evaluate(const Position& pos)
 
     for (Color c = WHITE; c <= BLACK; ++c) {
         e[c] += bishop_pair(pos, c);
-        e[c] += tactics(pos, c, attacks);
+        e[c].op() += tactics(pos, c, attacks);
         e[c].op() += safety(pos, c, attacks);
     }
 
