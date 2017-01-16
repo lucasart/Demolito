@@ -241,6 +241,12 @@ void Info::print_bestmove(const Position& pos) const
               << " ponder " << ponderMove.to_string(pos) << std::endl;
 }
 
+Move Info::best_move() const
+{
+    std::lock_guard<std::mutex> lk(mtx);
+    return bestMove;
+}
+
 std::string format_score(int score)
 {
     std::ostringstream os;

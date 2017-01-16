@@ -132,10 +132,8 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 
     // At Root, ensure that the last best move is searched first. This is not guaranteed,
     // as the TT entry could have got overriden by other search threads.
-    if (!Qsearch && ply == 0 && uci::ui.lastDepth > 0) {
-        std::lock_guard<std::mutex> lk(uci::ui.mtx);
-        tte.move = uci::ui.bestMove;
-    }
+    if (!Qsearch && ply == 0 && uci::ui.lastDepth > 0)
+        tte.move = uci::ui.best_move();
 
     nodeCount[ThreadId]++;
 
