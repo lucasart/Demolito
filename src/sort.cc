@@ -77,8 +77,10 @@ Move Selector::select(const Position& pos, int& see)
     size_t swapIdx = idx;
 
     for (size_t i = idx; i < cnt; i++)
-        if (scores[i] > maxScore)
+        if (scores[i] > maxScore) {
+            maxScore = scores[i];
             swapIdx = i;
+        }
 
     if (swapIdx != idx) {
         std::swap(moves[idx], moves[swapIdx]);
