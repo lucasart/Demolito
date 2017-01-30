@@ -269,6 +269,14 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
     if ((!Qsearch || pos.checkers()) && !moveCount)
         return pos.checkers() ? mated_in(ply) : draw_score(ply);
 
+    // Update History
+    if (!Qsearch && alpha > oldAlpha && !bestMove.is_capture(pos))
+        for (size_t i = 0; i < S.idx; i++) {
+            Move m(S.moves[i]);
+            const int bonus = depth * depth;
+            H.update(m, m == bestMove ? bonus : -bonus);
+        }
+
     // TT write
     tte.key = pos.key();
     tte.bound = bestScore <= oldAlpha ? tt::UBOUND : bestScore >= beta ? tt::LBOUND : tt::EXACT;
@@ -314,6 +322,7 @@ void iterate(const Position& pos, const Limits& lim, const zobrist::GameStack& i
     int score;
 
     std::memset(PawnHash, 0, sizeof(PawnHash));
+    H.clear();
 
     for (int depth = 1; depth <= lim.depth; depth++) {
         {

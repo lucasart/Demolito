@@ -13,11 +13,34 @@
  * You should have received a copy of the GNU General Public License along with this program. If
  * not, see <http://www.gnu.org/licenses/>.
 */
+#include <cstring>  // std::memset()
 #include "sort.h"
-#include "pst.h"
-#include "eval.h"
 
 namespace search {
+
+thread_local History H;
+
+void History::clear()
+{
+    std::memset(table, 0, sizeof(table));
+}
+
+int History::get(Move m) const
+{
+    return table[m.from][m.to];
+}
+
+void History::update(Move m, int bonus)
+{
+    int &t = table[m.from][m.to];
+
+    t += bonus;
+
+    if (t > Max)
+        t = Max;
+    else if (t < -Max)
+        t = -Max;
+}
 
 void Selector::generate(const Position& pos, int depth)
 {
@@ -43,23 +66,17 @@ void Selector::generate(const Position& pos, int depth)
 
 void Selector::score(const Position& pos, move_t ttMove)
 {
-    const Color us = pos.turn();
-
     for (size_t i = 0; i < cnt; i++) {
         if (moves[i] == ttMove)
             scores[i] = +INF;
         else {
             const Move m(moves[i]);
 
-            if (m.is_capture(pos))
-                scores[i] = m.see(pos);
-            else {
-                const Piece p = pos.piece_on(m.to);
-                const eval_t delta = us == WHITE
-                                     ? pst::table[us][p][m.to] - pst::table[us][p][m.from]
-                                     : pst::table[us][p][m.from] - pst::table[us][p][m.to];
-                scores[i] = blend(pos, delta);
-            }
+            if (m.is_capture(pos)) {
+                const int see = m.see(pos);
+                scores[i] = see >= 0 ? see + History::Max : see - History::Max;
+            } else
+                scores[i] = H.get(m);
         }
     }
 }
@@ -88,7 +105,17 @@ Move Selector::select(const Position& pos, int& see)
     }
 
     const Move m(moves[idx]);
-    see = m.is_capture(pos) ? scores[idx] : m.see(pos);
+
+    if (m.is_capture(pos)) {
+        if (scores[idx] >= History::Max)
+            see = scores[idx] - History::Max;
+        else {
+            assert(scores[idx] < -History::Max);
+            see = scores[idx] + History::Max;
+        }
+    } else
+        see = m.see(pos);
+
     return moves[idx++];
 }
 
