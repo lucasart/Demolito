@@ -198,7 +198,7 @@ void Info::clear()
     clock.reset();
 }
 
-void Info::update(const Position& pos, int depth, int score, int nodes, std::vector<move_t>& pv,
+void Info::update(const Position& pos, int depth, int score, uint64_t nodes, std::vector<move_t>& pv,
                   bool partial)
 {
     std::lock_guard<std::mutex> lk(mtx);
