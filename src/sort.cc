@@ -91,17 +91,17 @@ Selector::Selector(const Position& pos, int depth, move_t ttMove)
 Move Selector::select(const Position& pos, int& see)
 {
     int maxScore = -INF;
-    size_t swapIdx = idx;
+    size_t maxIdx = idx;
 
     for (size_t i = idx; i < cnt; i++)
         if (scores[i] > maxScore) {
             maxScore = scores[i];
-            swapIdx = i;
+            maxIdx = i;
         }
 
-    if (swapIdx != idx) {
-        std::swap(moves[idx], moves[swapIdx]);
-        std::swap(scores[idx], scores[swapIdx]);
+    if (maxIdx != idx) {
+        std::swap(moves[idx], moves[maxIdx]);
+        std::swap(scores[idx], scores[maxIdx]);
     }
 
     const Move m(moves[idx]);
