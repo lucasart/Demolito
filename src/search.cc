@@ -170,7 +170,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
     // Generate and score moves
     Selector S(pos, depth, tte.move);
 
-    size_t moveCount = 0;
+    int moveCount = 0, lmrCount = 0;
     Move currentMove;
 
     // Move loop
@@ -221,7 +221,8 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
             else {
                 int reduction = see < 0 || (!currentMove.is_capture(pos) && !nextPos.checkers());
 
-                if (!currentMove.is_capture(pos) && !pos.checkers() && !nextPos.checkers())
+                if (!currentMove.is_capture(pos) && !pos.checkers() && !nextPos.checkers()
+                        && ++lmrCount >= 2 + 8/depth)
                     reduction++;
 
                 // Reduced depth, zero window
