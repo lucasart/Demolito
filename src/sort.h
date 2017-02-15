@@ -9,7 +9,7 @@ public:
     int get(Move m) const;
     void update(Move m, int bonus);
 
-    static const int Max = 1000;
+    static const int Max = 2000;
 private:
     int table[NB_SQUARE][NB_SQUARE];
 };
