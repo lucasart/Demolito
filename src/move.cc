@@ -17,15 +17,15 @@
 #include "bitboard.h"
 #include "position.h"
 
-bool Move::ok() const
+bool move_ok(const Move& m)
 {
-    return unsigned(from) < NB_SQUARE && unsigned(to) < NB_SQUARE
-           && ((KNIGHT <= prom && prom <= QUEEN) || prom == NB_PIECE);
+    return unsigned(m.from) < NB_SQUARE && unsigned(m.to) < NB_SQUARE
+           && ((KNIGHT <= m.prom && m.prom <= QUEEN) || m.prom == NB_PIECE);
 }
 
 Move::operator move_t() const
 {
-    assert(ok());
+    assert(move_ok(*this));
     return from | (to << 6) | (prom << 12);
 }
 
@@ -34,92 +34,92 @@ Move Move::operator =(move_t em)
     from = Square(em & 077);
     to = Square((em >> 6) & 077);
     prom = Piece(em >> 12);
-    assert(ok());
+    assert(move_ok(*this));
     return *this;
 }
 
-bool Move::is_capture(const Position& pos) const
+bool move_is_capture(const Position& pos, const Move& m)
 {
     const Color us = pos.turn(), them = ~us;
-    return (bb::test(pos.by_color(them), to))
-           || ((to == pos.ep_square() || relative_rank_of(us, to) == RANK_8)
-               && pos.piece_on(from) == PAWN);
+    return (bb::test(pos.by_color(them), m.to))
+           || ((m.to == pos.ep_square() || relative_rank_of(us, m.to) == RANK_8)
+               && pos.piece_on(m.from) == PAWN);
 }
 
-bool Move::is_castling(const Position& pos) const
+bool move_is_castling(const Position& pos, const Move& m)
 {
-    return bb::test(pos.by_color(pos.turn()), to);
+    return bb::test(pos.by_color(pos.turn()), m.to);
 }
 
-std::string Move::to_string(const Position& pos) const
+std::string move_to_string(const Position& pos, const Move& m)
 {
-    assert(ok());
+    assert(move_ok(m));
 
     std::string s;
 
-    if (null())
+    if (!(m.from | m.to | m.prom))
         return "0000";
 
-    const Square _tsq = !Chess960 && is_castling(pos)
-                        ? (to > from ? from + 2 : from - 2)    // e1h1 -> e1g1, e1a1 -> e1c1
-                        : to;
+    const Square _tsq = !Chess960 && move_is_castling(pos, m)
+                        ? (m.to > m.from ? m.from + 2 : m.from - 2)    // e1h1 -> e1g1, e1a1 -> e1c1
+                        : m.to;
 
-    s += file_of(from) + 'a';
-    s += rank_of(from) + '1';
+    s += file_of(m.from) + 'a';
+    s += rank_of(m.from) + '1';
     s += file_of(_tsq) + 'a';
     s += rank_of(_tsq) + '1';
 
-    if (prom < NB_PIECE)
-        s += PieceLabel[BLACK][prom];
+    if (m.prom < NB_PIECE)
+        s += PieceLabel[BLACK][m.prom];
 
     return s;
 }
 
-void Move::from_string(const Position& pos, const std::string& s)
+void move_from_string(const Position& pos, const std::string& s, Move& m)
 {
-    from = square(Rank(s[1] - '1'), File(s[0] - 'a'));
-    to = square(Rank(s[3] - '1'), File(s[2] - 'a'));
-    prom = s[4] ? (Piece)PieceLabel[BLACK].find(s[4]) : NB_PIECE;
+    m.from = square(Rank(s[1] - '1'), File(s[0] - 'a'));
+    m.to = square(Rank(s[3] - '1'), File(s[2] - 'a'));
+    m.prom = s[4] ? (Piece)PieceLabel[BLACK].find(s[4]) : NB_PIECE;
 
-    if (!Chess960 && pos.piece_on(from) == KING) {
-        if (to == from + 2)      // e1g1
-            ++to;                // -> e1h1
-        else if (to == from - 2) // e1c1
-            to -= 2;             // -> e1a1
+    if (!Chess960 && pos.piece_on(m.from) == KING) {
+        if (m.to == m.from + 2)  // e1g1 -> e1h1
+            ++m.to;
+        else if (m.to == m.from - 2)  // e1c1 -> e1a1
+            m.to -= 2;
     }
 
-    assert(ok());
+    assert(move_ok(m));
 }
 
-bool Move::pseudo_is_legal(const Position& pos) const
+bool move_is_legal(const Position& pos, const Move& m)
 {
-    const Piece p = pos.piece_on(from);
+    const Piece p = pos.piece_on(m.from);
     const Square king = king_square(pos, pos.turn());
 
     if (p == KING) {
-        if (bb::test(pos.by_color(pos.turn()), to)) {
+        if (bb::test(pos.by_color(pos.turn()), m.to)) {
             // Castling: king must not move through attacked square, and rook must not
             // be pinned
-            assert(pos.piece_on(to) == ROOK);
-            const Square _tsq = square(rank_of(from), from < to ? FILE_G : FILE_C);
-            return !(pos.attacked() & bb::segment(from, _tsq))
-                   && !bb::test(pos.pins(), to);
+            assert(pos.piece_on(m.to) == ROOK);
+            const Square _tsq = square(rank_of(m.from), m.from < m.to ? FILE_G : FILE_C);
+            return !(pos.attacked() & bb::segment(m.from, _tsq))
+                   && !bb::test(pos.pins(), m.to);
         } else
             // Normal king move: do not land on an attacked square
-            return !bb::test(pos.attacked(), to);
+            return !bb::test(pos.attacked(), m.to);
     } else {
         // Normal case: illegal if pinned, and moves out of pin-ray
-        if (bb::test(pos.pins(), from) && !bb::test(bb::ray(king, from), to))
+        if (bb::test(pos.pins(), m.from) && !bb::test(bb::ray(king, m.from), m.to))
             return false;
 
         // En-passant special case: also illegal if self-check through the en-passant
         // captured pawn
-        if (to == pos.ep_square() && p == PAWN) {
+        if (m.to == pos.ep_square() && p == PAWN) {
             const Color us = pos.turn(), them = ~us;
             bitboard_t occ = pieces(pos);
-            bb::clear(occ, from);
-            bb::set(occ, to);
-            bb::clear(occ, to + push_inc(them));
+            bb::clear(occ, m.from);
+            bb::set(occ, m.to);
+            bb::clear(occ, m.to + push_inc(them));
             return !(bb::rattacks(king, occ) & pieces_cpp(pos, them, ROOK, QUEEN))
                    && !(bb::battacks(king, occ) & pieces_cpp(pos, them, BISHOP, QUEEN));
         } else
@@ -127,7 +127,7 @@ bool Move::pseudo_is_legal(const Position& pos) const
     }
 }
 
-int Move::see(const Position& pos) const
+int move_see(const Position& pos, const Move& m)
 {
     const int see_value[NB_PIECE+1] = {N, B, R, Q, MATE, P, 0};
 
@@ -135,25 +135,25 @@ int Move::see(const Position& pos) const
     bitboard_t occ = pieces(pos);
 
     // General case
-    int gain[32] = {see_value[pos.piece_on(to)]};
-    Piece capture = pos.piece_on(from);
-    bb::clear(occ, from);
+    int gain[32] = {see_value[pos.piece_on(m.to)]};
+    Piece capture = pos.piece_on(m.from);
+    bb::clear(occ, m.from);
 
     // Special cases
     if (capture == PAWN) {
-        if (to == pos.ep_square()) {
-            bb::clear(occ, to - push_inc(us));
+        if (m.to == pos.ep_square()) {
+            bb::clear(occ, m.to - push_inc(us));
             gain[0] = see_value[capture];
-        } else if (relative_rank_of(us, to) == RANK_8)
-            gain[0] += see_value[capture = prom] - see_value[PAWN];
+        } else if (relative_rank_of(us, m.to) == RANK_8)
+            gain[0] += see_value[capture = m.prom] - see_value[PAWN];
     }
 
     // Easy case: to is not defended
     // TODO: explore performance tradeoff between using pos.attacked() and using attackers below
-    if (!bb::test(pos.attacked(), to))
+    if (!bb::test(pos.attacked(), m.to))
         return gain[0];
 
-    bitboard_t attackers = attackers_to(pos, to, occ);
+    bitboard_t attackers = attackers_to(pos, m.to, occ);
     bitboard_t our_attackers;
 
     int idx = 0;
@@ -175,9 +175,9 @@ int Move::see(const Position& pos) const
         // Scan for new X-ray attacks through the LVA
         if (p != KNIGHT) {
             attackers |= (pos.by_piece(BISHOP) | pos.by_piece(QUEEN))
-                         & bb::bpattacks(to) & bb::battacks(to, occ);
+                         & bb::bpattacks(m.to) & bb::battacks(m.to, occ);
             attackers |= (pos.by_piece(ROOK) | pos.by_piece(QUEEN))
-                         & bb::rpattacks(to) & bb::rattacks(to, occ);
+                         & bb::rpattacks(m.to) & bb::rattacks(m.to, occ);
         }
 
         // Remove attackers we've already done
@@ -188,7 +188,7 @@ int Move::see(const Position& pos) const
         assert(idx < 32);
         gain[idx] = see_value[capture] - gain[idx-1];
 
-        if (p == PAWN && relative_rank_of(us, to) == RANK_8) {
+        if (p == PAWN && relative_rank_of(us, m.to) == RANK_8) {
             gain[idx] += see_value[QUEEN] - see_value[PAWN];
             capture = QUEEN;
         } else

@@ -178,7 +178,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
         int see;
         currentMove = S.select(pos, see);
 
-        if (!currentMove.pseudo_is_legal(pos))
+        if (!move_is_legal(pos, currentMove))
             continue;
 
         moveCount++;
@@ -219,9 +219,9 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
             if (moveCount == 1)
                 score = -recurse(nextPos, ply+1, nextDepth, -beta, -alpha, childPv);
             else {
-                int reduction = see < 0 || (!currentMove.is_capture(pos) && !nextPos.checkers());
+                int reduction = see < 0 || (!move_is_capture(pos, currentMove) && !nextPos.checkers());
 
-                if (!currentMove.is_capture(pos) && !pos.checkers() && !nextPos.checkers()
+                if (!move_is_capture(pos, currentMove) && !pos.checkers() && !nextPos.checkers()
                         && ++lmrCount >= 2 + 8/depth)
                     reduction++;
 
@@ -271,7 +271,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
         return pos.checkers() ? mated_in(ply) : draw_score(ply);
 
     // Update History
-    if (!Qsearch && alpha > oldAlpha && !bestMove.is_capture(pos))
+    if (!Qsearch && alpha > oldAlpha && !move_is_capture(pos, bestMove))
         for (size_t i = 0; i < S.idx; i++) {
             Move m(S.moves[i]);
             const int bonus = depth * depth;

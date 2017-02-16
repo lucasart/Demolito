@@ -72,8 +72,8 @@ void Selector::score(const Position& pos, move_t ttMove)
         else {
             const Move m(moves[i]);
 
-            if (m.is_capture(pos)) {
-                const int see = m.see(pos);
+            if (move_is_capture(pos, m)) {
+                const int see = move_see(pos, m);
                 scores[i] = see >= 0 ? see + History::Max : see - History::Max;
             } else
                 scores[i] = H.get(m);
@@ -106,7 +106,7 @@ Move Selector::select(const Position& pos, int& see)
 
     const Move m(moves[idx]);
 
-    if (m.is_capture(pos)) {
+    if (move_is_capture(pos, m)) {
         if (scores[idx] >= History::Max)
             see = scores[idx] - History::Max;
         else {
@@ -114,7 +114,7 @@ Move Selector::select(const Position& pos, int& see)
             see = scores[idx] + History::Max;
         }
     } else
-        see = m.see(pos);
+        see = move_see(pos, m);
 
     return moves[idx++];
 }

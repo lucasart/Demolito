@@ -93,7 +93,8 @@ void position(std::istringstream& is)
 
     // Parse moves (if any)
     while (is >> token) {
-        const Move m(p[idx], token);
+        Move m;
+        move_from_string(p[idx], token, m);
         p[idx ^ 1].set(p[idx], m);
         idx ^= 1;
         gameStack.push(p[idx].key());
@@ -225,7 +226,7 @@ void Info::update(const Position& pos, int depth, int score, uint64_t nodes,
 
         for (int i = 0; pv[i]; i++) {
             Move m(pv[i]);
-            os << ' ' << m.to_string(p[idx]);
+            os << ' ' << move_to_string(p[idx], m);
             p[idx ^ 1].set(p[idx], m);
             idx ^= 1;
         }
@@ -237,8 +238,8 @@ void Info::update(const Position& pos, int depth, int score, uint64_t nodes,
 void Info::print_bestmove(const Position& pos) const
 {
     std::lock_guard<std::mutex> lk(mtx);
-    std::cout << "bestmove " << bestMove.to_string(pos)
-              << " ponder " << ponderMove.to_string(pos) << std::endl;
+    std::cout << "bestmove " << move_to_string(pos, bestMove)
+              << " ponder " << move_to_string(pos, ponderMove) << std::endl;
 }
 
 Move Info::best_move() const

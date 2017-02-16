@@ -231,7 +231,7 @@ uint64_t perft(const Position& pos, int depth)
     for (move_t *em = emList; em != end; em++) {
         const Move m(*em);
 
-        if (!m.pseudo_is_legal(pos))
+        if (!move_is_legal(pos, m))
             continue;
 
         after.set(pos, m);
@@ -239,7 +239,7 @@ uint64_t perft(const Position& pos, int depth)
         result += sub_tree;
 
         if (Root)
-            std::cout << m.to_string(pos) << '\t' << sub_tree << std::endl;
+            std::cout << move_to_string(pos, m) << '\t' << sub_tree << std::endl;
     }
 
     return result;
