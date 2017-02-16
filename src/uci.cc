@@ -89,7 +89,7 @@ void position(std::istringstream& is)
 
     p[idx].set(fen);
     gameStack.clear();
-    gameStack.push(p[idx].key());
+    gameStack.push(p[idx].key);
 
     // Parse moves (if any)
     while (is >> token) {
@@ -97,7 +97,7 @@ void position(std::istringstream& is)
         move_from_string(p[idx], token, m);
         p[idx ^ 1].set(p[idx], m);
         idx ^= 1;
-        gameStack.push(p[idx].key());
+        gameStack.push(p[idx].key);
     }
 
     pos = p[idx];
@@ -118,9 +118,9 @@ void go(std::istringstream& is)
             lim.movetime -= TimeBuffer;
         } else if (token == "movestogo")
             is >> lim.movestogo;
-        else if ((pos.turn() == WHITE && token == "wtime") || (pos.turn() == BLACK && token == "btime"))
+        else if ((pos.turn == WHITE && token == "wtime") || (pos.turn == BLACK && token == "btime"))
             is >> lim.time;
-        else if ((pos.turn() == WHITE && token == "winc") || (pos.turn() == BLACK && token == "binc"))
+        else if ((pos.turn == WHITE && token == "winc") || (pos.turn == BLACK && token == "binc"))
             is >> lim.inc;
     }
 

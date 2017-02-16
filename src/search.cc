@@ -69,12 +69,12 @@ int draw_score(int ply)
 template<bool Qsearch = false>
 int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::vector<move_t>& pv)
 {
-    assert(gameStack[ThreadId].back() == pos.key());
+    assert(gameStack[ThreadId].back() == pos.key);
     assert(alpha < beta);
 
     const bool pvNode = beta > alpha + 1;
     const int oldAlpha = alpha;
-    const Color us = pos.turn();
+    const Color us = pos.turn;
     int bestScore = -INF;
     Move bestMove = 0;
     int score;
@@ -98,14 +98,14 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
         pv[0] = 0;
     }
 
-    if (ply > 0 && (gameStack[ThreadId].repetition(pos.rule50()) || insufficient_material(pos)))
+    if (ply > 0 && (gameStack[ThreadId].repetition(pos.rule50) || insufficient_material(pos)))
         return draw_score(ply);
 
     // TT probe
     tt::Entry tte;
     int staticEval, refinedEval;
 
-    if (tt::read(pos.key(), tte)) {
+    if (tt::read(pos.key, tte)) {
         tte.score = tt::score_from_tt(tte.score, ply);
 
         if (tte.depth >= depth && ply > 0) {
@@ -127,7 +127,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
             refinedEval = tte.score;
     } else {
         tte.move = 0;
-        refinedEval = staticEval = pos.checkers() ? -INF : evaluate(pos) + Tempo;
+        refinedEval = staticEval = pos.checkers ? -INF : evaluate(pos) + Tempo;
     }
 
     // At Root, ensure that the last best move is searched first. This is not guaranteed,
@@ -142,9 +142,9 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 
     // Null search
     if (!Qsearch && depth >= 2 && !pvNode
-            && staticEval >= beta && pos.piece_material(us)) {
+            && staticEval >= beta && pos.pieceMaterial[us]) {
         nextPos.toggle(pos);
-        gameStack[ThreadId].push(nextPos.key());
+        gameStack[ThreadId].push(nextPos.key);
         const int nextDepth = depth - (3 + depth/4);
         score = nextDepth <= 0
                 ? -recurse<true>(nextPos, ply+1, nextDepth, -beta, -(beta-1), childPv)
@@ -156,7 +156,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
     }
 
     // QSearch stand pat
-    if (Qsearch && !pos.checkers()) {
+    if (Qsearch && !pos.checkers) {
         bestScore = refinedEval;
 
         if (bestScore > alpha) {
@@ -184,11 +184,11 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
         moveCount++;
 
         // Prune losing captures in the qsearch
-        if (Qsearch && see < 0 && !pos.checkers())
+        if (Qsearch && see < 0 && !pos.checkers)
             continue;
 
         // SEE proxy tells us we're unlikely to beat alpha
-        if (Qsearch && !pos.checkers() && staticEval + P/2 <= alpha && see <= 0)
+        if (Qsearch && !pos.checkers && staticEval + P/2 <= alpha && see <= 0)
             continue;
 
         // Play move
@@ -196,18 +196,18 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 
         // Prune losing captures in the search, near the leaves
         if (!Qsearch && depth <= 4 && see < 0
-                && !pvNode && !pos.checkers() && !nextPos.checkers())
+                && !pvNode && !pos.checkers && !nextPos.checkers)
             continue;
 
-        gameStack[ThreadId].push(nextPos.key());
+        gameStack[ThreadId].push(nextPos.key);
 
-        const int ext = see >= 0 && nextPos.checkers();
+        const int ext = see >= 0 && nextPos.checkers;
         const int nextDepth = depth - 1 + ext;
 
         // Recursion
         if (Qsearch || nextDepth <= 0) {
             // Qsearch recursion (plain alpha/beta)
-            if (depth <= MIN_DEPTH && !pos.checkers()) {
+            if (depth <= MIN_DEPTH && !pos.checkers) {
                 score = staticEval + see;    // guard against QSearch explosion
 
                 if (pvNode)
@@ -219,9 +219,9 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
             if (moveCount == 1)
                 score = -recurse(nextPos, ply+1, nextDepth, -beta, -alpha, childPv);
             else {
-                int reduction = see < 0 || (!move_is_capture(pos, currentMove) && !nextPos.checkers());
+                int reduction = see < 0 || (!move_is_capture(pos, currentMove) && !nextPos.checkers);
 
-                if (!move_is_capture(pos, currentMove) && !pos.checkers() && !nextPos.checkers()
+                if (!move_is_capture(pos, currentMove) && !pos.checkers && !nextPos.checkers
                         && ++lmrCount >= 2 + 8/depth)
                     reduction++;
 
@@ -267,8 +267,8 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
     }
 
     // No legal move: mated or stalemated
-    if ((!Qsearch || pos.checkers()) && !moveCount)
-        return pos.checkers() ? mated_in(ply) : draw_score(ply);
+    if ((!Qsearch || pos.checkers) && !moveCount)
+        return pos.checkers ? mated_in(ply) : draw_score(ply);
 
     // Update History
     if (!Qsearch && alpha > oldAlpha && !move_is_capture(pos, bestMove))
@@ -279,10 +279,10 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
         }
 
     // TT write
-    tte.key = pos.key();
+    tte.key = pos.key;
     tte.bound = bestScore <= oldAlpha ? tt::UBOUND : bestScore >= beta ? tt::LBOUND : tt::EXACT;
     tte.score = tt::score_to_tt(bestScore, ply);
-    tte.eval = pos.checkers() ? -INF : staticEval;
+    tte.eval = pos.checkers ? -INF : staticEval;
     tte.depth = depth;
     tte.move = bestMove;
     tt::write(tte);

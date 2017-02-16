@@ -72,8 +72,8 @@ eval_t mobility(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_P
 
     while (fss) {
         tss = bb::rattacks(from = bb::pop_lsb(fss), occ);
-        attacks[us][piece = pos.piece_on(from)] |= tss;
-        result += score_mobility(ROOK, pos.piece_on(from), tss & targets);
+        attacks[us][piece = Piece(pos.pieceOn[from])] |= tss;
+        result += score_mobility(ROOK, pos.pieceOn[from], tss & targets);
     }
 
     // Diagonal mobility
@@ -82,8 +82,8 @@ eval_t mobility(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_P
 
     while (fss) {
         tss = bb::battacks(from = bb::pop_lsb(fss), occ);
-        attacks[us][piece = pos.piece_on(from)] |= tss;
-        result += score_mobility(BISHOP, pos.piece_on(from), tss & targets);
+        attacks[us][piece = Piece(pos.pieceOn[from])] |= tss;
+        result += score_mobility(BISHOP, pos.pieceOn[from], tss & targets);
     }
 
     attacks[us][NB_PIECE] = attacks[us][KNIGHT] | attacks[us][BISHOP] | attacks[us][ROOK] |
@@ -103,13 +103,13 @@ int tactics(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PIECE
 {
     static const int Hanging[QUEEN+1] = {66, 66, 81, 130};
 
-    bitboard_t b = attacks[~us][PAWN] & (pos.by_color(us) ^ pieces_cp(pos, us, PAWN));
+    bitboard_t b = attacks[~us][PAWN] & (pos.byColor[us] ^ pieces_cp(pos, us, PAWN));
     b |= (attacks[~us][KNIGHT] | attacks[~us][BISHOP]) & pieces_cpp(pos, us, ROOK, QUEEN);
 
     int result = 0;
 
     while (b) {
-        const Piece p = pos.piece_on(bb::pop_lsb(b));
+        const Piece p = Piece(pos.pieceOn[bb::pop_lsb(b)]);
         assert(KNIGHT <= p && p <= QUEEN);
         result -= Hanging[p];
     }
@@ -151,7 +151,7 @@ int safety(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PIECE+
 
     for (Piece p = KNIGHT; p <= QUEEN; ++p)
         if (checks[p]) {
-            const bitboard_t b = checks[p] & ~(pos.by_color(~us) | attacks[us][PAWN] | attacks[us][KING]);
+            const bitboard_t b = checks[p] & ~(pos.byColor[~us] | attacks[us][PAWN] | attacks[us][KING]);
 
             if (b) {
                 cnt++;
@@ -226,7 +226,7 @@ eval_t do_pawns(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_P
         const bool phalanx = chained && (ourPawns & bb::pattacks(~us, stop));
         const bool hole = !(bb::pawn_span(~us, stop) & ourPawns) && bb::test(attacks[~us][PAWN], stop);
         const bool isolated = !(adjacentFiles & ourPawns);
-        const bool exposed = !(bb::pawn_path(us, s) & pos.by_piece(PAWN));
+        const bool exposed = !(bb::pawn_path(us, s) & pos.byPiece[PAWN]);
         const bool passed = exposed && !(bb::pawn_span(us, s) & theirPawns);
 
         if (chained) {
@@ -249,7 +249,7 @@ eval_t pawns(const Position& pos, bitboard_t attacks[NB_COLOR][NB_PIECE+1])
 // Pawn evaluation is directly a diff, from white's pov. This reduces by half the
 // size of the pawn hash table.
 {
-    const uint64_t key = pos.pawn_key();
+    const uint64_t key = pos.pawnKey;
     const size_t idx = key & (NB_PAWN_ENTRY - 1);
 
     if (PawnHash[idx].key == key)
@@ -265,14 +265,14 @@ eval_t pawns(const Position& pos, bitboard_t attacks[NB_COLOR][NB_PIECE+1])
 int blend(const Position& pos, eval_t e)
 {
     static const int full = 4 * (N + B + R) + 2 * Q;
-    const int total = (pos.piece_material(WHITE) + pos.piece_material(BLACK)).eg();
+    const int total = (pos.pieceMaterial[WHITE] + pos.pieceMaterial[BLACK]).eg();
     return e.op() * total / full + e.eg() * (full - total) / full;
 }
 
 int evaluate(const Position& pos)
 {
-    assert(!pos.checkers());
-    eval_t e[NB_COLOR] = {pos.pst(), {0, 0}};
+    assert(!pos.checkers);
+    eval_t e[NB_COLOR] = {pos.pst, {0, 0}};
 
     bitboard_t attacks[NB_COLOR][NB_PIECE+1];
 
@@ -288,6 +288,6 @@ int evaluate(const Position& pos)
 
     e[WHITE] += pawns(pos, attacks);
 
-    const Color us = pos.turn();
+    const Color us = pos.turn;
     return blend(pos, e[us] - e[~us]);
 }

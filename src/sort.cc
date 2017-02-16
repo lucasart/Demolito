@@ -46,11 +46,11 @@ void Selector::generate(const Position& pos, int depth)
 {
     move_t *it = moves;
 
-    if (pos.checkers())
+    if (pos.checkers)
         it = gen::check_escapes(pos, it, depth > 0);
     else {
-        const Color us = pos.turn();
-        const bitboard_t pieceTargets = depth > 0 ? ~pos.by_color(us) : pos.by_color(~us);
+        const Color us = pos.turn;
+        const bitboard_t pieceTargets = depth > 0 ? ~pos.byColor[us] : pos.byColor[~us];
         const bitboard_t pawnTargets = pieceTargets | ep_square_bb(pos) | bb::rank(relative_rank(us,
                                        RANK_8));
 

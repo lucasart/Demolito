@@ -40,15 +40,15 @@ Move Move::operator =(move_t em)
 
 bool move_is_capture(const Position& pos, const Move& m)
 {
-    const Color us = pos.turn(), them = ~us;
-    return (bb::test(pos.by_color(them), m.to))
-           || ((m.to == pos.ep_square() || relative_rank_of(us, m.to) == RANK_8)
-               && pos.piece_on(m.from) == PAWN);
+    const Color us = pos.turn, them = ~us;
+    return (bb::test(pos.byColor[them], m.to))
+           || ((m.to == pos.epSquare || relative_rank_of(us, m.to) == RANK_8)
+               && pos.pieceOn[m.from] == PAWN);
 }
 
 bool move_is_castling(const Position& pos, const Move& m)
 {
-    return bb::test(pos.by_color(pos.turn()), m.to);
+    return bb::test(pos.byColor[pos.turn], m.to);
 }
 
 std::string move_to_string(const Position& pos, const Move& m)
@@ -81,7 +81,7 @@ void move_from_string(const Position& pos, const std::string& s, Move& m)
     m.to = square(Rank(s[3] - '1'), File(s[2] - 'a'));
     m.prom = s[4] ? (Piece)PieceLabel[BLACK].find(s[4]) : NB_PIECE;
 
-    if (!Chess960 && pos.piece_on(m.from) == KING) {
+    if (!Chess960 && pos.pieceOn[m.from] == KING) {
         if (m.to == m.from + 2)  // e1g1 -> e1h1
             ++m.to;
         else if (m.to == m.from - 2)  // e1c1 -> e1a1
@@ -93,29 +93,29 @@ void move_from_string(const Position& pos, const std::string& s, Move& m)
 
 bool move_is_legal(const Position& pos, const Move& m)
 {
-    const Piece p = pos.piece_on(m.from);
-    const Square king = king_square(pos, pos.turn());
+    const Piece p = Piece(pos.pieceOn[m.from]);
+    const Square king = king_square(pos, pos.turn);
 
     if (p == KING) {
-        if (bb::test(pos.by_color(pos.turn()), m.to)) {
+        if (bb::test(pos.byColor[pos.turn], m.to)) {
             // Castling: king must not move through attacked square, and rook must not
             // be pinned
-            assert(pos.piece_on(m.to) == ROOK);
+            assert(pos.pieceOn[m.to] == ROOK);
             const Square _tsq = square(rank_of(m.from), m.from < m.to ? FILE_G : FILE_C);
-            return !(pos.attacked() & bb::segment(m.from, _tsq))
-                   && !bb::test(pos.pins(), m.to);
+            return !(pos.attacked & bb::segment(m.from, _tsq))
+                   && !bb::test(pos.pins, m.to);
         } else
             // Normal king move: do not land on an attacked square
-            return !bb::test(pos.attacked(), m.to);
+            return !bb::test(pos.attacked, m.to);
     } else {
         // Normal case: illegal if pinned, and moves out of pin-ray
-        if (bb::test(pos.pins(), m.from) && !bb::test(bb::ray(king, m.from), m.to))
+        if (bb::test(pos.pins, m.from) && !bb::test(bb::ray(king, m.from), m.to))
             return false;
 
         // En-passant special case: also illegal if self-check through the en-passant
         // captured pawn
-        if (m.to == pos.ep_square() && p == PAWN) {
-            const Color us = pos.turn(), them = ~us;
+        if (m.to == pos.epSquare && p == PAWN) {
+            const Color us = pos.turn, them = ~us;
             bitboard_t occ = pieces(pos);
             bb::clear(occ, m.from);
             bb::set(occ, m.to);
@@ -131,17 +131,17 @@ int move_see(const Position& pos, const Move& m)
 {
     const int see_value[NB_PIECE+1] = {N, B, R, Q, MATE, P, 0};
 
-    Color us = pos.turn();
+    Color us = pos.turn;
     bitboard_t occ = pieces(pos);
 
     // General case
-    int gain[32] = {see_value[pos.piece_on(m.to)]};
-    Piece capture = pos.piece_on(m.from);
+    int gain[32] = {see_value[pos.pieceOn[m.to]]};
+    Piece capture = Piece(pos.pieceOn[m.from]);
     bb::clear(occ, m.from);
 
     // Special cases
     if (capture == PAWN) {
-        if (m.to == pos.ep_square()) {
+        if (m.to == pos.epSquare) {
             bb::clear(occ, m.to - push_inc(us));
             gain[0] = see_value[capture];
         } else if (relative_rank_of(us, m.to) == RANK_8)
@@ -149,8 +149,8 @@ int move_see(const Position& pos, const Move& m)
     }
 
     // Easy case: to is not defended
-    // TODO: explore performance tradeoff between using pos.attacked() and using attackers below
-    if (!bb::test(pos.attacked(), m.to))
+    // TODO: explore performance tradeoff between using pos.attacked and using attackers below
+    if (!bb::test(pos.attacked, m.to))
         return gain[0];
 
     bitboard_t attackers = attackers_to(pos, m.to, occ);
@@ -158,7 +158,7 @@ int move_see(const Position& pos, const Move& m)
 
     int idx = 0;
 
-    while (us = ~us, our_attackers = attackers & pos.by_color(us)) {
+    while (us = ~us, our_attackers = attackers & pos.byColor[us]) {
         // Find least valuable attacker (LVA)
         Piece p = PAWN;
 
@@ -174,9 +174,9 @@ int move_see(const Position& pos, const Move& m)
 
         // Scan for new X-ray attacks through the LVA
         if (p != KNIGHT) {
-            attackers |= (pos.by_piece(BISHOP) | pos.by_piece(QUEEN))
+            attackers |= (pos.byPiece[BISHOP] | pos.byPiece[QUEEN])
                          & bb::bpattacks(m.to) & bb::battacks(m.to, occ);
-            attackers |= (pos.by_piece(ROOK) | pos.by_piece(QUEEN))
+            attackers |= (pos.byPiece[ROOK] | pos.byPiece[QUEEN])
                          & bb::rpattacks(m.to) & bb::rattacks(m.to, occ);
         }
 

@@ -42,7 +42,7 @@ void idle_loop(int depth, int threadId)
     for (size_t i = threadId; i < fens.size(); i += search::Threads) {
         pos.set(fens[i]);
         search::gameStack[threadId].clear();
-        search::gameStack[threadId].push(pos.key());
+        search::gameStack[threadId].push(pos.key);
         qsearches[i] = depth <= 0
                        ? search::recurse<true>(pos, 0, depth, -INF, INF, pv)
                        : search::recurse(pos, 0, depth, -INF, INF, pv);
