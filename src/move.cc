@@ -42,7 +42,7 @@ bool Move::is_capture(const Position& pos) const
 {
     const Color us = pos.turn(), them = ~us;
     return (bb::test(pos.by_color(them), to))
-           || ((to == pos.ep_square() || relative_rank(us, to) == RANK_8)
+           || ((to == pos.ep_square() || relative_rank_of(us, to) == RANK_8)
                && pos.piece_on(from) == PAWN);
 }
 
@@ -120,8 +120,8 @@ bool Move::pseudo_is_legal(const Position& pos) const
             bb::clear(occ, from);
             bb::set(occ, to);
             bb::clear(occ, to + push_inc(them));
-            return !(bb::rattacks(king, occ) & pieces(pos, them, ROOK, QUEEN))
-                   && !(bb::battacks(king, occ) & pieces(pos, them, BISHOP, QUEEN));
+            return !(bb::rattacks(king, occ) & pieces_cpp(pos, them, ROOK, QUEEN))
+                   && !(bb::battacks(king, occ) & pieces_cpp(pos, them, BISHOP, QUEEN));
         } else
             return true;
     }
@@ -144,7 +144,7 @@ int Move::see(const Position& pos) const
         if (to == pos.ep_square()) {
             bb::clear(occ, to - push_inc(us));
             gain[0] = see_value[capture];
-        } else if (relative_rank(us, to) == RANK_8)
+        } else if (relative_rank_of(us, to) == RANK_8)
             gain[0] += see_value[capture = prom] - see_value[PAWN];
     }
 
@@ -162,15 +162,15 @@ int Move::see(const Position& pos) const
         // Find least valuable attacker (LVA)
         Piece p = PAWN;
 
-        if (!(our_attackers & pieces(pos, us, PAWN))) {
+        if (!(our_attackers & pieces_cp(pos, us, PAWN))) {
             for (p = KNIGHT; p <= KING; ++p) {
-                if (our_attackers & pieces(pos, us, p))
+                if (our_attackers & pieces_cp(pos, us, p))
                     break;
             }
         }
 
         // Remove the LVA
-        bb::clear(occ, bb::lsb(our_attackers & pieces(pos, us, p)));
+        bb::clear(occ, bb::lsb(our_attackers & pieces_cp(pos, us, p)));
 
         // Scan for new X-ray attacks through the LVA
         if (p != KNIGHT) {
@@ -188,7 +188,7 @@ int Move::see(const Position& pos) const
         assert(idx < 32);
         gain[idx] = see_value[capture] - gain[idx-1];
 
-        if (p == PAWN && relative_rank(us, to) == RANK_8) {
+        if (p == PAWN && relative_rank_of(us, to) == RANK_8) {
             gain[idx] += see_value[QUEEN] - see_value[PAWN];
             capture = QUEEN;
         } else

@@ -50,9 +50,8 @@ eval_t calc_pst(const Position& pos);
 eval_t calc_piece_material(const Position& pos, Color c);
 
 bitboard_t pieces(const Position& pos);
-bitboard_t pieces(const Position& pos, Piece p1, Piece p2);
-bitboard_t pieces(const Position& pos, Color c, Piece p);
-bitboard_t pieces(const Position& pos, Color c, Piece p1, Piece p2);
+bitboard_t pieces_cp(const Position& pos, Color c, Piece p);
+bitboard_t pieces_cpp(const Position& pos, Color c, Piece p1, Piece p2);
 
 std::string get(const Position& pos);
 bitboard_t ep_square_bb(const Position& pos);

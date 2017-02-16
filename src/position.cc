@@ -73,7 +73,8 @@ void Position::finish()
     const Square ksq = king_square(*this, us);
 
     _attacked = attacked_by(*this, them);
-    _checkers = bb::test(_attacked, ksq) ? attackers_to(*this, ksq, pieces(*this)) & by_color(them) : 0;
+    _checkers = bb::test(_attacked, ksq) ? attackers_to(*this, ksq,
+                pieces(*this)) & by_color(them) : 0;
     _pins = calc_pins(*this);
 }
 
@@ -326,25 +327,25 @@ bitboard_t attacked_by(const Position& pos, Color c)
 
     // King and Knight attacks
     bitboard_t result = bb::kattacks(king_square(pos, c));
-    bitboard_t fss = pieces(pos, c, KNIGHT);
+    bitboard_t fss = pieces_cp(pos, c, KNIGHT);
 
     while (fss)
         result |= bb::nattacks(bb::pop_lsb(fss));
 
     // Pawn captures
-    fss = pieces(pos, c, PAWN) & ~bb::file(FILE_A);
+    fss = pieces_cp(pos, c, PAWN) & ~bb::file(FILE_A);
     result |= bb::shift(fss, push_inc(c) + LEFT);
-    fss = pieces(pos, c, PAWN) & ~bb::file(FILE_H);
+    fss = pieces_cp(pos, c, PAWN) & ~bb::file(FILE_H);
     result |= bb::shift(fss, push_inc(c) + RIGHT);
 
     // Sliders
-    bitboard_t _occ = pieces(pos) ^ pieces(pos, ~c, KING);
-    fss = pieces(pos, c, ROOK, QUEEN);
+    bitboard_t _occ = pieces(pos) ^ pieces_cp(pos, ~c, KING);
+    fss = pieces_cpp(pos, c, ROOK, QUEEN);
 
     while (fss)
         result |= bb::rattacks(bb::pop_lsb(fss), _occ);
 
-    fss = pieces(pos, c, BISHOP, QUEEN);
+    fss = pieces_cpp(pos, c, BISHOP, QUEEN);
 
     while (fss)
         result |= bb::battacks(bb::pop_lsb(fss), _occ);
@@ -356,8 +357,8 @@ bitboard_t calc_pins(const Position& pos)
 {
     const Color us = pos.turn();
     const Square king = king_square(pos, us);
-    bitboard_t pinners = (pieces(pos, ~us, ROOK, QUEEN) & bb::rpattacks(king))
-                         | (pieces(pos, ~us, BISHOP, QUEEN) & bb::bpattacks(king));
+    bitboard_t pinners = (pieces_cpp(pos, ~us, ROOK, QUEEN) & bb::rpattacks(king))
+                         | (pieces_cpp(pos, ~us, BISHOP, QUEEN) & bb::bpattacks(king));
     bitboard_t result = 0;
 
     while (pinners) {
@@ -381,7 +382,7 @@ uint64_t calc_key(const Position& pos)
 
     for (Color c = WHITE; c <= BLACK; ++c)
         for (Piece p = KNIGHT; p < NB_PIECE; ++p)
-            key ^= zobrist::keys(c, p, pieces(pos, c, p));
+            key ^= zobrist::keys(c, p, pieces_cp(pos, c, p));
 
     return key;
 }
@@ -391,8 +392,8 @@ uint64_t calc_pawn_key(const Position& pos)
     uint64_t key = 0;
 
     for (Color c = WHITE; c <= BLACK; ++c) {
-        key ^= zobrist::keys(c, PAWN, pieces(pos, c, PAWN));
-        key ^= zobrist::keys(c, KING, pieces(pos, c, KING));
+        key ^= zobrist::keys(c, PAWN, pieces_cp(pos, c, PAWN));
+        key ^= zobrist::keys(c, KING, pieces_cp(pos, c, KING));
     }
 
     return key;
@@ -404,7 +405,7 @@ eval_t calc_pst(const Position& pos)
 
     for (Color c = WHITE; c <= BLACK; ++c)
         for (Piece p = KNIGHT; p < NB_PIECE; ++p) {
-            bitboard_t b = pieces(pos, c, p);
+            bitboard_t b = pieces_cp(pos, c, p);
 
             while (b)
                 result += pst::table[c][p][bb::pop_lsb(b)];
@@ -418,19 +419,14 @@ eval_t calc_piece_material(const Position& pos, Color c)
     eval_t result {0, 0};
 
     for (Piece p = KNIGHT; p <= QUEEN; ++p)
-        result += Material[p] * bb::count(pieces(pos, c, p));
+        result += Material[p] * bb::count(pieces_cp(pos, c, p));
 
     return result;
 }
 
-bitboard_t pieces(const Position& pos, Color c, Piece p)
+bitboard_t pieces_cp(const Position& pos, Color c, Piece p)
 {
     return pos.by_color(c) & pos.by_piece(p);
-}
-
-bitboard_t pieces(const Position& pos, Piece p1, Piece p2)
-{
-    return pos.by_piece(p1) | pos.by_piece(p2);
 }
 
 bitboard_t pieces(const Position& pos)
@@ -440,7 +436,7 @@ bitboard_t pieces(const Position& pos)
     return pos.by_color(WHITE) | pos.by_color(BLACK);
 }
 
-bitboard_t pieces(const Position& pos, Color c, Piece p1, Piece p2)
+bitboard_t pieces_cpp(const Position& pos, Color c, Piece p1, Piece p2)
 {
     return pos.by_color(c) & (pos.by_piece(p1) | pos.by_piece(p2));
 }
@@ -535,9 +531,9 @@ bool insufficient_material(const Position& pos)
 
 Square king_square(const Position& pos, Color c)
 {
-    assert(bb::count(pieces(pos, c, KING)) == 1);
+    assert(bb::count(pieces_cp(pos, c, KING)) == 1);
 
-    return bb::lsb(pieces(pos, c, KING));
+    return bb::lsb(pieces_cp(pos, c, KING));
 }
 
 Color color_on(const Position& pos, Square s)
@@ -551,12 +547,12 @@ bitboard_t attackers_to(const Position& pos, Square s, bitboard_t occ)
 {
     BOUNDS(s, NB_SQUARE);
 
-    return (pieces(pos, WHITE, PAWN) & bb::pattacks(BLACK, s))
-           | (pieces(pos, BLACK, PAWN) & bb::pattacks(WHITE, s))
+    return (pieces_cp(pos, WHITE, PAWN) & bb::pattacks(BLACK, s))
+           | (pieces_cp(pos, BLACK, PAWN) & bb::pattacks(WHITE, s))
            | (bb::nattacks(s) & pos.by_piece(KNIGHT))
            | (bb::kattacks(s) & pos.by_piece(KING))
-           | (bb::rattacks(s, occ) & pieces(pos, ROOK, QUEEN))
-           | (bb::battacks(s, occ) & pieces(pos, BISHOP, QUEEN));
+           | (bb::rattacks(s, occ) & (pos.by_piece(ROOK) | pos.by_piece(QUEEN)))
+           | (bb::battacks(s, occ) & (pos.by_piece(BISHOP) | pos.by_piece(QUEEN)));
 }
 
 void print(const Position& pos)

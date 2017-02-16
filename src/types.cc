@@ -43,7 +43,7 @@ Rank relative_rank(Color c, Rank r)
     return Rank(r ^ (7 * c));
 }
 
-Rank relative_rank(Color c, Square s)
+Rank relative_rank_of(Color c, Square s)
 {
     BOUNDS(s, NB_SQUARE);
 

@@ -54,7 +54,7 @@ move_t *pawn_moves(const Position& pos, move_t *emList, bitboard_t targets, bool
     Move m;
 
     // Non promotions
-    fss = pieces(pos, us, PAWN) & ~bb::rank(relative_rank(us, RANK_7));
+    fss = pieces_cp(pos, us, PAWN) & ~bb::rank(relative_rank(us, RANK_7));
 
     while (fss) {
         m.from = bb::pop_lsb(fss);
@@ -66,7 +66,7 @@ move_t *pawn_moves(const Position& pos, move_t *emList, bitboard_t targets, bool
             if (bb::test(targets, m.from + push))
                 bb::set(tss, m.from + push);
 
-            if (relative_rank(us, m.from) == RANK_2
+            if (relative_rank_of(us, m.from) == RANK_2
                     && bb::test(targets & ~pieces(pos), m.from + 2 * push))
                 bb::set(tss, m.from + 2 * push);
         }
@@ -77,7 +77,7 @@ move_t *pawn_moves(const Position& pos, move_t *emList, bitboard_t targets, bool
     }
 
     // Promotions
-    fss = pieces(pos, us, PAWN) & bb::rank(relative_rank(us, RANK_7));
+    fss = pieces_cp(pos, us, PAWN) & bb::rank(relative_rank(us, RANK_7));
 
     while (fss) {
         m.from = bb::pop_lsb(fss);
@@ -111,7 +111,7 @@ move_t *piece_moves(const Position& pos, move_t *emList, bitboard_t targets, boo
     }
 
     // Knight moves
-    fss = pieces(pos, us, KNIGHT);
+    fss = pieces_cp(pos, us, KNIGHT);
 
     while (fss) {
         m.from = bb::pop_lsb(fss);
@@ -120,7 +120,7 @@ move_t *piece_moves(const Position& pos, move_t *emList, bitboard_t targets, boo
     }
 
     // Rook moves
-    fss = pieces(pos, us, ROOK, QUEEN);
+    fss = pieces_cpp(pos, us, ROOK, QUEEN);
 
     while (fss) {
         m.from = bb::pop_lsb(fss);
@@ -129,7 +129,7 @@ move_t *piece_moves(const Position& pos, move_t *emList, bitboard_t targets, boo
     }
 
     // Bishop moves
-    fss = pieces(pos, us, BISHOP, QUEEN);
+    fss = pieces_cpp(pos, us, BISHOP, QUEEN);
 
     while (fss) {
         m.from = bb::pop_lsb(fss);
