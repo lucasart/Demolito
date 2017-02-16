@@ -57,7 +57,7 @@ uint64_t bench(bool perft, int depth, int threads)
     clock.reset();
 
     for (const std::string& fen : fens) {
-        pos.set(fen);
+        pos_set(&pos, fen);
         gameStack.clear();
         gameStack.push(pos.key);
         print(pos);
@@ -105,7 +105,7 @@ bool see(bool verbose)
     Position pos;
 
     for (auto& t : test) {
-        pos.set(t.fen);
+        pos_set(&pos, t.fen);
         Move m;
         move_from_string(pos, t.move, m);
         const int value = move_see(pos, m);

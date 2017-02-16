@@ -2,13 +2,7 @@
 #include "types.h"
 #include "move.h"
 
-class Position {
-    void clear();
-    void clear(Color c, Piece p, Square s);
-    void set(Color c, Piece p, Square s);
-    void finish();
-
-public:
+struct Position {
     bitboard_t byColor[NB_COLOR];
     bitboard_t byPiece[NB_PIECE];
     Color turn;
@@ -21,11 +15,11 @@ public:
     eval_t pst;
     char pieceOn[NB_SQUARE];
     eval_t pieceMaterial[NB_COLOR];
-
-    void set(const std::string& fen);
-    void set(const Position& before, Move m);
-    void toggle(const Position& before);
 };
+
+void pos_set(Position *pos, const std::string& fen);
+void pos_move(Position *pos, const Position& before, Move m);
+void pos_switch(Position *pos, const Position& before);
 
 bitboard_t attacked_by(const Position& pos, Color c);
 bitboard_t calc_pins(const Position& pos);

@@ -21,66 +21,70 @@
 #include "pst.h"
 #include "zobrist.h"
 
-void Position::clear()
+namespace {
+
+void clear(Position *pos)
 {
-    std::memset(this, 0, sizeof(*this));
+    std::memset(pos, 0, sizeof(*pos));
 
     for (Square s = A1; s <= H8; ++s)
-        pieceOn[s] = NB_PIECE;
+        pos->pieceOn[s] = NB_PIECE;
 }
 
-void Position::clear(Color c, Piece p, Square s)
+void clear_square(Position *pos, Color c, Piece p, Square s)
 {
     BOUNDS(c, NB_COLOR);
     BOUNDS(p, NB_PIECE);
     BOUNDS(s, NB_SQUARE);
 
-    bb::clear(byColor[c], s);
-    bb::clear(byPiece[p], s);
+    bb::clear(pos->byColor[c], s);
+    bb::clear(pos->byPiece[p], s);
 
-    pieceOn[s] = NB_PIECE;
-    pst -= pst::table[c][p][s];
-    key ^= zobrist::key(c, p, s);
+    pos->pieceOn[s] = NB_PIECE;
+    pos->pst -= pst::table[c][p][s];
+    pos->key ^= zobrist::key(c, p, s);
 
     if (p <= QUEEN)
-        pieceMaterial[c] -= Material[p];
+        pos->pieceMaterial[c] -= Material[p];
     else
-        pawnKey ^= zobrist::key(c, p, s);
+        pos->pawnKey ^= zobrist::key(c, p, s);
 }
 
-void Position::set(Color c, Piece p, Square s)
+void set_square(Position *pos, Color c, Piece p, Square s)
 {
     BOUNDS(c, NB_COLOR);
     BOUNDS(p, NB_PIECE);
     BOUNDS(s, NB_SQUARE);
 
-    bb::set(byColor[c], s);
-    bb::set(byPiece[p], s);
+    bb::set(pos->byColor[c], s);
+    bb::set(pos->byPiece[p], s);
 
-    pieceOn[s] = p;
-    pst += pst::table[c][p][s];
-    key ^= zobrist::key(c, p, s);
+    pos->pieceOn[s] = p;
+    pos->pst += pst::table[c][p][s];
+    pos->key ^= zobrist::key(c, p, s);
 
     if (p <= QUEEN)
-        pieceMaterial[c] += Material[p];
+        pos->pieceMaterial[c] += Material[p];
     else
-        pawnKey ^= zobrist::key(c, p, s);
+        pos->pawnKey ^= zobrist::key(c, p, s);
 }
 
-void Position::finish()
+void finish(Position *pos)
 {
-    const Color us = turn, them = ~us;
-    const Square ksq = king_square(*this, us);
+    const Color us = pos->turn, them = ~us;
+    const Square ksq = king_square(*pos, us);
 
-    attacked = attacked_by(*this, them);
-    checkers = bb::test(attacked, ksq) ? attackers_to(*this, ksq,
-               pieces(*this)) & byColor[them] : 0;
-    pins = calc_pins(*this);
+    pos->attacked = attacked_by(*pos, them);
+    pos->checkers = bb::test(pos->attacked, ksq) ? attackers_to(*pos, ksq,
+                    pieces(*pos)) & pos->byColor[them] : 0;
+    pos->pins = calc_pins(*pos);
 }
 
-void Position::set(const std::string& fen)
+}  // namespace
+
+void pos_set(Position *pos, const std::string& fen)
 {
-    clear();
+    clear(pos);
     std::istringstream is(fen);
     std::string token;
 
@@ -98,7 +102,7 @@ void Position::set(const std::string& fen)
                 const Piece p = Piece(PieceLabel[col].find(c));
 
                 if (unsigned(p) < NB_PIECE) {
-                    set(col, p, s);
+                    set_square(pos, col, p, s);
                     ++s;
                 }
             }
@@ -109,10 +113,10 @@ void Position::set(const std::string& fen)
     is >> token;
 
     if (token == "w")
-        turn = WHITE;
+        pos->turn = WHITE;
     else {
-        turn = BLACK;
-        key ^= zobrist::turn();
+        pos->turn = BLACK;
+        pos->key ^= zobrist::turn();
     }
 
     // Castling rights
@@ -130,67 +134,67 @@ void Position::set(const std::string& fen)
             else if ('A' <= c && c <= 'H')
                 s = square(r, File(c - 'A'));
 
-            bb::set(castleRooks, s);
+            bb::set(pos->castleRooks, s);
         }
 
-        key ^= zobrist::castling(castleRooks);
+        pos->key ^= zobrist::castling(pos->castleRooks);
     }
 
     // En passant and 50 move
     is >> token;
-    epSquare = string_to_square(token);
-    key ^= zobrist::en_passant(epSquare);
-    is >> rule50;
+    pos->epSquare = string_to_square(token);
+    pos->key ^= zobrist::en_passant(pos->epSquare);
+    is >> pos->rule50;
 
-    finish();
+    finish(pos);
 }
 
-void Position::set(const Position& before, Move m)
+void pos_move(Position *pos, const Position& before, Move m)
 {
-    *this = before;
-    rule50++;
+    *pos = before;
+    pos->rule50++;
 
-    const Color us = turn, them = ~us;
-    const Piece p = Piece(pieceOn[m.from]);
-    const Piece capture = Piece(pieceOn[m.to]);
+    const Color us = pos->turn, them = ~us;
+    const Piece p = Piece(pos->pieceOn[m.from]);
+    const Piece capture = Piece(pos->pieceOn[m.to]);
 
     // Capture piece on to square (if any)
     if (capture != NB_PIECE) {
-        rule50 = 0;
+        pos->rule50 = 0;
         // Use color_on() instead of them, because we could be playing a KxR castling here
-        clear(color_on(*this, m.to), capture, m.to);
+        clear_square(pos, color_on(*pos, m.to), capture, m.to);
 
         // Capturing a rook alters corresponding castling right
         if (capture == ROOK)
-            castleRooks &= ~(1ULL << m.to);
+            pos->castleRooks &= ~(1ULL << m.to);
     }
 
     // Move our piece
-    clear(us, p, m.from);
-    set(us, p, m.to);
+    clear_square(pos, us, p, m.from);
+    set_square(pos, us, p, m.to);
 
     if (p == PAWN) {
         // reset rule50, and set epSquare
         const int push = push_inc(us);
-        rule50 = 0;
-        epSquare = m.to == m.from + 2 * push ? m.from + push : NB_SQUARE;
+        pos->rule50 = 0;
+        pos->epSquare = m.to == m.from + 2 * push ? m.from + push : NB_SQUARE;
 
         // handle ep-capture and promotion
         if (m.to == before.epSquare)
-            clear(them, p, m.to - push);
+            clear_square(pos, them, p, m.to - push);
         else if (rank_of(m.to) == RANK_8 || rank_of(m.to) == RANK_1) {
-            clear(us, p, m.to);
-            set(us, m.prom, m.to);
+            clear_square(pos, us, p, m.to);
+            set_square(pos, us, m.prom, m.to);
         }
     } else {
-        epSquare = NB_SQUARE;
+        pos->epSquare = NB_SQUARE;
 
         if (p == ROOK)
             // remove corresponding castling right
-            castleRooks &= ~(1ULL << m.from);
+            pos->castleRooks &= ~(1ULL << m.from);
         else if (p == KING) {
             // Lose all castling rights
-            castleRooks &= ~bb::rank(Rank(us * RANK_8));
+            pos->castleRooks &= ~bb::rank(Rank(us * RANK_8));
 
             // Castling
             if (bb::test(before.byColor[us], m.to)) {
@@ -198,31 +202,31 @@ void Position::set(const Position& before, Move m)
                 assert(before.pieceOn[m.to] == ROOK);
                 const Rank r = rank_of(m.from);
 
-                clear(us, KING, m.to);
-                set(us, KING, square(r, m.to > m.from ? FILE_G : FILE_C));
-                set(us, ROOK, square(r, m.to > m.from ? FILE_F : FILE_D));
+                clear_square(pos, us, KING, m.to);
+                set_square(pos, us, KING, square(r, m.to > m.from ? FILE_G : FILE_C));
+                set_square(pos, us, ROOK, square(r, m.to > m.from ? FILE_F : FILE_D));
             }
         }
     }
 
-    turn = them;
-    key ^= zobrist::turn();
-    key ^= zobrist::en_passant(before.epSquare) ^ zobrist::en_passant(epSquare);
-    key ^= zobrist::castling(before.castleRooks ^ castleRooks);
+    pos->turn = them;
+    pos->key ^= zobrist::turn();
+    pos->key ^= zobrist::en_passant(before.epSquare) ^ zobrist::en_passant(pos->epSquare);
+    pos->key ^= zobrist::castling(before.castleRooks ^ pos->castleRooks);
 
-    finish();
+    finish(pos);
 }
 
-void Position::toggle(const Position& before)
+void pos_switch(Position *pos, const Position& before)
 {
-    *this = before;
-    epSquare = NB_SQUARE;
+    *pos = before;
+    pos->epSquare = NB_SQUARE;
 
-    turn = ~turn;
-    key ^= zobrist::turn();
-    key ^= zobrist::en_passant(before.epSquare) ^ zobrist::en_passant(epSquare);
+    pos->turn = ~pos->turn;
+    pos->key ^= zobrist::turn();
+    pos->key ^= zobrist::en_passant(before.epSquare) ^ zobrist::en_passant(pos->epSquare);
 
-    finish();
+    finish(pos);
 }
 
 bitboard_t attacked_by(const Position& pos, Color c)

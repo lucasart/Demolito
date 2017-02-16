@@ -40,7 +40,7 @@ void idle_loop(int depth, int threadId)
     std::vector<move_t> pv(MAX_PLY + 1);
 
     for (size_t i = threadId; i < fens.size(); i += search::Threads) {
-        pos.set(fens[i]);
+        pos_set(&pos, fens[i]);
         search::gameStack[threadId].clear();
         search::gameStack[threadId].push(pos.key);
         qsearches[i] = depth <= 0

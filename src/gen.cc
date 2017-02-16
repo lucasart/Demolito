@@ -234,7 +234,7 @@ uint64_t perft(const Position& pos, int depth)
         if (!move_is_legal(pos, m))
             continue;
 
-        after.set(pos, m);
+        pos_move(&after, pos, m);
         const uint64_t sub_tree = perft<false>(after, depth - 1);
         result += sub_tree;
 

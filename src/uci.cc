@@ -87,7 +87,7 @@ void position(std::istringstream& is)
     } else
         return;
 
-    p[idx].set(fen);
+    pos_set(&p[idx], fen);
     gameStack.clear();
     gameStack.push(p[idx].key);
 
@@ -95,7 +95,7 @@ void position(std::istringstream& is)
     while (is >> token) {
         Move m;
         move_from_string(p[idx], token, m);
-        p[idx ^ 1].set(p[idx], m);
+        pos_move(&p[idx^1], p[idx], m);
         idx ^= 1;
         gameStack.push(p[idx].key);
     }
@@ -227,7 +227,7 @@ void Info::update(const Position& pos, int depth, int score, uint64_t nodes,
         for (int i = 0; pv[i]; i++) {
             Move m(pv[i]);
             os << ' ' << move_to_string(p[idx], m);
-            p[idx ^ 1].set(p[idx], m);
+            pos_move(&p[idx^1], p[idx], m);
             idx ^= 1;
         }
 

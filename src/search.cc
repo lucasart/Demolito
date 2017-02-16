@@ -143,7 +143,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
     // Null search
     if (!Qsearch && depth >= 2 && !pvNode
             && staticEval >= beta && pos.pieceMaterial[us]) {
-        nextPos.toggle(pos);
+        pos_switch(&nextPos, pos);
         gameStack[ThreadId].push(nextPos.key);
         const int nextDepth = depth - (3 + depth/4);
         score = nextDepth <= 0
@@ -192,7 +192,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
             continue;
 
         // Play move
-        nextPos.set(pos, currentMove);
+        pos_move(&nextPos, pos, currentMove);
 
         // Prune losing captures in the search, near the leaves
         if (!Qsearch && depth <= 4 && see < 0
