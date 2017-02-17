@@ -32,76 +32,80 @@ uint64_t rotate(uint64_t x, int k)
 
 namespace zobrist {
 
-thread_local GameStack gameStack;
-
-void GameStack::push(uint64_t key)
+void gs_clear(GameStack *gs)
 {
-    assert(0 <= idx && idx < MAX_GAME_PLY);
-    keys[idx++] = key;
+    gs->idx = 0;
 }
 
-void GameStack::pop()
+void gs_push(GameStack *gs, uint64_t key)
 {
-    assert(0 < idx && idx <= MAX_GAME_PLY);
-    idx--;
+    assert(0 <= gs->idx && gs->idx < MAX_GAME_PLY);
+    gs->keys[gs->idx++] = key;
 }
 
-uint64_t GameStack::back() const
+void gs_pop(GameStack *gs)
 {
-    assert(0 < idx && idx <= MAX_GAME_PLY);
-    return keys[idx - 1];
+    assert(0 < gs->idx && gs->idx <= MAX_GAME_PLY);
+    gs->idx--;
 }
 
-bool GameStack::repetition(int rule50) const
+uint64_t gs_back(const GameStack *gs)
+{
+    assert(0 < gs->idx && gs->idx <= MAX_GAME_PLY);
+    return gs->keys[gs->idx - 1];
+}
+
+bool gs_repetition(const GameStack *gs, int rule50)
 {
     // 50 move rule
     if (rule50 >= 100)
         return true;
 
     // TODO: use 3 repetition past root position
-    for (int i = 4; i <= rule50 && i < idx; i += 2)
-        if (keys[idx-1 - i] == keys[idx-1])
+    for (int i = 4; i <= rule50 && i < gs->idx; i += 2)
+        if (gs->keys[gs->idx - 1 - i] == gs->keys[gs->idx - 1])
             return true;
 
     return false;
 }
 
-void PRNG::init(uint64_t seed)
+void prng_init(PRNG *prng, uint64_t seed)
 {
-    a = 0xf1ea5eed;
-    b = c = d = seed;
+    prng->a = 0xf1ea5eed;
+    prng->b = prng->c = prng->d = seed;
 
     for (int i = 0; i < 20; ++i)
-        rand();
+        prng_rand(prng);
 }
 
-uint64_t PRNG::rand()
+uint64_t prng_rand(PRNG *prng)
 {
-    uint64_t e = a - rotate(b, 7);
-    a = b ^ rotate(c, 13);
-    b = c + rotate(d, 37);
-    c = d + e;
-    return d = e + a;
+    uint64_t e = prng->a - rotate(prng->b, 7);
+    prng->a = prng->b ^ rotate(prng->c, 13);
+    prng->b = prng->c + rotate(prng->d, 37);
+    prng->c = prng->d + e;
+    return prng->d = e + prng->a;
 }
 
 void init()
 {
     PRNG prng;
+    prng_init(&prng, 0);
 
     for (Color c = WHITE; c <= BLACK; ++c)
         for (Piece p = KNIGHT; p < NB_PIECE; ++p)
             for (Square s = A1; s <= H8; ++s)
-                Zobrist[c][p][s] = prng.rand();
+                Zobrist[c][p][s] = prng_rand(&prng);
 
     for (Square s = A1; s <= H8; ++s)
-        ZobristCastling[s] = prng.rand();
+        ZobristCastling[s] = prng_rand(&prng);
 
     for (Square s = A1; s <= H8; ++s)
-        ZobristEnPassant[s] = prng.rand();
+        ZobristEnPassant[s] = prng_rand(&prng);
 
-    ZobristEnPassant[NB_SQUARE] = prng.rand();
+    ZobristEnPassant[NB_SQUARE] = prng_rand(&prng);
 
-    ZobristTurn = prng.rand();
+    ZobristTurn = prng_rand(&prng);
 }
 
 uint64_t key(Color c, Piece p, Square s)

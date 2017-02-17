@@ -98,7 +98,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
         pv[0] = 0;
     }
 
-    if (ply > 0 && (gameStack[ThreadId].repetition(pos.rule50) || insufficient_material(pos)))
+    if (ply > 0 && (gs_repetition(&gameStack[ThreadId], pos.rule50) || insufficient_material(pos)))
         return draw_score(ply);
 
     // TT probe
@@ -144,12 +144,12 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
     if (!Qsearch && depth >= 2 && !pvNode
             && staticEval >= beta && pos.pieceMaterial[us]) {
         pos_switch(&nextPos, pos);
-        gameStack[ThreadId].push(nextPos.key);
+        gs_push(&gameStack[ThreadId], nextPos.key);
         const int nextDepth = depth - (3 + depth/4);
         score = nextDepth <= 0
                 ? -recurse<true>(nextPos, ply+1, nextDepth, -beta, -(beta-1), childPv)
                 : -recurse(nextPos, ply+1, nextDepth, -beta, -(beta-1), childPv);
-        gameStack[ThreadId].pop();
+        gs_pop(&gameStack[ThreadId]);
 
         if (score >= beta)
             return score >= mate_in(MAX_PLY) ? beta : score;
@@ -199,7 +199,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
                 && !pvNode && !pos.checkers && !nextPos.checkers)
             continue;
 
-        gameStack[ThreadId].push(nextPos.key);
+        gs_push(&gameStack[ThreadId], nextPos.key);
 
         const int ext = see >= 0 && nextPos.checkers;
         const int nextDepth = depth - 1 + ext;
@@ -241,7 +241,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
         }
 
         // Undo move
-        gameStack[ThreadId].pop();
+        gs_pop(&gameStack[ThreadId]);
 
         // New best score
         if (score > bestScore) {

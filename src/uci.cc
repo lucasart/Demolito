@@ -88,8 +88,8 @@ void position(std::istringstream& is)
         return;
 
     pos_set(&p[idx], fen);
-    gameStack.clear();
-    gameStack.push(p[idx].key);
+    gs_clear(&gameStack);
+    gs_push(&gameStack, p[idx].key);
 
     // Parse moves (if any)
     while (is >> token) {
@@ -97,7 +97,7 @@ void position(std::istringstream& is)
         move_from_string(p[idx], token, m);
         pos_move(&p[idx^1], p[idx], m);
         idx ^= 1;
-        gameStack.push(p[idx].key);
+        gs_push(&gameStack, p[idx].key);
     }
 
     pos = p[idx];

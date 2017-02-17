@@ -58,8 +58,8 @@ uint64_t bench(bool perft, int depth, int threads)
 
     for (const std::string& fen : fens) {
         pos_set(&pos, fen);
-        gameStack.clear();
-        gameStack.push(pos.key);
+        gs_clear(&gameStack);
+        gs_push(&gameStack, pos.key);
         print(pos);
 
         if (perft) {
