@@ -16,35 +16,15 @@
 #include <cstring>  // std::memset()
 #include "sort.h"
 
+#define HISTORY_MAX 2000
+
 namespace search {
 
 thread_local History H;
 
-void History::clear()
+void sort_generate(Sort *s, const Position& pos, int depth)
 {
-    std::memset(table, 0, sizeof(table));
-}
-
-int History::get(Move m) const
-{
-    return table[m.from][m.to];
-}
-
-void History::update(Move m, int bonus)
-{
-    int &t = table[m.from][m.to];
-
-    t += bonus;
-
-    if (t > Max)
-        t = Max;
-    else if (t < -Max)
-        t = -Max;
-}
-
-void Selector::generate(const Position& pos, int depth)
-{
-    move_t *it = moves;
+    move_t *it = s->moves;
 
     if (pos.checkers)
         it = gen::check_escapes(pos, it, depth > 0);
@@ -61,62 +41,75 @@ void Selector::generate(const Position& pos, int depth)
             it = gen::castling_moves(pos, it);
     }
 
-    cnt = it - moves;
+    s->cnt = it - s->moves;
 }
 
-void Selector::score(const Position& pos, move_t ttMove)
+void sort_score(Sort *s, const Position& pos, move_t ttMove)
 {
-    for (size_t i = 0; i < cnt; i++) {
-        if (moves[i] == ttMove)
-            scores[i] = +INF;
+    for (size_t i = 0; i < s->cnt; i++) {
+        if (s->moves[i] == ttMove)
+            s->scores[i] = +INF;
         else {
-            const Move m(moves[i]);
+            const Move m(s->moves[i]);
 
             if (move_is_capture(pos, m)) {
                 const int see = move_see(pos, m);
-                scores[i] = see >= 0 ? see + History::Max : see - History::Max;
+                s->scores[i] = see >= 0 ? see + HISTORY_MAX : see - HISTORY_MAX;
             } else
-                scores[i] = H.get(m);
+                s->scores[i] = H.table[m.from][m.to];
         }
     }
 }
 
-Selector::Selector(const Position& pos, int depth, move_t ttMove)
+void history_update(Move m, int bonus)
 {
-    generate(pos, depth);
-    score(pos, ttMove);
+    int &t = H.table[m.from][m.to];
+
+    t += bonus;
+
+    if (t > HISTORY_MAX)
+        t = HISTORY_MAX;
+    else if (t < -HISTORY_MAX)
+        t = -HISTORY_MAX;
+}
+
+Sort::Sort(const Position& pos, int depth, move_t ttMove)
+{
+    sort_generate(this, pos, depth);
+    sort_score(this, pos, ttMove);
     idx = 0;
 }
 
-Move Selector::select(const Position& pos, int& see)
+Move sort_next(Sort *s, const Position& pos, int& see)
 {
     int maxScore = -INF;
-    size_t maxIdx = idx;
+    size_t maxIdx = s->idx;
 
-    for (size_t i = idx; i < cnt; i++)
-        if (scores[i] > maxScore) {
-            maxScore = scores[i];
+    for (size_t i = s->idx; i < s->cnt; i++)
+        if (s->scores[i] > maxScore) {
+            maxScore = s->scores[i];
             maxIdx = i;
         }
 
-    if (maxIdx != idx) {
-        std::swap(moves[idx], moves[maxIdx]);
-        std::swap(scores[idx], scores[maxIdx]);
+    if (maxIdx != s->idx) {
+        std::swap(s->moves[s->idx], s->moves[maxIdx]);
+        std::swap(s->scores[s->idx], s->scores[maxIdx]);
     }
 
-    const Move m(moves[idx]);
+    const Move m(s->moves[s->idx]);
+    const int score = s->scores[s->idx];
 
     if (move_is_capture(pos, m)) {
-        if (scores[idx] >= History::Max)
-            see = scores[idx] - History::Max;
+        if (score >= HISTORY_MAX)
+            see = score - HISTORY_MAX;
         else {
-            assert(scores[idx] < -History::Max);
-            see = scores[idx] + History::Max;
+            assert(score < -HISTORY_MAX);
+            see = score + HISTORY_MAX;
         }
     } else
         see = move_see(pos, m);
 
-    return moves[idx++];
+    return s->moves[s->idx++];
 }
 
 }    // namespace search

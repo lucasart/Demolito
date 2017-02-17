@@ -168,15 +168,15 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
     }
 
     // Generate and score moves
-    Selector S(pos, depth, tte.move);
+    Sort s(pos, depth, tte.move);
 
     int moveCount = 0, lmrCount = 0;
     Move currentMove;
 
     // Move loop
-    while (!S.done() && alpha < beta) {
+    while ((s.idx != s.cnt) && alpha < beta) {
         int see;
-        currentMove = S.select(pos, see);
+        currentMove = sort_next(&s, pos, see);
 
         if (!move_is_legal(pos, currentMove))
             continue;
@@ -272,10 +272,10 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 
     // Update History
     if (!Qsearch && alpha > oldAlpha && !move_is_capture(pos, bestMove))
-        for (size_t i = 0; i < S.idx; i++) {
-            Move m(S.moves[i]);
+        for (size_t i = 0; i < s.idx; i++) {
+            Move m(s.moves[i]);
             const int bonus = depth * depth;
-            H.update(m, m == bestMove ? bonus : -bonus);
+            history_update(m, m == bestMove ? bonus : -bonus);
         }
 
     // TT write
@@ -323,7 +323,7 @@ void iterate(const Position& pos, const Limits& lim, const zobrist::GameStack& i
     int score;
 
     std::memset(PawnHash, 0, sizeof(PawnHash));
-    H.clear();
+    std::memset(&H, 0, sizeof(H));
 
     for (int depth = 1; depth <= lim.depth; depth++) {
         {
