@@ -2,7 +2,7 @@
 #include "bitboard.h"
 #include "types.h"
 
-class Position;
+struct Position;
 
 typedef uint16_t move_t;  // from:6, to:6, prom: 3 (NB_PIECE if none)
 

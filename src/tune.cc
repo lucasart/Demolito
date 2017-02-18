@@ -92,7 +92,7 @@ void search(int depth, int threads, int hash)
     search::nodeCount.resize(threads);
     std::vector<std::thread> workers;
 
-    uci::ui.clear();
+    uci::info_clear(&uci::ui);
     search::signal = 0;
 
     for (int i = 0; i < threads; i++) {

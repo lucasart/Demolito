@@ -8,24 +8,21 @@ namespace uci {
 
 void loop();
 
-class Info {
-public:
-    void clear();
-    void update(const Position& pos, int depth, int score, uint64_t nodes, std::vector<move_t>& pv,
-                bool partial = false);
-    void print_bestmove(const Position& pos) const;
-
-    Move best_move() const;
-
+struct Info {
     // Do not need synchronization
     Clock clock;  // read-only during search
     std::atomic<int> lastDepth;
 
-private:
     // Require synchronization
     Move bestMove, ponderMove;
     mutable std::mutex mtx;
 };
+
+void info_clear(Info *info);
+void info_update(Info *info, const Position& pos, int depth, int score, uint64_t nodes,
+                 std::vector<move_t>& pv, bool partial = false);
+void info_print_bestmove(const Info *info, const Position& pos);
+Move info_best_move(const Info *info);
 
 extern Info ui;
 

@@ -133,7 +133,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
     // At Root, ensure that the last best move is searched first. This is not guaranteed,
     // as the TT entry could have got overriden by other search threads.
     if (!Qsearch && ply == 0 && uci::ui.lastDepth > 0)
-        tte.move = uci::ui.best_move();
+        tte.move = uci::info_best_move(&uci::ui);
 
     nodeCount[ThreadId]++;
 
@@ -260,7 +260,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
                             break;
 
                     if (!Qsearch && ply == 0 && uci::ui.lastDepth > 0)
-                        uci::ui.update(pos, depth, score, nodes(), pv, true);
+                        uci::info_update(&uci::ui, pos, depth, score, nodes(), pv, true);
                 }
             }
         }
@@ -379,7 +379,7 @@ void iterate(const Position& pos, const Limits& lim, const zobrist::GameStack& i
             }
         }
 
-        uci::ui.update(pos, depth, score, nodes(), pv);
+        uci::info_update(&uci::ui, pos, depth, score, nodes(), pv);
     }
 
     // Max depth completed by current thread. All threads should stop.
@@ -392,7 +392,7 @@ void bestmove(const Position& pos, const Limits& lim, const zobrist::GameStack& 
     using namespace std::chrono;
     const auto start = high_resolution_clock::now();
 
-    uci::ui.clear();
+    uci::info_clear(&uci::ui);
     signal = 0;
     std::vector<int> iteration(Threads, 0);
     gameStack.resize(Threads);
@@ -430,7 +430,7 @@ void bestmove(const Position& pos, const Limits& lim, const zobrist::GameStack& 
     for (auto& t : threads)
         t.join();
 
-    uci::ui.print_bestmove(pos);
+    uci::info_print_bestmove(&uci::ui, pos);
 }
 
 }    // namespace search

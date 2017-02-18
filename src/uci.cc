@@ -192,34 +192,37 @@ void loop()
         Timer.join();
 }
 
-void Info::clear()
+void info_clear(Info *info)
 {
-    lastDepth = 0;
-    bestMove = ponderMove = 0;
-    clock.reset();
+    info->lastDepth = 0;
+    info->bestMove = info->ponderMove = 0;
+    info->clock.reset();
 }
 
-void Info::update(const Position& pos, int depth, int score, uint64_t nodes,
-                  std::vector<move_t>& pv, bool partial)
+void info_update(Info *info, const Position& pos, int depth, int score, uint64_t nodes,
+                 std::vector<move_t>& pv, bool partial)
 {
-    std::lock_guard<std::mutex> lk(mtx);
+    std::lock_guard<std::mutex> lk(info->mtx);
 
-    if (depth > lastDepth) {
-        bestMove = pv[0];
-        ponderMove = pv[1];
+    if (depth > info->lastDepth) {
+        info->bestMove = pv[0];
+        info->ponderMove = pv[1];
 
         if (partial)
             return;
 
-        lastDepth = depth;
+        info->lastDepth = depth;
 
         std::ostringstream os;
-        const auto elapsed = clock.elapsed() + 1;  // Prevent division by zero
+        const auto elapsed = info->clock.elapsed() + 1;  // Prevent division by zero
 
         os << "info depth " << depth << " score " << format_score(score)
            << " time " << elapsed << " nodes " << nodes
            << " nps " << (1000 * nodes / elapsed) << " pv";
 
+        // Because of e1g1 notation when Chess960 = false, we need to play the PV, just to
+        // be able to print it. This is a defect of the UCI protocol (which should have
+        // encoded castling as e1h1 regardless of Chess960 allowing coherent treatement).
         Position p[2];
         int idx = 0;
         p[idx] = pos;
@@ -235,17 +238,17 @@ void Info::update(const Position& pos, int depth, int score, uint64_t nodes,
     }
 }
 
-void Info::print_bestmove(const Position& pos) const
+void info_print_bestmove(const Info *info, const Position& pos)
 {
-    std::lock_guard<std::mutex> lk(mtx);
-    std::cout << "bestmove " << move_to_string(pos, bestMove)
-              << " ponder " << move_to_string(pos, ponderMove) << std::endl;
+    std::lock_guard<std::mutex> lk(info->mtx);
+    std::cout << "bestmove " << move_to_string(pos, info->bestMove)
+              << " ponder " << move_to_string(pos, info->ponderMove) << std::endl;
 }
 
-Move Info::best_move() const
+Move info_best_move(const Info *info)
 {
-    std::lock_guard<std::mutex> lk(mtx);
-    return bestMove;
+    std::lock_guard<std::mutex> lk(info->mtx);
+    return info->bestMove;
 }
 
 std::string format_score(int score)
