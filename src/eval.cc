@@ -94,8 +94,11 @@ eval_t mobility(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_P
 
 eval_t bishop_pair(const Position& pos, Color us)
 {
-    // FIXME: verify that both B are indeed on different color squares
-    return bb::several(pieces_cp(pos, us, BISHOP)) ? eval_t{102, 114} :
+    static const bitboard_t WhiteSquares = 0x55AA55AA55AA55AAULL;
+
+    const bitboard_t bishops = pieces_cp(pos, us, BISHOP);
+
+    return (bishops & WhiteSquares) && (bishops & ~WhiteSquares) ? eval_t{102, 114} :
            eval_t{0, 0};
 }
 
