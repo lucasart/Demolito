@@ -275,7 +275,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
         for (size_t i = 0; i < s.idx; i++) {
             Move m(s.moves[i]);
             const int bonus = depth * depth;
-            history_update(m, m == bestMove ? bonus : -bonus);
+            history_update(us, m, m == bestMove ? bonus : -bonus);
         }
 
     // TT write

@@ -56,14 +56,14 @@ void sort_score(Sort *s, const Position& pos, move_t ttMove)
                 const int see = move_see(pos, m);
                 s->scores[i] = see >= 0 ? see + HISTORY_MAX : see - HISTORY_MAX;
             } else
-                s->scores[i] = H.table[m.from][m.to];
+                s->scores[i] = H.table[pos.turn][m.from][m.to];
         }
     }
 }
 
-void history_update(Move m, int bonus)
+void history_update(Color c, Move m, int bonus)
 {
-    int &t = H.table[m.from][m.to];
+    int &t = H.table[c][m.from][m.to];
 
     t += bonus;
 
