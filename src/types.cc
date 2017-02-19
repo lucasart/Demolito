@@ -35,7 +35,7 @@ int file_of(int s)
     return s % NB_FILE;
 }
 
-int relative_rank(Color c, int r)
+int relative_rank(int c, int r)
 {
     BOUNDS(c, NB_COLOR);
     BOUNDS(r, NB_RANK);
@@ -43,7 +43,7 @@ int relative_rank(Color c, int r)
     return r ^ (7 * c);
 }
 
-int relative_rank_of(Color c, int s)
+int relative_rank_of(int c, int s)
 {
     BOUNDS(s, NB_SQUARE);
 
@@ -74,7 +74,7 @@ int string_to_square(const std::string& s)
 
 /* Directions */
 
-int push_inc(Color c)
+int push_inc(int c)
 {
     BOUNDS(c, NB_COLOR);
 

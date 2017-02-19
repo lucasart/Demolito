@@ -13,7 +13,7 @@ bitboard_t rank(int r);
 bitboard_t file(int f);
 
 // Leaper attacks
-bitboard_t pattacks(Color c, int s);
+bitboard_t pattacks(int c, int s);
 bitboard_t nattacks(int s);
 bitboard_t kattacks(int s);
 
@@ -27,8 +27,8 @@ bitboard_t segment(int s1, int s2);
 bitboard_t ray(int s1, int s2);
 
 // Precalculated arrays for evaluation
-bitboard_t pawn_span(Color c, int s);
-bitboard_t pawn_path(Color c, int s);
+bitboard_t pawn_span(int c, int s);
+bitboard_t pawn_path(int c, int s);
 bitboard_t adjacent_files(int f);
 int king_distance(int s1, int s2);
 

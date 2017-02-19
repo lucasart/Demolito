@@ -10,11 +10,10 @@ extern int64_t dbgCnt[2];
 
 #define BOUNDS(v, ub) assert(unsigned(v) < ub)
 
-enum Color {WHITE, BLACK, NB_COLOR};
+enum {WHITE, BLACK, NB_COLOR};
 enum {KNIGHT, BISHOP, ROOK, QUEEN, KING, PAWN, NB_PIECE};
 
-inline Color operator~(Color c) { return Color(c ^ BLACK); }
-inline Color operator++(Color& c) { return c = Color(int(c) + 1); }
+inline int opposite(int c) { return c ^ BLACK; }
 
 enum {RANK_1, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8, NB_RANK};
 enum {FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H, NB_FILE};
@@ -32,8 +31,8 @@ enum {
 
 int rank_of(int s);
 int file_of(int s);
-int relative_rank(Color c, int r);
-int relative_rank_of(Color c, int s);
+int relative_rank(int c, int r);
+int relative_rank_of(int c, int s);
 int square(int r, int f);
 
 std::string square_to_string(int s);
@@ -43,7 +42,7 @@ int string_to_square(const std::string& s);
 
 enum {UP = 8, DOWN = -8, LEFT = -1, RIGHT = 1};
 
-int push_inc(Color c);    // pawn push increment
+int push_inc(int c);    // pawn push increment
 
 /* Material values */
 

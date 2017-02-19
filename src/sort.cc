@@ -29,8 +29,8 @@ void sort_generate(Sort *s, const Position& pos, int depth)
     if (pos.checkers)
         it = gen::check_escapes(pos, it, depth > 0);
     else {
-        const Color us = pos.turn;
-        const bitboard_t pieceTargets = depth > 0 ? ~pos.byColor[us] : pos.byColor[~us];
+        const int us = pos.turn;
+        const bitboard_t pieceTargets = depth > 0 ? ~pos.byColor[us] : pos.byColor[opposite(us)];
         const bitboard_t pawnTargets = pieceTargets | ep_square_bb(pos) | bb::rank(relative_rank(us,
                                        RANK_8));
 
@@ -61,7 +61,7 @@ void sort_score(Sort *s, const Position& pos, move_t ttMove)
     }
 }
 
-void history_update(Color c, Move m, int bonus)
+void history_update(int c, Move m, int bonus)
 {
     int &t = H.table[c][m.from][m.to];
 

@@ -92,7 +92,7 @@ void init()
     PRNG prng;
     prng_init(&prng, 0);
 
-    for (Color c = WHITE; c <= BLACK; ++c)
+    for (int c = WHITE; c <= BLACK; ++c)
         for (int p = KNIGHT; p < NB_PIECE; ++p)
             for (int s = A1; s <= H8; ++s)
                 Zobrist[c][p][s] = prng_rand(&prng);
@@ -108,7 +108,7 @@ void init()
     ZobristTurn = prng_rand(&prng);
 }
 
-uint64_t key(Color c, int p, int s)
+uint64_t key(int c, int p, int s)
 {
     BOUNDS(c, NB_COLOR);
     BOUNDS(p, NB_PIECE);
@@ -117,7 +117,7 @@ uint64_t key(Color c, int p, int s)
     return Zobrist[c][p][s];
 }
 
-uint64_t keys(Color c, int p, uint64_t sqs)
+uint64_t keys(int c, int p, uint64_t sqs)
 {
     BOUNDS(c, NB_COLOR);
     BOUNDS(p, NB_PIECE);

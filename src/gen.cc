@@ -47,7 +47,7 @@ namespace gen {
 
 move_t *pawn_moves(const Position& pos, move_t *emList, bitboard_t targets, bool subPromotions)
 {
-    const Color us = pos.turn, them = ~us;
+    const int us = pos.turn, them = opposite(us);
     const int push = push_inc(us);
     const bitboard_t capturable = pos.byColor[them] | ep_square_bb(pos);
     bitboard_t fss, tss;
@@ -97,7 +97,7 @@ move_t *pawn_moves(const Position& pos, move_t *emList, bitboard_t targets, bool
 
 move_t *piece_moves(const Position& pos, move_t *emList, bitboard_t targets, bool kingMoves)
 {
-    const Color us = pos.turn;
+    const int us = pos.turn;
     bitboard_t fss, tss;
 
     Move m;

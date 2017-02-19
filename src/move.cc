@@ -40,7 +40,7 @@ Move Move::operator =(move_t em)
 
 bool move_is_capture(const Position& pos, const Move& m)
 {
-    const Color us = pos.turn, them = ~us;
+    const int us = pos.turn, them = opposite(us);
     return (bb::test(pos.byColor[them], m.to))
            || ((m.to == pos.epSquare || relative_rank_of(us, m.to) == RANK_8)
                && pos.pieceOn[m.from] == PAWN);
@@ -115,7 +115,7 @@ bool move_is_legal(const Position& pos, const Move& m)
         // En-passant special case: also illegal if self-check through the en-passant
         // captured pawn
         if (m.to == pos.epSquare && p == PAWN) {
-            const Color us = pos.turn, them = ~us;
+            const int us = pos.turn, them = opposite(us);
             bitboard_t occ = pieces(pos);
             bb::clear(occ, m.from);
             bb::set(occ, m.to);
@@ -131,7 +131,7 @@ int move_see(const Position& pos, const Move& m)
 {
     const int see_value[NB_PIECE+1] = {N, B, R, Q, MATE, P, 0};
 
-    Color us = pos.turn;
+    int us = pos.turn;
     bitboard_t occ = pieces(pos);
 
     // General case
@@ -154,23 +154,23 @@ int move_see(const Position& pos, const Move& m)
         return gain[0];
 
     bitboard_t attackers = attackers_to(pos, m.to, occ);
-    bitboard_t our_attackers;
+    bitboard_t ourAttackers;
 
     int idx = 0;
 
-    while (us = ~us, our_attackers = attackers & pos.byColor[us]) {
+    while (us = opposite(us), ourAttackers = attackers & pos.byColor[us]) {
         // Find least valuable attacker (LVA)
         int p = PAWN;
 
-        if (!(our_attackers & pieces_cp(pos, us, PAWN))) {
+        if (!(ourAttackers & pieces_cp(pos, us, PAWN))) {
             for (p = KNIGHT; p <= KING; ++p) {
-                if (our_attackers & pieces_cp(pos, us, p))
+                if (ourAttackers & pieces_cp(pos, us, p))
                     break;
             }
         }
 
         // Remove the LVA
-        bb::clear(occ, bb::lsb(our_attackers & pieces_cp(pos, us, p)));
+        bb::clear(occ, bb::lsb(ourAttackers & pieces_cp(pos, us, p)));
 
         // Scan for new X-ray attacks through the LVA
         if (p != KNIGHT) {

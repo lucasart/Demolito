@@ -24,8 +24,8 @@ bool gs_repetition(const GameStack *gs, int rule50);
 
 void init();
 
-uint64_t key(Color c, int p, int s);
-uint64_t keys(Color c, int p, uint64_t sqs);
+uint64_t key(int c, int p, int s);
+uint64_t keys(int c, int p, uint64_t sqs);
 
 uint64_t castling(bitboard_t castlableRooks);
 uint64_t en_passant(int s);

@@ -7,7 +7,7 @@ struct History {
     int table[NB_COLOR][NB_SQUARE][NB_SQUARE];
 };
 
-void history_update(Color c, Move m, int bonus);
+void history_update(int c, Move m, int bonus);
 
 extern thread_local History H;
 

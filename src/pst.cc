@@ -90,7 +90,7 @@ void init()
     const pst_fn PstFn[NB_PIECE] = {&knight, &bishop, &rook, &queen, &king, &pawn};
 
     // Calculate PST, based on specialized functions for each piece
-    for (Color c = WHITE; c <= BLACK; ++c)
+    for (int c = WHITE; c <= BLACK; ++c)
         for (int p = KNIGHT; p < NB_PIECE; ++p)
             for (int s = A1; s <= H8; ++s) {
                 const int rr = relative_rank_of(c, s);

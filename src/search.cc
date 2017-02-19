@@ -74,7 +74,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
 
     const bool pvNode = beta > alpha + 1;
     const int oldAlpha = alpha;
-    const Color us = pos.turn;
+    const int us = pos.turn;
     int bestScore = -INF;
     Move bestMove = 0;
     int score;

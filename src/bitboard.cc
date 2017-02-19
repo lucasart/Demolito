@@ -155,7 +155,7 @@ bitboard_t file(int f)
     return 0x0101010101010101ULL << f;
 }
 
-bitboard_t pattacks(Color c, int s)
+bitboard_t pattacks(int c, int s)
 {
     BOUNDS(s, NB_SQUARE);
 
@@ -207,7 +207,7 @@ bitboard_t ray(int s1, int s2)
     return Ray[s1][s2];
 }
 
-bitboard_t pawn_span(Color c, int s)
+bitboard_t pawn_span(int c, int s)
 {
     BOUNDS(c, NB_COLOR);
     BOUNDS(s, NB_SQUARE);
@@ -215,7 +215,7 @@ bitboard_t pawn_span(Color c, int s)
     return PawnSpan[c][s];
 }
 
-bitboard_t pawn_path(Color c, int s)
+bitboard_t pawn_path(int c, int s)
 {
     BOUNDS(c, NB_COLOR);
     BOUNDS(s, NB_SQUARE);
