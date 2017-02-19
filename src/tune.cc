@@ -13,11 +13,11 @@
  * You should have received a copy of the GNU General Public License along with this program. If
  * not, see <http://www.gnu.org/licenses/>.
 */
-#include <cstring>    // std::memset()
+#include <string.h>    // memset()
 #include <fstream>
 #include <iostream>
 #include <thread>
-#include <cmath>
+#include <math.h>
 #include "eval.h"
 #include "search.h"
 #include "tt.h"
@@ -32,7 +32,7 @@ static std::vector<double> qsearches;
 static void idle_loop(int depth, int threadId)
 {
     search::ThreadId = threadId;
-    std::memset(PawnHash, 0, sizeof(PawnHash));
+    memset(PawnHash, 0, sizeof(PawnHash));
 
     Position pos;
     std::vector<move_t> pv(MAX_PLY + 1);
@@ -107,8 +107,8 @@ double error(double lambda)
     double sum = 0;
 
     for (size_t i = 0; i < fens.size(); i++) {
-        const double logistic = 1 / (1.0 + std::exp(-lambda * qsearches[i]));
-        sum += std::abs(scores[i] - logistic);
+        const double logistic = 1 / (1.0 + exp(-lambda * qsearches[i]));
+        sum += fabs(scores[i] - logistic);
     }
 
     return sum / fens.size();
@@ -137,7 +137,7 @@ void logistic()
 
         std::cout << "lambda = " << newLambda << ", error(lambda) = " << e0 << '\n';
 
-        if (std::abs(newLambda - lambda) < 0.00001)
+        if (fabs(newLambda - lambda) < 0.00001)
             break;
 
         lambda = newLambda;

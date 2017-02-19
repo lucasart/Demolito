@@ -15,7 +15,7 @@
 */
 #include <iostream>
 #include <sstream>
-#include <cstring>    // std::memset
+#include <string.h>    // memset
 #include "bitboard.h"
 #include "position.h"
 #include "pst.h"
@@ -23,7 +23,7 @@
 
 static void clear(Position *pos)
 {
-    std::memset(pos, 0, sizeof(*pos));
+    memset(pos, 0, sizeof(*pos));
 
     for (int s = A1; s <= H8; ++s)
         pos->pieceOn[s] = NB_PIECE;

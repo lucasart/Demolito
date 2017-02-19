@@ -1,6 +1,6 @@
 #pragma once
-#include <cstdint>
-#include <cassert>
+#include <stdint.h>
+#include <assert.h>
 #include <string>
 #include <chrono>
 

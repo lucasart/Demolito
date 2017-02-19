@@ -16,7 +16,7 @@
 #include <thread>
 #include <vector>
 #include <chrono>
-#include <cstring>  // std::memset
+#include <string.h>  // memset
 #include "search.h"
 #include "sort.h"
 #include "eval.h"
@@ -318,8 +318,8 @@ void iterate(const Position& pos, const Limits& lim, const zobrist::GameStack& i
     std::vector<move_t> pv(MAX_PLY + 1);
     int score;
 
-    std::memset(PawnHash, 0, sizeof(PawnHash));
-    std::memset(&H, 0, sizeof(H));
+    memset(PawnHash, 0, sizeof(PawnHash));
+    memset(&H, 0, sizeof(H));
 
     for (int depth = 1; depth <= lim.depth; depth++) {
         {

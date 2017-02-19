@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License along with this program. If
  * not, see <http://www.gnu.org/licenses/>.
 */
-#include <cstring>  // std::memset()
+#include <string.h>  // memset()
 #include "sort.h"
 
 #define HISTORY_MAX 2000
