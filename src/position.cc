@@ -21,9 +21,7 @@
 #include "pst.h"
 #include "zobrist.h"
 
-namespace {
-
-void clear(Position *pos)
+static void clear(Position *pos)
 {
     std::memset(pos, 0, sizeof(*pos));
 
@@ -31,7 +29,7 @@ void clear(Position *pos)
         pos->pieceOn[s] = NB_PIECE;
 }
 
-void clear_square(Position *pos, int c, int p, int s)
+static void clear_square(Position *pos, int c, int p, int s)
 {
     BOUNDS(c, NB_COLOR);
     BOUNDS(p, NB_PIECE);
@@ -50,7 +48,7 @@ void clear_square(Position *pos, int c, int p, int s)
         pos->pawnKey ^= zobrist::key(c, p, s);
 }
 
-void set_square(Position *pos, int c, int p, int s)
+static void set_square(Position *pos, int c, int p, int s)
 {
     BOUNDS(c, NB_COLOR);
     BOUNDS(p, NB_PIECE);
@@ -69,7 +67,7 @@ void set_square(Position *pos, int c, int p, int s)
         pos->pawnKey ^= zobrist::key(c, p, s);
 }
 
-void finish(Position *pos)
+static void finish(Position *pos)
 {
     const int us = pos->turn, them = opposite(us);
     const int ksq = king_square(*pos, us);
@@ -79,8 +77,6 @@ void finish(Position *pos)
                     pieces(*pos)) & pos->byColor[them] : 0;
     pos->pins = calc_pins(*pos);
 }
-
-}  // namespace
 
 void pos_set(Position *pos, const std::string& fen)
 {

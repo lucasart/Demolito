@@ -15,9 +15,7 @@
 */
 #include "bitboard.h"
 
-namespace {
-
-const int RShift[NB_SQUARE] = {
+static const int RShift[NB_SQUARE] = {
     52, 53, 53, 53, 53, 53, 53, 52,
     53, 54, 54, 54, 54, 54, 54, 53,
     53, 54, 54, 54, 54, 54, 54, 53,
@@ -28,7 +26,7 @@ const int RShift[NB_SQUARE] = {
     53, 54, 54, 53, 53, 53, 53, 53
 };
 
-const bitboard_t RMagic[NB_SQUARE] = {
+static const bitboard_t RMagic[NB_SQUARE] = {
     0x0080001020400080ull, 0x0040001000200040ull, 0x0080081000200080ull, 0x0080040800100080ull,
     0x0080020400080080ull, 0x0080010200040080ull, 0x0080008001000200ull, 0x0080002040800100ull,
     0x0000800020400080ull, 0x0000400020005000ull, 0x0000801000200080ull, 0x0000800800100080ull,
@@ -47,7 +45,7 @@ const bitboard_t RMagic[NB_SQUARE] = {
     0x0001000204080011ull, 0x0001000204000801ull, 0x0001000082000401ull, 0x0001FFFAABFAD1A2ull
 };
 
-const bitboard_t RMask[NB_SQUARE] = {
+static const bitboard_t RMask[NB_SQUARE] = {
     0x000101010101017Eull, 0x000202020202027Cull, 0x000404040404047Aull, 0x0008080808080876ull,
     0x001010101010106Eull, 0x002020202020205Eull, 0x004040404040403Eull, 0x008080808080807Eull,
     0x0001010101017E00ull, 0x0002020202027C00ull, 0x0004040404047A00ull, 0x0008080808087600ull,
@@ -66,7 +64,7 @@ const bitboard_t RMask[NB_SQUARE] = {
     0x6E10101010101000ull, 0x5E20202020202000ull, 0x3E40404040404000ull, 0x7E80808080808000ull
 };
 
-const int BShift[NB_SQUARE] = {
+static const int BShift[NB_SQUARE] = {
     58, 59, 59, 59, 59, 59, 59, 58,
     59, 59, 59, 59, 59, 59, 59, 59,
     59, 59, 57, 57, 57, 57, 59, 59,
@@ -77,7 +75,7 @@ const int BShift[NB_SQUARE] = {
     58, 59, 59, 59, 59, 59, 59, 58
 };
 
-const bitboard_t BMagic[NB_SQUARE] = {
+static const bitboard_t BMagic[NB_SQUARE] = {
     0x0002020202020200ull, 0x0002020202020000ull, 0x0004010202000000ull, 0x0004040080000000ull,
     0x0001104000000000ull, 0x0000821040000000ull, 0x0000410410400000ull, 0x0000104104104000ull,
     0x0000040404040400ull, 0x0000020202020200ull, 0x0000040102020000ull, 0x0000040400800000ull,
@@ -96,7 +94,7 @@ const bitboard_t BMagic[NB_SQUARE] = {
     0x0000000010020200ull, 0x0000000404080200ull, 0x0000040404040400ull, 0x0002020202020200ull
 };
 
-const bitboard_t BMask[NB_SQUARE] = {
+static const bitboard_t BMask[NB_SQUARE] = {
     0x0040201008040200ull, 0x0000402010080400ull, 0x0000004020100A00ull, 0x0000000040221400ull,
     0x0000000002442800ull, 0x0000000204085000ull, 0x0000020408102000ull, 0x0002040810204000ull,
     0x0020100804020000ull, 0x0040201008040000ull, 0x00004020100A0000ull, 0x0000004022140000ull,
@@ -115,9 +113,9 @@ const bitboard_t BMask[NB_SQUARE] = {
     0x0028440200000000ull, 0x0050080402000000ull, 0x0020100804020000ull, 0x0040201008040200ull
 };
 
-bitboard_t RMagicDB[0x19000], BMagicDB[0x1480];
+static bitboard_t RMagicDB[0x19000], BMagicDB[0x1480];
 
-const size_t BMagicIndex[NB_SQUARE] = {
+static const size_t BMagicIndex[NB_SQUARE] = {
     4992, 2624,  256,  896, 1280, 1664, 4800, 5120,
     2560, 2656,  288,  928, 1312, 1696, 4832, 4928,
     0,  128,  320,  960, 1344, 1728, 2304, 2432,
@@ -128,7 +126,7 @@ const size_t BMagicIndex[NB_SQUARE] = {
     5056, 2720,  864, 1248, 1632, 2272, 4896, 5184
 };
 
-const size_t RMagicIndex[64] = {
+static const size_t RMagicIndex[64] = {
     86016, 73728, 36864, 43008, 47104, 51200, 77824, 94208,
     69632, 32768, 38912, 10240, 14336, 53248, 57344, 81920,
     24576, 33792,  6144, 11264, 15360, 18432, 58368, 61440,
@@ -139,7 +137,7 @@ const size_t RMagicIndex[64] = {
     90112, 75776, 40960, 45056, 49152, 55296, 79872, 98304
 };
 
-bitboard_t calc_sliding_attacks(int s, bitboard_t occ, const int dir[4][2])
+static bitboard_t calc_sliding_attacks(int s, bitboard_t occ, const int dir[4][2])
 {
     const int r = rank_of(s), f = file_of(s);
     bitboard_t result = 0;
@@ -162,7 +160,7 @@ bitboard_t calc_sliding_attacks(int s, bitboard_t occ, const int dir[4][2])
     return result;
 }
 
-bitboard_t init_magic_occ(const int* s, int squareCount, bitboard_t lineOcc)
+static bitboard_t init_magic_occ(const int* s, int squareCount, bitboard_t lineOcc)
 {
     bitboard_t result = 0;
 
@@ -173,8 +171,8 @@ bitboard_t init_magic_occ(const int* s, int squareCount, bitboard_t lineOcc)
     return result;
 }
 
-void init_helper(int s, const bitboard_t mask[], const bitboard_t magic[], const int shift[],
-                 bitboard_t magicDb[], const size_t magicIndex[], const int dir[4][2])
+static void init_helper(int s, const bitboard_t mask[], const bitboard_t magic[], const int shift[],
+                        bitboard_t magicDb[], const size_t magicIndex[], const int dir[4][2])
 {
     int squares[NB_SQUARE];
     int squareCount = 0;
@@ -191,8 +189,6 @@ void init_helper(int s, const bitboard_t mask[], const bitboard_t magic[], const
         p[idx] = calc_sliding_attacks(s, occ, dir);
     }
 }
-
-}    // namespace
 
 namespace bb {
 

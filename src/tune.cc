@@ -25,13 +25,11 @@
 #include "types.h"
 #include "uci.h"
 
-namespace {
+static std::vector<std::string> fens;
+static std::vector<double> scores;
+static std::vector<double> qsearches;
 
-std::vector<std::string> fens;
-std::vector<double> scores;
-std::vector<double> qsearches;
-
-void idle_loop(int depth, int threadId)
+static void idle_loop(int depth, int threadId)
 {
     search::ThreadId = threadId;
     std::memset(PawnHash, 0, sizeof(PawnHash));
@@ -49,8 +47,6 @@ void idle_loop(int depth, int threadId)
         qsearches[i] /= double(EP);    // Rescale to Pawn = 1.0
     }
 }
-
-}    // namespace
 
 namespace tune {
 

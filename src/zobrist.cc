@@ -16,19 +16,15 @@
 #include "zobrist.h"
 #include "bitboard.h"
 
-namespace {
+static uint64_t Zobrist[NB_COLOR][NB_PIECE][NB_SQUARE];
+static uint64_t ZobristCastling[NB_SQUARE];
+static uint64_t ZobristEnPassant[(int)NB_SQUARE+1];
+static uint64_t ZobristTurn;
 
-uint64_t Zobrist[NB_COLOR][NB_PIECE][NB_SQUARE];
-uint64_t ZobristCastling[NB_SQUARE];
-uint64_t ZobristEnPassant[(int)NB_SQUARE+1];
-uint64_t ZobristTurn;
-
-uint64_t rotate(uint64_t x, int k)
+static uint64_t rotate(uint64_t x, int k)
 {
     return (x << k) | (x >> (64 - k));
 }
-
-}    // namespace
 
 namespace zobrist {
 

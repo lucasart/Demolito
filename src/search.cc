@@ -24,12 +24,8 @@
 #include "zobrist.h"
 #include "tt.h"
 
-namespace {
-
 // Protect thread scheduling decisions
-std::mutex mtxSchedule;
-
-}    // namespace
+static std::mutex mtxSchedule;
 
 namespace search {
 

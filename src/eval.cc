@@ -17,16 +17,14 @@
 
 thread_local PawnEntry PawnHash[NB_PAWN_ENTRY];
 
-namespace {
-
-bitboard_t pawn_attacks(const Position& pos, int c)
+static bitboard_t pawn_attacks(const Position& pos, int c)
 {
     const bitboard_t pawns = pieces_cp(pos, c, PAWN);
     return bb::shift(pawns & ~bb::file(FILE_A), push_inc(c) + LEFT)
            | bb::shift(pawns & ~bb::file(FILE_H), push_inc(c) + RIGHT);
 }
 
-eval_t score_mobility(int p0, int p, bitboard_t tss)
+static eval_t score_mobility(int p0, int p, bitboard_t tss)
 {
     assert(KNIGHT <= p0 && p0 <= ROOK);
     assert(KNIGHT <= p && p <= QUEEN);
@@ -41,7 +39,7 @@ eval_t score_mobility(int p0, int p, bitboard_t tss)
     return Weight[p] * AdjustCount[p0][bb::count(tss)];
 }
 
-eval_t mobility(const Position& pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE+1])
+static eval_t mobility(const Position& pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE+1])
 {
     bitboard_t fss, tss, occ;
     int from, piece;
@@ -92,7 +90,7 @@ eval_t mobility(const Position& pos, int us, bitboard_t attacks[NB_COLOR][NB_PIE
     return result;
 }
 
-eval_t bishop_pair(const Position& pos, int us)
+static eval_t bishop_pair(const Position& pos, int us)
 {
     static const bitboard_t WhiteSquares = 0x55AA55AA55AA55AAULL;
 
@@ -102,7 +100,7 @@ eval_t bishop_pair(const Position& pos, int us)
            eval_t{0, 0};
 }
 
-int tactics(const Position& pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE+1])
+static int tactics(const Position& pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE+1])
 {
     static const int Hanging[QUEEN+1] = {66, 66, 81, 130};
 
@@ -121,7 +119,7 @@ int tactics(const Position& pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE+1
     return result;
 }
 
-int safety(const Position& pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE+1])
+static int safety(const Position& pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE+1])
 {
     static const int AttackWeight[2] = {38, 54};
     static const int CheckWeight = 56;
@@ -167,7 +165,7 @@ int safety(const Position& pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE+1]
     return result * (2 + cnt) / 4;
 }
 
-eval_t passer(int us, int pawn, int ourKing, int theirKing, bool phalanx)
+static eval_t passer(int us, int pawn, int ourKing, int theirKing, bool phalanx)
 {
     static const eval_t bonus[7] = {{0, 6}, {0, 12}, {22, 30}, {66, 60}, {132, 102},
         {220, 156}, {330, 222}
@@ -189,7 +187,7 @@ eval_t passer(int us, int pawn, int ourKing, int theirKing, bool phalanx)
     return result;
 }
 
-eval_t do_pawns(const Position& pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE+1])
+static eval_t do_pawns(const Position& pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE+1])
 {
     static const eval_t Isolated[2] = {{20, 40}, {40, 40}};
     static const eval_t Hole[2] = {{16, 20}, {32, 20}};
@@ -250,7 +248,7 @@ eval_t do_pawns(const Position& pos, int us, bitboard_t attacks[NB_COLOR][NB_PIE
     return result;
 }
 
-eval_t pawns(const Position& pos, bitboard_t attacks[NB_COLOR][NB_PIECE+1])
+static eval_t pawns(const Position& pos, bitboard_t attacks[NB_COLOR][NB_PIECE+1])
 // Pawn evaluation is directly a diff, from white's pov. This reduces by half the
 // size of the pawn hash table.
 {
@@ -265,9 +263,7 @@ eval_t pawns(const Position& pos, bitboard_t attacks[NB_COLOR][NB_PIECE+1])
     return PawnHash[idx].eval;
 }
 
-}    // namespace
-
-int blend(const Position& pos, eval_t e)
+static int blend(const Position& pos, eval_t e)
 {
     static const int full = 4 * (N + B + R) + 2 * Q;
     const int total = (pos.pieceMaterial[WHITE] + pos.pieceMaterial[BLACK]).eg();

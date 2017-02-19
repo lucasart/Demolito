@@ -24,16 +24,14 @@
 
 zobrist::GameStack gameStack;
 
-namespace {
+static Position pos;
+static search::Limits lim;
+static std::thread Timer;
 
-Position pos;
-search::Limits lim;
-std::thread Timer;
+static size_t Hash = 1;
+static int TimeBuffer = 30;
 
-size_t Hash = 1;
-int TimeBuffer = 30;
-
-void intro()
+static void intro()
 {
     std::cout << "id name Demolito\nid author lucasart\n" << std::boolalpha
               << "option name UCI_Chess960 type check default " << Chess960 << '\n'
@@ -44,7 +42,7 @@ void intro()
               << "uciok" << std::endl;
 }
 
-void setoption(std::istringstream& is)
+static void setoption(std::istringstream& is)
 {
     std::string token, name;
 
@@ -70,7 +68,7 @@ void setoption(std::istringstream& is)
         is >> TimeBuffer;
 }
 
-void position(std::istringstream& is)
+static void position(std::istringstream& is)
 {
     Position p[NB_COLOR];
     int idx = 0;
@@ -103,7 +101,7 @@ void position(std::istringstream& is)
     pos = p[idx];
 }
 
-void go(std::istringstream& is)
+static void go(std::istringstream& is)
 {
     std::string token;
     lim.movestogo = 30;
@@ -135,13 +133,13 @@ void go(std::istringstream& is)
     Timer = std::thread(search::bestmove, std::cref(pos), std::cref(lim), std::cref(gameStack));
 }
 
-void eval()
+static void eval()
 {
     print(pos);
     std::cout << "score " << uci::format_score(evaluate(pos)) << std::endl;
 }
 
-void perft(std::istringstream& is)
+static void perft(std::istringstream& is)
 {
     int depth;
     is >> depth;
@@ -149,8 +147,6 @@ void perft(std::istringstream& is)
     print(pos);
     std::cout << "score " << gen::perft(pos, depth) << std::endl;
 }
-
-}    // namespace
 
 namespace uci {
 

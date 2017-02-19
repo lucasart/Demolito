@@ -10,5 +10,4 @@ struct PawnEntry {
 
 extern thread_local PawnEntry PawnHash[NB_PAWN_ENTRY];
 
-int blend(const Position& pos, eval_t e);
 int evaluate(const Position& pos);

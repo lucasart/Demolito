@@ -18,10 +18,8 @@
 #include "move.h"
 #include "bitboard.h"
 
-namespace {
-
 template <bool Promotion>
-move_t *serialize_moves(Move& m, bitboard_t tss, move_t *emList, bool subPromotions = true)
+static move_t *serialize_moves(Move& m, bitboard_t tss, move_t *emList, bool subPromotions = true)
 {
     while (tss) {
         m.to = bb::pop_lsb(tss);
@@ -40,8 +38,6 @@ move_t *serialize_moves(Move& m, bitboard_t tss, move_t *emList, bool subPromoti
 
     return emList;
 }
-
-}    // namespace
 
 namespace gen {
 

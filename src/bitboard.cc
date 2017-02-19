@@ -16,34 +16,32 @@
 #include <iostream>
 #include "bitboard.h"
 
-namespace {
+static const int PDir[2][2] = {{1,-1},{1,1}};
+static const int NDir[8][2] = {{-2,-1},{-2,1},{-1,-2},{-1,2},{1,-2},{1,2},{2,-1},{2,1}};
+static const int KDir[8][2] = {{-1,-1},{-1,0},{-1,1},{0,-1},{0,1},{1,-1},{1,0},{1,1}};
 
-const int PDir[2][2] = {{1,-1},{1,1}};
-const int NDir[8][2] = {{-2,-1},{-2,1},{-1,-2},{-1,2},{1,-2},{1,2},{2,-1},{2,1}};
-const int KDir[8][2] = {{-1,-1},{-1,0},{-1,1},{0,-1},{0,1},{1,-1},{1,0},{1,1}};
+static bitboard_t PAttacks[NB_COLOR][NB_SQUARE];
+static bitboard_t NAttacks[NB_SQUARE];
+static bitboard_t KAttacks[NB_SQUARE];
 
-bitboard_t PAttacks[NB_COLOR][NB_SQUARE];
-bitboard_t NAttacks[NB_SQUARE];
-bitboard_t KAttacks[NB_SQUARE];
+static bitboard_t BPseudoAttacks[NB_SQUARE];
+static bitboard_t RPseudoAttacks[NB_SQUARE];
 
-bitboard_t BPseudoAttacks[NB_SQUARE];
-bitboard_t RPseudoAttacks[NB_SQUARE];
+static bitboard_t Segment[NB_SQUARE][NB_SQUARE];
+static bitboard_t Ray[NB_SQUARE][NB_SQUARE];
 
-bitboard_t Segment[NB_SQUARE][NB_SQUARE];
-bitboard_t Ray[NB_SQUARE][NB_SQUARE];
+static bitboard_t PawnSpan[NB_COLOR][NB_SQUARE];
+static bitboard_t PawnPath[NB_COLOR][NB_SQUARE];
+static bitboard_t AdjacentFiles[NB_FILE];
+static int KingDistance[NB_SQUARE][NB_SQUARE];
 
-bitboard_t PawnSpan[NB_COLOR][NB_SQUARE];
-bitboard_t PawnPath[NB_COLOR][NB_SQUARE];
-bitboard_t AdjacentFiles[NB_FILE];
-int KingDistance[NB_SQUARE][NB_SQUARE];
-
-void safe_set_bit(bitboard_t& b, int r, int f)
+static void safe_set_bit(bitboard_t& b, int r, int f)
 {
     if (0 <= r && r < NB_RANK && 0 <= f && f < NB_FILE)
         bb::set(b, square(r, f));
 }
 
-void init_leaper_attacks()
+static void init_leaper_attacks()
 {
     for (int s = A1; s <= H8; ++s) {
         const int r = rank_of(s), f = file_of(s);
@@ -60,7 +58,7 @@ void init_leaper_attacks()
     }
 }
 
-void init_eval()
+static void init_eval()
 {
     for (int s = H8; s >= A1; --s) {
         if (rank_of(s) == RANK_8)
@@ -90,7 +88,7 @@ void init_eval()
                                             std::abs(file_of(s1) - file_of(s2)));
 }
 
-void init_rays()
+static void init_rays()
 {
     for (int s1 = A1; s1 <= H8; ++s1) {
         const int r1 = rank_of(s1), f1 = file_of(s1);
@@ -116,15 +114,13 @@ void init_rays()
     }
 }
 
-void init_slider_pseudo_attacks()
+static void init_slider_pseudo_attacks()
 {
     for (int s = A1; s <= H8; ++s) {
         BPseudoAttacks[s] = bb::battacks(s, 0);
         RPseudoAttacks[s] = bb::rattacks(s, 0);
     }
 }
-
-}    // namespace
 
 namespace bb {
 
