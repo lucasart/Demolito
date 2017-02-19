@@ -24,11 +24,11 @@ bool gs_repetition(const GameStack *gs, int rule50);
 
 void init();
 
-uint64_t key(Color c, Piece p, Square s);
-uint64_t keys(Color c, Piece p, uint64_t sqs);
+uint64_t key(Color c, int p, int s);
+uint64_t keys(Color c, int p, uint64_t sqs);
 
 uint64_t castling(bitboard_t castlableRooks);
-uint64_t en_passant(Square s);
+uint64_t en_passant(int s);
 uint64_t turn();
 
 }    // namespace zobrist

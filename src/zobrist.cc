@@ -93,14 +93,14 @@ void init()
     prng_init(&prng, 0);
 
     for (Color c = WHITE; c <= BLACK; ++c)
-        for (Piece p = KNIGHT; p < NB_PIECE; ++p)
-            for (Square s = A1; s <= H8; ++s)
+        for (int p = KNIGHT; p < NB_PIECE; ++p)
+            for (int s = A1; s <= H8; ++s)
                 Zobrist[c][p][s] = prng_rand(&prng);
 
-    for (Square s = A1; s <= H8; ++s)
+    for (int s = A1; s <= H8; ++s)
         ZobristCastling[s] = prng_rand(&prng);
 
-    for (Square s = A1; s <= H8; ++s)
+    for (int s = A1; s <= H8; ++s)
         ZobristEnPassant[s] = prng_rand(&prng);
 
     ZobristEnPassant[NB_SQUARE] = prng_rand(&prng);
@@ -108,7 +108,7 @@ void init()
     ZobristTurn = prng_rand(&prng);
 }
 
-uint64_t key(Color c, Piece p, Square s)
+uint64_t key(Color c, int p, int s)
 {
     BOUNDS(c, NB_COLOR);
     BOUNDS(p, NB_PIECE);
@@ -117,7 +117,7 @@ uint64_t key(Color c, Piece p, Square s)
     return Zobrist[c][p][s];
 }
 
-uint64_t keys(Color c, Piece p, uint64_t sqs)
+uint64_t keys(Color c, int p, uint64_t sqs)
 {
     BOUNDS(c, NB_COLOR);
     BOUNDS(p, NB_PIECE);
@@ -140,7 +140,7 @@ uint64_t castling(bitboard_t castlableRooks)
     return k;
 }
 
-uint64_t en_passant(Square s)
+uint64_t en_passant(int s)
 {
     assert(unsigned(s) <= NB_SQUARE);
 

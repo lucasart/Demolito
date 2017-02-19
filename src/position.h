@@ -7,7 +7,7 @@ struct Position {
     bitboard_t byPiece[NB_PIECE];
     Color turn;
     bitboard_t castleRooks;
-    Square epSquare;
+    int epSquare;
     int rule50;
 
     bitboard_t attacked, checkers, pins;
@@ -30,13 +30,13 @@ eval_t calc_pst(const Position& pos);
 eval_t calc_piece_material(const Position& pos, Color c);
 
 bitboard_t pieces(const Position& pos);
-bitboard_t pieces_cp(const Position& pos, Color c, Piece p);
-bitboard_t pieces_cpp(const Position& pos, Color c, Piece p1, Piece p2);
+bitboard_t pieces_cp(const Position& pos, Color c, int p);
+bitboard_t pieces_cpp(const Position& pos, Color c, int p1, int p2);
 
 std::string get(const Position& pos);
 bitboard_t ep_square_bb(const Position& pos);
 bool insufficient_material(const Position& pos);
-Square king_square(const Position& pos, Color c);
-Color color_on(const Position& pos, Square s);
-bitboard_t attackers_to(const Position& pos, Square s, bitboard_t occ);
+int king_square(const Position& pos, Color c);
+Color color_on(const Position& pos, int s);
+bitboard_t attackers_to(const Position& pos, int s, bitboard_t occ);
 void print(const Position& pos);

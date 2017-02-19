@@ -27,11 +27,11 @@ void clear(Position *pos)
 {
     std::memset(pos, 0, sizeof(*pos));
 
-    for (Square s = A1; s <= H8; ++s)
+    for (int s = A1; s <= H8; ++s)
         pos->pieceOn[s] = NB_PIECE;
 }
 
-void clear_square(Position *pos, Color c, Piece p, Square s)
+void clear_square(Position *pos, Color c, int p, int s)
 {
     BOUNDS(c, NB_COLOR);
     BOUNDS(p, NB_PIECE);
@@ -50,7 +50,7 @@ void clear_square(Position *pos, Color c, Piece p, Square s)
         pos->pawnKey ^= zobrist::key(c, p, s);
 }
 
-void set_square(Position *pos, Color c, Piece p, Square s)
+void set_square(Position *pos, Color c, int p, int s)
 {
     BOUNDS(c, NB_COLOR);
     BOUNDS(p, NB_PIECE);
@@ -72,7 +72,7 @@ void set_square(Position *pos, Color c, Piece p, Square s)
 void finish(Position *pos)
 {
     const Color us = pos->turn, them = ~us;
-    const Square ksq = king_square(*pos, us);
+    const int ksq = king_square(*pos, us);
 
     pos->attacked = attacked_by(*pos, them);
     pos->checkers = bb::test(pos->attacked, ksq) ? attackers_to(*pos, ksq,
@@ -88,9 +88,9 @@ void pos_set(Position *pos, const std::string& fen)
     std::istringstream is(fen);
     std::string token;
 
-    // Piece placement
+    // int placement
     is >> token;
-    Square s = A8;
+    int s = A8;
 
     for (char c : token) {
         if (isdigit(c))
@@ -99,7 +99,7 @@ void pos_set(Position *pos, const std::string& fen)
             s += 2 * DOWN;
         else {
             for (Color col = WHITE; col <= BLACK; ++col) {
-                const Piece p = Piece(PieceLabel[col].find(c));
+                const int p = PieceLabel[col].find(c);
 
                 if (unsigned(p) < NB_PIECE) {
                     set_square(pos, col, p, s);
@@ -124,7 +124,7 @@ void pos_set(Position *pos, const std::string& fen)
 
     if (token != "-") {
         for (char c : token) {
-            const Rank r = isupper(c) ? RANK_1 : RANK_8;
+            const int r = isupper(c) ? RANK_1 : RANK_8;
             c = toupper(c);
 
             if (c == 'K')
@@ -132,7 +132,7 @@ void pos_set(Position *pos, const std::string& fen)
             else if (c == 'Q')
                 s = square(r, FILE_A);
             else if ('A' <= c && c <= 'H')
-                s = square(r, File(c - 'A'));
+                s = square(r, c - 'A');
 
             bb::set(pos->castleRooks, s);
         }
@@ -155,8 +155,8 @@ void pos_move(Position *pos, const Position& before, Move m)
     pos->rule50++;
 
     const Color us = pos->turn, them = ~us;
-    const Piece p = Piece(pos->pieceOn[m.from]);
-    const Piece capture = Piece(pos->pieceOn[m.to]);
+    const int p = pos->pieceOn[m.from];
+    const int capture = pos->pieceOn[m.to];
 
     // Capture piece on to square (if any)
     if (capture != NB_PIECE) {
@@ -194,13 +194,13 @@ void pos_move(Position *pos, const Position& before, Move m)
             pos->castleRooks &= ~(1ULL << m.from);
         else if (p == KING) {
             // Lose all castling rights
-            pos->castleRooks &= ~bb::rank(Rank(us * RANK_8));
+            pos->castleRooks &= ~bb::rank(us * RANK_8);
 
             // Castling
             if (bb::test(before.byColor[us], m.to)) {
                 // Capturing our own piece can only be a castling move, encoded KxR
                 assert(before.pieceOn[m.to] == ROOK);
-                const Rank r = rank_of(m.from);
+                const int r = rank_of(m.from);
 
                 clear_square(pos, us, KING, m.to);
                 set_square(pos, us, KING, square(r, m.to > m.from ? FILE_G : FILE_C));
@@ -264,13 +264,13 @@ bitboard_t attacked_by(const Position& pos, Color c)
 bitboard_t calc_pins(const Position& pos)
 {
     const Color us = pos.turn;
-    const Square king = king_square(pos, us);
+    const int king = king_square(pos, us);
     bitboard_t pinners = (pieces_cpp(pos, ~us, ROOK, QUEEN) & bb::rpattacks(king))
                          | (pieces_cpp(pos, ~us, BISHOP, QUEEN) & bb::bpattacks(king));
     bitboard_t result = 0;
 
     while (pinners) {
-        const Square s = bb::pop_lsb(pinners);
+        const int s = bb::pop_lsb(pinners);
         bitboard_t skewered = bb::segment(king, s) & pieces(pos);
         bb::clear(skewered, king);
         bb::clear(skewered, s);
@@ -289,7 +289,7 @@ uint64_t calc_key(const Position& pos)
                    ^ zobrist::castling(pos.castleRooks);
 
     for (Color c = WHITE; c <= BLACK; ++c)
-        for (Piece p = KNIGHT; p < NB_PIECE; ++p)
+        for (int p = KNIGHT; p < NB_PIECE; ++p)
             key ^= zobrist::keys(c, p, pieces_cp(pos, c, p));
 
     return key;
@@ -312,7 +312,7 @@ eval_t calc_pst(const Position& pos)
     eval_t result {0, 0};
 
     for (Color c = WHITE; c <= BLACK; ++c)
-        for (Piece p = KNIGHT; p < NB_PIECE; ++p) {
+        for (int p = KNIGHT; p < NB_PIECE; ++p) {
             bitboard_t b = pieces_cp(pos, c, p);
 
             while (b)
@@ -326,13 +326,13 @@ eval_t calc_piece_material(const Position& pos, Color c)
 {
     eval_t result {0, 0};
 
-    for (Piece p = KNIGHT; p <= QUEEN; ++p)
+    for (int p = KNIGHT; p <= QUEEN; ++p)
         result += Material[p] * bb::count(pieces_cp(pos, c, p));
 
     return result;
 }
 
-bitboard_t pieces_cp(const Position& pos, Color c, Piece p)
+bitboard_t pieces_cp(const Position& pos, Color c, int p)
 {
     return pos.byColor[c] & pos.byPiece[p];
 }
@@ -344,7 +344,7 @@ bitboard_t pieces(const Position& pos)
     return pos.byColor[WHITE] | pos.byColor[BLACK];
 }
 
-bitboard_t pieces_cpp(const Position& pos, Color c, Piece p1, Piece p2)
+bitboard_t pieces_cpp(const Position& pos, Color c, int p1, int p2)
 {
     return pos.byColor[c] & (pos.byPiece[p1] | pos.byPiece[p2]);
 }
@@ -353,12 +353,12 @@ std::string get(const Position& pos)
 {
     std::ostringstream os;
 
-    // Piece placement
-    for (Rank r = RANK_8; r >= RANK_1; --r) {
+    // int placement
+    for (int r = RANK_8; r >= RANK_1; --r) {
         int cnt = 0;
 
-        for (File f = FILE_A; f <= FILE_H; ++f) {
-            const Square s = square(r, f);
+        for (int f = FILE_A; f <= FILE_H; ++f) {
+            const int s = square(r, f);
 
             if (bb::test(pieces(pos), s)) {
                 if (cnt)
@@ -389,7 +389,7 @@ std::string get(const Position& pos)
             if (!sqs)
                 continue;
 
-            const Square king = king_square(pos, c);
+            const int king = king_square(pos, c);
 
             // Because we have castlable rooks, the king has to be on the first rank and
             // cannot be in a corner, which allows using bb::ray(king, king +/- 1) to
@@ -437,21 +437,21 @@ bool insufficient_material(const Position& pos)
            && !pos.byPiece[QUEEN];
 }
 
-Square king_square(const Position& pos, Color c)
+int king_square(const Position& pos, Color c)
 {
     assert(bb::count(pieces_cp(pos, c, KING)) == 1);
 
     return bb::lsb(pieces_cp(pos, c, KING));
 }
 
-Color color_on(const Position& pos, Square s)
+Color color_on(const Position& pos, int s)
 {
     assert(bb::test(pieces(pos), s));
 
     return bb::test(pos.byColor[WHITE], s) ? WHITE : BLACK;
 }
 
-bitboard_t attackers_to(const Position& pos, Square s, bitboard_t occ)
+bitboard_t attackers_to(const Position& pos, int s, bitboard_t occ)
 {
     BOUNDS(s, NB_SQUARE);
 
@@ -465,11 +465,11 @@ bitboard_t attackers_to(const Position& pos, Square s, bitboard_t occ)
 
 void print(const Position& pos)
 {
-    for (Rank r = RANK_8; r >= RANK_1; --r) {
+    for (int r = RANK_8; r >= RANK_1; --r) {
         char line[] = ". . . . . . . .";
 
-        for (File f = FILE_A; f <= FILE_H; ++f) {
-            const Square s = square(r, f);
+        for (int f = FILE_A; f <= FILE_H; ++f) {
+            const int s = square(r, f);
             line[2 * f] = bb::test(pieces(pos), s)
                           ? PieceLabel[color_on(pos, s)][pos.pieceOn[s]]
                           : s == pos.epSquare ? '*' : '.';

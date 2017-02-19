@@ -44,8 +44,7 @@ eval_t score_mobility(int p0, int p, bitboard_t tss)
 eval_t mobility(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PIECE+1])
 {
     bitboard_t fss, tss, occ;
-    Square from;
-    Piece piece;
+    int from, piece;
 
     eval_t result = {0, 0};
 
@@ -72,7 +71,7 @@ eval_t mobility(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_P
 
     while (fss) {
         tss = bb::rattacks(from = bb::pop_lsb(fss), occ);
-        attacks[us][piece = Piece(pos.pieceOn[from])] |= tss;
+        attacks[us][piece = pos.pieceOn[from]] |= tss;
         result += score_mobility(ROOK, pos.pieceOn[from], tss & targets);
     }
 
@@ -82,7 +81,7 @@ eval_t mobility(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_P
 
     while (fss) {
         tss = bb::battacks(from = bb::pop_lsb(fss), occ);
-        attacks[us][piece = Piece(pos.pieceOn[from])] |= tss;
+        attacks[us][piece = pos.pieceOn[from]] |= tss;
         result += score_mobility(BISHOP, pos.pieceOn[from], tss & targets);
     }
 
@@ -112,7 +111,7 @@ int tactics(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PIECE
     int result = 0;
 
     while (b) {
-        const Piece p = Piece(pos.pieceOn[bb::pop_lsb(b)]);
+        const int p = pos.pieceOn[bb::pop_lsb(b)];
         assert(KNIGHT <= p && p <= QUEEN);
         result -= Hanging[p];
     }
@@ -131,7 +130,7 @@ int safety(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PIECE+
 
     const bitboard_t dangerZone = attacks[us][KING] & ~attacks[us][PAWN];
 
-    for (Piece p = KNIGHT; p <= QUEEN; ++p) {
+    for (int p = KNIGHT; p <= QUEEN; ++p) {
         const bitboard_t attacked = attacks[~us][p] & dangerZone;
 
         if (attacked) {
@@ -143,7 +142,7 @@ int safety(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PIECE+
 
     // Check threats
 
-    const Square ks = king_square(pos, us);
+    const int ks = king_square(pos, us);
     const bitboard_t occ = pieces(pos);
     const bitboard_t checks[QUEEN+1] = {
         bb::nattacks(ks) & attacks[~us][KNIGHT],
@@ -152,7 +151,7 @@ int safety(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PIECE+
         (bb::battacks(ks, occ) | bb::rattacks(ks, occ)) & attacks[~us][QUEEN]
     };
 
-    for (Piece p = KNIGHT; p <= QUEEN; ++p)
+    for (int p = KNIGHT; p <= QUEEN; ++p)
         if (checks[p]) {
             const bitboard_t b = checks[p] & ~(pos.byColor[~us] | attacks[us][PAWN] | attacks[us][KING]);
 
@@ -165,7 +164,7 @@ int safety(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_PIECE+
     return result * (2 + cnt) / 4;
 }
 
-eval_t passer(Color us, Square pawn, Square ourKing, Square theirKing, bool phalanx)
+eval_t passer(Color us, int pawn, int ourKing, int theirKing, bool phalanx)
 {
     static const eval_t bonus[7] = {{0, 6}, {0, 12}, {22, 30}, {66, 60}, {132, 102},
         {220, 156}, {330, 222}
@@ -178,7 +177,7 @@ eval_t passer(Color us, Square pawn, Square ourKing, Square theirKing, bool phal
 
     // king distance adjustment
     if (n > 1) {
-        const Square stop = pawn + push_inc(us);
+        const int stop = pawn + push_inc(us);
         const int Q = n * (n - 1);
         result.eg() += bb::king_distance(stop, theirKing) * 6 * Q;
         result.eg() -= bb::king_distance(stop, ourKing) * 3 * Q;
@@ -195,8 +194,8 @@ eval_t do_pawns(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_P
 
     const bitboard_t ourPawns = pieces_cp(pos, us, PAWN);
     const bitboard_t theirPawns = pieces_cp(pos, ~us, PAWN);
-    const Square ourKing = king_square(pos, us);
-    const Square theirKing = king_square(pos, ~us);
+    const int ourKing = king_square(pos, us);
+    const int theirKing = king_square(pos, ~us);
 
     eval_t result = {0, 0};
 
@@ -217,10 +216,9 @@ eval_t do_pawns(const Position& pos, Color us, bitboard_t attacks[NB_COLOR][NB_P
     b = ourPawns;
 
     while (b) {
-        const Square s = bb::pop_lsb(b);
-        const Square stop = s + push_inc(us);
-        const Rank r = rank_of(s);
-        const File f = file_of(s);
+        const int s = bb::pop_lsb(b);
+        const int stop = s + push_inc(us);
+        const int r = rank_of(s), f = file_of(s);
 
         const bitboard_t adjacentFiles = bb::adjacent_files(f);
         const bitboard_t besides = ourPawns & adjacentFiles;

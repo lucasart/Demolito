@@ -10,29 +10,15 @@ extern int64_t dbgCnt[2];
 
 #define BOUNDS(v, ub) assert(unsigned(v) < ub)
 
-#define ENABLE_OPERATORS(T) \
-inline constexpr T operator+(T v, int i) { return T(int(v) + i); } \
-inline constexpr T operator-(T v, int i) { return T(int(v) - i); } \
-inline T operator+=(T& v, int i) { return v = T(int(v) + i); } \
-inline T operator-=(T& v, int i) { return v = T(int(v) - i); } \
-inline T operator++(T& v) { return v = T(int(v) + 1); } \
-inline T operator--(T& v) { return v = T(int(v) - 1); }
-
-/* Color, Piece */
-
 enum Color {WHITE, BLACK, NB_COLOR};
-enum Piece {KNIGHT, BISHOP, ROOK, QUEEN, KING, PAWN, NB_PIECE};
-
-ENABLE_OPERATORS(Color)
-ENABLE_OPERATORS(Piece)
+enum {KNIGHT, BISHOP, ROOK, QUEEN, KING, PAWN, NB_PIECE};
 
 inline Color operator~(Color c) { return Color(c ^ BLACK); }
+inline Color operator++(Color& c) { return c = Color(int(c) + 1); }
 
-/* Rank, File, Square */
-
-enum Rank {RANK_1, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8, NB_RANK};
-enum File {FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H, NB_FILE};
-enum Square {
+enum {RANK_1, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8, NB_RANK};
+enum {FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H, NB_FILE};
+enum {
     A1, B1, C1, D1, E1, F1, G1, H1,
     A2, B2, C2, D2, E2, F2, G2, H2,
     A3, B3, C3, D3, E3, F3, G3, H3,
@@ -44,18 +30,14 @@ enum Square {
     NB_SQUARE
 };
 
-ENABLE_OPERATORS(Rank)
-ENABLE_OPERATORS(File)
-ENABLE_OPERATORS(Square)
+int rank_of(int s);
+int file_of(int s);
+int relative_rank(Color c, int r);
+int relative_rank_of(Color c, int s);
+int square(int r, int f);
 
-Rank rank_of(Square s);
-File file_of(Square s);
-Rank relative_rank(Color c, Rank r);
-Rank relative_rank_of(Color c, Square s);
-Square square(Rank r, File f);
-
-std::string square_to_string(Square s);
-Square string_to_square(const std::string& s);
+std::string square_to_string(int s);
+int string_to_square(const std::string& s);
 
 /* Directions */
 

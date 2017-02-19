@@ -7,8 +7,8 @@ struct Position;
 typedef uint16_t move_t;  // from:6, to:6, prom: 3 (NB_PIECE if none)
 
 struct Move {
-    Square from, to;
-    Piece prom;
+    int from, to;
+    int prom;
 
     Move() = default;
     Move(move_t em) { *this = em; }

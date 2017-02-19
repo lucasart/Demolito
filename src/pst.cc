@@ -22,13 +22,13 @@ eval_t table[NB_COLOR][NB_PIECE][NB_SQUARE];
 
 const int Center[NB_FILE] = {-5,-2, 0, 2, 2, 0,-2,-5};
 
-eval_t knight(Rank r, File f)
+eval_t knight(int r, int f)
 {
     const eval_t CenterWeight = {10, 3};
     return CenterWeight * (Center[r] + Center[f]);
 }
 
-eval_t bishop(Rank r, File f)
+eval_t bishop(int r, int f)
 {
     const eval_t CenterWeight = {2, 3};
     const eval_t DiagonalWeight = {8, 0};
@@ -39,7 +39,7 @@ eval_t bishop(Rank r, File f)
            + BackRankWeight * (r == RANK_1);
 }
 
-eval_t rook(Rank r, File f)
+eval_t rook(int r, int f)
 {
     const eval_t FileWeight = {3, 0};
     const eval_t SeventhWeight = {16, 16};
@@ -48,7 +48,7 @@ eval_t rook(Rank r, File f)
            + SeventhWeight * (r == RANK_7);
 }
 
-eval_t queen(Rank r, File f)
+eval_t queen(int r, int f)
 {
     const eval_t CenterWeight = {0, 4};
     const eval_t BackRankWeight = {-10, 0};
@@ -57,7 +57,7 @@ eval_t queen(Rank r, File f)
            + BackRankWeight * (r == RANK_1);
 }
 
-eval_t king(Rank r, File f)
+eval_t king(int r, int f)
 {
     static const int FileWeight[NB_FILE] = {54, 84, 40, 0, 0, 40, 84, 54};
     static const int RankWeight[NB_RANK] = {28, 0,-28,-46,-58,-70,-70,-70};
@@ -69,7 +69,7 @@ eval_t king(Rank r, File f)
     };
 }
 
-eval_t pawn(Rank r, File f)
+eval_t pawn(int r, int f)
 {
     const eval_t PCenter = {36, 0};
     eval_t e = {0, 0};
@@ -86,15 +86,15 @@ eval_t pawn(Rank r, File f)
 
 void init()
 {
-    typedef eval_t (*pst_fn)(Rank, File);
+    typedef eval_t (*pst_fn)(int, int);
     const pst_fn PstFn[NB_PIECE] = {&knight, &bishop, &rook, &queen, &king, &pawn};
 
     // Calculate PST, based on specialized functions for each piece
     for (Color c = WHITE; c <= BLACK; ++c)
-        for (Piece p = KNIGHT; p < NB_PIECE; ++p)
-            for (Square s = A1; s <= H8; ++s) {
-                const Rank rr = Rank(rank_of(s) ^ (RANK_8 * c));
-                const File f = file_of(s);
+        for (int p = KNIGHT; p < NB_PIECE; ++p)
+            for (int s = A1; s <= H8; ++s) {
+                const int rr = relative_rank_of(c, s);
+                const int f = file_of(s);
                 table[c][p][s] = (Material[p] + (*PstFn[p])(rr, f)) * (c == WHITE ? 1 : -1);
             }
 }

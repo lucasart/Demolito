@@ -31,9 +31,9 @@ Move::operator move_t() const
 
 Move Move::operator =(move_t em)
 {
-    from = Square(em & 077);
-    to = Square((em >> 6) & 077);
-    prom = Piece(em >> 12);
+    from = em & 077;
+    to = (em >> 6) & 077;
+    prom = em >> 12;
     assert(move_ok(*this));
     return *this;
 }
@@ -60,9 +60,9 @@ std::string move_to_string(const Position& pos, const Move& m)
     if (!(m.from | m.to | m.prom))
         return "0000";
 
-    const Square _tsq = !Chess960 && move_is_castling(pos, m)
-                        ? (m.to > m.from ? m.from + 2 : m.from - 2)    // e1h1 -> e1g1, e1a1 -> e1c1
-                        : m.to;
+    const int _tsq = !Chess960 && move_is_castling(pos, m)
+                     ? (m.to > m.from ? m.from + 2 : m.from - 2)    // e1h1 -> e1g1, e1a1 -> e1c1
+                     : m.to;
 
     s += file_of(m.from) + 'a';
     s += rank_of(m.from) + '1';
@@ -77,9 +77,9 @@ std::string move_to_string(const Position& pos, const Move& m)
 
 void move_from_string(const Position& pos, const std::string& s, Move& m)
 {
-    m.from = square(Rank(s[1] - '1'), File(s[0] - 'a'));
-    m.to = square(Rank(s[3] - '1'), File(s[2] - 'a'));
-    m.prom = s[4] ? (Piece)PieceLabel[BLACK].find(s[4]) : NB_PIECE;
+    m.from = square(s[1] - '1', s[0] - 'a');
+    m.to = square(s[3] - '1', s[2] - 'a');
+    m.prom = s[4] ? (int)PieceLabel[BLACK].find(s[4]) : NB_PIECE;
 
     if (!Chess960 && pos.pieceOn[m.from] == KING) {
         if (m.to == m.from + 2)  // e1g1 -> e1h1
@@ -93,15 +93,15 @@ void move_from_string(const Position& pos, const std::string& s, Move& m)
 
 bool move_is_legal(const Position& pos, const Move& m)
 {
-    const Piece p = Piece(pos.pieceOn[m.from]);
-    const Square king = king_square(pos, pos.turn);
+    const int p = pos.pieceOn[m.from];
+    const int king = king_square(pos, pos.turn);
 
     if (p == KING) {
         if (bb::test(pos.byColor[pos.turn], m.to)) {
             // Castling: king must not move through attacked square, and rook must not
             // be pinned
             assert(pos.pieceOn[m.to] == ROOK);
-            const Square _tsq = square(rank_of(m.from), m.from < m.to ? FILE_G : FILE_C);
+            const int _tsq = square(rank_of(m.from), m.from < m.to ? FILE_G : FILE_C);
             return !(pos.attacked & bb::segment(m.from, _tsq))
                    && !bb::test(pos.pins, m.to);
         } else
@@ -136,7 +136,7 @@ int move_see(const Position& pos, const Move& m)
 
     // General case
     int gain[32] = {see_value[pos.pieceOn[m.to]]};
-    Piece capture = Piece(pos.pieceOn[m.from]);
+    int capture = pos.pieceOn[m.from];
     bb::clear(occ, m.from);
 
     // Special cases
@@ -160,7 +160,7 @@ int move_see(const Position& pos, const Move& m)
 
     while (us = ~us, our_attackers = attackers & pos.byColor[us]) {
         // Find least valuable attacker (LVA)
-        Piece p = PAWN;
+        int p = PAWN;
 
         if (!(our_attackers & pieces_cp(pos, us, PAWN))) {
             for (p = KNIGHT; p <= KING; ++p) {
