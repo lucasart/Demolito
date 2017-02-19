@@ -148,7 +148,7 @@ static bitboard_t calc_sliding_attacks(int s, bitboard_t occ, const int dir[4][2
 
         while (0 <= _r && _r < NB_RANK && 0 <= _f && _f < NB_FILE) {
             const int _sq = square(_r, _f);
-            bb::set(result, _sq);
+            bb::set(&result, _sq);
 
             if (bb::test(occ, _sq))
                 break;
@@ -166,7 +166,7 @@ static bitboard_t init_magic_occ(const int* s, int squareCount, bitboard_t lineO
 
     for (int i = 0; i < squareCount; ++i)
         if (lineOcc & (1ULL << i))
-            bb::set(result, s[i]);
+            bb::set(&result, s[i]);
 
     return result;
 }
@@ -180,7 +180,7 @@ static void init_helper(int s, const bitboard_t mask[], const bitboard_t magic[]
     bitboard_t temp = mask[s];
 
     while (temp)
-        squares[squareCount++] = bb::pop_lsb(temp);
+        squares[squareCount++] = bb::pop_lsb(&temp);
 
     for (temp = 0; temp < (1ULL << squareCount); temp++) {
         bitboard_t occ = init_magic_occ(squares, squareCount, temp);

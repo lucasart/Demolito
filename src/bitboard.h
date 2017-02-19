@@ -35,13 +35,13 @@ int king_distance(int s1, int s2);
 /* Bit manipulation */
 
 bool test(bitboard_t b, int s);
-void clear(bitboard_t& b, int s);
-void set(bitboard_t& b, int s);
+void clear(bitboard_t *b, int s);
+void set(bitboard_t *b, int s);
 bitboard_t shift(bitboard_t b, int i);
 
 int lsb(bitboard_t b);
 int msb(bitboard_t b);
-int pop_lsb(bitboard_t& b);
+int pop_lsb(bitboard_t *b);
 
 bool several(bitboard_t b);
 int count(bitboard_t b);

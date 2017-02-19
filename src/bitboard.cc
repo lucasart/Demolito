@@ -35,7 +35,7 @@ static bitboard_t PawnPath[NB_COLOR][NB_SQUARE];
 static bitboard_t AdjacentFiles[NB_FILE];
 static int KingDistance[NB_SQUARE][NB_SQUARE];
 
-static void safe_set_bit(bitboard_t& b, int r, int f)
+static void safe_set_bit(bitboard_t *b, int r, int f)
 {
     if (0 <= r && r < NB_RANK && 0 <= f && f < NB_FILE)
         bb::set(b, square(r, f));
@@ -47,13 +47,13 @@ static void init_leaper_attacks()
         const int r = rank_of(s), f = file_of(s);
 
         for (int d = 0; d < 8; d++) {
-            safe_set_bit(NAttacks[s], r + NDir[d][0], f + NDir[d][1]);
-            safe_set_bit(KAttacks[s], r + KDir[d][0], f + KDir[d][1]);
+            safe_set_bit(&NAttacks[s], r + NDir[d][0], f + NDir[d][1]);
+            safe_set_bit(&KAttacks[s], r + KDir[d][0], f + KDir[d][1]);
         }
 
         for (int d = 0; d < 2; d++) {
-            safe_set_bit(PAttacks[WHITE][s], r + PDir[d][0], f + PDir[d][1]);
-            safe_set_bit(PAttacks[BLACK][s], r - PDir[d][0], f - PDir[d][1]);
+            safe_set_bit(&PAttacks[WHITE][s], r + PDir[d][0], f + PDir[d][1]);
+            safe_set_bit(&PAttacks[BLACK][s], r - PDir[d][0], f - PDir[d][1]);
         }
     }
 }
@@ -99,7 +99,7 @@ static void init_rays()
 
             while (0 <= r2 && r2 < NB_RANK && 0 <= f2 && f2 < NB_FILE) {
                 const int s2 = square(r2, f2);
-                bb::set(mask, s2);
+                bb::set(&mask, s2);
                 Segment[s1][s2] = mask;
                 r2 += KDir[d][0], f2 += KDir[d][1];
             }
@@ -107,7 +107,7 @@ static void init_rays()
             bitboard_t sqs = mask;
 
             while (sqs) {
-                int s2 = bb::pop_lsb(sqs);
+                int s2 = bb::pop_lsb(&sqs);
                 Ray[s1][s2] = mask;
             }
         }
@@ -243,20 +243,20 @@ bool test(bitboard_t b, int s)
     return b & (1ULL << s);
 }
 
-void clear(bitboard_t& b, int s)
+void clear(bitboard_t *b, int s)
 {
     BOUNDS(s, NB_SQUARE);
-    assert(test(b, s));
+    assert(test(*b, s));
 
-    b ^= 1ULL << s;
+    *b ^= 1ULL << s;
 }
 
-void set(bitboard_t& b, int s)
+void set(bitboard_t *b, int s)
 {
     BOUNDS(s, NB_SQUARE);
-    assert(!test(b, s));
+    assert(!test(*b, s));
 
-    b ^= 1ULL << s;
+    *b ^= 1ULL << s;
 }
 
 bitboard_t shift(bitboard_t b, int i)
@@ -280,10 +280,10 @@ int msb(bitboard_t b)
     return 63 - __builtin_clzll(b);
 }
 
-int pop_lsb(bitboard_t& b)
+int pop_lsb(bitboard_t *b)
 {
-    int s = lsb(b);
-    b &= b - 1;
+    int s = lsb(*b);
+    *b &= *b - 1;
     return s;
 }
 

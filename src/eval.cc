@@ -59,7 +59,7 @@ static eval_t mobility(const Position& pos, int us, bitboard_t attacks[NB_COLOR]
     fss = pieces_cp(pos, us, KNIGHT);
 
     while (fss) {
-        tss = bb::nattacks(bb::pop_lsb(fss));
+        tss = bb::nattacks(bb::pop_lsb(&fss));
         attacks[us][KNIGHT] |= tss;
         result += score_mobility(KNIGHT, KNIGHT, tss & targets);
     }
@@ -69,7 +69,7 @@ static eval_t mobility(const Position& pos, int us, bitboard_t attacks[NB_COLOR]
     occ = pieces(pos) ^ fss;    // RQ see through each other
 
     while (fss) {
-        tss = bb::rattacks(from = bb::pop_lsb(fss), occ);
+        tss = bb::rattacks(from = bb::pop_lsb(&fss), occ);
         attacks[us][piece = pos.pieceOn[from]] |= tss;
         result += score_mobility(ROOK, pos.pieceOn[from], tss & targets);
     }
@@ -79,7 +79,7 @@ static eval_t mobility(const Position& pos, int us, bitboard_t attacks[NB_COLOR]
     occ = pieces(pos) ^ fss;    // BQ see through each other
 
     while (fss) {
-        tss = bb::battacks(from = bb::pop_lsb(fss), occ);
+        tss = bb::battacks(from = bb::pop_lsb(&fss), occ);
         attacks[us][piece = pos.pieceOn[from]] |= tss;
         result += score_mobility(BISHOP, pos.pieceOn[from], tss & targets);
     }
@@ -111,7 +111,7 @@ static int tactics(const Position& pos, int us, bitboard_t attacks[NB_COLOR][NB_
     int result = 0;
 
     while (b) {
-        const int p = pos.pieceOn[bb::pop_lsb(b)];
+        const int p = pos.pieceOn[bb::pop_lsb(&b)];
         assert(KNIGHT <= p && p <= QUEEN);
         result -= Hanging[p];
     }
@@ -206,19 +206,19 @@ static eval_t do_pawns(const Position& pos, int us, bitboard_t attacks[NB_COLOR]
     bitboard_t b = ourPawns & bb::pawn_path(us, ourKing);
 
     while (b)
-        result.op() += shieldBonus[relative_rank_of(us, bb::pop_lsb(b))];
+        result.op() += shieldBonus[relative_rank_of(us, bb::pop_lsb(&b))];
 
     b = ourPawns & bb::pawn_span(us, ourKing);
 
     while (b)
-        result.op() += shieldBonus[relative_rank_of(us, bb::pop_lsb(b))] / 2;
+        result.op() += shieldBonus[relative_rank_of(us, bb::pop_lsb(&b))] / 2;
 
     // Pawn structure
 
     b = ourPawns;
 
     while (b) {
-        const int s = bb::pop_lsb(b);
+        const int s = bb::pop_lsb(&b);
         const int stop = s + push_inc(us);
         const int r = rank_of(s), f = file_of(s);
 

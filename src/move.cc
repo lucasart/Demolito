@@ -117,9 +117,9 @@ bool move_is_legal(const Position& pos, const Move& m)
         if (m.to == pos.epSquare && p == PAWN) {
             const int us = pos.turn, them = opposite(us);
             bitboard_t occ = pieces(pos);
-            bb::clear(occ, m.from);
-            bb::set(occ, m.to);
-            bb::clear(occ, m.to + push_inc(them));
+            bb::clear(&occ, m.from);
+            bb::set(&occ, m.to);
+            bb::clear(&occ, m.to + push_inc(them));
             return !(bb::rattacks(king, occ) & pieces_cpp(pos, them, ROOK, QUEEN))
                    && !(bb::battacks(king, occ) & pieces_cpp(pos, them, BISHOP, QUEEN));
         } else
@@ -137,12 +137,12 @@ int move_see(const Position& pos, const Move& m)
     // General case
     int gain[32] = {see_value[pos.pieceOn[m.to]]};
     int capture = pos.pieceOn[m.from];
-    bb::clear(occ, m.from);
+    bb::clear(&occ, m.from);
 
     // Special cases
     if (capture == PAWN) {
         if (m.to == pos.epSquare) {
-            bb::clear(occ, m.to - push_inc(us));
+            bb::clear(&occ, m.to - push_inc(us));
             gain[0] = see_value[capture];
         } else if (relative_rank_of(us, m.to) == RANK_8)
             gain[0] += see_value[capture = m.prom] - see_value[PAWN];
@@ -170,7 +170,7 @@ int move_see(const Position& pos, const Move& m)
         }
 
         // Remove the LVA
-        bb::clear(occ, bb::lsb(ourAttackers & pieces_cp(pos, us, p)));
+        bb::clear(&occ, bb::lsb(ourAttackers & pieces_cp(pos, us, p)));
 
         // Scan for new X-ray attacks through the LVA
         if (p != KNIGHT) {

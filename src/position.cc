@@ -35,8 +35,8 @@ static void clear_square(Position *pos, int c, int p, int s)
     BOUNDS(p, NB_PIECE);
     BOUNDS(s, NB_SQUARE);
 
-    bb::clear(pos->byColor[c], s);
-    bb::clear(pos->byPiece[p], s);
+    bb::clear(&pos->byColor[c], s);
+    bb::clear(&pos->byPiece[p], s);
 
     pos->pieceOn[s] = NB_PIECE;
     pos->pst -= pst::table[c][p][s];
@@ -54,8 +54,8 @@ static void set_square(Position *pos, int c, int p, int s)
     BOUNDS(p, NB_PIECE);
     BOUNDS(s, NB_SQUARE);
 
-    bb::set(pos->byColor[c], s);
-    bb::set(pos->byPiece[p], s);
+    bb::set(&pos->byColor[c], s);
+    bb::set(&pos->byPiece[p], s);
 
     pos->pieceOn[s] = p;
     pos->pst += pst::table[c][p][s];
@@ -130,7 +130,7 @@ void pos_set(Position *pos, const std::string& fen)
             else if ('A' <= c && c <= 'H')
                 s = square(r, c - 'A');
 
-            bb::set(pos->castleRooks, s);
+            bb::set(&pos->castleRooks, s);
         }
 
         pos->key ^= zobrist::castling(pos->castleRooks);
@@ -234,7 +234,7 @@ bitboard_t attacked_by(const Position& pos, int c)
     bitboard_t fss = pieces_cp(pos, c, KNIGHT);
 
     while (fss)
-        result |= bb::nattacks(bb::pop_lsb(fss));
+        result |= bb::nattacks(bb::pop_lsb(&fss));
 
     // Pawn captures
     fss = pieces_cp(pos, c, PAWN) & ~bb::file(FILE_A);
@@ -247,12 +247,12 @@ bitboard_t attacked_by(const Position& pos, int c)
     fss = pieces_cpp(pos, c, ROOK, QUEEN);
 
     while (fss)
-        result |= bb::rattacks(bb::pop_lsb(fss), _occ);
+        result |= bb::rattacks(bb::pop_lsb(&fss), _occ);
 
     fss = pieces_cpp(pos, c, BISHOP, QUEEN);
 
     while (fss)
-        result |= bb::battacks(bb::pop_lsb(fss), _occ);
+        result |= bb::battacks(bb::pop_lsb(&fss), _occ);
 
     return result;
 }
@@ -266,10 +266,10 @@ bitboard_t calc_pins(const Position& pos)
     bitboard_t result = 0;
 
     while (pinners) {
-        const int s = bb::pop_lsb(pinners);
+        const int s = bb::pop_lsb(&pinners);
         bitboard_t skewered = bb::segment(king, s) & pieces(pos);
-        bb::clear(skewered, king);
-        bb::clear(skewered, s);
+        bb::clear(&skewered, king);
+        bb::clear(&skewered, s);
 
         if (!bb::several(skewered) && (skewered & pos.byColor[us]))
             result |= skewered;
@@ -312,7 +312,7 @@ eval_t calc_pst(const Position& pos)
             bitboard_t b = pieces_cp(pos, c, p);
 
             while (b)
-                result += pst::table[c][p][bb::pop_lsb(b)];
+                result += pst::table[c][p][bb::pop_lsb(&b)];
         }
 
     return result;
@@ -482,7 +482,7 @@ void print(const Position& pos)
         std::cout << "checkers:";
 
         while (b)
-            std::cout << ' ' << square_to_string(bb::pop_lsb(b));
+            std::cout << ' ' << square_to_string(bb::pop_lsb(&b));
 
         std::cout << std::endl;
     }
