@@ -56,7 +56,7 @@ move_t *pawn_moves(const Position& pos, move_t *emList, bitboard_t targets, bool
         m.from = bb_pop_lsb(&fss);
 
         // Calculate to squares: captures, single pushes and double pushes
-        tss = bb_pattacks(us, m.from) & capturable & targets;
+        tss = PAttacks[us][m.from] & capturable & targets;
 
         if (bb_test(~pieces(pos), m.from + push)) {
             if (bb_test(targets, m.from + push))
@@ -79,7 +79,7 @@ move_t *pawn_moves(const Position& pos, move_t *emList, bitboard_t targets, bool
         m.from = bb_pop_lsb(&fss);
 
         // Calculate to squares: captures and single pushes
-        tss = bb_pattacks(us, m.from) & capturable & targets;
+        tss = PAttacks[us][m.from] & capturable & targets;
 
         if (bb_test(targets & ~pieces(pos), m.from + push))
             bb_set(&tss, m.from + push);
@@ -102,7 +102,7 @@ move_t *piece_moves(const Position& pos, move_t *emList, bitboard_t targets, boo
     // King moves
     if (kingMoves) {
         m.from = king_square(pos, us);
-        tss = bb_kattacks(m.from) & targets;
+        tss = KAttacks[m.from] & targets;
         emList = serialize_moves<false>(m, tss, emList);
     }
 
@@ -111,7 +111,7 @@ move_t *piece_moves(const Position& pos, move_t *emList, bitboard_t targets, boo
 
     while (fss) {
         m.from = bb_pop_lsb(&fss);
-        tss = bb_nattacks(m.from) & targets;
+        tss = NAttacks[m.from] & targets;
         emList = serialize_moves<false>(m, tss, emList);
     }
 
@@ -149,7 +149,7 @@ move_t *castling_moves(const Position& pos, move_t *emList)
         m.to = bb_pop_lsb(&tss);
         const int kto = square(rank_of(m.to), m.to > m.from ? FILE_G : FILE_C);
         const int rto = square(rank_of(m.to), m.to > m.from ? FILE_F : FILE_D);
-        const bitboard_t s = bb_segment(m.from, kto) | bb_segment(m.to, rto);
+        const bitboard_t s = Segment[m.from][kto] | Segment[m.to][rto];
 
         if (bb_count(s & pieces(pos)) == 2)
             *emList++ = m;
@@ -167,7 +167,7 @@ move_t *check_escapes(const Position& pos, move_t *emList, bool subPromotions)
     Move m;
 
     // King moves
-    tss = bb_kattacks(king) & ~ours;
+    tss = KAttacks[king] & ~ours;
     m.from = king;
     m.prom = NB_PIECE;
     emList = serialize_moves<false>(m, tss, emList);
@@ -180,7 +180,7 @@ move_t *check_escapes(const Position& pos, move_t *emList, bool subPromotions)
         // int moves must cover the checking segment for a sliding check, or capture the
         // checker otherwise.
         tss = BISHOP <= checkerPiece && checkerPiece <= QUEEN
-              ? bb_segment(king, checkerSquare)
+              ? Segment[king][checkerSquare]
               : pos.checkers;
 
         emList = piece_moves(pos, emList, tss & ~ours, false);

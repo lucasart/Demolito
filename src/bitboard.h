@@ -10,19 +10,19 @@ void bb_init();
 bitboard_t bb_rank(int r);
 bitboard_t bb_file(int f);
 
-// Leaper attacks
-bitboard_t bb_pattacks(int c, int s);
-bitboard_t bb_nattacks(int s);
-bitboard_t bb_kattacks(int s);
+// Attack per piece (on an empty board for sliders)
+extern bitboard_t PAttacks[NB_COLOR][NB_SQUARE];
+extern bitboard_t NAttacks[NB_SQUARE];
+extern bitboard_t KAttacks[NB_SQUARE];
+extern bitboard_t BPseudoAttacks[NB_SQUARE];
+extern bitboard_t RPseudoAttacks[NB_SQUARE];
 
-// Slider attacks
+// Slider attacks (on an occupied board)
 bitboard_t bb_battacks(int s, bitboard_t occ);
 bitboard_t bb_rattacks(int s, bitboard_t occ);
-bitboard_t bb_bpattacks(int s);    // pseudo-attacks (empty board)
-bitboard_t bb_rpattacks(int s);    // pseudo-attacks (empty board)
 
-bitboard_t bb_segment(int s1, int s2);
-bitboard_t bb_ray(int s1, int s2);
+extern bitboard_t Segment[NB_SQUARE][NB_SQUARE];
+extern bitboard_t Ray[NB_SQUARE][NB_SQUARE];
 
 /* Bit manipulation */
 

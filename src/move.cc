@@ -102,14 +102,14 @@ bool move_is_legal(const Position& pos, const Move& m)
             // be pinned
             assert(pos.pieceOn[m.to] == ROOK);
             const int _tsq = square(rank_of(m.from), m.from < m.to ? FILE_G : FILE_C);
-            return !(pos.attacked & bb_segment(m.from, _tsq))
+            return !(pos.attacked & Segment[m.from][_tsq])
                    && !bb_test(pos.pins, m.to);
         } else
             // Normal king move: do not land on an attacked square
             return !bb_test(pos.attacked, m.to);
     } else {
         // Normal case: illegal if pinned, and moves out of pin-ray
-        if (bb_test(pos.pins, m.from) && !bb_test(bb_ray(king, m.from), m.to))
+        if (bb_test(pos.pins, m.from) && !bb_test(Ray[king][m.from], m.to))
             return false;
 
         // En-passant special case: also illegal if self-check through the en-passant
@@ -175,9 +175,9 @@ int move_see(const Position& pos, const Move& m)
         // Scan for new X-ray attacks through the LVA
         if (p != KNIGHT) {
             attackers |= (pos.byPiece[BISHOP] | pos.byPiece[QUEEN])
-                         & bb_bpattacks(m.to) & bb_battacks(m.to, occ);
+                         & BPseudoAttacks[m.to] & bb_battacks(m.to, occ);
             attackers |= (pos.byPiece[ROOK] | pos.byPiece[QUEEN])
-                         & bb_rpattacks(m.to) & bb_rattacks(m.to, occ);
+                         & RPseudoAttacks[m.to] & bb_rattacks(m.to, occ);
         }
 
         // Remove attackers we've already done

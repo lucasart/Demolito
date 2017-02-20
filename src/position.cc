@@ -230,11 +230,11 @@ bitboard_t attacked_by(const Position& pos, int c)
     BOUNDS(c, NB_COLOR);
 
     // King and Knight attacks
-    bitboard_t result = bb_kattacks(king_square(pos, c));
+    bitboard_t result = KAttacks[king_square(pos, c)];
     bitboard_t fss = pieces_cp(pos, c, KNIGHT);
 
     while (fss)
-        result |= bb_nattacks(bb_pop_lsb(&fss));
+        result |= NAttacks[bb_pop_lsb(&fss)];
 
     // Pawn captures
     fss = pieces_cp(pos, c, PAWN) & ~bb_file(FILE_A);
@@ -261,13 +261,13 @@ bitboard_t calc_pins(const Position& pos)
 {
     const int us = pos.turn, them = opposite(us);
     const int king = king_square(pos, us);
-    bitboard_t pinners = (pieces_cpp(pos, them, ROOK, QUEEN) & bb_rpattacks(king))
-                         | (pieces_cpp(pos, them, BISHOP, QUEEN) & bb_bpattacks(king));
+    bitboard_t pinners = (pieces_cpp(pos, them, ROOK, QUEEN) & RPseudoAttacks[king])
+                         | (pieces_cpp(pos, them, BISHOP, QUEEN) & BPseudoAttacks[king]);
     bitboard_t result = 0;
 
     while (pinners) {
         const int s = bb_pop_lsb(&pinners);
-        bitboard_t skewered = bb_segment(king, s) & pieces(pos);
+        bitboard_t skewered = Segment[king][s] & pieces(pos);
         bb_clear(&skewered, king);
         bb_clear(&skewered, s);
 
@@ -388,24 +388,24 @@ std::string get(const Position& pos)
             const int king = king_square(pos, c);
 
             // Because we have castlable rooks, the king has to be on the first rank and
-            // cannot be in a corner, which allows using bb_ray(king, king +/- 1) to
-            // search for the castle rook in Chess960.
+            // cannot be in a corner, which allows using Ray[king][king +/- 1] to search
+            // for the castle rook in Chess960.
             assert(rank_of(king) == relative_rank(c, RANK_1));
             assert(file_of(king) != FILE_A && file_of(king) != FILE_H);
 
             // Right side castling
-            if (sqs & bb_ray(king, king + 1)) {
+            if (sqs & Ray[king][king + RIGHT]) {
                 if (Chess960)
-                    os << char(file_of(bb_lsb(sqs & bb_ray(king, king + 1)))
+                    os << char(file_of(bb_lsb(sqs & Ray[king][king + RIGHT]))
                                + (c == WHITE ? 'A' : 'a'));
                 else
                     os << PieceLabel[c][KING];
             }
 
             // Left side castling
-            if (sqs & bb_ray(king, king - 1)) {
+            if (sqs & Ray[king][king + LEFT]) {
                 if (Chess960)
-                    os << char(file_of(bb_msb(sqs & bb_ray(king, king - 1)))
+                    os << char(file_of(bb_msb(sqs & Ray[king][king + LEFT]))
                                + (c == WHITE ? 'A' : 'a'));
                 else
                     os << PieceLabel[c][QUEEN];
@@ -451,10 +451,10 @@ bitboard_t attackers_to(const Position& pos, int s, bitboard_t occ)
 {
     BOUNDS(s, NB_SQUARE);
 
-    return (pieces_cp(pos, WHITE, PAWN) & bb_pattacks(BLACK, s))
-           | (pieces_cp(pos, BLACK, PAWN) & bb_pattacks(WHITE, s))
-           | (bb_nattacks(s) & pos.byPiece[KNIGHT])
-           | (bb_kattacks(s) & pos.byPiece[KING])
+    return (pieces_cp(pos, WHITE, PAWN) & PAttacks[BLACK][s])
+           | (pieces_cp(pos, BLACK, PAWN) & PAttacks[WHITE][s])
+           | (NAttacks[s] & pos.byPiece[KNIGHT])
+           | (KAttacks[s] & pos.byPiece[KING])
            | (bb_rattacks(s, occ) & (pos.byPiece[ROOK] | pos.byPiece[QUEEN]))
            | (bb_battacks(s, occ) & (pos.byPiece[BISHOP] | pos.byPiece[QUEEN]));
 }

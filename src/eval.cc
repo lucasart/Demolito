@@ -24,35 +24,6 @@ static bitboard_t PawnPath[NB_COLOR][NB_SQUARE];
 static bitboard_t AdjacentFiles[NB_FILE];
 static int KingDistance[NB_SQUARE][NB_SQUARE];
 
-/* Safe accessors to pre-calculated arrays */
-
-bitboard_t pawn_span(int c, int s)
-{
-    BOUNDS(c, NB_COLOR);
-    BOUNDS(s, NB_SQUARE);
-    return PawnSpan[c][s];
-}
-
-bitboard_t pawn_path(int c, int s)
-{
-    BOUNDS(c, NB_COLOR);
-    BOUNDS(s, NB_SQUARE);
-    return PawnPath[c][s];
-}
-
-bitboard_t adjacent_files(int f)
-{
-    BOUNDS(f, NB_FILE);
-    return AdjacentFiles[f];
-}
-
-int king_distance(int s1, int s2)
-{
-    BOUNDS(s1, NB_SQUARE);
-    BOUNDS(s2, NB_SQUARE);
-    return KingDistance[s1][s2];
-}
-
 static bitboard_t pawn_attacks(const Position& pos, int c)
 {
     const bitboard_t pawns = pieces_cp(pos, c, PAWN);
@@ -83,7 +54,7 @@ static eval_t mobility(const Position& pos, int us, bitboard_t attacks[NB_COLOR]
     const int them = opposite(us);
     eval_t result = {0, 0};
 
-    attacks[us][KING] = bb_kattacks(king_square(pos, us));
+    attacks[us][KING] = KAttacks[king_square(pos, us)];
     attacks[them][PAWN] = pawn_attacks(pos, them);
 
     for (piece = KNIGHT; piece <= QUEEN; ++piece)
@@ -95,7 +66,7 @@ static eval_t mobility(const Position& pos, int us, bitboard_t attacks[NB_COLOR]
     fss = pieces_cp(pos, us, KNIGHT);
 
     while (fss) {
-        tss = bb_nattacks(bb_pop_lsb(&fss));
+        tss = NAttacks[bb_pop_lsb(&fss)];
         attacks[us][KNIGHT] |= tss;
         result += score_mobility(KNIGHT, KNIGHT, tss & targets);
     }
@@ -182,7 +153,7 @@ static int safety(const Position& pos, int us, bitboard_t attacks[NB_COLOR][NB_P
     const int ks = king_square(pos, us);
     const bitboard_t occ = pieces(pos);
     const bitboard_t checks[QUEEN+1] = {
-        bb_nattacks(ks) & attacks[them][KNIGHT],
+        NAttacks[ks] & attacks[them][KNIGHT],
         bb_battacks(ks, occ) & attacks[them][BISHOP],
         bb_rattacks(ks, occ) & attacks[them][ROOK],
         (bb_battacks(ks, occ) | bb_rattacks(ks, occ)) & attacks[them][QUEEN]
@@ -216,8 +187,8 @@ static eval_t passer(int us, int pawn, int ourKing, int theirKing, bool phalanx)
     if (n > 1) {
         const int stop = pawn + push_inc(us);
         const int Q = n * (n - 1);
-        result.eg() += king_distance(stop, theirKing) * 6 * Q;
-        result.eg() -= king_distance(stop, ourKing) * 3 * Q;
+        result.eg() += KingDistance[stop][theirKing] * 6 * Q;
+        result.eg() -= KingDistance[stop][ourKing] * 3 * Q;
     }
 
     return result;
@@ -239,12 +210,12 @@ static eval_t do_pawns(const Position& pos, int us, bitboard_t attacks[NB_COLOR]
 
     // Pawn shield
 
-    bitboard_t b = ourPawns & pawn_path(us, ourKing);
+    bitboard_t b = ourPawns & PawnPath[us][ourKing];
 
     while (b)
         result.op() += shieldBonus[relative_rank_of(us, bb_pop_lsb(&b))];
 
-    b = ourPawns & pawn_span(us, ourKing);
+    b = ourPawns & PawnSpan[us][ourKing];
 
     while (b)
         result.op() += shieldBonus[relative_rank_of(us, bb_pop_lsb(&b))] / 2;
@@ -258,15 +229,15 @@ static eval_t do_pawns(const Position& pos, int us, bitboard_t attacks[NB_COLOR]
         const int stop = s + push_inc(us);
         const int r = rank_of(s), f = file_of(s);
 
-        const bitboard_t adjacentFiles = adjacent_files(f);
+        const bitboard_t adjacentFiles = AdjacentFiles[f];
         const bitboard_t besides = ourPawns & adjacentFiles;
 
         const bool chained = besides & (bb_rank(r) | bb_rank(us == WHITE ? r - 1 : r + 1));
-        const bool phalanx = chained && (ourPawns & bb_pattacks(them, stop));
-        const bool hole = !(pawn_span(them, stop) & ourPawns) && bb_test(attacks[them][PAWN], stop);
+        const bool phalanx = chained && (ourPawns & PAttacks[them][stop]);
+        const bool hole = !(PawnSpan[them][stop] & ourPawns) && bb_test(attacks[them][PAWN], stop);
         const bool isolated = !(adjacentFiles & ourPawns);
-        const bool exposed = !(pawn_path(us, s) & pos.byPiece[PAWN]);
-        const bool passed = exposed && !(pawn_span(us, s) & theirPawns);
+        const bool exposed = !(PawnPath[us][s] & pos.byPiece[PAWN]);
+        const bool passed = exposed && !(PawnSpan[us][s] & theirPawns);
 
         if (chained) {
             const int rr = relative_rank(us, r) - RANK_2;
@@ -312,7 +283,7 @@ void eval_init()
         if (rank_of(s) == RANK_8)
             PawnSpan[WHITE][s] = PawnPath[WHITE][s] = 0;
         else {
-            PawnSpan[WHITE][s] = bb_pattacks(WHITE, s) | PawnSpan[WHITE][s + UP];
+            PawnSpan[WHITE][s] = PAttacks[WHITE][s] | PawnSpan[WHITE][s + UP];
             PawnPath[WHITE][s] = (1ULL << (s + UP)) | PawnPath[WHITE][s + UP];
         }
     }
@@ -321,7 +292,7 @@ void eval_init()
         if (rank_of(s) == RANK_1)
             PawnSpan[BLACK][s] = PawnPath[BLACK][s] = 0;
         else {
-            PawnSpan[BLACK][s] = bb_pattacks(BLACK, s) | PawnSpan[BLACK][s + DOWN];
+            PawnSpan[BLACK][s] = PAttacks[BLACK][s] | PawnSpan[BLACK][s + DOWN];
             PawnPath[BLACK][s] = (1ULL << (s + DOWN)) | PawnPath[BLACK][s + DOWN];
         }
     }

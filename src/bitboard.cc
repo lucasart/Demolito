@@ -20,15 +20,15 @@ static const int PDir[2][2] = {{1,-1},{1,1}};
 static const int NDir[8][2] = {{-2,-1},{-2,1},{-1,-2},{-1,2},{1,-2},{1,2},{2,-1},{2,1}};
 static const int KDir[8][2] = {{-1,-1},{-1,0},{-1,1},{0,-1},{0,1},{1,-1},{1,0},{1,1}};
 
-static bitboard_t PAttacks[NB_COLOR][NB_SQUARE];
-static bitboard_t NAttacks[NB_SQUARE];
-static bitboard_t KAttacks[NB_SQUARE];
+bitboard_t PAttacks[NB_COLOR][NB_SQUARE];
+bitboard_t NAttacks[NB_SQUARE];
+bitboard_t KAttacks[NB_SQUARE];
 
-static bitboard_t BPseudoAttacks[NB_SQUARE];
-static bitboard_t RPseudoAttacks[NB_SQUARE];
+bitboard_t BPseudoAttacks[NB_SQUARE];
+bitboard_t RPseudoAttacks[NB_SQUARE];
 
-static bitboard_t Segment[NB_SQUARE][NB_SQUARE];
-static bitboard_t Ray[NB_SQUARE][NB_SQUARE];
+bitboard_t Segment[NB_SQUARE][NB_SQUARE];
+bitboard_t Ray[NB_SQUARE][NB_SQUARE];
 
 static void safe_set_bit(bitboard_t *b, int r, int f)
 {
@@ -109,51 +109,6 @@ bitboard_t bb_file(int f)
 {
     BOUNDS(f, NB_FILE);
     return 0x0101010101010101ULL << f;
-}
-
-bitboard_t bb_pattacks(int c, int s)
-{
-    BOUNDS(s, NB_SQUARE);
-    return PAttacks[c][s];
-}
-
-bitboard_t bb_nattacks(int s)
-{
-    BOUNDS(s, NB_SQUARE);
-    return NAttacks[s];
-}
-
-bitboard_t bb_kattacks(int s)
-{
-    BOUNDS(s, NB_SQUARE);
-    return KAttacks[s];
-}
-
-bitboard_t bb_bpattacks(int s)
-{
-    BOUNDS(s, NB_SQUARE);
-    return BPseudoAttacks[s];
-}
-
-bitboard_t bb_rpattacks(int s)
-{
-    BOUNDS(s, NB_SQUARE);
-    return RPseudoAttacks[s];
-}
-
-bitboard_t bb_segment(int s1, int s2)
-{
-    BOUNDS(s1, NB_SQUARE);
-    BOUNDS(s2, NB_SQUARE);
-    return Segment[s1][s2];
-}
-
-bitboard_t bb_ray(int s1, int s2)
-{
-    BOUNDS(s1, NB_SQUARE);
-    BOUNDS(s2, NB_SQUARE);
-    assert(s1 != s2);    // Ray[s][s] is undefined
-    return Ray[s1][s2];
 }
 
 /* Bit manipulation */
