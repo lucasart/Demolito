@@ -19,9 +19,7 @@
 #include "gen.h"
 #include "uci.h"
 
-namespace test {
-
-uint64_t bench(bool perft, int depth, int threads)
+uint64_t test_search(bool perft, int depth, int threads)
 {
     const std::string fens[] = {
         "r1bqkbnr/pp1ppppp/2n5/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 0 1",
@@ -82,7 +80,7 @@ uint64_t bench(bool perft, int depth, int threads)
     return result;
 }
 
-bool see(bool verbose)
+bool test_see(bool verbose)
 {
     struct TestSEE {
         std::string fen, move;
@@ -124,5 +122,3 @@ bool see(bool verbose)
 
     return true;
 }
-
-}    // namespace test

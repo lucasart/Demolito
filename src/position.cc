@@ -39,7 +39,7 @@ static void clear_square(Position *pos, int c, int p, int s)
     bb_clear(&pos->byPiece[p], s);
 
     pos->pieceOn[s] = NB_PIECE;
-    pos->pst -= pst::table[c][p][s];
+    pos->pst -= pst[c][p][s];
     pos->key ^= zobrist::key(c, p, s);
 
     if (p <= QUEEN)
@@ -58,7 +58,7 @@ static void set_square(Position *pos, int c, int p, int s)
     bb_set(&pos->byPiece[p], s);
 
     pos->pieceOn[s] = p;
-    pos->pst += pst::table[c][p][s];
+    pos->pst += pst[c][p][s];
     pos->key ^= zobrist::key(c, p, s);
 
     if (p <= QUEEN)
@@ -312,7 +312,7 @@ eval_t calc_pst(const Position& pos)
             bitboard_t b = pieces_cp(pos, c, p);
 
             while (b)
-                result += pst::table[c][p][bb_pop_lsb(&b)];
+                result += pst[c][p][bb_pop_lsb(&b)];
         }
 
     return result;
