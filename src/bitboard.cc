@@ -30,14 +30,10 @@ static bitboard_t RPseudoAttacks[NB_SQUARE];
 static bitboard_t Segment[NB_SQUARE][NB_SQUARE];
 static bitboard_t Ray[NB_SQUARE][NB_SQUARE];
 
-static bitboard_t PawnSpan[NB_COLOR][NB_SQUARE];
-static bitboard_t PawnPath[NB_COLOR][NB_SQUARE];
-static bitboard_t AdjacentFiles[NB_FILE];
-
 static void safe_set_bit(bitboard_t *b, int r, int f)
 {
     if (0 <= r && r < NB_RANK && 0 <= f && f < NB_FILE)
-        bb::set(b, square(r, f));
+        bb_set(b, square(r, f));
 }
 
 static void init_leaper_attacks()
@@ -57,31 +53,6 @@ static void init_leaper_attacks()
     }
 }
 
-static void init_eval()
-{
-    for (int s = H8; s >= A1; --s) {
-        if (rank_of(s) == RANK_8)
-            PawnSpan[WHITE][s] = PawnPath[WHITE][s] = 0;
-        else {
-            PawnSpan[WHITE][s] = PAttacks[WHITE][s] | PawnSpan[WHITE][s + UP];
-            PawnPath[WHITE][s] = (1ULL << (s + UP)) | PawnPath[WHITE][s + UP];
-        }
-    }
-
-    for (int s = A1; s <= H8; ++s) {
-        if (rank_of(s) == RANK_1)
-            PawnSpan[BLACK][s] = PawnPath[BLACK][s] = 0;
-        else {
-            PawnSpan[BLACK][s] = PAttacks[BLACK][s] | PawnSpan[BLACK][s + DOWN];
-            PawnPath[BLACK][s] = (1ULL << (s + DOWN)) | PawnPath[BLACK][s + DOWN];
-        }
-    }
-
-    for (int f = FILE_A; f <= FILE_H; ++f)
-        AdjacentFiles[f] = (f > FILE_A ? bb::file(f - 1) : 0)
-                           | (f < FILE_H ? bb::file(f + 1) : 0);
-}
-
 static void init_rays()
 {
     for (int s1 = A1; s1 <= H8; ++s1) {
@@ -93,7 +64,7 @@ static void init_rays()
 
             while (0 <= r2 && r2 < NB_RANK && 0 <= f2 && f2 < NB_FILE) {
                 const int s2 = square(r2, f2);
-                bb::set(&mask, s2);
+                bb_set(&mask, s2);
                 Segment[s1][s2] = mask;
                 r2 += KDir[d][0], f2 += KDir[d][1];
             }
@@ -101,7 +72,7 @@ static void init_rays()
             bitboard_t sqs = mask;
 
             while (sqs) {
-                int s2 = bb::pop_lsb(&sqs);
+                int s2 = bb_pop_lsb(&sqs);
                 Ray[s1][s2] = mask;
             }
         }
@@ -111,76 +82,73 @@ static void init_rays()
 static void init_slider_pseudo_attacks()
 {
     for (int s = A1; s <= H8; ++s) {
-        BPseudoAttacks[s] = bb::battacks(s, 0);
-        RPseudoAttacks[s] = bb::rattacks(s, 0);
+        BPseudoAttacks[s] = bb_battacks(s, 0);
+        RPseudoAttacks[s] = bb_rattacks(s, 0);
     }
 }
 
-namespace bb {
-
 void init_slider_attacks();    // in magic.cc
 
-void init()
+void bb_init()
 {
     init_rays();
     init_leaper_attacks();
     init_slider_attacks();
     init_slider_pseudo_attacks();
-    init_eval();
 }
 
 /* Bitboard Accessors */
 
-bitboard_t rank(int r)
+bitboard_t bb_rank(int r)
 {
     BOUNDS(r, NB_RANK);
     return 0xFFULL << (8 * r);
 }
 
-bitboard_t file(int f)
+bitboard_t bb_file(int f)
 {
     BOUNDS(f, NB_FILE);
     return 0x0101010101010101ULL << f;
 }
 
-bitboard_t pattacks(int c, int s)
+bitboard_t bb_pattacks(int c, int s)
 {
     BOUNDS(s, NB_SQUARE);
     return PAttacks[c][s];
 }
 
-bitboard_t nattacks(int s)
+bitboard_t bb_nattacks(int s)
 {
     BOUNDS(s, NB_SQUARE);
     return NAttacks[s];
 }
 
-bitboard_t kattacks(int s)
+bitboard_t bb_kattacks(int s)
 {
     BOUNDS(s, NB_SQUARE);
     return KAttacks[s];
 }
 
-bitboard_t bpattacks(int s)
+bitboard_t bb_bpattacks(int s)
 {
     BOUNDS(s, NB_SQUARE);
     return BPseudoAttacks[s];
 }
 
-bitboard_t rpattacks(int s)
+bitboard_t bb_rpattacks(int s)
 {
     BOUNDS(s, NB_SQUARE);
     return RPseudoAttacks[s];
 }
 
-bitboard_t segment(int s1, int s2)
+bitboard_t bb_segment(int s1, int s2)
 {
     BOUNDS(s1, NB_SQUARE);
     BOUNDS(s2, NB_SQUARE);
     return Segment[s1][s2];
 }
 
-bitboard_t ray(int s1, int s2)
+bitboard_t bb_ray(int s1, int s2)
 {
     BOUNDS(s1, NB_SQUARE);
     BOUNDS(s2, NB_SQUARE);
@@ -188,92 +156,72 @@ bitboard_t ray(int s1, int s2)
     return Ray[s1][s2];
 }
 
-bitboard_t pawn_span(int c, int s)
-{
-    BOUNDS(c, NB_COLOR);
-    BOUNDS(s, NB_SQUARE);
-    return PawnSpan[c][s];
-}
-
-bitboard_t pawn_path(int c, int s)
-{
-    BOUNDS(c, NB_COLOR);
-    BOUNDS(s, NB_SQUARE);
-    return PawnPath[c][s];
-}
-
-bitboard_t adjacent_files(int f)
-{
-    BOUNDS(f, NB_FILE);
-    return AdjacentFiles[f];
-}
-
 /* Bit manipulation */
 
-bool test(bitboard_t b, int s)
+bool bb_test(bitboard_t b, int s)
 {
     BOUNDS(s, NB_SQUARE);
     return b & (1ULL << s);
 }
 
-void clear(bitboard_t *b, int s)
+void bb_clear(bitboard_t *b, int s)
 {
     BOUNDS(s, NB_SQUARE);
     assert(test(*b, s));
     *b ^= 1ULL << s;
 }
 
-void set(bitboard_t *b, int s)
+void bb_set(bitboard_t *b, int s)
 {
     BOUNDS(s, NB_SQUARE);
     assert(!test(*b, s));
     *b ^= 1ULL << s;
 }
 
-bitboard_t shift(bitboard_t b, int i)
+bitboard_t bb_shift(bitboard_t b, int i)
 {
     assert(-63 <= i && i <= 63);    // forbid oversized shift (undefined behaviour)
     return i > 0 ? b << i : b >> -i;
 }
 
-int lsb(bitboard_t b)
+int bb_lsb(bitboard_t b)
 {
     assert(b);
     return __builtin_ffsll(b) - 1;
 }
 
-int msb(bitboard_t b)
+int bb_msb(bitboard_t b)
 {
     assert(b);
     return 63 - __builtin_clzll(b);
 }
 
-int pop_lsb(bitboard_t *b)
+int bb_pop_lsb(bitboard_t *b)
 {
-    int s = lsb(*b);
+    int s = bb_lsb(*b);
     *b &= *b - 1;
     return s;
 }
 
-bool several(bitboard_t b)
+bool bb_several(bitboard_t b)
 {
     return b & (b - 1);
 }
 
-int count(bitboard_t b)
+int bb_count(bitboard_t b)
 {
     return __builtin_popcountll(b);
 }
 
 /* Debug print */
 
-void print(bitboard_t b)
+void bb_print(bitboard_t b)
 {
     for (int r = RANK_8; r >= RANK_1; --r) {
         char line[] = ". . . . . . . .";
 
         for (int f = FILE_A; f <= FILE_H; ++f) {
-            if (test(b, square(r, f)))
+            if (bb_test(b, square(r, f)))
                 line[2 * f] = 'X';
         }
 
@@ -282,5 +230,3 @@ void print(bitboard_t b)
 
     std::cout << std::endl;
 }
-
-}    // namespace bb

@@ -121,7 +121,7 @@ uint64_t keys(int c, int p, uint64_t sqs)
     bitboard_t k = 0;
 
     while(sqs)
-        k ^= key(c, p, bb::pop_lsb(&sqs));
+        k ^= key(c, p, bb_pop_lsb(&sqs));
 
     return k;
 }
@@ -131,7 +131,7 @@ uint64_t castling(bitboard_t castlableRooks)
     bitboard_t k = 0;
 
     while (castlableRooks)
-        k ^= ZobristCastling[bb::pop_lsb(&castlableRooks)];
+        k ^= ZobristCastling[bb_pop_lsb(&castlableRooks)];
 
     return k;
 }

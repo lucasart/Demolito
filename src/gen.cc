@@ -22,7 +22,7 @@ template <bool Promotion>
 static move_t *serialize_moves(Move& m, bitboard_t tss, move_t *emList, bool subPromotions = true)
 {
     while (tss) {
-        m.to = bb::pop_lsb(&tss);
+        m.to = bb_pop_lsb(&tss);
 
         if (Promotion) {
             if (subPromotions) {
@@ -50,21 +50,21 @@ move_t *pawn_moves(const Position& pos, move_t *emList, bitboard_t targets, bool
     Move m;
 
     // Non promotions
-    fss = pieces_cp(pos, us, PAWN) & ~bb::rank(relative_rank(us, RANK_7));
+    fss = pieces_cp(pos, us, PAWN) & ~bb_rank(relative_rank(us, RANK_7));
 
     while (fss) {
-        m.from = bb::pop_lsb(&fss);
+        m.from = bb_pop_lsb(&fss);
 
         // Calculate to squares: captures, single pushes and double pushes
-        tss = bb::pattacks(us, m.from) & capturable & targets;
+        tss = bb_pattacks(us, m.from) & capturable & targets;
 
-        if (bb::test(~pieces(pos), m.from + push)) {
-            if (bb::test(targets, m.from + push))
-                bb::set(&tss, m.from + push);
+        if (bb_test(~pieces(pos), m.from + push)) {
+            if (bb_test(targets, m.from + push))
+                bb_set(&tss, m.from + push);
 
             if (relative_rank_of(us, m.from) == RANK_2
-                    && bb::test(targets & ~pieces(pos), m.from + 2 * push))
-                bb::set(&tss, m.from + 2 * push);
+                    && bb_test(targets & ~pieces(pos), m.from + 2 * push))
+                bb_set(&tss, m.from + 2 * push);
         }
 
         // Generate moves
@@ -73,16 +73,16 @@ move_t *pawn_moves(const Position& pos, move_t *emList, bitboard_t targets, bool
     }
 
     // Promotions
-    fss = pieces_cp(pos, us, PAWN) & bb::rank(relative_rank(us, RANK_7));
+    fss = pieces_cp(pos, us, PAWN) & bb_rank(relative_rank(us, RANK_7));
 
     while (fss) {
-        m.from = bb::pop_lsb(&fss);
+        m.from = bb_pop_lsb(&fss);
 
         // Calculate to squares: captures and single pushes
-        tss = bb::pattacks(us, m.from) & capturable & targets;
+        tss = bb_pattacks(us, m.from) & capturable & targets;
 
-        if (bb::test(targets & ~pieces(pos), m.from + push))
-            bb::set(&tss, m.from + push);
+        if (bb_test(targets & ~pieces(pos), m.from + push))
+            bb_set(&tss, m.from + push);
 
         // Generate moves (or promotions)
         emList = serialize_moves<true>(m, tss, emList, subPromotions);
@@ -102,7 +102,7 @@ move_t *piece_moves(const Position& pos, move_t *emList, bitboard_t targets, boo
     // King moves
     if (kingMoves) {
         m.from = king_square(pos, us);
-        tss = bb::kattacks(m.from) & targets;
+        tss = bb_kattacks(m.from) & targets;
         emList = serialize_moves<false>(m, tss, emList);
     }
 
@@ -110,8 +110,8 @@ move_t *piece_moves(const Position& pos, move_t *emList, bitboard_t targets, boo
     fss = pieces_cp(pos, us, KNIGHT);
 
     while (fss) {
-        m.from = bb::pop_lsb(&fss);
-        tss = bb::nattacks(m.from) & targets;
+        m.from = bb_pop_lsb(&fss);
+        tss = bb_nattacks(m.from) & targets;
         emList = serialize_moves<false>(m, tss, emList);
     }
 
@@ -119,8 +119,8 @@ move_t *piece_moves(const Position& pos, move_t *emList, bitboard_t targets, boo
     fss = pieces_cpp(pos, us, ROOK, QUEEN);
 
     while (fss) {
-        m.from = bb::pop_lsb(&fss);
-        tss = bb::rattacks(m.from, pieces(pos)) & targets;
+        m.from = bb_pop_lsb(&fss);
+        tss = bb_rattacks(m.from, pieces(pos)) & targets;
         emList = serialize_moves<false>(m, tss, emList);
     }
 
@@ -128,8 +128,8 @@ move_t *piece_moves(const Position& pos, move_t *emList, bitboard_t targets, boo
     fss = pieces_cpp(pos, us, BISHOP, QUEEN);
 
     while (fss) {
-        m.from = bb::pop_lsb(&fss);
-        tss = bb::battacks(m.from, pieces(pos)) & targets;
+        m.from = bb_pop_lsb(&fss);
+        tss = bb_battacks(m.from, pieces(pos)) & targets;
         emList = serialize_moves<false>(m, tss, emList);
     }
 
@@ -146,12 +146,12 @@ move_t *castling_moves(const Position& pos, move_t *emList)
     bitboard_t tss = pos.castleRooks & pos.byColor[pos.turn];
 
     while (tss) {
-        m.to = bb::pop_lsb(&tss);
+        m.to = bb_pop_lsb(&tss);
         const int kto = square(rank_of(m.to), m.to > m.from ? FILE_G : FILE_C);
         const int rto = square(rank_of(m.to), m.to > m.from ? FILE_F : FILE_D);
-        const bitboard_t s = bb::segment(m.from, kto) | bb::segment(m.to, rto);
+        const bitboard_t s = bb_segment(m.from, kto) | bb_segment(m.to, rto);
 
-        if (bb::count(s & pieces(pos)) == 2)
+        if (bb_count(s & pieces(pos)) == 2)
             *emList++ = m;
     }
 
@@ -167,20 +167,20 @@ move_t *check_escapes(const Position& pos, move_t *emList, bool subPromotions)
     Move m;
 
     // King moves
-    tss = bb::kattacks(king) & ~ours;
+    tss = bb_kattacks(king) & ~ours;
     m.from = king;
     m.prom = NB_PIECE;
     emList = serialize_moves<false>(m, tss, emList);
 
-    if (!bb::several(pos.checkers)) {
+    if (!bb_several(pos.checkers)) {
         // Single checker
-        const int checkerSquare = bb::lsb(pos.checkers);
+        const int checkerSquare = bb_lsb(pos.checkers);
         const int checkerPiece = pos.pieceOn[checkerSquare];
 
         // int moves must cover the checking segment for a sliding check, or capture the
         // checker otherwise.
         tss = BISHOP <= checkerPiece && checkerPiece <= QUEEN
-              ? bb::segment(king, checkerSquare)
+              ? bb_segment(king, checkerSquare)
               : pos.checkers;
 
         emList = piece_moves(pos, emList, tss & ~ours, false);
@@ -189,7 +189,7 @@ move_t *check_escapes(const Position& pos, move_t *emList, bool subPromotions)
         // pawn double push, and we also need to consider capturing it en-passant to solve
         // the check.
         if (checkerPiece == PAWN && pos.epSquare < NB_SQUARE)
-            bb::set(&tss, pos.epSquare);
+            bb_set(&tss, pos.epSquare);
 
         emList = pawn_moves(pos, emList, tss, subPromotions);
     }

@@ -17,7 +17,34 @@
 
 thread_local PawnEntry PawnHash[NB_PAWN_ENTRY];
 
+/* Pre-calculated in eval_init() */
+
+static bitboard_t PawnSpan[NB_COLOR][NB_SQUARE];
+static bitboard_t PawnPath[NB_COLOR][NB_SQUARE];
+static bitboard_t AdjacentFiles[NB_FILE];
 static int KingDistance[NB_SQUARE][NB_SQUARE];
+
+/* Safe accessors to pre-calculated arrays */
+
+bitboard_t pawn_span(int c, int s)
+{
+    BOUNDS(c, NB_COLOR);
+    BOUNDS(s, NB_SQUARE);
+    return PawnSpan[c][s];
+}
+
+bitboard_t pawn_path(int c, int s)
+{
+    BOUNDS(c, NB_COLOR);
+    BOUNDS(s, NB_SQUARE);
+    return PawnPath[c][s];
+}
+
+bitboard_t adjacent_files(int f)
+{
+    BOUNDS(f, NB_FILE);
+    return AdjacentFiles[f];
+}
 
 int king_distance(int s1, int s2)
 {
@@ -29,8 +56,8 @@ int king_distance(int s1, int s2)
 static bitboard_t pawn_attacks(const Position& pos, int c)
 {
     const bitboard_t pawns = pieces_cp(pos, c, PAWN);
-    return bb::shift(pawns & ~bb::file(FILE_A), push_inc(c) + LEFT)
-           | bb::shift(pawns & ~bb::file(FILE_H), push_inc(c) + RIGHT);
+    return bb_shift(pawns & ~bb_file(FILE_A), push_inc(c) + LEFT)
+           | bb_shift(pawns & ~bb_file(FILE_H), push_inc(c) + RIGHT);
 }
 
 static eval_t score_mobility(int p0, int p, bitboard_t tss)
@@ -45,7 +72,7 @@ static eval_t score_mobility(int p0, int p, bitboard_t tss)
     };
     static const eval_t Weight[] = {{6, 10}, {11, 12}, {6, 6}, {4, 6}};
 
-    return Weight[p] * AdjustCount[p0][bb::count(tss)];
+    return Weight[p] * AdjustCount[p0][bb_count(tss)];
 }
 
 static eval_t mobility(const Position& pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE+1])
@@ -56,7 +83,7 @@ static eval_t mobility(const Position& pos, int us, bitboard_t attacks[NB_COLOR]
     const int them = opposite(us);
     eval_t result = {0, 0};
 
-    attacks[us][KING] = bb::kattacks(king_square(pos, us));
+    attacks[us][KING] = bb_kattacks(king_square(pos, us));
     attacks[them][PAWN] = pawn_attacks(pos, them);
 
     for (piece = KNIGHT; piece <= QUEEN; ++piece)
@@ -68,7 +95,7 @@ static eval_t mobility(const Position& pos, int us, bitboard_t attacks[NB_COLOR]
     fss = pieces_cp(pos, us, KNIGHT);
 
     while (fss) {
-        tss = bb::nattacks(bb::pop_lsb(&fss));
+        tss = bb_nattacks(bb_pop_lsb(&fss));
         attacks[us][KNIGHT] |= tss;
         result += score_mobility(KNIGHT, KNIGHT, tss & targets);
     }
@@ -78,7 +105,7 @@ static eval_t mobility(const Position& pos, int us, bitboard_t attacks[NB_COLOR]
     occ = pieces(pos) ^ fss;    // RQ see through each other
 
     while (fss) {
-        tss = bb::rattacks(from = bb::pop_lsb(&fss), occ);
+        tss = bb_rattacks(from = bb_pop_lsb(&fss), occ);
         attacks[us][piece = pos.pieceOn[from]] |= tss;
         result += score_mobility(ROOK, pos.pieceOn[from], tss & targets);
     }
@@ -88,7 +115,7 @@ static eval_t mobility(const Position& pos, int us, bitboard_t attacks[NB_COLOR]
     occ = pieces(pos) ^ fss;    // BQ see through each other
 
     while (fss) {
-        tss = bb::battacks(from = bb::pop_lsb(&fss), occ);
+        tss = bb_battacks(from = bb_pop_lsb(&fss), occ);
         attacks[us][piece = pos.pieceOn[from]] |= tss;
         result += score_mobility(BISHOP, pos.pieceOn[from], tss & targets);
     }
@@ -120,7 +147,7 @@ static int tactics(const Position& pos, int us, bitboard_t attacks[NB_COLOR][NB_
     int result = 0;
 
     while (b) {
-        const int p = pos.pieceOn[bb::pop_lsb(&b)];
+        const int p = pos.pieceOn[bb_pop_lsb(&b)];
         assert(KNIGHT <= p && p <= QUEEN);
         result -= Hanging[p];
     }
@@ -145,8 +172,8 @@ static int safety(const Position& pos, int us, bitboard_t attacks[NB_COLOR][NB_P
 
         if (attacked) {
             cnt++;
-            result -= bb::count(attacked) * AttackWeight[p / 2]
-                      - bb::count(attacked & attacks[us][NB_PIECE]) * AttackWeight[p / 2] / 2;
+            result -= bb_count(attacked) * AttackWeight[p / 2]
+                      - bb_count(attacked & attacks[us][NB_PIECE]) * AttackWeight[p / 2] / 2;
         }
     }
 
@@ -155,10 +182,10 @@ static int safety(const Position& pos, int us, bitboard_t attacks[NB_COLOR][NB_P
     const int ks = king_square(pos, us);
     const bitboard_t occ = pieces(pos);
     const bitboard_t checks[QUEEN+1] = {
-        bb::nattacks(ks) & attacks[them][KNIGHT],
-        bb::battacks(ks, occ) & attacks[them][BISHOP],
-        bb::rattacks(ks, occ) & attacks[them][ROOK],
-        (bb::battacks(ks, occ) | bb::rattacks(ks, occ)) & attacks[them][QUEEN]
+        bb_nattacks(ks) & attacks[them][KNIGHT],
+        bb_battacks(ks, occ) & attacks[them][BISHOP],
+        bb_rattacks(ks, occ) & attacks[them][ROOK],
+        (bb_battacks(ks, occ) | bb_rattacks(ks, occ)) & attacks[them][QUEEN]
     };
 
     for (int p = KNIGHT; p <= QUEEN; ++p)
@@ -167,7 +194,7 @@ static int safety(const Position& pos, int us, bitboard_t attacks[NB_COLOR][NB_P
 
             if (b) {
                 cnt++;
-                result -= bb::count(b) * CheckWeight;
+                result -= bb_count(b) * CheckWeight;
             }
         }
 
@@ -212,34 +239,34 @@ static eval_t do_pawns(const Position& pos, int us, bitboard_t attacks[NB_COLOR]
 
     // Pawn shield
 
-    bitboard_t b = ourPawns & bb::pawn_path(us, ourKing);
+    bitboard_t b = ourPawns & pawn_path(us, ourKing);
 
     while (b)
-        result.op() += shieldBonus[relative_rank_of(us, bb::pop_lsb(&b))];
+        result.op() += shieldBonus[relative_rank_of(us, bb_pop_lsb(&b))];
 
-    b = ourPawns & bb::pawn_span(us, ourKing);
+    b = ourPawns & pawn_span(us, ourKing);
 
     while (b)
-        result.op() += shieldBonus[relative_rank_of(us, bb::pop_lsb(&b))] / 2;
+        result.op() += shieldBonus[relative_rank_of(us, bb_pop_lsb(&b))] / 2;
 
     // Pawn structure
 
     b = ourPawns;
 
     while (b) {
-        const int s = bb::pop_lsb(&b);
+        const int s = bb_pop_lsb(&b);
         const int stop = s + push_inc(us);
         const int r = rank_of(s), f = file_of(s);
 
-        const bitboard_t adjacentFiles = bb::adjacent_files(f);
+        const bitboard_t adjacentFiles = adjacent_files(f);
         const bitboard_t besides = ourPawns & adjacentFiles;
 
-        const bool chained = besides & (bb::rank(r) | bb::rank(us == WHITE ? r - 1 : r + 1));
-        const bool phalanx = chained && (ourPawns & bb::pattacks(them, stop));
-        const bool hole = !(bb::pawn_span(them, stop) & ourPawns) && bb::test(attacks[them][PAWN], stop);
+        const bool chained = besides & (bb_rank(r) | bb_rank(us == WHITE ? r - 1 : r + 1));
+        const bool phalanx = chained && (ourPawns & bb_pattacks(them, stop));
+        const bool hole = !(pawn_span(them, stop) & ourPawns) && bb_test(attacks[them][PAWN], stop);
         const bool isolated = !(adjacentFiles & ourPawns);
-        const bool exposed = !(bb::pawn_path(us, s) & pos.byPiece[PAWN]);
-        const bool passed = exposed && !(bb::pawn_span(us, s) & theirPawns);
+        const bool exposed = !(pawn_path(us, s) & pos.byPiece[PAWN]);
+        const bool passed = exposed && !(pawn_span(us, s) & theirPawns);
 
         if (chained) {
             const int rr = relative_rank(us, r) - RANK_2;
@@ -281,6 +308,28 @@ static int blend(const Position& pos, eval_t e)
 
 void eval_init()
 {
+    for (int s = H8; s >= A1; --s) {
+        if (rank_of(s) == RANK_8)
+            PawnSpan[WHITE][s] = PawnPath[WHITE][s] = 0;
+        else {
+            PawnSpan[WHITE][s] = bb_pattacks(WHITE, s) | PawnSpan[WHITE][s + UP];
+            PawnPath[WHITE][s] = (1ULL << (s + UP)) | PawnPath[WHITE][s + UP];
+        }
+    }
+
+    for (int s = A1; s <= H8; ++s) {
+        if (rank_of(s) == RANK_1)
+            PawnSpan[BLACK][s] = PawnPath[BLACK][s] = 0;
+        else {
+            PawnSpan[BLACK][s] = bb_pattacks(BLACK, s) | PawnSpan[BLACK][s + DOWN];
+            PawnPath[BLACK][s] = (1ULL << (s + DOWN)) | PawnPath[BLACK][s + DOWN];
+        }
+    }
+
+    for (int f = FILE_A; f <= FILE_H; ++f)
+        AdjacentFiles[f] = (f > FILE_A ? bb_file(f - 1) : 0)
+                           | (f < FILE_H ? bb_file(f + 1) : 0);
+
     for (int s1 = A1; s1 <= H8; ++s1)
         for (int s2 = A1; s2 <= H8; ++s2)
             KingDistance[s1][s2] = std::max(std::abs(rank_of(s1) - rank_of(s2)),

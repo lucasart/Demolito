@@ -35,8 +35,8 @@ static void clear_square(Position *pos, int c, int p, int s)
     BOUNDS(p, NB_PIECE);
     BOUNDS(s, NB_SQUARE);
 
-    bb::clear(&pos->byColor[c], s);
-    bb::clear(&pos->byPiece[p], s);
+    bb_clear(&pos->byColor[c], s);
+    bb_clear(&pos->byPiece[p], s);
 
     pos->pieceOn[s] = NB_PIECE;
     pos->pst -= pst::table[c][p][s];
@@ -54,8 +54,8 @@ static void set_square(Position *pos, int c, int p, int s)
     BOUNDS(p, NB_PIECE);
     BOUNDS(s, NB_SQUARE);
 
-    bb::set(&pos->byColor[c], s);
-    bb::set(&pos->byPiece[p], s);
+    bb_set(&pos->byColor[c], s);
+    bb_set(&pos->byPiece[p], s);
 
     pos->pieceOn[s] = p;
     pos->pst += pst::table[c][p][s];
@@ -73,7 +73,7 @@ static void finish(Position *pos)
     const int ksq = king_square(*pos, us);
 
     pos->attacked = attacked_by(*pos, them);
-    pos->checkers = bb::test(pos->attacked, ksq) ? attackers_to(*pos, ksq,
+    pos->checkers = bb_test(pos->attacked, ksq) ? attackers_to(*pos, ksq,
                     pieces(*pos)) & pos->byColor[them] : 0;
     pos->pins = calc_pins(*pos);
 }
@@ -130,7 +130,7 @@ void pos_set(Position *pos, const std::string& fen)
             else if ('A' <= c && c <= 'H')
                 s = square(r, c - 'A');
 
-            bb::set(&pos->castleRooks, s);
+            bb_set(&pos->castleRooks, s);
         }
 
         pos->key ^= zobrist::castling(pos->castleRooks);
@@ -190,10 +190,10 @@ void pos_move(Position *pos, const Position& before, Move m)
             pos->castleRooks &= ~(1ULL << m.from);
         else if (p == KING) {
             // Lose all castling rights
-            pos->castleRooks &= ~bb::rank(us * RANK_8);
+            pos->castleRooks &= ~bb_rank(us * RANK_8);
 
             // Castling
-            if (bb::test(before.byColor[us], m.to)) {
+            if (bb_test(before.byColor[us], m.to)) {
                 // Capturing our own piece can only be a castling move, encoded KxR
                 assert(before.pieceOn[m.to] == ROOK);
                 const int r = rank_of(m.from);
@@ -230,29 +230,29 @@ bitboard_t attacked_by(const Position& pos, int c)
     BOUNDS(c, NB_COLOR);
 
     // King and Knight attacks
-    bitboard_t result = bb::kattacks(king_square(pos, c));
+    bitboard_t result = bb_kattacks(king_square(pos, c));
     bitboard_t fss = pieces_cp(pos, c, KNIGHT);
 
     while (fss)
-        result |= bb::nattacks(bb::pop_lsb(&fss));
+        result |= bb_nattacks(bb_pop_lsb(&fss));
 
     // Pawn captures
-    fss = pieces_cp(pos, c, PAWN) & ~bb::file(FILE_A);
-    result |= bb::shift(fss, push_inc(c) + LEFT);
-    fss = pieces_cp(pos, c, PAWN) & ~bb::file(FILE_H);
-    result |= bb::shift(fss, push_inc(c) + RIGHT);
+    fss = pieces_cp(pos, c, PAWN) & ~bb_file(FILE_A);
+    result |= bb_shift(fss, push_inc(c) + LEFT);
+    fss = pieces_cp(pos, c, PAWN) & ~bb_file(FILE_H);
+    result |= bb_shift(fss, push_inc(c) + RIGHT);
 
     // Sliders
     bitboard_t _occ = pieces(pos) ^ pieces_cp(pos, opposite(c), KING);
     fss = pieces_cpp(pos, c, ROOK, QUEEN);
 
     while (fss)
-        result |= bb::rattacks(bb::pop_lsb(&fss), _occ);
+        result |= bb_rattacks(bb_pop_lsb(&fss), _occ);
 
     fss = pieces_cpp(pos, c, BISHOP, QUEEN);
 
     while (fss)
-        result |= bb::battacks(bb::pop_lsb(&fss), _occ);
+        result |= bb_battacks(bb_pop_lsb(&fss), _occ);
 
     return result;
 }
@@ -261,17 +261,17 @@ bitboard_t calc_pins(const Position& pos)
 {
     const int us = pos.turn, them = opposite(us);
     const int king = king_square(pos, us);
-    bitboard_t pinners = (pieces_cpp(pos, them, ROOK, QUEEN) & bb::rpattacks(king))
-                         | (pieces_cpp(pos, them, BISHOP, QUEEN) & bb::bpattacks(king));
+    bitboard_t pinners = (pieces_cpp(pos, them, ROOK, QUEEN) & bb_rpattacks(king))
+                         | (pieces_cpp(pos, them, BISHOP, QUEEN) & bb_bpattacks(king));
     bitboard_t result = 0;
 
     while (pinners) {
-        const int s = bb::pop_lsb(&pinners);
-        bitboard_t skewered = bb::segment(king, s) & pieces(pos);
-        bb::clear(&skewered, king);
-        bb::clear(&skewered, s);
+        const int s = bb_pop_lsb(&pinners);
+        bitboard_t skewered = bb_segment(king, s) & pieces(pos);
+        bb_clear(&skewered, king);
+        bb_clear(&skewered, s);
 
-        if (!bb::several(skewered) && (skewered & pos.byColor[us]))
+        if (!bb_several(skewered) && (skewered & pos.byColor[us]))
             result |= skewered;
     }
 
@@ -312,7 +312,7 @@ eval_t calc_pst(const Position& pos)
             bitboard_t b = pieces_cp(pos, c, p);
 
             while (b)
-                result += pst::table[c][p][bb::pop_lsb(&b)];
+                result += pst::table[c][p][bb_pop_lsb(&b)];
         }
 
     return result;
@@ -323,7 +323,7 @@ eval_t calc_piece_material(const Position& pos, int c)
     eval_t result {0, 0};
 
     for (int p = KNIGHT; p <= QUEEN; ++p)
-        result += Material[p] * bb::count(pieces_cp(pos, c, p));
+        result += Material[p] * bb_count(pieces_cp(pos, c, p));
 
     return result;
 }
@@ -356,7 +356,7 @@ std::string get(const Position& pos)
         for (int f = FILE_A; f <= FILE_H; ++f) {
             const int s = square(r, f);
 
-            if (bb::test(pieces(pos), s)) {
+            if (bb_test(pieces(pos), s)) {
                 if (cnt)
                     os << char(cnt + '0');
 
@@ -388,24 +388,24 @@ std::string get(const Position& pos)
             const int king = king_square(pos, c);
 
             // Because we have castlable rooks, the king has to be on the first rank and
-            // cannot be in a corner, which allows using bb::ray(king, king +/- 1) to
+            // cannot be in a corner, which allows using bb_ray(king, king +/- 1) to
             // search for the castle rook in Chess960.
             assert(rank_of(king) == relative_rank(c, RANK_1));
             assert(file_of(king) != FILE_A && file_of(king) != FILE_H);
 
             // Right side castling
-            if (sqs & bb::ray(king, king + 1)) {
+            if (sqs & bb_ray(king, king + 1)) {
                 if (Chess960)
-                    os << char(file_of(bb::lsb(sqs & bb::ray(king, king + 1)))
+                    os << char(file_of(bb_lsb(sqs & bb_ray(king, king + 1)))
                                + (c == WHITE ? 'A' : 'a'));
                 else
                     os << PieceLabel[c][KING];
             }
 
             // Left side castling
-            if (sqs & bb::ray(king, king - 1)) {
+            if (sqs & bb_ray(king, king - 1)) {
                 if (Chess960)
-                    os << char(file_of(bb::msb(sqs & bb::ray(king, king - 1)))
+                    os << char(file_of(bb_msb(sqs & bb_ray(king, king - 1)))
                                + (c == WHITE ? 'A' : 'a'));
                 else
                     os << PieceLabel[c][QUEEN];
@@ -429,34 +429,34 @@ bitboard_t ep_square_bb(const Position& pos)
 
 bool insufficient_material(const Position& pos)
 {
-    return bb::count(pieces(pos)) <= 3 && !pos.byPiece[PAWN] && !pos.byPiece[ROOK]
+    return bb_count(pieces(pos)) <= 3 && !pos.byPiece[PAWN] && !pos.byPiece[ROOK]
            && !pos.byPiece[QUEEN];
 }
 
 int king_square(const Position& pos, int c)
 {
-    assert(bb::count(pieces_cp(pos, c, KING)) == 1);
+    assert(bb_count(pieces_cp(pos, c, KING)) == 1);
 
-    return bb::lsb(pieces_cp(pos, c, KING));
+    return bb_lsb(pieces_cp(pos, c, KING));
 }
 
 int color_on(const Position& pos, int s)
 {
-    assert(bb::test(pieces(pos), s));
+    assert(bb_test(pieces(pos), s));
 
-    return bb::test(pos.byColor[WHITE], s) ? WHITE : BLACK;
+    return bb_test(pos.byColor[WHITE], s) ? WHITE : BLACK;
 }
 
 bitboard_t attackers_to(const Position& pos, int s, bitboard_t occ)
 {
     BOUNDS(s, NB_SQUARE);
 
-    return (pieces_cp(pos, WHITE, PAWN) & bb::pattacks(BLACK, s))
-           | (pieces_cp(pos, BLACK, PAWN) & bb::pattacks(WHITE, s))
-           | (bb::nattacks(s) & pos.byPiece[KNIGHT])
-           | (bb::kattacks(s) & pos.byPiece[KING])
-           | (bb::rattacks(s, occ) & (pos.byPiece[ROOK] | pos.byPiece[QUEEN]))
-           | (bb::battacks(s, occ) & (pos.byPiece[BISHOP] | pos.byPiece[QUEEN]));
+    return (pieces_cp(pos, WHITE, PAWN) & bb_pattacks(BLACK, s))
+           | (pieces_cp(pos, BLACK, PAWN) & bb_pattacks(WHITE, s))
+           | (bb_nattacks(s) & pos.byPiece[KNIGHT])
+           | (bb_kattacks(s) & pos.byPiece[KING])
+           | (bb_rattacks(s, occ) & (pos.byPiece[ROOK] | pos.byPiece[QUEEN]))
+           | (bb_battacks(s, occ) & (pos.byPiece[BISHOP] | pos.byPiece[QUEEN]));
 }
 
 void print(const Position& pos)
@@ -466,7 +466,7 @@ void print(const Position& pos)
 
         for (int f = FILE_A; f <= FILE_H; ++f) {
             const int s = square(r, f);
-            line[2 * f] = bb::test(pieces(pos), s)
+            line[2 * f] = bb_test(pieces(pos), s)
                           ? PieceLabel[color_on(pos, s)][pos.pieceOn[s]]
                           : s == pos.epSquare ? '*' : '.';
         }
@@ -482,7 +482,7 @@ void print(const Position& pos)
         std::cout << "checkers:";
 
         while (b)
-            std::cout << ' ' << square_to_string(bb::pop_lsb(&b));
+            std::cout << ' ' << square_to_string(bb_pop_lsb(&b));
 
         std::cout << std::endl;
     }

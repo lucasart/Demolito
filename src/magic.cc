@@ -148,9 +148,9 @@ static bitboard_t calc_sliding_attacks(int s, bitboard_t occ, const int dir[4][2
 
         while (0 <= _r && _r < NB_RANK && 0 <= _f && _f < NB_FILE) {
             const int _sq = square(_r, _f);
-            bb::set(&result, _sq);
+            bb_set(&result, _sq);
 
-            if (bb::test(occ, _sq))
+            if (bb_test(occ, _sq))
                 break;
 
             _r += dr, _f += df;
@@ -166,7 +166,7 @@ static bitboard_t init_magic_occ(const int* s, int squareCount, bitboard_t lineO
 
     for (int i = 0; i < squareCount; ++i)
         if (lineOcc & (1ULL << i))
-            bb::set(&result, s[i]);
+            bb_set(&result, s[i]);
 
     return result;
 }
@@ -180,7 +180,7 @@ static void init_helper(int s, const bitboard_t mask[], const bitboard_t magic[]
     bitboard_t temp = mask[s];
 
     while (temp)
-        squares[squareCount++] = bb::pop_lsb(&temp);
+        squares[squareCount++] = bb_pop_lsb(&temp);
 
     for (temp = 0; temp < (1ULL << squareCount); temp++) {
         bitboard_t occ = init_magic_occ(squares, squareCount, temp);
@@ -189,8 +189,6 @@ static void init_helper(int s, const bitboard_t mask[], const bitboard_t magic[]
         p[idx] = calc_sliding_attacks(s, occ, dir);
     }
 }
-
-namespace bb {
 
 void init_slider_attacks()
 {
@@ -203,18 +201,16 @@ void init_slider_attacks()
     }
 }
 
-bitboard_t battacks(int s, bitboard_t occ)
+bitboard_t bb_battacks(int s, bitboard_t occ)
 {
     BOUNDS(s, NB_SQUARE);
     const int idx = ((occ & BMask[s]) * BMagic[s]) >> BShift[s];
     return (BMagicDB + BMagicIndex[s])[idx];
 }
 
-bitboard_t rattacks(int s, bitboard_t occ)
+bitboard_t bb_rattacks(int s, bitboard_t occ)
 {
     BOUNDS(s, NB_SQUARE);
     const int idx = ((occ & RMask[s]) * RMagic[s]) >> RShift[s];
     return (RMagicDB + RMagicIndex[s])[idx];
 }
-
-}    // namespace bb

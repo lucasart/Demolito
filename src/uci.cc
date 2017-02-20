@@ -58,7 +58,7 @@ static void setoption(std::istringstream& is)
         is >> std::boolalpha >> Chess960;
     else if (name == "Hash") {
         is >> Hash;
-        Hash = 1ULL << bb::msb(Hash);    // must be a power of two
+        Hash = 1ULL << bb_msb(Hash);    // must be a power of two
         tt::table.resize(Hash * 1024 * (1024 / sizeof(tt::Entry)), 0);
     } else if (name == "Threads")
         is >> search::Threads;

@@ -41,14 +41,14 @@ Move Move::operator =(move_t em)
 bool move_is_capture(const Position& pos, const Move& m)
 {
     const int us = pos.turn, them = opposite(us);
-    return (bb::test(pos.byColor[them], m.to))
+    return (bb_test(pos.byColor[them], m.to))
            || ((m.to == pos.epSquare || relative_rank_of(us, m.to) == RANK_8)
                && pos.pieceOn[m.from] == PAWN);
 }
 
 bool move_is_castling(const Position& pos, const Move& m)
 {
-    return bb::test(pos.byColor[pos.turn], m.to);
+    return bb_test(pos.byColor[pos.turn], m.to);
 }
 
 std::string move_to_string(const Position& pos, const Move& m)
@@ -97,19 +97,19 @@ bool move_is_legal(const Position& pos, const Move& m)
     const int king = king_square(pos, pos.turn);
 
     if (p == KING) {
-        if (bb::test(pos.byColor[pos.turn], m.to)) {
+        if (bb_test(pos.byColor[pos.turn], m.to)) {
             // Castling: king must not move through attacked square, and rook must not
             // be pinned
             assert(pos.pieceOn[m.to] == ROOK);
             const int _tsq = square(rank_of(m.from), m.from < m.to ? FILE_G : FILE_C);
-            return !(pos.attacked & bb::segment(m.from, _tsq))
-                   && !bb::test(pos.pins, m.to);
+            return !(pos.attacked & bb_segment(m.from, _tsq))
+                   && !bb_test(pos.pins, m.to);
         } else
             // Normal king move: do not land on an attacked square
-            return !bb::test(pos.attacked, m.to);
+            return !bb_test(pos.attacked, m.to);
     } else {
         // Normal case: illegal if pinned, and moves out of pin-ray
-        if (bb::test(pos.pins, m.from) && !bb::test(bb::ray(king, m.from), m.to))
+        if (bb_test(pos.pins, m.from) && !bb_test(bb_ray(king, m.from), m.to))
             return false;
 
         // En-passant special case: also illegal if self-check through the en-passant
@@ -117,11 +117,11 @@ bool move_is_legal(const Position& pos, const Move& m)
         if (m.to == pos.epSquare && p == PAWN) {
             const int us = pos.turn, them = opposite(us);
             bitboard_t occ = pieces(pos);
-            bb::clear(&occ, m.from);
-            bb::set(&occ, m.to);
-            bb::clear(&occ, m.to + push_inc(them));
-            return !(bb::rattacks(king, occ) & pieces_cpp(pos, them, ROOK, QUEEN))
-                   && !(bb::battacks(king, occ) & pieces_cpp(pos, them, BISHOP, QUEEN));
+            bb_clear(&occ, m.from);
+            bb_set(&occ, m.to);
+            bb_clear(&occ, m.to + push_inc(them));
+            return !(bb_rattacks(king, occ) & pieces_cpp(pos, them, ROOK, QUEEN))
+                   && !(bb_battacks(king, occ) & pieces_cpp(pos, them, BISHOP, QUEEN));
         } else
             return true;
     }
@@ -137,12 +137,12 @@ int move_see(const Position& pos, const Move& m)
     // General case
     int gain[32] = {see_value[pos.pieceOn[m.to]]};
     int capture = pos.pieceOn[m.from];
-    bb::clear(&occ, m.from);
+    bb_clear(&occ, m.from);
 
     // Special cases
     if (capture == PAWN) {
         if (m.to == pos.epSquare) {
-            bb::clear(&occ, m.to - push_inc(us));
+            bb_clear(&occ, m.to - push_inc(us));
             gain[0] = see_value[capture];
         } else if (relative_rank_of(us, m.to) == RANK_8)
             gain[0] += see_value[capture = m.prom] - see_value[PAWN];
@@ -150,7 +150,7 @@ int move_see(const Position& pos, const Move& m)
 
     // Easy case: to is not defended
     // TODO: explore performance tradeoff between using pos.attacked and using attackers below
-    if (!bb::test(pos.attacked, m.to))
+    if (!bb_test(pos.attacked, m.to))
         return gain[0];
 
     bitboard_t attackers = attackers_to(pos, m.to, occ);
@@ -170,14 +170,14 @@ int move_see(const Position& pos, const Move& m)
         }
 
         // Remove the LVA
-        bb::clear(&occ, bb::lsb(ourAttackers & pieces_cp(pos, us, p)));
+        bb_clear(&occ, bb_lsb(ourAttackers & pieces_cp(pos, us, p)));
 
         // Scan for new X-ray attacks through the LVA
         if (p != KNIGHT) {
             attackers |= (pos.byPiece[BISHOP] | pos.byPiece[QUEEN])
-                         & bb::bpattacks(m.to) & bb::battacks(m.to, occ);
+                         & bb_bpattacks(m.to) & bb_battacks(m.to, occ);
             attackers |= (pos.byPiece[ROOK] | pos.byPiece[QUEEN])
-                         & bb::rpattacks(m.to) & bb::rattacks(m.to, occ);
+                         & bb_rpattacks(m.to) & bb_rattacks(m.to, occ);
         }
 
         // Remove attackers we've already done
