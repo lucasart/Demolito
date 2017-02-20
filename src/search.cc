@@ -217,9 +217,11 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
             else {
                 int reduction = see < 0 || (!move_is_capture(pos, currentMove) && !nextPos.checkers);
 
-                if (!move_is_capture(pos, currentMove) && !pos.checkers && !nextPos.checkers
-                        && ++lmrCount >= 2 + 8/depth)
-                    reduction++;
+                if (!move_is_capture(pos, currentMove) && !pos.checkers && !nextPos.checkers) {
+                    lmrCount++;
+                    const int idx = 2 + 8 / depth;
+                    reduction += (lmrCount >= idx) + (lmrCount >= 3*idx);
+                }
 
                 // Reduced depth, zero window
                 score = nextDepth - reduction <= 0
