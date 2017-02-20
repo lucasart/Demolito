@@ -17,6 +17,15 @@
 
 thread_local PawnEntry PawnHash[NB_PAWN_ENTRY];
 
+static int KingDistance[NB_SQUARE][NB_SQUARE];
+
+int king_distance(int s1, int s2)
+{
+    BOUNDS(s1, NB_SQUARE);
+    BOUNDS(s2, NB_SQUARE);
+    return KingDistance[s1][s2];
+}
+
 static bitboard_t pawn_attacks(const Position& pos, int c)
 {
     const bitboard_t pawns = pieces_cp(pos, c, PAWN);
@@ -180,8 +189,8 @@ static eval_t passer(int us, int pawn, int ourKing, int theirKing, bool phalanx)
     if (n > 1) {
         const int stop = pawn + push_inc(us);
         const int Q = n * (n - 1);
-        result.eg() += bb::king_distance(stop, theirKing) * 6 * Q;
-        result.eg() -= bb::king_distance(stop, ourKing) * 3 * Q;
+        result.eg() += king_distance(stop, theirKing) * 6 * Q;
+        result.eg() -= king_distance(stop, ourKing) * 3 * Q;
     }
 
     return result;
@@ -268,6 +277,14 @@ static int blend(const Position& pos, eval_t e)
     static const int full = 4 * (N + B + R) + 2 * Q;
     const int total = (pos.pieceMaterial[WHITE] + pos.pieceMaterial[BLACK]).eg();
     return e.op() * total / full + e.eg() * (full - total) / full;
+}
+
+void eval_init()
+{
+    for (int s1 = A1; s1 <= H8; ++s1)
+        for (int s2 = A1; s2 <= H8; ++s2)
+            KingDistance[s1][s2] = std::max(std::abs(rank_of(s1) - rank_of(s2)),
+                                            std::abs(file_of(s1) - file_of(s2)));
 }
 
 int evaluate(const Position& pos)

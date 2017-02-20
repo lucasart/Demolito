@@ -33,7 +33,6 @@ static bitboard_t Ray[NB_SQUARE][NB_SQUARE];
 static bitboard_t PawnSpan[NB_COLOR][NB_SQUARE];
 static bitboard_t PawnPath[NB_COLOR][NB_SQUARE];
 static bitboard_t AdjacentFiles[NB_FILE];
-static int KingDistance[NB_SQUARE][NB_SQUARE];
 
 static void safe_set_bit(bitboard_t *b, int r, int f)
 {
@@ -81,11 +80,6 @@ static void init_eval()
     for (int f = FILE_A; f <= FILE_H; ++f)
         AdjacentFiles[f] = (f > FILE_A ? bb::file(f - 1) : 0)
                            | (f < FILE_H ? bb::file(f + 1) : 0);
-
-    for (int s1 = A1; s1 <= H8; ++s1)
-        for (int s2 = A1; s2 <= H8; ++s2)
-            KingDistance[s1][s2] = std::max(std::abs(rank_of(s1) - rank_of(s2)),
-                                            std::abs(file_of(s1) - file_of(s2)));
 }
 
 static void init_rays()
@@ -140,49 +134,42 @@ void init()
 bitboard_t rank(int r)
 {
     BOUNDS(r, NB_RANK);
-
     return 0xFFULL << (8 * r);
 }
 
 bitboard_t file(int f)
 {
     BOUNDS(f, NB_FILE);
-
     return 0x0101010101010101ULL << f;
 }
 
 bitboard_t pattacks(int c, int s)
 {
     BOUNDS(s, NB_SQUARE);
-
     return PAttacks[c][s];
 }
 
 bitboard_t nattacks(int s)
 {
     BOUNDS(s, NB_SQUARE);
-
     return NAttacks[s];
 }
 
 bitboard_t kattacks(int s)
 {
     BOUNDS(s, NB_SQUARE);
-
     return KAttacks[s];
 }
 
 bitboard_t bpattacks(int s)
 {
     BOUNDS(s, NB_SQUARE);
-
     return BPseudoAttacks[s];
 }
 
 bitboard_t rpattacks(int s)
 {
     BOUNDS(s, NB_SQUARE);
-
     return RPseudoAttacks[s];
 }
 
@@ -190,7 +177,6 @@ bitboard_t segment(int s1, int s2)
 {
     BOUNDS(s1, NB_SQUARE);
     BOUNDS(s2, NB_SQUARE);
-
     return Segment[s1][s2];
 }
 
@@ -199,7 +185,6 @@ bitboard_t ray(int s1, int s2)
     BOUNDS(s1, NB_SQUARE);
     BOUNDS(s2, NB_SQUARE);
     assert(s1 != s2);    // Ray[s][s] is undefined
-
     return Ray[s1][s2];
 }
 
@@ -207,7 +192,6 @@ bitboard_t pawn_span(int c, int s)
 {
     BOUNDS(c, NB_COLOR);
     BOUNDS(s, NB_SQUARE);
-
     return PawnSpan[c][s];
 }
 
@@ -215,23 +199,13 @@ bitboard_t pawn_path(int c, int s)
 {
     BOUNDS(c, NB_COLOR);
     BOUNDS(s, NB_SQUARE);
-
     return PawnPath[c][s];
 }
 
 bitboard_t adjacent_files(int f)
 {
     BOUNDS(f, NB_FILE);
-
     return AdjacentFiles[f];
-}
-
-int king_distance(int s1, int s2)
-{
-    BOUNDS(s1, NB_SQUARE);
-    BOUNDS(s2, NB_SQUARE);
-
-    return KingDistance[s1][s2];
 }
 
 /* Bit manipulation */
@@ -239,7 +213,6 @@ int king_distance(int s1, int s2)
 bool test(bitboard_t b, int s)
 {
     BOUNDS(s, NB_SQUARE);
-
     return b & (1ULL << s);
 }
 
@@ -247,7 +220,6 @@ void clear(bitboard_t *b, int s)
 {
     BOUNDS(s, NB_SQUARE);
     assert(test(*b, s));
-
     *b ^= 1ULL << s;
 }
 
@@ -255,28 +227,24 @@ void set(bitboard_t *b, int s)
 {
     BOUNDS(s, NB_SQUARE);
     assert(!test(*b, s));
-
     *b ^= 1ULL << s;
 }
 
 bitboard_t shift(bitboard_t b, int i)
 {
     assert(-63 <= i && i <= 63);    // forbid oversized shift (undefined behaviour)
-
     return i > 0 ? b << i : b >> -i;
 }
 
 int lsb(bitboard_t b)
 {
     assert(b);
-
     return __builtin_ffsll(b) - 1;
 }
 
 int msb(bitboard_t b)
 {
     assert(b);
-
     return 63 - __builtin_clzll(b);
 }
 

@@ -15,6 +15,7 @@
 */
 #include <iostream>
 #include "bitboard.h"
+#include "eval.h"
 #include "zobrist.h"
 #include "test.h"
 #include "pst.h"
@@ -26,6 +27,7 @@ int main(int argc, char **argv)
     bb::init();
     zobrist::init();
     pst::init();
+    eval_init();
 
     if (argc >= 2) {
         const std::string cmd(argv[1]);

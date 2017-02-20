@@ -30,7 +30,6 @@ bitboard_t ray(int s1, int s2);
 bitboard_t pawn_span(int c, int s);
 bitboard_t pawn_path(int c, int s);
 bitboard_t adjacent_files(int f);
-int king_distance(int s1, int s2);
 
 /* Bit manipulation */
 
