@@ -40,12 +40,12 @@ static void clear_square(Position *pos, int c, int p, int s)
 
     pos->pieceOn[s] = NB_PIECE;
     pos->pst -= pst[c][p][s];
-    pos->key ^= zobrist::key(c, p, s);
+    pos->key ^= ZobristKey[c][p][s];
 
     if (p <= QUEEN)
         pos->pieceMaterial[c] -= Material[p];
     else
-        pos->pawnKey ^= zobrist::key(c, p, s);
+        pos->pawnKey ^= ZobristKey[c][p][s];
 }
 
 static void set_square(Position *pos, int c, int p, int s)
@@ -59,12 +59,12 @@ static void set_square(Position *pos, int c, int p, int s)
 
     pos->pieceOn[s] = p;
     pos->pst += pst[c][p][s];
-    pos->key ^= zobrist::key(c, p, s);
+    pos->key ^= ZobristKey[c][p][s];
 
     if (p <= QUEEN)
         pos->pieceMaterial[c] += Material[p];
     else
-        pos->pawnKey ^= zobrist::key(c, p, s);
+        pos->pawnKey ^= ZobristKey[c][p][s];
 }
 
 static void finish(Position *pos)
@@ -112,7 +112,7 @@ void pos_set(Position *pos, const std::string& fen)
         pos->turn = WHITE;
     else {
         pos->turn = BLACK;
-        pos->key ^= zobrist::turn();
+        pos->key ^= ZobristTurn;
     }
 
     // Castling rights
@@ -133,13 +133,13 @@ void pos_set(Position *pos, const std::string& fen)
             bb_set(&pos->castleRooks, s);
         }
 
-        pos->key ^= zobrist::castling(pos->castleRooks);
+        pos->key ^= zobrist_castling(pos->castleRooks);
     }
 
     // En passant and 50 move
     is >> token;
     pos->epSquare = string_to_square(token);
-    pos->key ^= zobrist::en_passant(pos->epSquare);
+    pos->key ^= ZobristEnPassant[pos->epSquare];
     is >> pos->rule50;
 
     finish(pos);
@@ -206,9 +206,9 @@ void pos_move(Position *pos, const Position& before, Move m)
     }
 
     pos->turn = them;
-    pos->key ^= zobrist::turn();
-    pos->key ^= zobrist::en_passant(before.epSquare) ^ zobrist::en_passant(pos->epSquare);
-    pos->key ^= zobrist::castling(before.castleRooks ^ pos->castleRooks);
+    pos->key ^= ZobristTurn;
+    pos->key ^= ZobristEnPassant[before.epSquare] ^ ZobristEnPassant[pos->epSquare];
+    pos->key ^= zobrist_castling(before.castleRooks ^ pos->castleRooks);
 
     finish(pos);
 }
@@ -219,8 +219,8 @@ void pos_switch(Position *pos, const Position& before)
     pos->epSquare = NB_SQUARE;
 
     pos->turn = opposite(pos->turn);
-    pos->key ^= zobrist::turn();
-    pos->key ^= zobrist::en_passant(before.epSquare) ^ zobrist::en_passant(pos->epSquare);
+    pos->key ^= ZobristTurn;
+    pos->key ^= ZobristEnPassant[before.epSquare] ^ ZobristEnPassant[pos->epSquare];
 
     finish(pos);
 }
@@ -280,13 +280,13 @@ bitboard_t calc_pins(const Position& pos)
 
 uint64_t calc_key(const Position& pos)
 {
-    uint64_t key = (pos.turn ? zobrist::turn() : 0)
-                   ^ zobrist::en_passant(pos.epSquare)
-                   ^ zobrist::castling(pos.castleRooks);
+    uint64_t key = (pos.turn ? ZobristTurn : 0)
+                   ^ ZobristEnPassant[pos.epSquare]
+                   ^ zobrist_castling(pos.castleRooks);
 
     for (int c = WHITE; c <= BLACK; ++c)
         for (int p = KNIGHT; p < NB_PIECE; ++p)
-            key ^= zobrist::keys(c, p, pieces_cp(pos, c, p));
+            key ^= zobrist_keys(c, p, pieces_cp(pos, c, p));
 
     return key;
 }
@@ -296,8 +296,8 @@ uint64_t calc_pawn_key(const Position& pos)
     uint64_t key = 0;
 
     for (int c = WHITE; c <= BLACK; ++c) {
-        key ^= zobrist::keys(c, PAWN, pieces_cp(pos, c, PAWN));
-        key ^= zobrist::keys(c, KING, pieces_cp(pos, c, KING));
+        key ^= zobrist_keys(c, PAWN, pieces_cp(pos, c, PAWN));
+        key ^= zobrist_keys(c, KING, pieces_cp(pos, c, KING));
     }
 
     return key;

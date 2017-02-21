@@ -16,17 +16,15 @@
 #include "zobrist.h"
 #include "bitboard.h"
 
-static uint64_t Zobrist[NB_COLOR][NB_PIECE][NB_SQUARE];
+uint64_t ZobristKey[NB_COLOR][NB_PIECE][NB_SQUARE];
 static uint64_t ZobristCastling[NB_SQUARE];
-static uint64_t ZobristEnPassant[(int)NB_SQUARE+1];
-static uint64_t ZobristTurn;
+uint64_t ZobristEnPassant[NB_SQUARE+1];
+uint64_t ZobristTurn;
 
 static uint64_t rotate(uint64_t x, int k)
 {
     return (x << k) | (x >> (64 - k));
 }
-
-namespace zobrist {
 
 void gs_clear(GameStack *gs)
 {
@@ -83,7 +81,7 @@ uint64_t prng_rand(PRNG *prng)
     return prng->d = e + prng->a;
 }
 
-void init()
+void zobrist_init()
 {
     PRNG prng;
     prng_init(&prng, 0);
@@ -91,7 +89,7 @@ void init()
     for (int c = WHITE; c <= BLACK; ++c)
         for (int p = KNIGHT; p < NB_PIECE; ++p)
             for (int s = A1; s <= H8; ++s)
-                Zobrist[c][p][s] = prng_rand(&prng);
+                ZobristKey[c][p][s] = prng_rand(&prng);
 
     for (int s = A1; s <= H8; ++s)
         ZobristCastling[s] = prng_rand(&prng);
@@ -104,16 +102,7 @@ void init()
     ZobristTurn = prng_rand(&prng);
 }
 
-uint64_t key(int c, int p, int s)
-{
-    BOUNDS(c, NB_COLOR);
-    BOUNDS(p, NB_PIECE);
-    BOUNDS(s, NB_SQUARE);
-
-    return Zobrist[c][p][s];
-}
-
-uint64_t keys(int c, int p, uint64_t sqs)
+uint64_t zobrist_keys(int c, int p, uint64_t sqs)
 {
     BOUNDS(c, NB_COLOR);
     BOUNDS(p, NB_PIECE);
@@ -121,12 +110,12 @@ uint64_t keys(int c, int p, uint64_t sqs)
     bitboard_t k = 0;
 
     while(sqs)
-        k ^= key(c, p, bb_pop_lsb(&sqs));
+        k ^= ZobristKey[c][p][bb_pop_lsb(&sqs)];
 
     return k;
 }
 
-uint64_t castling(bitboard_t castlableRooks)
+uint64_t zobrist_castling(bitboard_t castlableRooks)
 {
     bitboard_t k = 0;
 
@@ -135,17 +124,3 @@ uint64_t castling(bitboard_t castlableRooks)
 
     return k;
 }
-
-uint64_t en_passant(int s)
-{
-    assert(unsigned(s) <= NB_SQUARE);
-
-    return ZobristEnPassant[s];
-}
-
-uint64_t turn()
-{
-    return ZobristTurn;
-}
-
-}    // namespace zobrist

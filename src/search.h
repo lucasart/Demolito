@@ -7,7 +7,7 @@
 namespace search {
 
 extern thread_local int ThreadId;
-extern std::vector<zobrist::GameStack> gameStack;
+extern std::vector<GameStack> gameStack;
 extern std::vector<uint64_t> nodeCount;
 
 extern int Threads;
@@ -27,6 +27,6 @@ struct Limits {
 template<bool Qsearch = false>
 int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::vector<move_t>& pv);
 
-void bestmove(const Position& pos, const Limits& lim, const zobrist::GameStack& gameStack);
+void bestmove(const Position& pos, const Limits& lim, const GameStack& gameStack);
 
 }

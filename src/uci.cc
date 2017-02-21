@@ -22,7 +22,7 @@
 #include "tt.h"
 #include "gen.h"
 
-zobrist::GameStack gameStack;
+GameStack gameStack;
 
 static Position pos;
 static search::Limits lim;

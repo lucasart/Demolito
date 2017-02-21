@@ -49,7 +49,7 @@ uint64_t test_search(bool perft, int depth, int threads)
     lim.depth = depth;
     search::Threads = threads;
     Position pos;
-    zobrist::GameStack gameStack;
+    GameStack gameStack;
 
     Clock clock;
     clock.reset();

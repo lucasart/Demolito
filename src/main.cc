@@ -24,7 +24,7 @@
 int main(int argc, char **argv)
 {
     bb_init();
-    zobrist::init();
+    zobrist_init();
     pst_init();
     eval_init();
 

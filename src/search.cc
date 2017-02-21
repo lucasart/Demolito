@@ -33,7 +33,7 @@ namespace search {
 thread_local int ThreadId;
 
 // Per thread data
-std::vector<zobrist::GameStack> gameStack;
+std::vector<GameStack> gameStack;
 std::vector<uint64_t> nodeCount;
 
 uint64_t nodes()
@@ -313,7 +313,7 @@ int aspirate(const Position& pos, int depth, std::vector<move_t>& pv, int score)
     }
 }
 
-void iterate(const Position& pos, const Limits& lim, const zobrist::GameStack& initialGameStack,
+void iterate(const Position& pos, const Limits& lim, const GameStack& initialGameStack,
              std::vector<int>& iteration, int threadId)
 {
     ThreadId = threadId;
@@ -385,7 +385,7 @@ void iterate(const Position& pos, const Limits& lim, const zobrist::GameStack& i
     signal = STOP;
 }
 
-void bestmove(const Position& pos, const Limits& lim, const zobrist::GameStack& initialGameStack)
+void bestmove(const Position& pos, const Limits& lim, const GameStack& initialGameStack)
 {
     using namespace std::chrono;
     const auto start = high_resolution_clock::now();
