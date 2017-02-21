@@ -61,7 +61,7 @@ uint64_t test_search(bool perft, int depth, int threads)
         print(pos);
 
         if (perft) {
-            nodes = gen::perft(pos, depth);
+            nodes = gen_perft(pos, depth);
             std::cout << "perft(" << depth << ") = " << nodes << std::endl;
         } else {
             search::bestmove(pos, lim, gameStack);

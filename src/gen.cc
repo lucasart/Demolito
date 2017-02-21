@@ -39,9 +39,7 @@ static move_t *serialize_moves(Move& m, bitboard_t tss, move_t *emList, bool sub
     return emList;
 }
 
-namespace gen {
-
-move_t *pawn_moves(const Position& pos, move_t *emList, bitboard_t targets, bool subPromotions)
+move_t *gen_pawn_moves(const Position& pos, move_t *emList, bitboard_t targets, bool subPromotions)
 {
     const int us = pos.turn, them = opposite(us);
     const int push = push_inc(us);
@@ -91,7 +89,7 @@ move_t *pawn_moves(const Position& pos, move_t *emList, bitboard_t targets, bool
     return emList;
 }
 
-move_t *piece_moves(const Position& pos, move_t *emList, bitboard_t targets, bool kingMoves)
+move_t *gen_piece_moves(const Position& pos, move_t *emList, bitboard_t targets, bool kingMoves)
 {
     const int us = pos.turn;
     bitboard_t fss, tss;
@@ -136,7 +134,7 @@ move_t *piece_moves(const Position& pos, move_t *emList, bitboard_t targets, boo
     return emList;
 }
 
-move_t *castling_moves(const Position& pos, move_t *emList)
+move_t *gen_castling_moves(const Position& pos, move_t *emList)
 {
     assert(!pos.checkers);
     Move m;
@@ -158,7 +156,7 @@ move_t *castling_moves(const Position& pos, move_t *emList)
     return emList;
 }
 
-move_t *check_escapes(const Position& pos, move_t *emList, bool subPromotions)
+move_t *gen_check_escapes(const Position& pos, move_t *emList, bool subPromotions)
 {
     assert(pos.checkers);
     bitboard_t ours = pos.byColor[pos.turn];
@@ -183,7 +181,7 @@ move_t *check_escapes(const Position& pos, move_t *emList, bool subPromotions)
               ? Segment[king][checkerSquare]
               : pos.checkers;
 
-        emList = piece_moves(pos, emList, tss & ~ours, false);
+        emList = gen_piece_moves(pos, emList, tss & ~ours, false);
 
         // if checked by a Pawn and epsq is available, then the check must result from a
         // pawn double push, and we also need to consider capturing it en-passant to solve
@@ -191,29 +189,29 @@ move_t *check_escapes(const Position& pos, move_t *emList, bool subPromotions)
         if (checkerPiece == PAWN && pos.epSquare < NB_SQUARE)
             bb_set(&tss, pos.epSquare);
 
-        emList = pawn_moves(pos, emList, tss, subPromotions);
+        emList = gen_pawn_moves(pos, emList, tss, subPromotions);
     }
 
     return emList;
 }
 
-move_t *all_moves(const Position& pos, move_t *emList)
+move_t *gen_all_moves(const Position& pos, move_t *emList)
 {
     if (pos.checkers)
-        return check_escapes(pos, emList);
+        return gen_check_escapes(pos, emList);
     else {
         bitboard_t targets = ~pos.byColor[pos.turn];
         move_t *em = emList;
 
-        em = pawn_moves(pos, em, targets);
-        em = piece_moves(pos, em, targets);
-        em = castling_moves(pos, em);
+        em = gen_pawn_moves(pos, em, targets);
+        em = gen_piece_moves(pos, em, targets);
+        em = gen_castling_moves(pos, em);
         return em;
     }
 }
 
 template <bool Root>
-uint64_t perft(const Position& pos, int depth)
+uint64_t gen_perft(const Position& pos, int depth)
 {
     // Do not use bulk-counting. It's faster, but falses profiling results.
     if (depth <= 0)
@@ -222,7 +220,7 @@ uint64_t perft(const Position& pos, int depth)
     uint64_t result = 0;
     Position after;
     move_t emList[MAX_MOVES];
-    move_t *end = all_moves(pos, emList);
+    move_t *end = gen_all_moves(pos, emList);
 
     for (move_t *em = emList; em != end; em++) {
         const Move m(*em);
@@ -231,7 +229,7 @@ uint64_t perft(const Position& pos, int depth)
             continue;
 
         pos_move(&after, pos, m);
-        const uint64_t sub_tree = perft<false>(after, depth - 1);
+        const uint64_t sub_tree = gen_perft<false>(after, depth - 1);
         result += sub_tree;
 
         if (Root)
@@ -241,6 +239,4 @@ uint64_t perft(const Position& pos, int depth)
     return result;
 }
 
-template uint64_t perft<true>(const Position& pos, int depth);
-
-}    // namespace gen
+template uint64_t gen_perft<true>(const Position& pos, int depth);
