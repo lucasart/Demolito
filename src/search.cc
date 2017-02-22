@@ -17,12 +17,14 @@
 #include <vector>
 #include <chrono>
 #include <string.h>  // memset
+#include <algorithm>  // std::min and std::max
 #include "search.h"
 #include "sort.h"
 #include "eval.h"
 #include "uci.h"
 #include "zobrist.h"
 #include "tt.h"
+#include "math.h"
 
 // Protect thread scheduling decisions
 static std::mutex mtxSchedule;
@@ -62,10 +64,20 @@ int draw_score(int ply)
     return (ply & 1 ? Contempt : -Contempt) * EP / 100;
 }
 
+int Reduction[32][32];
+
+void init()
+{
+    for (int d = 1; d < 32; d++)
+        for (int c = 1; c < 32; c++)
+            Reduction[d][c] = .4*log(d) + .8*log(c);
+}
+
 template<bool Qsearch = false>
 int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::vector<move_t>& pv)
 {
-    assert(gameStack[ThreadId].back() == pos.key);
+    assert(Qsearch == depth <= 0);
+    assert(gs_back(&gameStack[ThreadId]) == pos.key);
     assert(alpha < beta);
 
     const bool pvNode = beta > alpha + 1;
@@ -218,9 +230,9 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
                 int reduction = see < 0 || (!move_is_capture(pos, currentMove) && !nextPos.checkers);
 
                 if (!move_is_capture(pos, currentMove) && !pos.checkers && !nextPos.checkers) {
-                    lmrCount++;
-                    const int idx = 2 + 8 / depth;
-                    reduction += (lmrCount >= idx) + (lmrCount >= 3*idx);
+                    reduction = Reduction[std::min(31, nextDepth)][std::min(31, ++lmrCount)];
+                    assert(nextDepth >= 1);
+                    assert(lmrCount >= 1);
                 }
 
                 // Reduced depth, zero window

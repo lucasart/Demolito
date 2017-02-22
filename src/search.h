@@ -24,6 +24,8 @@ struct Limits {
     uint64_t nodes;
 };
 
+void init();
+
 template<bool Qsearch = false>
 int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::vector<move_t>& pv);
 

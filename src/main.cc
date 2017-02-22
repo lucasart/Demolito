@@ -16,10 +16,11 @@
 #include <iostream>
 #include "bitboard.h"
 #include "eval.h"
-#include "zobrist.h"
-#include "test.h"
 #include "pst.h"
+#include "search.h"
+#include "test.h"
 #include "uci.h"
+#include "zobrist.h"
 
 int main(int argc, char **argv)
 {
@@ -27,6 +28,7 @@ int main(int argc, char **argv)
     zobrist_init();
     pst_init();
     eval_init();
+    search::init();
 
     if (argc >= 2) {
         const std::string cmd(argv[1]);

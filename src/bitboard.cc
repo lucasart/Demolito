@@ -122,14 +122,14 @@ bool bb_test(bitboard_t b, int s)
 void bb_clear(bitboard_t *b, int s)
 {
     BOUNDS(s, NB_SQUARE);
-    assert(test(*b, s));
+    assert(bb_test(*b, s));
     *b ^= 1ULL << s;
 }
 
 void bb_set(bitboard_t *b, int s)
 {
     BOUNDS(s, NB_SQUARE);
-    assert(!test(*b, s));
+    assert(!bb_test(*b, s));
     *b ^= 1ULL << s;
 }
 
