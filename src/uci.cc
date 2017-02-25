@@ -145,7 +145,7 @@ static void perft(std::istringstream& is)
     is >> depth;
 
     pos_print(&pos);
-    std::cout << "score " << gen_perft(pos, depth) << std::endl;
+    std::cout << "score " << gen_perft(&pos, depth) << std::endl;
 }
 
 namespace uci {
