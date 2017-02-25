@@ -26,7 +26,7 @@ static int KingDistance[NB_SQUARE][NB_SQUARE];
 
 static bitboard_t pawn_attacks(const Position& pos, int c)
 {
-    const bitboard_t pawns = pieces_cp(pos, c, PAWN);
+    const bitboard_t pawns = pos_pieces_cp(&pos, c, PAWN);
     return bb_shift(pawns & ~bb_file(FILE_A), push_inc(c) + LEFT)
            | bb_shift(pawns & ~bb_file(FILE_H), push_inc(c) + RIGHT);
 }
@@ -54,16 +54,16 @@ static eval_t mobility(const Position& pos, int us, bitboard_t attacks[NB_COLOR]
     const int them = opposite(us);
     eval_t result = {0, 0};
 
-    attacks[us][KING] = KAttacks[king_square(pos, us)];
+    attacks[us][KING] = KAttacks[pos_king_square(&pos, us)];
     attacks[them][PAWN] = pawn_attacks(pos, them);
 
     for (piece = KNIGHT; piece <= QUEEN; ++piece)
         attacks[us][piece] = 0;
 
-    const bitboard_t targets = ~(pieces_cpp(pos, us, KING, PAWN) | attacks[them][PAWN]);
+    const bitboard_t targets = ~(pos_pieces_cpp(&pos, us, KING, PAWN) | attacks[them][PAWN]);
 
     // Knight mobility
-    fss = pieces_cp(pos, us, KNIGHT);
+    fss = pos_pieces_cp(&pos, us, KNIGHT);
 
     while (fss) {
         tss = NAttacks[bb_pop_lsb(&fss)];
@@ -72,8 +72,8 @@ static eval_t mobility(const Position& pos, int us, bitboard_t attacks[NB_COLOR]
     }
 
     // Lateral mobility
-    fss = pieces_cpp(pos, us, ROOK, QUEEN);
-    occ = pieces(pos) ^ fss;    // RQ see through each other
+    fss = pos_pieces_cpp(&pos, us, ROOK, QUEEN);
+    occ = pos_pieces(&pos) ^ fss;    // RQ see through each other
 
     while (fss) {
         tss = bb_rattacks(from = bb_pop_lsb(&fss), occ);
@@ -82,8 +82,8 @@ static eval_t mobility(const Position& pos, int us, bitboard_t attacks[NB_COLOR]
     }
 
     // Diagonal mobility
-    fss = pieces_cpp(pos, us, BISHOP, QUEEN);
-    occ = pieces(pos) ^ fss;    // BQ see through each other
+    fss = pos_pieces_cpp(&pos, us, BISHOP, QUEEN);
+    occ = pos_pieces(&pos) ^ fss;    // BQ see through each other
 
     while (fss) {
         tss = bb_battacks(from = bb_pop_lsb(&fss), occ);
@@ -101,7 +101,7 @@ static eval_t bishop_pair(const Position& pos, int us)
 {
     static const bitboard_t WhiteSquares = 0x55AA55AA55AA55AAULL;
 
-    const bitboard_t bishops = pieces_cp(pos, us, BISHOP);
+    const bitboard_t bishops = pos_pieces_cp(&pos, us, BISHOP);
 
     return (bishops & WhiteSquares) && (bishops & ~WhiteSquares) ? eval_t{102, 114} :
            eval_t{0, 0};
@@ -112,8 +112,8 @@ static int tactics(const Position& pos, int us, bitboard_t attacks[NB_COLOR][NB_
     static const int Hanging[QUEEN+1] = {66, 66, 81, 130};
 
     const int them = opposite(us);
-    bitboard_t b = attacks[them][PAWN] & (pos.byColor[us] ^ pieces_cp(pos, us, PAWN));
-    b |= (attacks[them][KNIGHT] | attacks[them][BISHOP]) & pieces_cpp(pos, us, ROOK, QUEEN);
+    bitboard_t b = attacks[them][PAWN] & (pos.byColor[us] ^ pos_pieces_cp(&pos, us, PAWN));
+    b |= (attacks[them][KNIGHT] | attacks[them][BISHOP]) & pos_pieces_cpp(&pos, us, ROOK, QUEEN);
 
     int result = 0;
 
@@ -150,8 +150,8 @@ static int safety(const Position& pos, int us, bitboard_t attacks[NB_COLOR][NB_P
 
     // Check threats
 
-    const int ks = king_square(pos, us);
-    const bitboard_t occ = pieces(pos);
+    const int ks = pos_king_square(&pos, us);
+    const bitboard_t occ = pos_pieces(&pos);
     const bitboard_t checks[QUEEN+1] = {
         NAttacks[ks] & attacks[them][KNIGHT],
         bb_battacks(ks, occ) & attacks[them][BISHOP],
@@ -201,10 +201,10 @@ static eval_t do_pawns(const Position& pos, int us, bitboard_t attacks[NB_COLOR]
     static const int shieldBonus[NB_RANK] = {0, 28, 11, 6, 2, 2};
 
     const int them = opposite(us);
-    const bitboard_t ourPawns = pieces_cp(pos, us, PAWN);
-    const bitboard_t theirPawns = pieces_cp(pos, them, PAWN);
-    const int ourKing = king_square(pos, us);
-    const int theirKing = king_square(pos, them);
+    const bitboard_t ourPawns = pos_pieces_cp(&pos, us, PAWN);
+    const bitboard_t theirPawns = pos_pieces_cp(&pos, them, PAWN);
+    const int ourKing = pos_king_square(&pos, us);
+    const int theirKing = pos_king_square(&pos, them);
 
     eval_t result = {0, 0};
 

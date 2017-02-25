@@ -43,12 +43,12 @@ move_t *gen_pawn_moves(const Position& pos, move_t *emList, bitboard_t targets, 
 {
     const int us = pos.turn, them = opposite(us);
     const int push = push_inc(us);
-    const bitboard_t capturable = pos.byColor[them] | ep_square_bb(pos);
+    const bitboard_t capturable = pos.byColor[them] | pos_ep_square_bb(&pos);
     bitboard_t fss, tss;
     Move m;
 
     // Non promotions
-    fss = pieces_cp(pos, us, PAWN) & ~bb_rank(relative_rank(us, RANK_7));
+    fss = pos_pieces_cp(&pos, us, PAWN) & ~bb_rank(relative_rank(us, RANK_7));
 
     while (fss) {
         m.from = bb_pop_lsb(&fss);
@@ -56,12 +56,12 @@ move_t *gen_pawn_moves(const Position& pos, move_t *emList, bitboard_t targets, 
         // Calculate to squares: captures, single pushes and double pushes
         tss = PAttacks[us][m.from] & capturable & targets;
 
-        if (bb_test(~pieces(pos), m.from + push)) {
+        if (bb_test(~pos_pieces(&pos), m.from + push)) {
             if (bb_test(targets, m.from + push))
                 bb_set(&tss, m.from + push);
 
             if (relative_rank_of(us, m.from) == RANK_2
-                    && bb_test(targets & ~pieces(pos), m.from + 2 * push))
+                    && bb_test(targets & ~pos_pieces(&pos), m.from + 2 * push))
                 bb_set(&tss, m.from + 2 * push);
         }
 
@@ -71,7 +71,7 @@ move_t *gen_pawn_moves(const Position& pos, move_t *emList, bitboard_t targets, 
     }
 
     // Promotions
-    fss = pieces_cp(pos, us, PAWN) & bb_rank(relative_rank(us, RANK_7));
+    fss = pos_pieces_cp(&pos, us, PAWN) & bb_rank(relative_rank(us, RANK_7));
 
     while (fss) {
         m.from = bb_pop_lsb(&fss);
@@ -79,7 +79,7 @@ move_t *gen_pawn_moves(const Position& pos, move_t *emList, bitboard_t targets, 
         // Calculate to squares: captures and single pushes
         tss = PAttacks[us][m.from] & capturable & targets;
 
-        if (bb_test(targets & ~pieces(pos), m.from + push))
+        if (bb_test(targets & ~pos_pieces(&pos), m.from + push))
             bb_set(&tss, m.from + push);
 
         // Generate moves (or promotions)
@@ -99,13 +99,13 @@ move_t *gen_piece_moves(const Position& pos, move_t *emList, bitboard_t targets,
 
     // King moves
     if (kingMoves) {
-        m.from = king_square(pos, us);
+        m.from = pos_king_square(&pos, us);
         tss = KAttacks[m.from] & targets;
         emList = serialize_moves<false>(m, tss, emList);
     }
 
     // Knight moves
-    fss = pieces_cp(pos, us, KNIGHT);
+    fss = pos_pieces_cp(&pos, us, KNIGHT);
 
     while (fss) {
         m.from = bb_pop_lsb(&fss);
@@ -114,20 +114,20 @@ move_t *gen_piece_moves(const Position& pos, move_t *emList, bitboard_t targets,
     }
 
     // Rook moves
-    fss = pieces_cpp(pos, us, ROOK, QUEEN);
+    fss = pos_pieces_cpp(&pos, us, ROOK, QUEEN);
 
     while (fss) {
         m.from = bb_pop_lsb(&fss);
-        tss = bb_rattacks(m.from, pieces(pos)) & targets;
+        tss = bb_rattacks(m.from, pos_pieces(&pos)) & targets;
         emList = serialize_moves<false>(m, tss, emList);
     }
 
     // Bishop moves
-    fss = pieces_cpp(pos, us, BISHOP, QUEEN);
+    fss = pos_pieces_cpp(&pos, us, BISHOP, QUEEN);
 
     while (fss) {
         m.from = bb_pop_lsb(&fss);
-        tss = bb_battacks(m.from, pieces(pos)) & targets;
+        tss = bb_battacks(m.from, pos_pieces(&pos)) & targets;
         emList = serialize_moves<false>(m, tss, emList);
     }
 
@@ -138,7 +138,7 @@ move_t *gen_castling_moves(const Position& pos, move_t *emList)
 {
     assert(!pos.checkers);
     Move m;
-    m.from = king_square(pos, pos.turn);
+    m.from = pos_king_square(&pos, pos.turn);
     m.prom = NB_PIECE;
 
     bitboard_t tss = pos.castleRooks & pos.byColor[pos.turn];
@@ -149,7 +149,7 @@ move_t *gen_castling_moves(const Position& pos, move_t *emList)
         const int rto = square(rank_of(m.to), m.to > m.from ? FILE_F : FILE_D);
         const bitboard_t s = Segment[m.from][kto] | Segment[m.to][rto];
 
-        if (bb_count(s & pieces(pos)) == 2)
+        if (bb_count(s & pos_pieces(&pos)) == 2)
             *emList++ = m;
     }
 
@@ -160,7 +160,7 @@ move_t *gen_check_escapes(const Position& pos, move_t *emList, bool subPromotion
 {
     assert(pos.checkers);
     bitboard_t ours = pos.byColor[pos.turn];
-    const int king = king_square(pos, pos.turn);
+    const int king = pos_king_square(&pos, pos.turn);
     bitboard_t tss;
     Move m;
 
@@ -228,7 +228,7 @@ uint64_t gen_perft(const Position& pos, int depth)
         if (!move_is_legal(pos, m))
             continue;
 
-        pos_move(&after, pos, m);
+        pos_move(&after, &pos, m);
         const uint64_t sub_tree = gen_perft<false>(after, depth - 1);
         result += sub_tree;
 

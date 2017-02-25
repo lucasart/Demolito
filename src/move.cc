@@ -94,7 +94,7 @@ void move_from_string(const Position& pos, const std::string& s, Move& m)
 bool move_is_legal(const Position& pos, const Move& m)
 {
     const int p = pos.pieceOn[m.from];
-    const int king = king_square(pos, pos.turn);
+    const int king = pos_king_square(&pos, pos.turn);
 
     if (p == KING) {
         if (bb_test(pos.byColor[pos.turn], m.to)) {
@@ -116,12 +116,12 @@ bool move_is_legal(const Position& pos, const Move& m)
         // captured pawn
         if (m.to == pos.epSquare && p == PAWN) {
             const int us = pos.turn, them = opposite(us);
-            bitboard_t occ = pieces(pos);
+            bitboard_t occ = pos_pieces(&pos);
             bb_clear(&occ, m.from);
             bb_set(&occ, m.to);
             bb_clear(&occ, m.to + push_inc(them));
-            return !(bb_rattacks(king, occ) & pieces_cpp(pos, them, ROOK, QUEEN))
-                   && !(bb_battacks(king, occ) & pieces_cpp(pos, them, BISHOP, QUEEN));
+            return !(bb_rattacks(king, occ) & pos_pieces_cpp(&pos, them, ROOK, QUEEN))
+                   && !(bb_battacks(king, occ) & pos_pieces_cpp(&pos, them, BISHOP, QUEEN));
         } else
             return true;
     }
@@ -132,7 +132,7 @@ int move_see(const Position& pos, const Move& m)
     const int see_value[NB_PIECE+1] = {N, B, R, Q, MATE, P, 0};
 
     int us = pos.turn;
-    bitboard_t occ = pieces(pos);
+    bitboard_t occ = pos_pieces(&pos);
 
     // General case
     int gain[32] = {see_value[pos.pieceOn[m.to]]};
@@ -153,7 +153,7 @@ int move_see(const Position& pos, const Move& m)
     if (!bb_test(pos.attacked, m.to))
         return gain[0];
 
-    bitboard_t attackers = attackers_to(pos, m.to, occ);
+    bitboard_t attackers = pos_attackers_to(&pos, m.to, occ);
     bitboard_t ourAttackers;
 
     int idx = 0;
@@ -162,15 +162,15 @@ int move_see(const Position& pos, const Move& m)
         // Find least valuable attacker (LVA)
         int p = PAWN;
 
-        if (!(ourAttackers & pieces_cp(pos, us, PAWN))) {
+        if (!(ourAttackers & pos_pieces_cp(&pos, us, PAWN))) {
             for (p = KNIGHT; p <= KING; ++p) {
-                if (ourAttackers & pieces_cp(pos, us, p))
+                if (ourAttackers & pos_pieces_cp(&pos, us, p))
                     break;
             }
         }
 
         // Remove the LVA
-        bb_clear(&occ, bb_lsb(ourAttackers & pieces_cp(pos, us, p)));
+        bb_clear(&occ, bb_lsb(ourAttackers & pos_pieces_cp(&pos, us, p)));
 
         // Scan for new X-ray attacks through the LVA
         if (p != KNIGHT) {

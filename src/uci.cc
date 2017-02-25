@@ -93,7 +93,7 @@ static void position(std::istringstream& is)
     while (is >> token) {
         Move m;
         move_from_string(p[idx], token, m);
-        pos_move(&p[idx^1], p[idx], m);
+        pos_move(&p[idx^1], &p[idx], m);
         idx ^= 1;
         gs_push(&gameStack, p[idx].key);
     }
@@ -135,7 +135,7 @@ static void go(std::istringstream& is)
 
 static void eval()
 {
-    print(pos);
+    pos_print(&pos);
     std::cout << "score " << uci::format_score(evaluate(pos)) << std::endl;
 }
 
@@ -144,7 +144,7 @@ static void perft(std::istringstream& is)
     int depth;
     is >> depth;
 
-    print(pos);
+    pos_print(&pos);
     std::cout << "score " << gen_perft(pos, depth) << std::endl;
 }
 
@@ -226,7 +226,7 @@ void info_update(Info *info, const Position& pos, int depth, int score, uint64_t
         for (int i = 0; pv[i]; i++) {
             Move m(pv[i]);
             os << ' ' << move_to_string(p[idx], m);
-            pos_move(&p[idx^1], p[idx], m);
+            pos_move(&p[idx^1], &p[idx], m);
             idx ^= 1;
         }
 

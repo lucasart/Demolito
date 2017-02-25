@@ -18,25 +18,17 @@ struct Position {
 };
 
 void pos_set(Position *pos, const std::string& fen);
-void pos_move(Position *pos, const Position& before, Move m);
-void pos_switch(Position *pos, const Position& before);
+void pos_move(Position *pos, const Position *before, Move m);
+void pos_switch(Position *pos, const Position *before);
 
-bitboard_t attacked_by(const Position& pos, int c);
-bitboard_t calc_pins(const Position& pos);
+bitboard_t pos_pieces(const Position* pos);
+bitboard_t pos_pieces_cp(const Position *pos, int c, int p);
+bitboard_t pos_pieces_cpp(const Position *pos, int c, int p1, int p2);
 
-uint64_t calc_key(const Position& pos);
-uint64_t calc_pawn_key(const Position& pos);
-eval_t calc_pst(const Position& pos);
-eval_t calc_piece_material(const Position& pos, int c);
-
-bitboard_t pieces(const Position& pos);
-bitboard_t pieces_cp(const Position& pos, int c, int p);
-bitboard_t pieces_cpp(const Position& pos, int c, int p1, int p2);
-
-std::string get(const Position& pos);
-bitboard_t ep_square_bb(const Position& pos);
-bool insufficient_material(const Position& pos);
-int king_square(const Position& pos, int c);
-int color_on(const Position& pos, int s);
-bitboard_t attackers_to(const Position& pos, int s, bitboard_t occ);
-void print(const Position& pos);
+std::string pos_get_fen(const Position *pos);
+bitboard_t pos_ep_square_bb(const Position *pos);
+bool pos_insufficient_material(const Position *pos);
+int pos_king_square(const Position *pos, int c);
+int pos_color_on(const Position *pos, int s);
+bitboard_t pos_attackers_to(const Position *pos, int s, bitboard_t occ);
+void pos_print(const Position *pos);

@@ -106,7 +106,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
         pv[0] = 0;
     }
 
-    if (ply > 0 && (gs_repetition(&gameStack[ThreadId], pos.rule50) || insufficient_material(pos)))
+    if (ply > 0 && (gs_repetition(&gameStack[ThreadId], pos.rule50) || pos_insufficient_material(&pos)))
         return draw_score(ply);
 
     // TT probe
@@ -151,7 +151,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
     // Null search
     if (!Qsearch && depth >= 2 && !pvNode
             && staticEval >= beta && pos.pieceMaterial[us]) {
-        pos_switch(&nextPos, pos);
+        pos_switch(&nextPos, &pos);
         gs_push(&gameStack[ThreadId], nextPos.key);
         const int nextDepth = depth - (3 + depth/4);
         score = nextDepth <= 0
@@ -200,7 +200,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
             continue;
 
         // Play move
-        pos_move(&nextPos, pos, currentMove);
+        pos_move(&nextPos, &pos, currentMove);
 
         // Prune losing captures in the search, near the leaves
         if (!Qsearch && depth <= 4 && see < 0

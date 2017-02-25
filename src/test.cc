@@ -58,7 +58,7 @@ uint64_t test_search(bool perft, int depth, int threads)
         pos_set(&pos, fen);
         gs_clear(&gameStack);
         gs_push(&gameStack, pos.key);
-        print(pos);
+        pos_print(&pos);
 
         if (perft) {
             nodes = gen_perft(pos, depth);
@@ -110,7 +110,7 @@ bool test_see(bool verbose)
 
         if (verbose) {
             std::cout << '\n';
-            print(pos);
+            pos_print(&pos);
         } else
             std::cout << t.fen << '\t';
 

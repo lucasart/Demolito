@@ -31,7 +31,7 @@ void sort_generate(Sort *s, const Position& pos, int depth)
     else {
         const int us = pos.turn;
         const bitboard_t pieceTargets = depth > 0 ? ~pos.byColor[us] : pos.byColor[opposite(us)];
-        const bitboard_t pawnTargets = pieceTargets | ep_square_bb(pos) | bb_rank(relative_rank(us,
+        const bitboard_t pawnTargets = pieceTargets | pos_ep_square_bb(&pos) | bb_rank(relative_rank(us,
                                        RANK_8));
 
         it = gen_piece_moves(pos, it, pieceTargets);
