@@ -17,13 +17,13 @@ struct Move {
     Move operator =(move_t em);
 };
 
-bool move_ok(const Move& m);
+bool move_ok(const Move *m);
 
-std::string move_to_string(const Position& pos, const Move& m);
-void move_from_string(const Position& pos, const std::string& s, Move& m);
+std::string move_to_string(const Position *pos, const Move *m);
+void move_from_string(const Position *pos, const std::string& s, Move *m);
 
-bool move_is_capture(const Position& pos, const Move& m);
-bool move_is_castling(const Position& pos, const Move& m);
+bool move_is_capture(const Position *pos, const Move *m);
+bool move_is_castling(const Position *pos, const Move *m);
 
-bool move_is_legal(const Position& pos, const Move& m);
-int move_see(const Position& pos, const Move& m);
+bool move_is_legal(const Position *pos, const Move *m);
+int move_see(const Position *pos, const Move *m);

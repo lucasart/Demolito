@@ -105,8 +105,8 @@ bool test_see(bool verbose)
     for (auto& t : test) {
         pos_set(&pos, t.fen);
         Move m;
-        move_from_string(pos, t.move, m);
-        const int value = move_see(pos, m);
+        move_from_string(&pos, t.move, &m);
+        const int value = move_see(&pos, &m);
 
         if (verbose) {
             std::cout << '\n';

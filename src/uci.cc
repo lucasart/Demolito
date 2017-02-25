@@ -92,7 +92,7 @@ static void position(std::istringstream& is)
     // Parse moves (if any)
     while (is >> token) {
         Move m;
-        move_from_string(p[idx], token, m);
+        move_from_string(&p[idx], token, &m);
         pos_move(&p[idx^1], &p[idx], m);
         idx ^= 1;
         gs_push(&gameStack, p[idx].key);
@@ -225,7 +225,7 @@ void info_update(Info *info, const Position& pos, int depth, int score, uint64_t
 
         for (int i = 0; pv[i]; i++) {
             Move m(pv[i]);
-            os << ' ' << move_to_string(p[idx], m);
+            os << ' ' << move_to_string(&p[idx], &m);
             pos_move(&p[idx^1], &p[idx], m);
             idx ^= 1;
         }
@@ -237,8 +237,8 @@ void info_update(Info *info, const Position& pos, int depth, int score, uint64_t
 void info_print_bestmove(const Info *info, const Position& pos)
 {
     std::lock_guard<std::mutex> lk(info->mtx);
-    std::cout << "bestmove " << move_to_string(pos, info->bestMove)
-              << " ponder " << move_to_string(pos, info->ponderMove) << std::endl;
+    std::cout << "bestmove " << move_to_string(&pos, &info->bestMove)
+              << " ponder " << move_to_string(&pos, &info->ponderMove) << std::endl;
 }
 
 Move info_best_move(const Info *info)

@@ -52,8 +52,8 @@ void sort_score(Sort *s, const Position& pos, move_t ttMove)
         else {
             const Move m(s->moves[i]);
 
-            if (move_is_capture(pos, m)) {
-                const int see = move_see(pos, m);
+            if (move_is_capture(&pos, &m)) {
+                const int see = move_see(&pos, &m);
                 s->scores[i] = see >= 0 ? see + HISTORY_MAX : see - HISTORY_MAX;
             } else
                 s->scores[i] = H.table[pos.turn][m.from][m.to];
@@ -99,7 +99,7 @@ Move sort_next(Sort *s, const Position& pos, int& see)
     const Move m(s->moves[s->idx]);
     const int score = s->scores[s->idx];
 
-    if (move_is_capture(pos, m)) {
+    if (move_is_capture(&pos, &m)) {
         if (score >= HISTORY_MAX)
             see = score - HISTORY_MAX;
         else {
@@ -107,7 +107,7 @@ Move sort_next(Sort *s, const Position& pos, int& see)
             see = score + HISTORY_MAX;
         }
     } else
-        see = move_see(pos, m);
+        see = move_see(&pos, &m);
 
     return s->moves[s->idx++];
 }
