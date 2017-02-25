@@ -135,7 +135,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
             refinedEval = tte.score;
     } else {
         tte.move = 0;
-        refinedEval = staticEval = pos.checkers ? -INF : evaluate(pos) + Tempo;
+        refinedEval = staticEval = pos.checkers ? -INF : evaluate(&pos) + Tempo;
     }
 
     // At Root, ensure that the last best move is searched first. This is not guaranteed,

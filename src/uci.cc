@@ -136,7 +136,7 @@ static void go(std::istringstream& is)
 static void eval()
 {
     pos_print(&pos);
-    std::cout << "score " << uci::format_score(evaluate(pos)) << std::endl;
+    std::cout << "score " << uci::format_score(evaluate(&pos)) << std::endl;
 }
 
 static void perft(std::istringstream& is)

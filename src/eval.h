@@ -11,4 +11,4 @@ struct PawnEntry {
 extern thread_local PawnEntry PawnHash[NB_PAWN_ENTRY];
 
 void eval_init();
-int evaluate(const Position& pos);
+int evaluate(const Position *pos);
