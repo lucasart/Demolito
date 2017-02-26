@@ -176,7 +176,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
     }
 
     // Generate and score moves
-    Sort s(pos, depth, tte.move);
+    Sort s(&pos, depth, tte.move);
 
     int moveCount = 0, lmrCount = 0;
     Move currentMove;
@@ -184,7 +184,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
     // Move loop
     while ((s.idx != s.cnt) && alpha < beta) {
         int see;
-        currentMove = sort_next(&s, pos, see);
+        currentMove = sort_next(&s, &pos, &see);
 
         if (!move_is_legal(&pos, &currentMove))
             continue;

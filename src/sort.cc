@@ -22,29 +22,29 @@ namespace search {
 
 thread_local History H;
 
-void sort_generate(Sort *s, const Position& pos, int depth)
+void sort_generate(Sort *s, const Position *pos, int depth)
 {
     move_t *it = s->moves;
 
-    if (pos.checkers)
-        it = gen_check_escapes(&pos, it, depth > 0);
+    if (pos->checkers)
+        it = gen_check_escapes(pos, it, depth > 0);
     else {
-        const int us = pos.turn;
-        const bitboard_t pieceTargets = depth > 0 ? ~pos.byColor[us] : pos.byColor[opposite(us)];
-        const bitboard_t pawnTargets = pieceTargets | pos_ep_square_bb(&pos) | bb_rank(relative_rank(us,
+        const int us = pos->turn;
+        const bitboard_t pieceTargets = depth > 0 ? ~pos->byColor[us] : pos->byColor[opposite(us)];
+        const bitboard_t pawnTargets = pieceTargets | pos_ep_square_bb(pos) | bb_rank(relative_rank(us,
                                        RANK_8));
 
-        it = gen_piece_moves(&pos, it, pieceTargets);
-        it = gen_pawn_moves(&pos, it, pawnTargets, depth > 0);
+        it = gen_piece_moves(pos, it, pieceTargets);
+        it = gen_pawn_moves(pos, it, pawnTargets, depth > 0);
 
         if (depth > 0)
-            it = gen_castling_moves(&pos, it);
+            it = gen_castling_moves(pos, it);
     }
 
     s->cnt = it - s->moves;
 }
 
-void sort_score(Sort *s, const Position& pos, move_t ttMove)
+void sort_score(Sort *s, const Position *pos, move_t ttMove)
 {
     for (size_t i = 0; i < s->cnt; i++) {
         if (s->moves[i] == ttMove)
@@ -52,11 +52,11 @@ void sort_score(Sort *s, const Position& pos, move_t ttMove)
         else {
             const Move m(s->moves[i]);
 
-            if (move_is_capture(&pos, &m)) {
-                const int see = move_see(&pos, &m);
+            if (move_is_capture(pos, &m)) {
+                const int see = move_see(pos, &m);
                 s->scores[i] = see >= 0 ? see + HISTORY_MAX : see - HISTORY_MAX;
             } else
-                s->scores[i] = H.table[pos.turn][m.from][m.to];
+                s->scores[i] = H.table[pos->turn][m.from][m.to];
         }
     }
 }
@@ -73,14 +73,14 @@ void history_update(int c, Move m, int bonus)
         t = -HISTORY_MAX;
 }
 
-Sort::Sort(const Position& pos, int depth, move_t ttMove)
+Sort::Sort(const Position *pos, int depth, move_t ttMove)
 {
     sort_generate(this, pos, depth);
     sort_score(this, pos, ttMove);
     idx = 0;
 }
 
-Move sort_next(Sort *s, const Position& pos, int& see)
+Move sort_next(Sort *s, const Position *pos, int *see)
 {
     int maxScore = -INF;
     size_t maxIdx = s->idx;
@@ -99,15 +99,15 @@ Move sort_next(Sort *s, const Position& pos, int& see)
     const Move m(s->moves[s->idx]);
     const int score = s->scores[s->idx];
 
-    if (move_is_capture(&pos, &m)) {
+    if (move_is_capture(pos, &m)) {
         if (score >= HISTORY_MAX)
-            see = score - HISTORY_MAX;
+            *see = score - HISTORY_MAX;
         else {
             assert(score < -HISTORY_MAX);
-            see = score + HISTORY_MAX;
+            *see = score + HISTORY_MAX;
         }
     } else
-        see = move_see(&pos, &m);
+        *see = move_see(pos, &m);
 
     return s->moves[s->idx++];
 }
