@@ -74,7 +74,7 @@ void init()
 }
 
 template<bool Qsearch = false>
-int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::vector<move_t>& pv)
+int recurse(const Position& pos, int ply, int depth, int alpha, int beta, move_t pv[])
 {
     assert(Qsearch == depth <= 0);
     assert(gs_back(&gameStack[ThreadId]) == pos.key);
@@ -99,12 +99,10 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
         }
     }
 
-    std::vector<move_t> childPv;
+    move_t childPv[MAX_PLY - ply];
 
-    if (pvNode) {
-        childPv.reserve(MAX_PLY - ply);
+    if (pvNode)
         pv[0] = 0;
-    }
 
     if (ply > 0 && (gs_repetition(&gameStack[ThreadId], pos.rule50) || pos_insufficient_material(&pos)))
         return draw_score(ply);
@@ -270,7 +268,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
                             break;
 
                     if (!Qsearch && ply == 0 && uci::ui.lastDepth > 0)
-                        uci::info_update(&uci::ui, pos, depth, score, nodes(), pv, true);
+                        uci::info_update(&uci::ui, &pos, depth, score, nodes(), pv, true);
                 }
             }
         }
@@ -300,7 +298,7 @@ int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::v
     return bestScore;
 }
 
-int aspirate(const Position& pos, int depth, std::vector<move_t>& pv, int score)
+int aspirate(const Position& pos, int depth, move_t pv[], int score)
 {
     if (depth <= 1) {
         assert(depth == 1);
@@ -329,7 +327,7 @@ void iterate(const Position& pos, const Limits& lim, const GameStack& initialGam
              std::vector<int>& iteration, int threadId)
 {
     ThreadId = threadId;
-    std::vector<move_t> pv(MAX_PLY + 1);
+    move_t pv[MAX_PLY + 1];
     int score;
 
     memset(PawnHash, 0, sizeof(PawnHash));
@@ -389,7 +387,7 @@ void iterate(const Position& pos, const Limits& lim, const GameStack& initialGam
             }
         }
 
-        uci::info_update(&uci::ui, pos, depth, score, nodes(), pv);
+        uci::info_update(&uci::ui, &pos, depth, score, nodes(), pv);
     }
 
     // Max depth completed by current thread. All threads should stop.
@@ -440,7 +438,7 @@ void bestmove(const Position& pos, const Limits& lim, const GameStack& initialGa
     for (auto& t : threads)
         t.join();
 
-    uci::info_print_bestmove(&uci::ui, pos);
+    uci::info_print_bestmove(&uci::ui, &pos);
 }
 
 }    // namespace search

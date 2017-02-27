@@ -195,8 +195,8 @@ void info_clear(Info *info)
     info->clock.reset();
 }
 
-void info_update(Info *info, const Position& pos, int depth, int score, uint64_t nodes,
-                 std::vector<move_t>& pv, bool partial)
+void info_update(Info *info, const Position *pos, int depth, int score, uint64_t nodes,
+                 move_t pv[], bool partial)
 {
     std::lock_guard<std::mutex> lk(info->mtx);
 
@@ -221,7 +221,7 @@ void info_update(Info *info, const Position& pos, int depth, int score, uint64_t
         // encoded castling as e1h1 regardless of Chess960 allowing coherent treatement).
         Position p[2];
         int idx = 0;
-        p[idx] = pos;
+        p[idx] = *pos;
 
         for (int i = 0; pv[i]; i++) {
             Move m(pv[i]);
@@ -234,11 +234,11 @@ void info_update(Info *info, const Position& pos, int depth, int score, uint64_t
     }
 }
 
-void info_print_bestmove(const Info *info, const Position& pos)
+void info_print_bestmove(const Info *info, const Position *pos)
 {
     std::lock_guard<std::mutex> lk(info->mtx);
-    std::cout << "bestmove " << move_to_string(&pos, &info->bestMove)
-              << " ponder " << move_to_string(&pos, &info->ponderMove) << std::endl;
+    std::cout << "bestmove " << move_to_string(pos, &info->bestMove)
+              << " ponder " << move_to_string(pos, &info->ponderMove) << std::endl;
 }
 
 Move info_best_move(const Info *info)
