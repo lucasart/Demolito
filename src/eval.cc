@@ -109,17 +109,21 @@ static eval_t bishop_pair(const Position *pos, int us)
 
 static int tactics(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE+1])
 {
-    static const int Hanging[QUEEN+1] = {66, 66, 81, 130};
+    static const int Hanging[NB_PIECE] = {66, 66, 81, 130, 0, 16};
 
     const int them = opposite(us);
-    bitboard_t b = attacks[them][PAWN] & (pos->byColor[us] ^ pos_pieces_cp(pos, us, PAWN));
+    const bitboard_t ourPawns = pos_pieces_cp(pos, us, PAWN);
+
+    bitboard_t b = attacks[them][PAWN] & (pos->byColor[us] ^ ourPawns);
     b |= (attacks[them][KNIGHT] | attacks[them][BISHOP]) & pos_pieces_cpp(pos, us, ROOK, QUEEN);
+    b |= ourPawns & ~(attacks[us][PAWN] | attacks[us][KING])
+         & (attacks[them][NB_PIECE] | attacks[them][KING]);
 
     int result = 0;
 
     while (b) {
         const int p = pos->pieceOn[bb_pop_lsb(&b)];
-        assert(KNIGHT <= p && p <= QUEEN);
+        assert(piece_ok(p) && p != KING);
         result -= Hanging[p];
     }
 
