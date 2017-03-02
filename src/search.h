@@ -26,9 +26,6 @@ struct Limits {
 
 void init();
 
-template<bool Qsearch = false>
-int recurse(const Position& pos, int ply, int depth, int alpha, int beta, std::vector<move_t>& pv);
-
 void bestmove(const Position& pos, const Limits& lim, const GameStack& gameStack);
 
 }

@@ -63,14 +63,14 @@ void sort_score(Sort *s, const Position *pos, move_t ttMove)
 
 void history_update(int c, Move m, int bonus)
 {
-    int &t = H.table[c][m.from][m.to];
+    int *t = &H.table[c][m.from][m.to];
 
-    t += bonus;
+    *t += bonus;
 
-    if (t > HISTORY_MAX)
-        t = HISTORY_MAX;
-    else if (t < -HISTORY_MAX)
-        t = -HISTORY_MAX;
+    if (*t > HISTORY_MAX)
+        *t = HISTORY_MAX;
+    else if (*t < -HISTORY_MAX)
+        *t = -HISTORY_MAX;
 }
 
 Sort::Sort(const Position *pos, int depth, move_t ttMove)
