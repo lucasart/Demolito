@@ -1,5 +1,7 @@
 #pragma once
+#include <assert.h>
 #include <stdint.h>
+#include <string.h>
 #include <assert.h>
 #include <string>
 #include <chrono>

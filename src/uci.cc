@@ -19,7 +19,7 @@
 #include "uci.h"
 #include "eval.h"
 #include "search.h"
-#include "tt.h"
+#include "htable.h"
 #include "gen.h"
 
 GameStack gameStack;
@@ -28,7 +28,7 @@ static Position pos;
 static search::Limits lim;
 static std::thread Timer;
 
-static size_t Hash = 1;
+static uint64_t Hash = 1;
 static int TimeBuffer = 30;
 
 static void intro()
@@ -59,7 +59,7 @@ static void setoption(std::istringstream& is)
     else if (name == "Hash") {
         is >> Hash;
         Hash = 1ULL << bb_msb(Hash);    // must be a power of two
-        tt::table.resize(Hash * 1024 * (1024 / sizeof(tt::Entry)), 0);
+        hash_resize(Hash);
     } else if (name == "Threads")
         is >> search::Threads;
     else if (name == "Contempt")
@@ -164,10 +164,11 @@ void loop()
             intro();
         else if (token == "setoption")
             setoption(is);
-        else if (token == "isready")
+        else if (token == "isready") {
+            hash_resize(Hash);
             std::cout << "readyok" << std::endl;
-        else if (token == "ucinewgame")
-            tt::clear();
+        } else if (token == "ucinewgame")
+            memset(HashTable, 0, Hash << 20);
         else if (token == "position")
             position(is);
         else if (token == "go")
@@ -178,9 +179,10 @@ void loop()
             eval();
         else if (token == "perft")
             perft(is);
-        else if (token == "quit")
+        else if (token == "quit") {
+            free(HashTable);
             break;
-        else
+        } else
             std::cout << "unknown command: " << command << std::endl;
     }
 

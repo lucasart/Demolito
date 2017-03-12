@@ -16,15 +16,14 @@
 #include <thread>
 #include <vector>
 #include <chrono>
-#include <string.h>  // memset
 #include <algorithm>  // std::min and std::max
+#include <math.h>
 #include "search.h"
 #include "sort.h"
 #include "eval.h"
+#include "htable.h"
 #include "uci.h"
 #include "zobrist.h"
-#include "tt.h"
-#include "math.h"
 
 // Protect thread scheduling decisions
 static std::mutex mtxSchedule;
@@ -108,38 +107,38 @@ int recurse(const Position *pos, int ply, int depth, int alpha, int beta, move_t
         return draw_score(ply);
 
     // TT probe
-    tt::Entry tte;
+    HashEntry he;
     int staticEval, refinedEval;
 
-    if (tt::read(pos->key, tte)) {
-        tte.score = tt::score_from_tt(tte.score, ply);
+    if (hash_read(pos->key, &he)) {
+        he.score = score_from_hash(he.score, ply);
 
-        if (tte.depth >= depth && ply > 0) {
-            if (tte.score <= alpha && tte.bound >= tt::EXACT)
-                return tte.score;
-            else if (tte.score >= beta && tte.bound <= tt::EXACT)
-                return tte.score;
-            else if (alpha < tte.score && tte.score < beta && tte.bound == tt::EXACT)
-                return tte.score;
+        if (he.depth >= depth && ply > 0) {
+            if (he.score <= alpha && he.bound >= EXACT)
+                return he.score;
+            else if (he.score >= beta && he.bound <= EXACT)
+                return he.score;
+            else if (alpha < he.score && he.score < beta && he.bound == EXACT)
+                return he.score;
         }
 
-        if (!Qsearch && tte.depth <= 0)
-            tte.move = 0;
+        if (!Qsearch && he.depth <= 0)
+            he.move = 0;
 
-        refinedEval = staticEval = tte.eval;
+        refinedEval = staticEval = he.eval;
 
-        if ((tte.score > refinedEval && tte.bound <= tt::EXACT)
-                || (tte.score < refinedEval && tte.bound >= tt::EXACT))
-            refinedEval = tte.score;
+        if ((he.score > refinedEval && he.bound <= EXACT)
+                || (he.score < refinedEval && he.bound >= EXACT))
+            refinedEval = he.score;
     } else {
-        tte.move = 0;
+        he.move = 0;
         refinedEval = staticEval = pos->checkers ? -INF : evaluate(pos) + Tempo;
     }
 
     // At Root, ensure that the last best move is searched first. This is not guaranteed,
     // as the TT entry could have got overriden by other search threads.
     if (!Qsearch && ply == 0 && uci::ui.lastDepth > 0)
-        tte.move = uci::info_best_move(&uci::ui);
+        he.move = uci::info_best_move(&uci::ui);
 
     nodeCount[ThreadId]++;
 
@@ -174,7 +173,7 @@ int recurse(const Position *pos, int ply, int depth, int alpha, int beta, move_t
     }
 
     // Generate and score moves
-    Sort s(pos, depth, tte.move);
+    Sort s(pos, depth, he.move);
 
     int moveCount = 0, lmrCount = 0;
     Move currentMove;
@@ -287,13 +286,13 @@ int recurse(const Position *pos, int ply, int depth, int alpha, int beta, move_t
         }
 
     // TT write
-    tte.key = pos->key;
-    tte.bound = bestScore <= oldAlpha ? tt::UBOUND : bestScore >= beta ? tt::LBOUND : tt::EXACT;
-    tte.score = tt::score_to_tt(bestScore, ply);
-    tte.eval = pos->checkers ? -INF : staticEval;
-    tte.depth = depth;
-    tte.move = bestMove;
-    tt::write(tte);
+    he.key = pos->key;
+    he.bound = bestScore <= oldAlpha ? UBOUND : bestScore >= beta ? LBOUND : EXACT;
+    he.score = score_to_hash(bestScore, ply);
+    he.eval = pos->checkers ? -INF : staticEval;
+    he.depth = depth;
+    he.move = bestMove;
+    hash_write(&he);
 
     return bestScore;
 }

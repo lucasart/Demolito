@@ -18,6 +18,7 @@
 #include "search.h"
 #include "gen.h"
 #include "uci.h"
+#include "htable.h"
 
 uint64_t test_search(bool perft, int depth, int threads)
 {
@@ -44,6 +45,7 @@ uint64_t test_search(bool perft, int depth, int threads)
         "r4rk1/1pp1q1pp/p2p4/3Pn3/1PP1Pp2/P7/3QB1PP/2R2RK1 b - - 0 1"
     };
 
+    hash_resize(1);
     uint64_t result = 0, nodes;
     search::Limits lim;
     lim.depth = depth;

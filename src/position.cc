@@ -15,7 +15,6 @@
 */
 #include <iostream>
 #include <sstream>
-#include <string.h>    // memset
 #include "bitboard.h"
 #include "position.h"
 #include "pst.h"
