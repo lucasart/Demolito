@@ -128,8 +128,8 @@ static int tactics(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_
 
 static int safety(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE+1])
 {
-    static const int AttackWeight[2] = {38, 54};
-    static const int CheckWeight = 56;
+    static const int AttackWeight[2] = {43, 61};
+    static const int CheckWeight = 63;
 
     const int them = opposite(us);
     int result = 0, cnt = 0;
