@@ -330,7 +330,7 @@ void iterate(const Position& pos, const Limits& lim, const GameStack& initialGam
     int score;
 
     memset(PawnHash, 0, sizeof(PawnHash));
-    memset(&H, 0, sizeof(H));
+    memset(HistoryTable, 0, sizeof(HistoryTable));
 
     for (int depth = 1; depth <= lim.depth; depth++) {
         {

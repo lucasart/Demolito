@@ -17,9 +17,7 @@
 
 #define HISTORY_MAX 2000
 
-namespace search {
-
-thread_local History H;
+thread_local int HistoryTable[NB_COLOR][NB_SQUARE][NB_SQUARE];
 
 void sort_generate(Sort *s, const Position *pos, int depth)
 {
@@ -55,14 +53,14 @@ void sort_score(Sort *s, const Position *pos, move_t ttMove)
                 const int see = move_see(pos, &m);
                 s->scores[i] = see >= 0 ? see + HISTORY_MAX : see - HISTORY_MAX;
             } else
-                s->scores[i] = H.table[pos->turn][m.from][m.to];
+                s->scores[i] = HistoryTable[pos->turn][m.from][m.to];
         }
     }
 }
 
 void history_update(int c, Move m, int bonus)
 {
-    int *t = &H.table[c][m.from][m.to];
+    int *t = &HistoryTable[c][m.from][m.to];
 
     *t += bonus;
 
@@ -110,5 +108,3 @@ Move sort_next(Sort *s, const Position *pos, int *see)
 
     return s->moves[s->idx++];
 }
-
-}    // namespace search
