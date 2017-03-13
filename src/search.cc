@@ -200,8 +200,8 @@ int recurse(const Position *pos, int ply, int depth, int alpha, int beta, move_t
         pos_move(&nextPos, pos, currentMove);
 
         // Prune losing captures in the search, near the leaves
-        if (!Qsearch && depth <= 4 && see < 0
-                && !pvNode && !pos->checkers && !nextPos.checkers)
+        if (!Qsearch && depth <= 4 && see < 0 && !pvNode && !pos->checkers && !nextPos.checkers
+                && !move_is_capture(pos, &currentMove))
             continue;
 
         gs_push(&gameStack[ThreadId], nextPos.key);
@@ -224,7 +224,7 @@ int recurse(const Position *pos, int ply, int depth, int alpha, int beta, move_t
             if (moveCount == 1)
                 score = -recurse(&nextPos, ply+1, nextDepth, -beta, -alpha, childPv);
             else {
-                int reduction = see < 0 || (!move_is_capture(pos, &currentMove) && !nextPos.checkers);
+                int reduction = see < 0 || (!nextPos.checkers && !move_is_capture(pos, &currentMove));
 
                 if (!move_is_capture(pos, &currentMove) && !pos->checkers && !nextPos.checkers) {
                     reduction = Reduction[std::min(31, nextDepth)][std::min(31, ++lmrCount)];
