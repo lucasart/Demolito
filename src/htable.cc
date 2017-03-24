@@ -50,13 +50,13 @@ bool hash_read(uint64_t key, HashEntry *e)
 {
     const size_t idx = key & (HashCount - 1);
     *e = HashTable[idx];
-    return e->key == key;
+    return (e->keyXorData ^ e->data) == key;
 }
 
-void hash_write(const HashEntry *e)
+void hash_write(uint64_t key, const HashEntry *e)
 {
-    HashEntry *replace = &HashTable[e->key & (HashCount - 1)];
+    HashEntry *replace = &HashTable[key & (HashCount - 1)];
 
-    if (e->key != replace->key || e->depth >= replace->depth)
+    if (key != (replace->keyXorData ^ replace->data) || e->depth >= replace->depth)
         *replace = *e;
 }

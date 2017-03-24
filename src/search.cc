@@ -286,13 +286,13 @@ int recurse(const Position *pos, int ply, int depth, int alpha, int beta, move_t
         }
 
     // TT write
-    he.key = pos->key;
     he.bound = bestScore <= oldAlpha ? UBOUND : bestScore >= beta ? LBOUND : EXACT;
     he.score = score_to_hash(bestScore, ply);
     he.eval = pos->checkers ? -INF : staticEval;
     he.depth = depth;
     he.move = bestMove;
-    hash_write(&he);
+    he.keyXorData = pos->key ^ he.data;
+    hash_write(pos->key, &he);
 
     return bestScore;
 }
