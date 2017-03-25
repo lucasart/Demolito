@@ -198,7 +198,7 @@ static eval_t do_pawns(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
 {
     static const eval_t Isolated[2] = {{20, 40}, {40, 40}};
     static const eval_t Hole[2] = {{16, 20}, {32, 20}};
-    static const int shieldBonus[NB_RANK] = {0, 28, 11, 6, 2, 2};
+    static const int shieldBonus[NB_RANK] = {0, 38, 21, 16, 12, 10, 10};
 
     const int them = opposite(us);
     const bitboard_t ourPawns = pos_pieces_cp(pos, us, PAWN);
