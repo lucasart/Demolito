@@ -25,7 +25,7 @@ bool move_ok(const Move *m)
 
 Move::operator move_t() const
 {
-    assert(move_ok(*this));
+    assert(move_ok(this));
     return from | (to << 6) | (prom << 12);
 }
 
@@ -34,7 +34,7 @@ Move Move::operator =(move_t em)
     from = em & 077;
     to = (em >> 6) & 077;
     prom = em >> 12;
-    assert(move_ok(*this));
+    assert(move_ok(this));
     return *this;
 }
 

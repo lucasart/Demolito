@@ -75,7 +75,7 @@ void init()
 template<bool Qsearch = false>
 int recurse(const Position *pos, int ply, int depth, int alpha, int beta, move_t pv[])
 {
-    assert(Qsearch == depth <= 0);
+    assert(Qsearch == (depth <= 0));
     assert(gs_back(&gameStack[ThreadId]) == pos->key);
     assert(alpha < beta);
 
@@ -327,7 +327,7 @@ void iterate(const Position& pos, const Limits& lim, const GameStack& initialGam
 {
     ThreadId = threadId;
     move_t pv[MAX_PLY + 1];
-    int score;
+    int score = 0;  // Silence bogus GCC warning (score may be uninitialized)
 
     memset(PawnHash, 0, sizeof(PawnHash));
     memset(HistoryTable, 0, sizeof(HistoryTable));
