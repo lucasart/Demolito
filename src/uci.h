@@ -3,9 +3,7 @@
 #include <mutex>
 #include "move.h"
 
-namespace uci {
-
-void loop();
+void uci_loop();
 
 struct Info {
     Clock clock;  // Read-only during search (doesn't need lock protection)
@@ -24,6 +22,4 @@ int info_last_depth(const Info *info);
 
 extern Info ui;
 
-std::string format_score(int score);
-
-}    // namespace UCI
+std::string uci_format_score(int score);

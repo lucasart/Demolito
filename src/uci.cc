@@ -24,7 +24,7 @@
 
 GameStack gameStack;
 
-static Position pos;
+static Position rootPos;
 static search::Limits lim;
 static std::thread Timer;
 
@@ -98,7 +98,7 @@ static void position(std::istringstream& is)
         gs_push(&gameStack, p[idx].key);
     }
 
-    pos = p[idx];
+    rootPos = p[idx];
 }
 
 static void go(std::istringstream& is)
@@ -116,9 +116,9 @@ static void go(std::istringstream& is)
             lim.movetime -= TimeBuffer;
         } else if (token == "movestogo")
             is >> lim.movestogo;
-        else if ((pos.turn == WHITE && token == "wtime") || (pos.turn == BLACK && token == "btime"))
+        else if ((rootPos.turn == WHITE && token == "wtime") || (rootPos.turn == BLACK && token == "btime"))
             is >> lim.time;
-        else if ((pos.turn == WHITE && token == "winc") || (pos.turn == BLACK && token == "binc"))
+        else if ((rootPos.turn == WHITE && token == "winc") || (rootPos.turn == BLACK && token == "binc"))
             is >> lim.inc;
     }
 
@@ -130,13 +130,13 @@ static void go(std::istringstream& is)
     if (Timer.joinable())
         Timer.join();
 
-    Timer = std::thread(search::bestmove, std::cref(pos), std::cref(lim), std::cref(gameStack));
+    Timer = std::thread(search::bestmove, std::cref(rootPos), std::cref(lim), std::cref(gameStack));
 }
 
 static void eval()
 {
-    pos_print(&pos);
-    std::cout << "score " << uci::format_score(evaluate(&pos)) << std::endl;
+    pos_print(&rootPos);
+    std::cout << "score " << uci_format_score(evaluate(&rootPos)) << std::endl;
 }
 
 static void perft(std::istringstream& is)
@@ -144,15 +144,13 @@ static void perft(std::istringstream& is)
     int depth;
     is >> depth;
 
-    pos_print(&pos);
-    std::cout << "score " << gen_perft(&pos, depth) << std::endl;
+    pos_print(&rootPos);
+    std::cout << "score " << gen_perft(&rootPos, depth) << std::endl;
 }
-
-namespace uci {
 
 Info ui;
 
-void loop()
+void uci_loop()
 {
     std::string command, token;
 
@@ -214,7 +212,7 @@ void info_update(Info *info, const Position *pos, int depth, int score, uint64_t
         std::ostringstream os;
         const auto elapsed = info->clock.elapsed() + 1;  // Prevent division by zero
 
-        os << "info depth " << depth << " score " << format_score(score)
+        os << "info depth " << depth << " score " << uci_format_score(score)
            << " time " << elapsed << " nodes " << nodes
            << " nps " << (1000 * nodes / elapsed) << " pv";
 
@@ -255,7 +253,7 @@ int info_last_depth(const Info *info)
     return info->lastDepth;
 }
 
-std::string format_score(int score)
+std::string uci_format_score(int score)
 {
     std::ostringstream os;
 
@@ -269,5 +267,3 @@ std::string format_score(int score)
 
     return os.str();
 }
-
-}    // namespace uci
