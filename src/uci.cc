@@ -249,6 +249,12 @@ Move info_best_move(const Info *info)
     return info->bestMove;
 }
 
+int info_last_depth(const Info *info)
+{
+    std::lock_guard<std::mutex> lk(info->mtx);
+    return info->lastDepth;
+}
+
 std::string format_score(int score)
 {
     std::ostringstream os;
