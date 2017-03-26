@@ -172,14 +172,6 @@ int move_see(const Position *pos, const Move *m)
         // Remove the LVA
         bb_clear(&occ, bb_lsb(ourAttackers & pos_pieces_cp(pos, us, p)));
 
-        // Scan for new X-ray attacks through the LVA
-        if (p != KNIGHT) {
-            attackers |= (pos->byPiece[BISHOP] | pos->byPiece[QUEEN])
-                         & BPseudoAttacks[m->to] & bb_battacks(m->to, occ);
-            attackers |= (pos->byPiece[ROOK] | pos->byPiece[QUEEN])
-                         & RPseudoAttacks[m->to] & bb_rattacks(m->to, occ);
-        }
-
         // Remove attackers we've already done
         attackers &= occ;
 

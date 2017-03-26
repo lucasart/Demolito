@@ -33,9 +33,7 @@ int main(int argc, char **argv)
     if (argc >= 2) {
         const std::string cmd(argv[1]);
 
-        if (cmd == "see")
-            std::cout << "\nSEE: " << (test_see(true) ? "ok" : "failed") << std::endl;
-        else if ((cmd == "perft" || cmd == "search") && argc >= 4) {
+        if ((cmd == "perft" || cmd == "search") && argc >= 4) {
             const int depth = std::stoi(argv[2]), threads = std::stoi(argv[3]);
             const uint64_t nodes = test_search(cmd == "perft", depth, threads);
             std::cout << "total = " << nodes << std::endl;
