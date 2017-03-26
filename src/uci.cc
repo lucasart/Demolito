@@ -24,7 +24,7 @@
 
 GameStack gameStack;
 
-static search::Limits lim;
+static Limits lim;
 static std::thread Timer;
 
 static uint64_t Hash = 1;
@@ -35,8 +35,8 @@ static void intro()
     std::cout << "id name Demolito\nid author lucasart\n" << std::boolalpha
               << "option name UCI_Chess960 type check default " << Chess960 << '\n'
               << "option name Hash type spin default " << Hash << " min 1 max 1048576\n"
-              << "option name Threads type spin default " << search::Threads << " min 1 max 64\n"
-              << "option name Contempt type spin default " << search::Contempt << " min -100 max 100\n"
+              << "option name Threads type spin default " << Threads << " min 1 max 64\n"
+              << "option name Contempt type spin default " << Contempt << " min -100 max 100\n"
               << "option name Time Buffer type spin default " << TimeBuffer << " min 0 max 1000\n"
               << "uciok" << std::endl;
 }
@@ -60,9 +60,9 @@ static void setoption(std::istringstream& is)
         Hash = 1ULL << bb_msb(Hash);    // must be a power of two
         hash_resize(Hash);
     } else if (name == "Threads")
-        is >> search::Threads;
+        is >> Threads;
     else if (name == "Contempt")
-        is >> search::Contempt;
+        is >> Contempt;
     else if (name == "TimeBuffer")
         is >> TimeBuffer;
 }
@@ -129,7 +129,7 @@ static void go(std::istringstream& is)
     if (Timer.joinable())
         Timer.join();
 
-    Timer = std::thread(search::bestmove, std::cref(lim), std::cref(gameStack));
+    Timer = std::thread(search_go, std::cref(lim), std::cref(gameStack));
 }
 
 static void eval()
@@ -171,7 +171,7 @@ void uci_loop()
         else if (token == "go")
             go(is);
         else if (token == "stop")
-            search::signal = STOP;
+            signal = STOP;
         else if (token == "eval")
             eval();
         else if (token == "perft")

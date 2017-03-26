@@ -28,7 +28,7 @@ int main(int argc, char **argv)
     zobrist_init();
     pst_init();
     eval_init();
-    search::init();
+    search_init();
 
     if (argc >= 2) {
         const std::string cmd(argv[1]);

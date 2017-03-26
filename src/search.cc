@@ -30,20 +30,18 @@ Position rootPos;
 // Protect thread scheduling decisions
 static std::mutex mtxSchedule;
 
-namespace search {
-
 // Set at thread creation, so each thread can know its unique id
 thread_local int ThreadId;
 
 // Per thread data
-std::vector<GameStack> gameStack;
-std::vector<uint64_t> nodeCount;
+std::vector<GameStack> gameStacks;
+std::vector<uint64_t> nodeCounts;
 
-uint64_t nodes()
+uint64_t search_nodes()
 {
     uint64_t total = 0;
 
-    for (uint64_t n : nodeCount)
+    for (uint64_t n : nodeCounts)
         total += n;
 
     return total;
@@ -67,7 +65,7 @@ int draw_score(int ply)
 
 int Reduction[32][32];
 
-void init()
+void search_init()
 {
     for (int d = 1; d < 32; d++)
         for (int c = 1; c < 32; c++)
@@ -78,7 +76,7 @@ template<bool Qsearch = false>
 int recurse(const Position *pos, int ply, int depth, int alpha, int beta, move_t pv[])
 {
     assert(Qsearch == (depth <= 0));
-    assert(gs_back(&gameStack[ThreadId]) == pos->key);
+    assert(gs_back(&gameStacks[ThreadId]) == pos->key);
     assert(alpha < beta);
 
     const bool pvNode = beta > alpha + 1;
@@ -105,7 +103,8 @@ int recurse(const Position *pos, int ply, int depth, int alpha, int beta, move_t
     if (pvNode)
         pv[0] = 0;
 
-    if (ply > 0 && (gs_repetition(&gameStack[ThreadId], pos->rule50) || pos_insufficient_material(pos)))
+    if (ply > 0 && (gs_repetition(&gameStacks[ThreadId], pos->rule50)
+                    || pos_insufficient_material(pos)))
         return draw_score(ply);
 
     // TT probe
@@ -142,7 +141,7 @@ int recurse(const Position *pos, int ply, int depth, int alpha, int beta, move_t
     if (!Qsearch && ply == 0 && info_last_depth(&ui) > 0)
         he.move = info_best_move(&ui);
 
-    nodeCount[ThreadId]++;
+    nodeCounts[ThreadId]++;
 
     if (ply >= MAX_PLY)
         return refinedEval;
@@ -151,12 +150,12 @@ int recurse(const Position *pos, int ply, int depth, int alpha, int beta, move_t
     if (!Qsearch && depth >= 2 && !pvNode
             && staticEval >= beta && pos->pieceMaterial[us]) {
         pos_switch(&nextPos, pos);
-        gs_push(&gameStack[ThreadId], nextPos.key);
+        gs_push(&gameStacks[ThreadId], nextPos.key);
         const int nextDepth = depth - (3 + depth/4);
         score = nextDepth <= 0
                 ? -recurse<true>(&nextPos, ply+1, nextDepth, -beta, -(beta-1), childPv)
                 : -recurse(&nextPos, ply+1, nextDepth, -beta, -(beta-1), childPv);
-        gs_pop(&gameStack[ThreadId]);
+        gs_pop(&gameStacks[ThreadId]);
 
         if (score >= beta)
             return score >= mate_in(MAX_PLY) ? beta : score;
@@ -206,7 +205,7 @@ int recurse(const Position *pos, int ply, int depth, int alpha, int beta, move_t
                 && !move_is_capture(pos, &currentMove))
             continue;
 
-        gs_push(&gameStack[ThreadId], nextPos.key);
+        gs_push(&gameStacks[ThreadId], nextPos.key);
 
         const int ext = see >= 0 && nextPos.checkers;
         const int nextDepth = depth - 1 + ext;
@@ -250,7 +249,7 @@ int recurse(const Position *pos, int ply, int depth, int alpha, int beta, move_t
         }
 
         // Undo move
-        gs_pop(&gameStack[ThreadId]);
+        gs_pop(&gameStacks[ThreadId]);
 
         // New best score
         if (score > bestScore) {
@@ -269,7 +268,7 @@ int recurse(const Position *pos, int ply, int depth, int alpha, int beta, move_t
                             break;
 
                     if (!Qsearch && ply == 0 && info_last_depth(&ui) > 0)
-                        info_update(&ui, depth, score, nodes(), pv, true);
+                        info_update(&ui, depth, score, search_nodes(), pv, true);
                 }
             }
         }
@@ -324,8 +323,8 @@ int aspirate(int depth, move_t pv[], int score)
     }
 }
 
-void iterate(const Limits& lim, const GameStack& initialGameStack,
-             std::vector<int>& iteration, int threadId)
+void iterate(const Limits& lim, const GameStack& initialGameStack, std::vector<int>& iteration,
+             int threadId)
 {
     ThreadId = threadId;
     move_t pv[MAX_PLY + 1];
@@ -378,7 +377,7 @@ void iterate(const Limits& lim, const GameStack& initialGameStack,
             }
         } catch (const Abort e) {
             assert(signal & (1ULL << ThreadId));
-            gameStack[ThreadId] = initialGameStack;    // Restore an orderly state
+            gameStacks[ThreadId] = initialGameStack;    // Restore an orderly state
 
             if (e == ABORT_STOP)
                 break;
@@ -388,7 +387,7 @@ void iterate(const Limits& lim, const GameStack& initialGameStack,
             }
         }
 
-        info_update(&ui, depth, score, nodes(), pv);
+        info_update(&ui, depth, score, search_nodes(), pv);
     }
 
     // Max depth completed by current thread. All threads should stop.
@@ -396,7 +395,7 @@ void iterate(const Limits& lim, const GameStack& initialGameStack,
     signal = STOP;
 }
 
-void bestmove(const Limits& lim, const GameStack& initialGameStack)
+void search_go(const Limits& lim, const GameStack& initialGameStack)
 {
     using namespace std::chrono;
     const auto start = high_resolution_clock::now();
@@ -404,15 +403,15 @@ void bestmove(const Limits& lim, const GameStack& initialGameStack)
     info_clear(&ui);
     signal = 0;
     std::vector<int> iteration(Threads, 0);
-    gameStack.resize(Threads);
-    nodeCount.resize(Threads);
+    gameStacks.resize(Threads);
+    nodeCounts.resize(Threads);
 
     std::vector<std::thread> threads;
 
     for (int i = 0; i < Threads; i++) {
         // Initialize per-thread data
-        gameStack[i] = initialGameStack;
-        nodeCount[i] = 0;
+        gameStacks[i] = initialGameStack;
+        nodeCounts[i] = 0;
 
         // Start searching thread
         threads.emplace_back(iterate, std::cref(lim), std::cref(initialGameStack), std::ref(iteration), i);
@@ -424,7 +423,7 @@ void bestmove(const Limits& lim, const GameStack& initialGameStack)
         // Check for search termination conditions, but only after depth 1 has been
         // completed, to make sure we do not return an illegal move.
         if (info_last_depth(&ui) > 0) {
-            if (lim.nodes && nodes() >= lim.nodes) {
+            if (lim.nodes && search_nodes() >= lim.nodes) {
                 std::lock_guard<std::mutex> lk(mtxSchedule);
                 signal = STOP;
             } else if (lim.movetime && duration_cast<milliseconds>
@@ -440,5 +439,3 @@ void bestmove(const Limits& lim, const GameStack& initialGameStack)
 
     info_print_bestmove(&ui);
 }
-
-}    // namespace search

@@ -17,7 +17,6 @@
 #include "test.h"
 #include "search.h"
 #include "gen.h"
-#include "uci.h"
 #include "htable.h"
 
 uint64_t test_search(bool perft, int depth, int threads)
@@ -47,9 +46,9 @@ uint64_t test_search(bool perft, int depth, int threads)
 
     hash_resize(1);
     uint64_t result = 0, nodes;
-    search::Limits lim;
+    Limits lim;
     lim.depth = depth;
-    search::Threads = threads;
+    Threads = threads;
     GameStack gameStack;
 
     Clock clock;
@@ -65,8 +64,8 @@ uint64_t test_search(bool perft, int depth, int threads)
             nodes = gen_perft(&rootPos, depth);
             std::cout << "perft(" << depth << ") = " << nodes << std::endl;
         } else {
-            search::bestmove(lim, gameStack);
-            nodes = search::nodes();
+            search_go(lim, gameStack);
+            nodes = search_nodes();
         }
 
         std::cout << std::endl;
