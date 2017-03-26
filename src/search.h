@@ -26,6 +26,8 @@ struct Limits {
 
 void init();
 
-void bestmove(const Position& pos, const Limits& lim, const GameStack& gameStack);
+void bestmove(const Limits& lim, const GameStack& gameStack);
 
 }
+
+extern Position rootPos;

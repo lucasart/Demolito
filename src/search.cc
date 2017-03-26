@@ -25,6 +25,8 @@
 #include "uci.h"
 #include "zobrist.h"
 
+Position rootPos;
+
 // Protect thread scheduling decisions
 static std::mutex mtxSchedule;
 
@@ -267,7 +269,7 @@ int recurse(const Position *pos, int ply, int depth, int alpha, int beta, move_t
                             break;
 
                     if (!Qsearch && ply == 0 && info_last_depth(&ui) > 0)
-                        info_update(&ui, pos, depth, score, nodes(), pv, true);
+                        info_update(&ui, depth, score, nodes(), pv, true);
                 }
             }
         }
@@ -297,11 +299,11 @@ int recurse(const Position *pos, int ply, int depth, int alpha, int beta, move_t
     return bestScore;
 }
 
-int aspirate(const Position *pos, int depth, move_t pv[], int score)
+int aspirate(int depth, move_t pv[], int score)
 {
     if (depth <= 1) {
         assert(depth == 1);
-        return recurse(pos, 0, depth, -INF, +INF, pv);
+        return recurse(&rootPos, 0, depth, -INF, +INF, pv);
     }
 
     int delta = 32;
@@ -309,7 +311,7 @@ int aspirate(const Position *pos, int depth, move_t pv[], int score)
     int beta = score + delta;
 
     for ( ; ; delta += delta) {
-        score = recurse(pos, 0, depth, alpha, beta, pv);
+        score = recurse(&rootPos, 0, depth, alpha, beta, pv);
 
         if (score <= alpha) {
             beta = (alpha + beta) / 2;
@@ -322,7 +324,7 @@ int aspirate(const Position *pos, int depth, move_t pv[], int score)
     }
 }
 
-void iterate(const Position& pos, const Limits& lim, const GameStack& initialGameStack,
+void iterate(const Limits& lim, const GameStack& initialGameStack,
              std::vector<int>& iteration, int threadId)
 {
     ThreadId = threadId;
@@ -359,7 +361,7 @@ void iterate(const Position& pos, const Limits& lim, const GameStack& initialGam
         }
 
         try {
-            score = aspirate(&pos, depth, pv, score);
+            score = aspirate(depth, pv, score);
 
             // Iteration was completed normally. Now we need to see who is working on
             // obsolete iterations, and raise the appropriate signal, to make them move
@@ -386,7 +388,7 @@ void iterate(const Position& pos, const Limits& lim, const GameStack& initialGam
             }
         }
 
-        info_update(&ui, &pos, depth, score, nodes(), pv);
+        info_update(&ui, depth, score, nodes(), pv);
     }
 
     // Max depth completed by current thread. All threads should stop.
@@ -394,7 +396,7 @@ void iterate(const Position& pos, const Limits& lim, const GameStack& initialGam
     signal = STOP;
 }
 
-void bestmove(const Position& pos, const Limits& lim, const GameStack& initialGameStack)
+void bestmove(const Limits& lim, const GameStack& initialGameStack)
 {
     using namespace std::chrono;
     const auto start = high_resolution_clock::now();
@@ -413,8 +415,7 @@ void bestmove(const Position& pos, const Limits& lim, const GameStack& initialGa
         nodeCount[i] = 0;
 
         // Start searching thread
-        threads.emplace_back(iterate, std::cref(pos), std::cref(lim), std::cref(initialGameStack),
-                             std::ref(iteration), i);
+        threads.emplace_back(iterate, std::cref(lim), std::cref(initialGameStack), std::ref(iteration), i);
     }
 
     do {
@@ -437,7 +438,7 @@ void bestmove(const Position& pos, const Limits& lim, const GameStack& initialGa
     for (auto& t : threads)
         t.join();
 
-    info_print_bestmove(&ui, &pos);
+    info_print_bestmove(&ui);
 }
 
 }    // namespace search

@@ -50,23 +50,22 @@ uint64_t test_search(bool perft, int depth, int threads)
     search::Limits lim;
     lim.depth = depth;
     search::Threads = threads;
-    Position pos;
     GameStack gameStack;
 
     Clock clock;
     clock.reset();
 
     for (const std::string& fen : fens) {
-        pos_set(&pos, fen);
+        pos_set(&rootPos, fen);
         gs_clear(&gameStack);
-        gs_push(&gameStack, pos.key);
-        pos_print(&pos);
+        gs_push(&gameStack, rootPos.key);
+        pos_print(&rootPos);
 
         if (perft) {
-            nodes = gen_perft(&pos, depth);
+            nodes = gen_perft(&rootPos, depth);
             std::cout << "perft(" << depth << ") = " << nodes << std::endl;
         } else {
-            search::bestmove(pos, lim, gameStack);
+            search::bestmove(lim, gameStack);
             nodes = search::nodes();
         }
 
