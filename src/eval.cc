@@ -187,8 +187,8 @@ static eval_t passer(int us, int pawn, int ourKing, int theirKing, bool phalanx)
     if (n > 1) {
         const int stop = pawn + push_inc(us);
         const int Q = n * (n - 1);
-        result.eg() += KingDistance[stop][theirKing] * 6 * Q;
-        result.eg() -= KingDistance[stop][ourKing] * 3 * Q;
+        result.eg += KingDistance[stop][theirKing] * 6 * Q;
+        result.eg -= KingDistance[stop][ourKing] * 3 * Q;
     }
 
     return result;
@@ -213,12 +213,12 @@ static eval_t do_pawns(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
     bitboard_t b = ourPawns & PawnPath[us][ourKing];
 
     while (b)
-        result.op() += shieldBonus[relative_rank_of(us, bb_pop_lsb(&b))];
+        result.op += shieldBonus[relative_rank_of(us, bb_pop_lsb(&b))];
 
     b = ourPawns & PawnSpan[us][ourKing];
 
     while (b)
-        result.op() += shieldBonus[relative_rank_of(us, bb_pop_lsb(&b))] / 2;
+        result.op += shieldBonus[relative_rank_of(us, bb_pop_lsb(&b))] / 2;
 
     // Pawn structure
 
@@ -273,8 +273,8 @@ static eval_t pawns(const Position *pos, bitboard_t attacks[NB_COLOR][NB_PIECE+1
 static int blend(const Position *pos, eval_t e)
 {
     static const int full = 4 * (N + B + R) + 2 * Q;
-    const int total = (pos->pieceMaterial[WHITE] + pos->pieceMaterial[BLACK]).eg();
-    return e.op() * total / full + e.eg() * (full - total) / full;
+    const int total = (pos->pieceMaterial[WHITE] + pos->pieceMaterial[BLACK]).eg;
+    return e.op * total / full + e.eg * (full - total) / full;
 }
 
 void eval_init()
@@ -320,8 +320,8 @@ int evaluate(const Position *pos)
 
     for (int c = WHITE; c <= BLACK; ++c) {
         e[c] += bishop_pair(pos, c);
-        e[c].op() += tactics(pos, c, attacks);
-        e[c].op() += safety(pos, c, attacks);
+        e[c].op += tactics(pos, c, attacks);
+        e[c].op += safety(pos, c, attacks);
     }
 
     e[WHITE] += pawns(pos, attacks);

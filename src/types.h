@@ -65,27 +65,21 @@ typedef int eval_t __attribute__ (( vector_size(8) ));
 #endif*/
 
 struct eval_t {
-    int v[NB_PHASE];
+    int op, eg;
 
-    int operator[](int phase) const { return v[phase]; }
-    int op() const { return v[OPENING]; }
-    int eg() const { return v[ENDGAME]; }
-    int& op() { return v[OPENING]; }
-    int& eg() { return v[ENDGAME]; }
-
-    operator bool() const { return op() || eg(); }
-    bool operator==(eval_t e) const { return op() == e.op() && eg() == e.eg(); }
+    operator bool() const { return op || eg; }
+    bool operator==(eval_t e) const { return op == e.op && eg == e.eg; }
     bool operator!=(eval_t e) const { return !(*this == e); }
 
-    eval_t operator+(eval_t e) const { return {op() + e.op(), eg() + e.eg()}; }
-    eval_t operator-(eval_t e) const { return {op() - e.op(), eg() - e.eg()}; }
-    eval_t operator*(int x) const { return {op() * x, eg() * x}; }
-    eval_t operator/(int x) const { return {op() / x, eg() / x}; }
+    eval_t operator+(eval_t e) const { return {op + e.op, eg + e.eg}; }
+    eval_t operator-(eval_t e) const { return {op - e.op, eg - e.eg}; }
+    eval_t operator*(int x) const { return {op * x, eg * x}; }
+    eval_t operator/(int x) const { return {op / x, eg / x}; }
 
-    eval_t& operator+=(eval_t e) { return op() += e.op(), eg() += e.eg(), *this; }
-    eval_t& operator-=(eval_t e) { return op() -= e.op(), eg() -= e.eg(), *this; }
-    eval_t& operator*=(int x) { return op() *= x, eg() *= x, *this; }
-    eval_t& operator/=(int x) { return op() /= x, eg() /= x, *this; }
+    eval_t& operator+=(eval_t e) { return op += e.op, eg += e.eg, *this; }
+    eval_t& operator-=(eval_t e) { return op -= e.op, eg -= e.eg, *this; }
+    eval_t& operator*=(int x) { return op *= x, eg *= x, *this; }
+    eval_t& operator/=(int x) { return op /= x, eg /= x, *this; }
 };
 
 extern const eval_t Material[NB_PIECE];
