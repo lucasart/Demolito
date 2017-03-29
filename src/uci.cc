@@ -161,12 +161,12 @@ void uci_loop()
             intro();
         else if (token == "setoption")
             setoption(is);
-        else if (token == "isready") {
-            hash_resize(Hash);
+        else if (token == "isready")
             std::cout << "readyok" << std::endl;
-        } else if (token == "ucinewgame")
+        else if (token == "ucinewgame") {
+            hash_resize(Hash);
             memset(HashTable, 0, Hash << 20);
-        else if (token == "position")
+        } else if (token == "position")
             position(is);
         else if (token == "go")
             go(is);
