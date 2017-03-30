@@ -114,14 +114,9 @@ int recurse(const Position *pos, int ply, int depth, int alpha, int beta, move_t
     if (hash_read(pos->key, &he)) {
         he.score = score_from_hash(he.score, ply);
 
-        if (he.depth >= depth && ply > 0) {
-            if (he.score <= alpha && he.bound >= EXACT)
-                return he.score;
-            else if (he.score >= beta && he.bound <= EXACT)
-                return he.score;
-            else if (alpha < he.score && he.score < beta && he.bound == EXACT)
-                return he.score;
-        }
+        if (he.depth >= depth && !pvNode && ((he.score <= alpha && he.bound >= EXACT) || (he.score >= beta
+                                             && he.bound <= EXACT)))
+            return he.score;
 
         if (!Qsearch && he.depth <= 0)
             he.move = 0;
