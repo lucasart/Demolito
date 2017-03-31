@@ -13,7 +13,6 @@
  * You should have received a copy of the GNU General Public License along with this program. If
  * not, see <http://www.gnu.org/licenses/>.
 */
-#include <iostream>
 #include "gen.h"
 #include "move.h"
 #include "bitboard.h"
@@ -229,11 +228,11 @@ uint64_t gen_perft(const Position *pos, int depth)
             continue;
 
         pos_move(&after, pos, m);
-        const uint64_t sub_tree = gen_perft<false>(&after, depth - 1);
-        result += sub_tree;
+        const uint64_t subTree = gen_perft<false>(&after, depth - 1);
+        result += subTree;
 
         if (Root)
-            std::cout << move_to_string(pos, &m) << '\t' << sub_tree << std::endl;
+            printf("%s\t%" PRIu64 "\n", move_to_string(pos, &m).c_str(), subTree);
     }
 
     return result;

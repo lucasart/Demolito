@@ -1,8 +1,10 @@
 #pragma once
 #include <assert.h>
-#include <stdint.h>
+#define __STDC_FORMAT_MACROS  // C++
+#include <inttypes.h>
 #include <string.h>
 #include <assert.h>
+#include <stdio.h>
 #include <string>
 #include <chrono>
 

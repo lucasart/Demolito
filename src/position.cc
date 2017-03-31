@@ -13,7 +13,6 @@
  * You should have received a copy of the GNU General Public License along with this program. If
  * not, see <http://www.gnu.org/licenses/>.
 */
-#include <iostream>
 #include <sstream>
 #include "bitboard.h"
 #include "position.h"
@@ -416,19 +415,19 @@ void pos_print(const Position *pos)
                           : s == pos->epSquare ? '*' : '.';
         }
 
-        std::cout << line << '\n';
+        puts(line);
     }
 
-    std::cout << pos_get_fen(pos) << std::endl;
+    puts(pos_get_fen(pos).c_str());
 
     bitboard_t b = pos->checkers;
 
     if (b) {
-        std::cout << "checkers:";
+        puts("checkers:");
 
         while (b)
-            std::cout << ' ' << square_to_string(bb_pop_lsb(&b));
+            printf(" %s", square_to_string(bb_pop_lsb(&b)).c_str());
 
-        std::cout << std::endl;
+        puts("");
     }
 }

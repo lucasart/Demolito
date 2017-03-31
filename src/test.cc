@@ -13,7 +13,6 @@
  * You should have received a copy of the GNU General Public License along with this program. If
  * not, see <http://www.gnu.org/licenses/>.
 */
-#include <iostream>
 #include "test.h"
 #include "search.h"
 #include "gen.h"
@@ -62,20 +61,20 @@ uint64_t test_search(bool perft, int depth, int threads)
 
         if (perft) {
             nodes = gen_perft(&rootPos, depth);
-            std::cout << "perft(" << depth << ") = " << nodes << std::endl;
+            printf("perft(%d) = %" PRIu64 "\n", depth, nodes);
         } else {
             search_go(lim, gameStack);
             nodes = search_nodes();
         }
 
-        std::cout << std::endl;
+        puts("");
         result += nodes;
     }
 
     if (dbgCnt[1])
-        std::cout << "dbgCnt[0] = " << dbgCnt[0] << ", dbgCnt[1] = " << dbgCnt[1] << '\n';
+        printf("dbgCnt[0] = %" PRId64 ", dbgCnt[1] = %" PRId64 "\n", dbgCnt[0], dbgCnt[1]);
 
-    std::cout << "kn/s: " << result / clock.elapsed() << std::endl;
+    printf("kn/s: %" PRIu64 "\n", result / clock.elapsed());
 
     return result;
 }

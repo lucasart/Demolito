@@ -13,7 +13,6 @@
  * You should have received a copy of the GNU General Public License along with this program. If
  * not, see <http://www.gnu.org/licenses/>.
 */
-#include <iostream>
 #include "bitboard.h"
 
 static const int PDir[2][2] = {{1,-1},{1,1}};
@@ -180,8 +179,8 @@ void bb_print(bitboard_t b)
                 line[2 * f] = 'X';
         }
 
-        std::cout << line << '\n';
+        puts(line);
     }
 
-    std::cout << std::endl;
+    puts("");
 }

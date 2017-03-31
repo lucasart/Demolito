@@ -13,7 +13,6 @@
  * You should have received a copy of the GNU General Public License along with this program. If
  * not, see <http://www.gnu.org/licenses/>.
 */
-#include <iostream>
 #include "bitboard.h"
 #include "eval.h"
 #include "pst.h"
@@ -36,7 +35,7 @@ int main(int argc, char **argv)
         if ((cmd == "perft" || cmd == "search") && argc >= 4) {
             const int depth = std::stoi(argv[2]), threads = std::stoi(argv[3]);
             const uint64_t nodes = test_search(cmd == "perft", depth, threads);
-            std::cout << "total = " << nodes << std::endl;
+            printf("total = %" PRIu64 "\n", nodes);
         }
     } else
         uci_loop();

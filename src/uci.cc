@@ -32,13 +32,15 @@ static int TimeBuffer = 30;
 
 static void intro()
 {
-    std::cout << "id name Demolito\nid author lucasart\n" << std::boolalpha
-              << "option name UCI_Chess960 type check default " << Chess960 << '\n'
-              << "option name Hash type spin default " << Hash << " min 1 max 1048576\n"
-              << "option name Threads type spin default " << Threads << " min 1 max 64\n"
-              << "option name Contempt type spin default " << Contempt << " min -100 max 100\n"
-              << "option name Time Buffer type spin default " << TimeBuffer << " min 0 max 1000\n"
-              << "uciok" << std::endl;
+    setvbuf(stdout, NULL, _IOLBF, BUFSIZ);
+
+    puts("id name Demolito\nid author lucasart");
+    printf("option name UCI_Chess960 type check default %s\n", Chess960 ? "true" : "false");
+    printf("option name Hash type spin default %" PRIu64 " min 1 max 1048576\n", Hash);
+    printf("option name Threads type spin default %d min 1 max 64\n", Threads);
+    printf("option name Contempt type spin default %d min -100 max 100\n", Contempt);
+    printf("option name Time Buffer type spin default %d min 0 max 1000\n", TimeBuffer);
+    puts("uciok");
 }
 
 static void setoption(std::istringstream& is)
@@ -135,7 +137,7 @@ static void go(std::istringstream& is)
 static void eval()
 {
     pos_print(&rootPos);
-    std::cout << "score " << uci_format_score(evaluate(&rootPos)) << std::endl;
+    printf("score %s\n", uci_format_score(evaluate(&rootPos)).c_str());
 }
 
 static void perft(std::istringstream& is)
@@ -144,7 +146,7 @@ static void perft(std::istringstream& is)
     is >> depth;
 
     pos_print(&rootPos);
-    std::cout << "score " << gen_perft(&rootPos, depth) << std::endl;
+    printf("perft = %" PRIu64 "\n", gen_perft(&rootPos, depth));
 }
 
 Info ui;
@@ -162,7 +164,7 @@ void uci_loop()
         else if (token == "setoption")
             setoption(is);
         else if (token == "isready")
-            std::cout << "readyok" << std::endl;
+            puts("readyok");
         else if (token == "ucinewgame") {
             hash_resize(Hash);
             memset(HashTable, 0, Hash << 20);
@@ -180,7 +182,7 @@ void uci_loop()
             free(HashTable);
             break;
         } else
-            std::cout << "unknown command: " << command << std::endl;
+            printf("unknown command: %s\n", command.c_str());
     }
 
     if (Timer.joinable())
@@ -228,15 +230,15 @@ void info_update(Info *info, int depth, int score, uint64_t nodes, move_t pv[], 
             idx ^= 1;
         }
 
-        std::cout << os.str() << std::endl;
+        puts(os.str().c_str());
     }
 }
 
 void info_print_bestmove(const Info *info)
 {
     std::lock_guard<std::mutex> lk(info->mtx);
-    std::cout << "bestmove " << move_to_string(&rootPos, &info->bestMove)
-              << " ponder " << move_to_string(&rootPos, &info->ponderMove) << std::endl;
+    printf("bestmove %s ponder %s\n", move_to_string(&rootPos, &info->bestMove).c_str(),
+           move_to_string(&rootPos, &info->ponderMove).c_str());
 }
 
 Move info_best_move(const Info *info)
