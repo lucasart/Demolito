@@ -60,12 +60,6 @@ enum {
 
 enum {OPENING, ENDGAME, NB_PHASE};
 
-/*#ifdef __clang__
-typedef int eval_t __attribute__ (( ext_vector_type(2) ));
-#else
-typedef int eval_t __attribute__ (( vector_size(8) ));
-#endif*/
-
 struct eval_t {
     int op, eg;
 

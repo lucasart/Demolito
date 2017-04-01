@@ -149,7 +149,6 @@ int move_see(const Position *pos, const Move *m)
     }
 
     // Easy case: to is not defended
-    // TODO: explore performance tradeoff between using pos->attacked and using attackers below
     if (!bb_test(pos->attacked, m->to))
         return gain[0];
 
