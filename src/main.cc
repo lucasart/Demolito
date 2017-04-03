@@ -15,6 +15,7 @@
 */
 #include "bitboard.h"
 #include "eval.h"
+#include "htable.h"
 #include "pst.h"
 #include "search.h"
 #include "test.h"
@@ -39,4 +40,6 @@ int main(int argc, char **argv)
         }
     } else
         uci_loop();
+
+    free(HashTable);
 }

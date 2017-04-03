@@ -178,10 +178,9 @@ void uci_loop()
             eval();
         else if (token == "perft")
             perft(is);
-        else if (token == "quit") {
-            free(HashTable);
+        else if (token == "quit")
             break;
-        } else
+        else
             printf("unknown command: %s\n", command.c_str());
     }
 
