@@ -332,6 +332,11 @@ void iterate(const Limits& lim, const GameStack& initialGameStack, std::vector<i
         {
             std::lock_guard<std::mutex> lk(mtxSchedule);
 
+            if (signal == STOP)
+                return;
+            else
+                signal &= ~(1ULL << ThreadId);
+
             // If half of the threads are searching >= depth, then move to the next iteration.
             // Special cases where this does not apply:
             // depth == 1: we want all threads to finish depth == 1 asap.
@@ -365,7 +370,7 @@ void iterate(const Limits& lim, const GameStack& initialGameStack, std::vector<i
                 uint64_t s = 0;
 
                 for (int i = 0; i < Threads; i++)
-                    if (i != ThreadId && iteration[i] == depth)
+                    if (i != ThreadId && iteration[i] <= depth)
                         s |= 1ULL << i;
 
                 signal |= s;
