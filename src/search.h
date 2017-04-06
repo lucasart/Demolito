@@ -1,6 +1,5 @@
 #pragma once
 #include <atomic>
-#include <vector>
 #include "position.h"
 #include "zobrist.h"
 
@@ -19,5 +18,4 @@ struct Limits {
 };
 
 void search_init();
-uint64_t search_nodes();
-void search_go(const Limits& lim, const GameStack& gameStack);
+uint64_t search_go(const Limits& lim, const GameStack& gameStack);

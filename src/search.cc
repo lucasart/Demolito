@@ -34,15 +34,14 @@ static std::mutex mtxSchedule;
 thread_local int ThreadId;
 
 // Per thread data
-std::vector<GameStack> gameStacks;
-std::vector<uint64_t> nodeCounts;
+GameStack *gameStacks;
+uint64_t *nodeCounts;
 
-uint64_t search_nodes()
+uint64_t count_nodes()
 {
     uint64_t total = 0;
 
-    for (uint64_t n : nodeCounts)
-        total += n;
+    for (int i = 0; i < Threads; total += nodeCounts[i++]);
 
     return total;
 }
@@ -263,7 +262,7 @@ int recurse(const Position *pos, int ply, int depth, int alpha, int beta, move_t
                             break;
 
                     if (!Qsearch && ply == 0 && info_last_depth(&ui) > 0)
-                        info_update(&ui, depth, score, search_nodes(), pv, true);
+                        info_update(&ui, depth, score, count_nodes(), pv, true);
                 }
             }
         }
@@ -318,8 +317,7 @@ int aspirate(int depth, move_t pv[], int score)
     }
 }
 
-void iterate(const Limits& lim, const GameStack& initialGameStack, std::vector<int>& iteration,
-             int threadId)
+void iterate(const Limits& lim, const GameStack& initialGameStack, int iterations[], int threadId)
 {
     ThreadId = threadId;
     move_t pv[MAX_PLY + 1];
@@ -345,13 +343,13 @@ void iterate(const Limits& lim, const GameStack& initialGameStack, std::vector<i
                 int cnt = 0;
 
                 for (int i = 0; i < Threads; i++)
-                    cnt += i != ThreadId && iteration[i] >= depth;
+                    cnt += i != ThreadId && iterations[i] >= depth;
 
                 if (cnt >= Threads / 2)
                     continue;
             }
 
-            iteration[ThreadId] = depth;
+            iterations[ThreadId] = depth;
 
             if (signal == STOP)
                 return;
@@ -370,7 +368,7 @@ void iterate(const Limits& lim, const GameStack& initialGameStack, std::vector<i
                 uint64_t s = 0;
 
                 for (int i = 0; i < Threads; i++)
-                    if (i != ThreadId && iteration[i] <= depth)
+                    if (i != ThreadId && iterations[i] <= depth)
                         s |= 1ULL << i;
 
                 signal |= s;
@@ -387,7 +385,7 @@ void iterate(const Limits& lim, const GameStack& initialGameStack, std::vector<i
             }
         }
 
-        info_update(&ui, depth, score, search_nodes(), pv);
+        info_update(&ui, depth, score, count_nodes(), pv);
     }
 
     // Max depth completed by current thread. All threads should stop.
@@ -395,16 +393,17 @@ void iterate(const Limits& lim, const GameStack& initialGameStack, std::vector<i
     signal = STOP;
 }
 
-void search_go(const Limits& lim, const GameStack& initialGameStack)
+uint64_t search_go(const Limits& lim, const GameStack& initialGameStack)
 {
     using namespace std::chrono;
     const auto start = high_resolution_clock::now();
 
     info_clear(&ui);
     signal = 0;
-    std::vector<int> iteration(Threads, 0);
-    gameStacks.resize(Threads);
-    nodeCounts.resize(Threads);
+
+    int *iterations = (int *)calloc(Threads, sizeof(int));  // FIXME: C++ needs cast
+    gameStacks = (GameStack *)malloc(Threads * sizeof(GameStack));  // FIXME: C++ needs cast
+    nodeCounts = (uint64_t *)calloc(Threads, sizeof(uint64_t));  // FIXME: C++ needs cast
 
     std::vector<std::thread> threads;
 
@@ -414,7 +413,7 @@ void search_go(const Limits& lim, const GameStack& initialGameStack)
         nodeCounts[i] = 0;
 
         // Start searching thread
-        threads.emplace_back(iterate, std::cref(lim), std::cref(initialGameStack), std::ref(iteration), i);
+        threads.emplace_back(iterate, std::cref(lim), std::cref(initialGameStack), iterations, i);
     }
 
     do {
@@ -423,7 +422,7 @@ void search_go(const Limits& lim, const GameStack& initialGameStack)
         // Check for search termination conditions, but only after depth 1 has been
         // completed, to make sure we do not return an illegal move.
         if (info_last_depth(&ui) > 0) {
-            if (lim.nodes && search_nodes() >= lim.nodes) {
+            if (lim.nodes && count_nodes() >= lim.nodes) {
                 std::lock_guard<std::mutex> lk(mtxSchedule);
                 signal = STOP;
             } else if (lim.movetime && duration_cast<milliseconds>
@@ -438,4 +437,12 @@ void search_go(const Limits& lim, const GameStack& initialGameStack)
         t.join();
 
     info_print_bestmove(&ui);
+
+    const uint64_t nodes = count_nodes();
+
+    free(gameStacks);
+    free(nodeCounts);
+    free(iterations);
+
+    return nodes;
 }
