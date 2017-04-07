@@ -219,7 +219,7 @@ int recurse(const Position *pos, int ply, int depth, int alpha, int beta, move_t
             if (moveCount == 1)
                 score = -recurse(&nextPos, ply+1, nextDepth, -beta, -alpha, childPv);
             else {
-                int reduction = see < 0 || (!nextPos.checkers && !move_is_capture(pos, &currentMove));
+                int reduction = see < 0 || !move_is_capture(pos, &currentMove);
 
                 if (!move_is_capture(pos, &currentMove) && !nextPos.checkers) {
                     reduction = Reduction[std::min(31, nextDepth)][std::min(31, ++lmrCount)];
