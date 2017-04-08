@@ -14,7 +14,6 @@
  * not, see <http://www.gnu.org/licenses/>.
 */
 #include <thread>
-#include <vector>
 #include <chrono>
 #include <algorithm>  // std::min and std::max
 #include <math.h>
@@ -405,7 +404,7 @@ uint64_t search_go(const Limits& lim, const GameStack& initialGameStack)
     gameStacks = (GameStack *)malloc(Threads * sizeof(GameStack));  // FIXME: C++ needs cast
     nodeCounts = (uint64_t *)calloc(Threads, sizeof(uint64_t));  // FIXME: C++ needs cast
 
-    std::vector<std::thread> threads;
+    std::thread threads[Threads];
 
     for (int i = 0; i < Threads; i++) {
         // Initialize per-thread data
@@ -413,7 +412,7 @@ uint64_t search_go(const Limits& lim, const GameStack& initialGameStack)
         nodeCounts[i] = 0;
 
         // Start searching thread
-        threads.emplace_back(iterate, std::cref(lim), std::cref(initialGameStack), iterations, i);
+        threads[i] = std::thread(iterate, std::cref(lim), std::cref(initialGameStack), iterations, i);
     }
 
     do {
@@ -433,8 +432,8 @@ uint64_t search_go(const Limits& lim, const GameStack& initialGameStack)
         }
     } while (signal != STOP);
 
-    for (auto& t : threads)
-        t.join();
+    for (int i = 0; i < Threads; i++)
+        threads[i].join();
 
     info_print_bestmove(&ui);
 
