@@ -17,109 +17,119 @@
 #include "bitboard.h"
 #include "position.h"
 
-bool move_ok(const Move *m)
+bool move_ok(move_t m)
 {
-    return unsigned(m->from) < NB_SQUARE && unsigned(m->to) < NB_SQUARE
-           && ((KNIGHT <= m->prom && m->prom <= QUEEN) || m->prom == NB_PIECE);
+    const int from = move_from(m), to = move_to(m), prom = move_prom(m);
+    return (unsigned)from < NB_SQUARE && (unsigned)to < NB_SQUARE
+           && ((KNIGHT <= prom && prom <= QUEEN) || prom == NB_PIECE);
 }
 
-Move::operator move_t() const
+int move_from(move_t m)
 {
-    assert(move_ok(this));
+    return m & 077;
+}
+
+int move_to(move_t m)
+{
+    return (m >> 6) & 077;
+}
+
+int move_prom(move_t m)
+{
+    return m >> 12;
+}
+
+move_t move_build(int from, int to, int prom)
+{
     return from | (to << 6) | (prom << 12);
 }
 
-Move Move::operator =(move_t em)
-{
-    from = em & 077;
-    to = (em >> 6) & 077;
-    prom = em >> 12;
-    assert(move_ok(this));
-    return *this;
-}
-
-bool move_is_capture(const Position *pos, const Move *m)
+bool move_is_capture(const Position *pos, move_t m)
 {
     const int us = pos->turn, them = opposite(us);
-    return (bb_test(pos->byColor[them], m->to))
-           || ((m->to == pos->epSquare || relative_rank_of(us, m->to) == RANK_8)
-               && pos->pieceOn[m->from] == PAWN);
+    const int from = move_from(m), to = move_to(m);
+    return (bb_test(pos->byColor[them], to))
+           || ((to == pos->epSquare || relative_rank_of(us, to) == RANK_8)
+               && pos->pieceOn[from] == PAWN);
 }
 
-bool move_is_castling(const Position *pos, const Move *m)
+bool move_is_castling(const Position *pos, move_t m)
 {
-    return bb_test(pos->byColor[pos->turn], m->to);
+    return bb_test(pos->byColor[pos->turn], move_to(m));
 }
 
-std::string move_to_string(const Position *pos, const Move *m)
+std::string move_to_string(const Position *pos, move_t m)
 {
     assert(move_ok(m));
+    const int from = move_from(m), to = move_to(m), prom = move_prom(m);
 
     std::string s;
 
-    if (!(m->from | m->to | m->prom))
+    if (!(from | to | prom))
         return "0000";
 
     const int _tsq = !Chess960 && move_is_castling(pos, m)
-                     ? (m->to > m->from ? m->from + 2 : m->from - 2)    // e1h1 -> e1g1, e1a1 -> e1c1
-                     : m->to;
+                     ? (to > from ? from + 2 : from - 2)    // e1h1 -> e1g1, e1a1 -> e1c1
+                     : to;
 
-    s += file_of(m->from) + 'a';
-    s += rank_of(m->from) + '1';
+    s += file_of(from) + 'a';
+    s += rank_of(from) + '1';
     s += file_of(_tsq) + 'a';
     s += rank_of(_tsq) + '1';
 
-    if (m->prom < NB_PIECE)
-        s += PieceLabel[BLACK][m->prom];
+    if (prom < NB_PIECE)
+        s += PieceLabel[BLACK][prom];
 
     return s;
 }
 
-void move_from_string(const Position *pos, const std::string& s, Move *m)
+void move_from_string(const Position *pos, const std::string& s, move_t *m)
 {
-    m->from = square(s[1] - '1', s[0] - 'a');
-    m->to = square(s[3] - '1', s[2] - 'a');
-    m->prom = s[4] ? (int)PieceLabel[BLACK].find(s[4]) : NB_PIECE;
+    const int prom = s[4] ? (int)PieceLabel[BLACK].find(s[4]) : NB_PIECE;
+    int from = square(s[1] - '1', s[0] - 'a');
+    int to = square(s[3] - '1', s[2] - 'a');
 
-    if (!Chess960 && pos->pieceOn[m->from] == KING) {
-        if (m->to == m->from + 2)  // e1g1 -> e1h1
-            ++m->to;
-        else if (m->to == m->from - 2)  // e1c1 -> e1a1
-            m->to -= 2;
+    if (!Chess960 && pos->pieceOn[from] == KING) {
+        if (to == from + 2)  // e1g1 -> e1h1
+            ++to;
+        else if (to == from - 2)  // e1c1 -> e1a1
+            to -= 2;
     }
 
-    assert(move_ok(m));
+    *m = move_build(from, to, prom);
+    assert(move_ok(*m));
 }
 
-bool move_is_legal(const Position *pos, const Move *m)
+bool move_is_legal(const Position *pos, move_t m)
 {
-    const int p = pos->pieceOn[m->from];
+    const int from = move_from(m), to = move_to(m);
+    const int p = pos->pieceOn[from];
     const int king = pos_king_square(pos, pos->turn);
 
     if (p == KING) {
-        if (bb_test(pos->byColor[pos->turn], m->to)) {
+        if (bb_test(pos->byColor[pos->turn], to)) {
             // Castling: king must not move through attacked square, and rook must not
             // be pinned
-            assert(pos->pieceOn[m->to] == ROOK);
-            const int _tsq = square(rank_of(m->from), m->from < m->to ? FILE_G : FILE_C);
-            return !(pos->attacked & Segment[m->from][_tsq])
-                   && !bb_test(pos->pins, m->to);
+            assert(pos->pieceOn[to] == ROOK);
+            const int _tsq = square(rank_of(from), from < to ? FILE_G : FILE_C);
+            return !(pos->attacked & Segment[from][_tsq])
+                   && !bb_test(pos->pins, to);
         } else
             // Normal king move: do not land on an attacked square
-            return !bb_test(pos->attacked, m->to);
+            return !bb_test(pos->attacked, to);
     } else {
         // Normal case: illegal if pinned, and moves out of pin-ray
-        if (bb_test(pos->pins, m->from) && !bb_test(Ray[king][m->from], m->to))
+        if (bb_test(pos->pins, from) && !bb_test(Ray[king][from], to))
             return false;
 
         // En-passant special case: also illegal if self-check through the en-passant
         // captured pawn
-        if (m->to == pos->epSquare && p == PAWN) {
+        if (to == pos->epSquare && p == PAWN) {
             const int us = pos->turn, them = opposite(us);
             bitboard_t occ = pos_pieces(pos);
-            bb_clear(&occ, m->from);
-            bb_set(&occ, m->to);
-            bb_clear(&occ, m->to + push_inc(them));
+            bb_clear(&occ, from);
+            bb_set(&occ, to);
+            bb_clear(&occ, to + push_inc(them));
             return !(bb_rattacks(king, occ) & pos_pieces_cpp(pos, them, ROOK, QUEEN))
                    && !(bb_battacks(king, occ) & pos_pieces_cpp(pos, them, BISHOP, QUEEN));
         } else
@@ -127,32 +137,33 @@ bool move_is_legal(const Position *pos, const Move *m)
     }
 }
 
-int move_see(const Position *pos, const Move *m)
+int move_see(const Position *pos, move_t m)
 {
-    const int see_value[NB_PIECE+1] = {N, B, R, Q, MATE, P, 0};
+    static const int see_value[NB_PIECE+1] = {N, B, R, Q, MATE, P, 0};
 
+    const int from = move_from(m), to = move_to(m), prom = move_prom(m);
     int us = pos->turn;
     bitboard_t occ = pos_pieces(pos);
 
     // General case
-    int gain[32] = {see_value[pos->pieceOn[m->to]]};
-    int capture = pos->pieceOn[m->from];
-    bb_clear(&occ, m->from);
+    int gain[32] = {see_value[pos->pieceOn[to]]};
+    int capture = pos->pieceOn[from];
+    bb_clear(&occ, from);
 
     // Special cases
     if (capture == PAWN) {
-        if (m->to == pos->epSquare) {
-            bb_clear(&occ, m->to - push_inc(us));
+        if (to == pos->epSquare) {
+            bb_clear(&occ, to - push_inc(us));
             gain[0] = see_value[capture];
-        } else if (relative_rank_of(us, m->to) == RANK_8)
-            gain[0] += see_value[capture = m->prom] - see_value[PAWN];
+        } else if (relative_rank_of(us, to) == RANK_8)
+            gain[0] += see_value[capture = prom] - see_value[PAWN];
     }
 
     // Easy case: to is not defended
-    if (!bb_test(pos->attacked, m->to))
+    if (!bb_test(pos->attacked, to))
         return gain[0];
 
-    bitboard_t attackers = pos_attackers_to(pos, m->to, occ);
+    bitboard_t attackers = pos_attackers_to(pos, to, occ);
     bitboard_t ourAttackers;
 
     int idx = 0;
@@ -179,7 +190,7 @@ int move_see(const Position *pos, const Move *m)
         assert(idx < 32);
         gain[idx] = see_value[capture] - gain[idx-1];
 
-        if (p == PAWN && relative_rank_of(us, m->to) == RANK_8) {
+        if (p == PAWN && relative_rank_of(us, to) == RANK_8) {
             gain[idx] += see_value[QUEEN] - see_value[PAWN];
             capture = QUEEN;
         } else

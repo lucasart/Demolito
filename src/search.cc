@@ -81,7 +81,7 @@ int recurse(const Position *pos, int ply, int depth, int alpha, int beta, move_t
     const int oldAlpha = alpha;
     const int us = pos->turn;
     int bestScore = -INF;
-    Move bestMove = 0;
+    move_t bestMove = 0;
     int score;
     Position nextPos;
 
@@ -132,7 +132,7 @@ int recurse(const Position *pos, int ply, int depth, int alpha, int beta, move_t
     // At Root, ensure that the last best move is searched first. This is not guaranteed,
     // as the TT entry could have got overriden by other search threads.
     if (!Qsearch && ply == 0 && info_last_depth(&ui) > 0)
-        he.move = info_best_move(&ui);
+        he.move = info_best(&ui);
 
     nodeCounts[ThreadId]++;
 
@@ -170,14 +170,14 @@ int recurse(const Position *pos, int ply, int depth, int alpha, int beta, move_t
     Sort s(pos, depth, he.move);
 
     int moveCount = 0, lmrCount = 0;
-    Move currentMove;
+    move_t currentMove;
 
     // Move loop
     while ((s.idx != s.cnt) && alpha < beta) {
         int see;
         currentMove = sort_next(&s, pos, &see);
 
-        if (!move_is_legal(pos, &currentMove))
+        if (!move_is_legal(pos, currentMove))
             continue;
 
         moveCount++;
@@ -195,7 +195,7 @@ int recurse(const Position *pos, int ply, int depth, int alpha, int beta, move_t
 
         // Prune losing captures in the search, near the leaves
         if (!Qsearch && depth <= 4 && see < 0 && !pvNode && !pos->checkers && !nextPos.checkers
-                && !move_is_capture(pos, &currentMove))
+                && !move_is_capture(pos, currentMove))
             continue;
 
         gs_push(&gameStacks[ThreadId], nextPos.key);
@@ -218,9 +218,9 @@ int recurse(const Position *pos, int ply, int depth, int alpha, int beta, move_t
             if (moveCount == 1)
                 score = -recurse(&nextPos, ply+1, nextDepth, -beta, -alpha, childPv);
             else {
-                int reduction = see < 0 || !move_is_capture(pos, &currentMove);
+                int reduction = see < 0 || !move_is_capture(pos, currentMove);
 
-                if (!move_is_capture(pos, &currentMove)) {
+                if (!move_is_capture(pos, currentMove)) {
                     reduction = Reduction[std::min(31, nextDepth)][std::min(31, ++lmrCount)];
                     assert(nextDepth >= 1);
                     assert(lmrCount >= 1);
@@ -272,11 +272,10 @@ int recurse(const Position *pos, int ply, int depth, int alpha, int beta, move_t
         return pos->checkers ? mated_in(ply) : draw_score(ply);
 
     // Update History
-    if (!Qsearch && alpha > oldAlpha && !move_is_capture(pos, &bestMove))
+    if (!Qsearch && alpha > oldAlpha && !move_is_capture(pos, bestMove))
         for (size_t i = 0; i < s.idx; i++) {
-            Move m(s.moves[i]);
             const int bonus = depth * depth;
-            history_update(us, m, m == bestMove ? bonus : -bonus);
+            history_update(us, s.moves[i], s.moves[i] == bestMove ? bonus : -bonus);
         }
 
     // TT write

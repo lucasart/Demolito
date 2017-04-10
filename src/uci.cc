@@ -92,7 +92,7 @@ static void position(std::istringstream& is)
 
     // Parse moves (if any)
     while (is >> token) {
-        Move m;
+        move_t m;
         move_from_string(&p[idx], token, &m);
         pos_move(&p[idx^1], &p[idx], m);
         idx ^= 1;
@@ -191,7 +191,7 @@ void uci_loop()
 void info_clear(Info *info)
 {
     info->lastDepth = 0;
-    info->bestMove = info->ponderMove = 0;
+    info->best = info->ponder = 0;
     info->clock.reset();
 }
 
@@ -200,8 +200,8 @@ void info_update(Info *info, int depth, int score, uint64_t nodes, move_t pv[], 
     std::lock_guard<std::mutex> lk(info->mtx);
 
     if (depth > info->lastDepth) {
-        info->bestMove = pv[0];
-        info->ponderMove = pv[1];
+        info->best = pv[0];
+        info->ponder = pv[1];
 
         if (partial)
             return;
@@ -223,9 +223,8 @@ void info_update(Info *info, int depth, int score, uint64_t nodes, move_t pv[], 
         p[idx] = rootPos;
 
         for (int i = 0; pv[i]; i++) {
-            Move m(pv[i]);
-            os << ' ' << move_to_string(&p[idx], &m);
-            pos_move(&p[idx^1], &p[idx], m);
+            os << ' ' << move_to_string(&p[idx], pv[i]);
+            pos_move(&p[idx^1], &p[idx], pv[i]);
             idx ^= 1;
         }
 
@@ -236,14 +235,14 @@ void info_update(Info *info, int depth, int score, uint64_t nodes, move_t pv[], 
 void info_print_bestmove(const Info *info)
 {
     std::lock_guard<std::mutex> lk(info->mtx);
-    printf("bestmove %s ponder %s\n", move_to_string(&rootPos, &info->bestMove).c_str(),
-           move_to_string(&rootPos, &info->ponderMove).c_str());
+    printf("bestmove %s ponder %s\n", move_to_string(&rootPos, info->best).c_str(),
+           move_to_string(&rootPos, info->ponder).c_str());
 }
 
-Move info_best_move(const Info *info)
+move_t info_best(const Info *info)
 {
     std::lock_guard<std::mutex> lk(info->mtx);
-    return info->bestMove;
+    return info->best;
 }
 
 int info_last_depth(const Info *info)

@@ -18,7 +18,7 @@ struct Position {
 };
 
 void pos_set(Position *pos, const std::string& fen);
-void pos_move(Position *pos, const Position *before, Move m);
+void pos_move(Position *pos, const Position *before, move_t m);
 void pos_switch(Position *pos, const Position *before);
 
 bitboard_t pos_pieces(const Position* pos);

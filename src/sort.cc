@@ -47,20 +47,19 @@ void sort_score(Sort *s, const Position *pos, move_t ttMove)
         if (s->moves[i] == ttMove)
             s->scores[i] = +INF;
         else {
-            const Move m(s->moves[i]);
-
-            if (move_is_capture(pos, &m)) {
-                const int see = move_see(pos, &m);
+            if (move_is_capture(pos, s->moves[i])) {
+                const int see = move_see(pos, s->moves[i]);
                 s->scores[i] = see >= 0 ? see + HISTORY_MAX : see - HISTORY_MAX;
             } else
-                s->scores[i] = HistoryTable[pos->turn][m.from][m.to];
+                s->scores[i] = HistoryTable[pos->turn][move_from(s->moves[i])][move_to(s->moves[i])];
         }
     }
 }
 
-void history_update(int c, Move m, int bonus)
+void history_update(int c, move_t m, int bonus)
 {
-    int *t = &HistoryTable[c][m.from][m.to];
+    const int from = move_from(m), to = move_to(m);
+    int *t = &HistoryTable[c][from][to];
 
     *t += bonus;
 
@@ -77,7 +76,7 @@ Sort::Sort(const Position *pos, int depth, move_t ttMove)
     idx = 0;
 }
 
-Move sort_next(Sort *s, const Position *pos, int *see)
+move_t sort_next(Sort *s, const Position *pos, int *see)
 {
     int maxScore = -INF;
     size_t maxIdx = s->idx;
@@ -93,10 +92,10 @@ Move sort_next(Sort *s, const Position *pos, int *see)
         std::swap(s->scores[s->idx], s->scores[maxIdx]);
     }
 
-    const Move m(s->moves[s->idx]);
     const int score = s->scores[s->idx];
+    const move_t m = s->moves[s->idx];
 
-    if (move_is_capture(pos, &m)) {
+    if (move_is_capture(pos, m)) {
         if (score >= HISTORY_MAX)
             *see = score - HISTORY_MAX;
         else {
@@ -104,7 +103,7 @@ Move sort_next(Sort *s, const Position *pos, int *see)
             *see = score + HISTORY_MAX;
         }
     } else
-        *see = move_see(pos, &m);
+        *see = move_see(pos, m);
 
     return s->moves[s->idx++];
 }

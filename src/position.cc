@@ -196,62 +196,63 @@ void pos_set(Position *pos, const std::string& fen)
     finish(pos);
 }
 
-void pos_move(Position *pos, const Position *before, Move m)
+void pos_move(Position *pos, const Position *before, move_t m)
 {
     *pos = *before;
     pos->rule50++;
 
     const int us = pos->turn, them = opposite(us);
-    const int p = pos->pieceOn[m.from];
-    const int capture = pos->pieceOn[m.to];
+    const int from = move_from(m), to = move_to(m), prom = move_prom(m);
+    const int p = pos->pieceOn[from];
+    const int capture = pos->pieceOn[to];
 
     // Capture piece on to square (if any)
     if (capture != NB_PIECE) {
         pos->rule50 = 0;
         // Use pos_color_on() instead of them, because we could be playing a KxR castling here
-        clear_square(pos, pos_color_on(pos, m.to), capture, m.to);
+        clear_square(pos, pos_color_on(pos, to), capture, to);
 
         // Capturing a rook alters corresponding castling right
         if (capture == ROOK)
-            pos->castleRooks &= ~(1ULL << m.to);
+            pos->castleRooks &= ~(1ULL << to);
     }
 
     // Move our piece
-    clear_square(pos, us, p, m.from);
-    set_square(pos, us, p, m.to);
+    clear_square(pos, us, p, from);
+    set_square(pos, us, p, to);
 
     if (p == PAWN) {
         // reset rule50, and set epSquare
         const int push = push_inc(us);
         pos->rule50 = 0;
-        pos->epSquare = m.to == m.from + 2 * push ? m.from + push : NB_SQUARE;
+        pos->epSquare = to == from + 2 * push ? from + push : NB_SQUARE;
 
         // handle ep-capture and promotion
-        if (m.to == before->epSquare)
-            clear_square(pos, them, p, m.to - push);
-        else if (rank_of(m.to) == RANK_8 || rank_of(m.to) == RANK_1) {
-            clear_square(pos, us, p, m.to);
-            set_square(pos, us, m.prom, m.to);
+        if (to == before->epSquare)
+            clear_square(pos, them, p, to - push);
+        else if (rank_of(to) == RANK_8 || rank_of(to) == RANK_1) {
+            clear_square(pos, us, p, to);
+            set_square(pos, us, prom, to);
         }
     } else {
         pos->epSquare = NB_SQUARE;
 
         if (p == ROOK)
             // remove corresponding castling right
-            pos->castleRooks &= ~(1ULL << m.from);
+            pos->castleRooks &= ~(1ULL << from);
         else if (p == KING) {
             // Lose all castling rights
             pos->castleRooks &= ~bb_rank(us * RANK_8);
 
             // Castling
-            if (bb_test(before->byColor[us], m.to)) {
+            if (bb_test(before->byColor[us], to)) {
                 // Capturing our own piece can only be a castling move, encoded KxR
-                assert(before->pieceOn[m.to] == ROOK);
-                const int r = rank_of(m.from);
+                assert(before->pieceOn[to] == ROOK);
+                const int r = rank_of(from);
 
-                clear_square(pos, us, KING, m.to);
-                set_square(pos, us, KING, square(r, m.to > m.from ? FILE_G : FILE_C));
-                set_square(pos, us, ROOK, square(r, m.to > m.from ? FILE_F : FILE_D));
+                clear_square(pos, us, KING, to);
+                set_square(pos, us, KING, square(r, to > from ? FILE_G : FILE_C));
+                set_square(pos, us, ROOK, square(r, to > from ? FILE_F : FILE_D));
             }
         }
     }
