@@ -144,7 +144,7 @@ int recurse(const Position *pos, int ply, int depth, int alpha, int beta, move_t
             && staticEval >= beta && pos->pieceMaterial[us]) {
         pos_switch(&nextPos, pos);
         gs_push(&gameStacks[ThreadId], nextPos.key);
-        const int nextDepth = depth - (2 + depth/3) - (staticEval >= beta+P);
+        const int nextDepth = depth - (2 + depth/3) - (refinedEval >= beta+P);
         score = nextDepth <= 0
                 ? -recurse<true>(&nextPos, ply+1, nextDepth, -beta, -(beta-1), childPv)
                 : -recurse(&nextPos, ply+1, nextDepth, -beta, -(beta-1), childPv);
