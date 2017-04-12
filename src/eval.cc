@@ -179,6 +179,16 @@ static int safety(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_P
             result -= CheckWeight;
         }
 
+    // Rook X-Ray threats
+
+    bitboard_t rooks = RPseudoAttacks[ks] & pos_pieces_cpp(pos, them, ROOK, QUEEN);
+
+    while (rooks)
+        if (!(Segment[ks][bb_pop_lsb(&rooks)] & pos->byPiece[PAWN])) {
+            cnt++;
+            result -= CheckWeight;
+        }
+
     return result * (2 + cnt) / 4;
 }
 
