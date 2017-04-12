@@ -169,6 +169,16 @@ static int safety(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_P
             }
         }
 
+    // Bishop X-Ray threats
+
+    bitboard_t bishops = BPseudoAttacks[ks] & pos_pieces_cpp(pos, them, BISHOP, QUEEN);
+
+    while (bishops)
+        if (!(Segment[ks][bb_pop_lsb(&bishops)] & pos->byPiece[PAWN])) {
+            cnt++;
+            result -= CheckWeight;
+        }
+
     return result * (2 + cnt) / 4;
 }
 
