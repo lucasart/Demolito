@@ -69,11 +69,11 @@ void history_update(int c, move_t m, int bonus)
         *t = -HISTORY_MAX;
 }
 
-Sort::Sort(const Position *pos, int depth, move_t ttMove)
+void sort_init(Sort *s, const Position *pos, int depth, move_t ttMove)
 {
-    sort_generate(this, pos, depth);
-    sort_score(this, pos, ttMove);
-    idx = 0;
+    sort_generate(s, pos, depth);
+    sort_score(s, pos, ttMove);
+    s->idx = 0;
 }
 
 move_t sort_next(Sort *s, const Position *pos, int *see)

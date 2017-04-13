@@ -167,7 +167,8 @@ int recurse(const Position *pos, int ply, int depth, int alpha, int beta, move_t
     }
 
     // Generate and score moves
-    Sort s(pos, depth, he.move);
+    Sort s;
+    sort_init(&s, pos, depth, he.move);
 
     int moveCount = 0, lmrCount = 0;
     move_t currentMove;

@@ -45,10 +45,12 @@ uint64_t test_search(bool perft, int depth, int threads)
 
     hash_resize(1);
     uint64_t result = 0, nodes;
-    Limits lim;
-    lim.depth = depth;
     Threads = threads;
     GameStack gameStack;
+
+    Limits lim;
+    memset(&lim, 0, sizeof(lim));
+    lim.depth = depth;
 
     Clock clock;
     clock.reset();

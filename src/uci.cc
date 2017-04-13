@@ -24,7 +24,6 @@
 
 GameStack gameStack;
 
-static Limits lim;
 static std::thread Timer;
 
 static uint64_t Hash = 1;
@@ -104,8 +103,11 @@ static void position(std::istringstream& is)
 
 static void go(std::istringstream& is)
 {
-    std::string token;
+    Limits lim;
+    memset(&lim, 0, sizeof(lim));
     lim.movestogo = 30;
+
+    std::string token;
 
     while (is >> token) {
         if (token == "depth")
