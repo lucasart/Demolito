@@ -105,6 +105,7 @@ static void go(std::istringstream& is)
 {
     Limits lim;
     memset(&lim, 0, sizeof(lim));
+    lim.depth = MAX_DEPTH;
     lim.movestogo = 30;
 
     std::string token;
