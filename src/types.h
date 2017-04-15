@@ -62,30 +62,19 @@ enum {OPENING, ENDGAME, NB_PHASE};
 
 struct eval_t {
     int op, eg;
-
-    operator bool() const { return op || eg; }
-    bool operator==(eval_t e) const { return op == e.op && eg == e.eg; }
-    bool operator!=(eval_t e) const { return !(*this == e); }
-
-    eval_t operator+(eval_t e) const { return {op + e.op, eg + e.eg}; }
-    eval_t operator-(eval_t e) const { return {op - e.op, eg - e.eg}; }
-    eval_t operator*(int x) const { return {op * x, eg * x}; }
-    eval_t operator/(int x) const { return {op / x, eg / x}; }
-
-    eval_t& operator+=(eval_t e) { return op += e.op, eg += e.eg, *this; }
-    eval_t& operator-=(eval_t e) { return op -= e.op, eg -= e.eg, *this; }
-    eval_t& operator*=(int x) { return op *= x, eg *= x, *this; }
-    eval_t& operator/=(int x) { return op /= x, eg /= x, *this; }
 };
+
+static inline void eval_add(eval_t *e1, eval_t e2) { e1->op += e2.op; e1->eg += e2.eg; }
+static inline void eval_sub(eval_t *e1, eval_t e2) { e1->op -= e2.op; e1->eg -= e2.eg; }
 
 extern const eval_t Material[NB_PIECE];
 
-#define INF    32767
-#define MATE    32000
-#define MAX_DEPTH    127
-#define MIN_DEPTH    -8
-#define MAX_PLY        (MAX_DEPTH - MIN_DEPTH + 2)
-#define MAX_GAME_PLY    1024
+enum {
+    INF = 32767, MATE = 32000,
+    MAX_DEPTH = 127, MIN_DEPTH = -8,
+    MAX_PLY = MAX_DEPTH - MIN_DEPTH + 2,
+    MAX_GAME_PLY = 1024
+};
 
 /* Clock */
 

@@ -141,7 +141,7 @@ int recurse(const Position *pos, int ply, int depth, int alpha, int beta, move_t
 
     // Null search
     if (!Qsearch && depth >= 2 && !pvNode
-            && staticEval >= beta && pos->pieceMaterial[us]) {
+            && staticEval >= beta && pos->pieceMaterial[us].eg) {
         pos_switch(&nextPos, pos);
         gs_push(&gameStacks[ThreadId], nextPos.key);
         const int nextDepth = depth - (2 + depth/3) - (refinedEval >= beta+P);

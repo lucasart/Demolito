@@ -37,11 +37,11 @@ static void clear_square(Position *pos, int c, int p, int s)
     bb_clear(&pos->byPiece[p], s);
 
     pos->pieceOn[s] = NB_PIECE;
-    pos->pst -= pst[c][p][s];
+    eval_sub(&pos->pst, pst[c][p][s]);
     pos->key ^= ZobristKey[c][p][s];
 
     if (p <= QUEEN)
-        pos->pieceMaterial[c] -= Material[p];
+        eval_sub(&pos->pieceMaterial[c], Material[p]);
     else
         pos->pawnKey ^= ZobristKey[c][p][s];
 }
@@ -56,11 +56,11 @@ static void set_square(Position *pos, int c, int p, int s)
     bb_set(&pos->byPiece[p], s);
 
     pos->pieceOn[s] = p;
-    pos->pst += pst[c][p][s];
+    eval_add(&pos->pst, pst[c][p][s]);
     pos->key ^= ZobristKey[c][p][s];
 
     if (p <= QUEEN)
-        pos->pieceMaterial[c] += Material[p];
+        eval_add(&pos->pieceMaterial[c], Material[p]);
     else
         pos->pawnKey ^= ZobristKey[c][p][s];
 }

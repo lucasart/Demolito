@@ -43,7 +43,8 @@ static eval_t score_mobility(int p0, int p, bitboard_t tss)
     };
     static const eval_t Weight[] = {{6, 10}, {11, 12}, {6, 6}, {4, 6}};
 
-    return Weight[p] * AdjustCount[p0][bb_count(tss)];
+    const int c = AdjustCount[p0][bb_count(tss)];
+    return {Weight[p].op * c, Weight[p].eg *c};
 }
 
 static eval_t mobility(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE+1])
@@ -68,7 +69,7 @@ static eval_t mobility(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
     while (fss) {
         tss = NAttacks[bb_pop_lsb(&fss)];
         attacks[us][KNIGHT] |= tss;
-        result += score_mobility(KNIGHT, KNIGHT, tss & targets);
+        eval_add(&result, score_mobility(KNIGHT, KNIGHT, tss & targets));
     }
 
     // Lateral mobility
@@ -78,7 +79,7 @@ static eval_t mobility(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
     while (fss) {
         tss = bb_rattacks(from = bb_pop_lsb(&fss), occ);
         attacks[us][piece = pos->pieceOn[from]] |= tss;
-        result += score_mobility(ROOK, pos->pieceOn[from], tss & targets);
+        eval_add(&result, score_mobility(ROOK, pos->pieceOn[from], tss & targets));
     }
 
     // Diagonal mobility
@@ -88,7 +89,7 @@ static eval_t mobility(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
     while (fss) {
         tss = bb_battacks(from = bb_pop_lsb(&fss), occ);
         attacks[us][piece = pos->pieceOn[from]] |= tss;
-        result += score_mobility(BISHOP, pos->pieceOn[from], tss & targets);
+        eval_add(&result, score_mobility(BISHOP, pos->pieceOn[from], tss & targets));
     }
 
     attacks[us][NB_PIECE] = attacks[us][KNIGHT] | attacks[us][BISHOP] | attacks[us][ROOK] |
@@ -194,9 +195,7 @@ static int safety(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_P
 
 static eval_t passer(int us, int pawn, int ourKing, int theirKing)
 {
-    static const eval_t bonus[7] = {{0, 6}, {0, 12}, {22, 30}, {66, 60}, {132, 102},
-        {220, 156}, {330, 222}
-    };
+    static const eval_t bonus[] = {{0, 6}, {0, 12}, {22, 30}, {66, 60}, {132, 102}, {220, 156}};
 
     const int n = relative_rank_of(us, pawn) - RANK_2;
 
@@ -262,14 +261,14 @@ static eval_t do_pawns(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
         if (chained) {
             const int rr = relative_rank(us, r) - RANK_2;
             const int bonus = rr * (rr + phalanx) * 3;
-            result += {8 + bonus / 2, bonus};
+            eval_add(&result, {8 + bonus / 2, bonus});
         } else if (hole)
-            result -= Hole[exposed];
+            eval_sub(&result, Hole[exposed]);
         else if (isolated)
-            result -= Isolated[exposed];
+            eval_sub(&result, Isolated[exposed]);
 
         if (passed)
-            result += passer(us, s, ourKing, theirKing);
+            eval_add(&result, passer(us, s, ourKing, theirKing));
     }
 
     return result;
@@ -286,14 +285,15 @@ static eval_t pawns(const Position *pos, bitboard_t attacks[NB_COLOR][NB_PIECE+1
         return PawnHash[idx].eval;
 
     PawnHash[idx].key = key;
-    PawnHash[idx].eval = do_pawns(pos, WHITE, attacks) - do_pawns(pos, BLACK, attacks);
+    PawnHash[idx].eval = do_pawns(pos, WHITE, attacks);
+    eval_sub(&PawnHash[idx].eval, do_pawns(pos, BLACK, attacks));
     return PawnHash[idx].eval;
 }
 
 static int blend(const Position *pos, eval_t e)
 {
     static const int full = 4 * (N + B + R) + 2 * Q;
-    const int total = (pos->pieceMaterial[WHITE] + pos->pieceMaterial[BLACK]).eg;
+    const int total = pos->pieceMaterial[WHITE].eg+ pos->pieceMaterial[BLACK].eg;
     return e.op * total / full + e.eg * (full - total) / full;
 }
 
@@ -336,16 +336,18 @@ int evaluate(const Position *pos)
 
     // Mobility first, because it fills in the attacks array
     for (int c = WHITE; c <= BLACK; ++c)
-        e[c] += mobility(pos, c, attacks);
+        eval_add(&e[c], mobility(pos, c, attacks));
 
     for (int c = WHITE; c <= BLACK; ++c) {
-        e[c] += bishop_pair(pos, c);
+        eval_add(&e[c], bishop_pair(pos, c));
         e[c].op += tactics(pos, c, attacks);
         e[c].op += safety(pos, c, attacks);
     }
 
-    e[WHITE] += pawns(pos, attacks);
+    eval_add(&e[WHITE], pawns(pos, attacks));
 
-    const int us = pos->turn, them = opposite(us);
-    return blend(pos, e[us] - e[them]);
+    eval_t stm = e[pos->turn];
+    eval_sub(&stm, e[opposite(pos->turn)]);
+
+    return blend(pos, stm);
 }

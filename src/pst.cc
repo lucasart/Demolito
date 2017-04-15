@@ -76,6 +76,11 @@ void pst_init()
             for (int s = A1; s <= H8; ++s) {
                 const int rr = relative_rank_of(c, s);
                 const int f = file_of(s);
-                pst[c][p][s] = (Material[p] + (*PstFn[p])(rr, f)) * (c == WHITE ? 1 : -1);
+
+                pst[c][p][s] = Material[p];
+                eval_add(&pst[c][p][s], (*PstFn[p])(rr, f));
+
+                if (c == BLACK)
+                    pst[c][p][s].op *= -1, pst[c][p][s].eg *= -1;
             }
 }
