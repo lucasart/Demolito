@@ -192,7 +192,7 @@ static int safety(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_P
     return result * (2 + cnt) / 4;
 }
 
-static eval_t passer(int us, int pawn, int ourKing, int theirKing, bool phalanx)
+static eval_t passer(int us, int pawn, int ourKing, int theirKing)
 {
     static const eval_t bonus[7] = {{0, 6}, {0, 12}, {22, 30}, {66, 60}, {132, 102},
         {220, 156}, {330, 222}
@@ -201,7 +201,7 @@ static eval_t passer(int us, int pawn, int ourKing, int theirKing, bool phalanx)
     const int n = relative_rank_of(us, pawn) - RANK_2;
 
     // score based on rank
-    eval_t result = phalanx ? bonus[n] : (bonus[n] + bonus[n + 1]) / 2;
+    eval_t result = bonus[n];
 
     // king distance adjustment
     if (n > 1) {
@@ -269,7 +269,7 @@ static eval_t do_pawns(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
             result -= Isolated[exposed];
 
         if (passed)
-            result += passer(us, s, ourKing, theirKing, phalanx);
+            result += passer(us, s, ourKing, theirKing);
     }
 
     return result;
