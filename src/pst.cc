@@ -22,37 +22,24 @@ static const int Center[NB_FILE] = {-5,-2, 0, 2, 2, 0,-2,-5};
 
 static eval_t knight(int r, int f)
 {
-    const eval_t CenterWeight = {10, 3};
-    return CenterWeight * (Center[r] + Center[f]);
+    const int c = Center[r] + Center[f];
+    return {10 * c, 3 * c};
 }
 
 static eval_t bishop(int r, int f)
 {
-    const eval_t CenterWeight = {2, 3};
-    const eval_t DiagonalWeight = {8, 0};
-    const eval_t BackRankWeight = {-20, 0};
-
-    return CenterWeight * (Center[r] + Center[f])
-           + DiagonalWeight * (r + f == 7 || r - f == 0)
-           + BackRankWeight * (r == RANK_1);
+    const int c = Center[r] + Center[f];
+    return {2 * c + 8 * (r + f == 7 || r - f == 0) - 20 * (r == RANK_1), 3 * c};
 }
 
 static eval_t rook(int r, int f)
 {
-    const eval_t FileWeight = {3, 0};
-    const eval_t SeventhWeight = {16, 16};
-
-    return FileWeight * Center[f]
-           + SeventhWeight * (r == RANK_7);
+    return {3 * Center[f] + 16 * (r == RANK_7), 16 * (r == RANK_7)};
 }
 
 static eval_t queen(int r, int f)
 {
-    const eval_t CenterWeight = {0, 4};
-    const eval_t BackRankWeight = {-10, 0};
-
-    return CenterWeight * (Center[r] + Center[f])
-           + BackRankWeight * (r == RANK_1);
+    return {-10 * (r == RANK_1), 4 * (Center[r] + Center[f])};
 }
 
 static eval_t king(int r, int f)
@@ -61,22 +48,18 @@ static eval_t king(int r, int f)
     static const int RankWeight[NB_RANK] = {28, 0,-28,-46,-58,-70,-70,-70};
     static const int CenterWeight = 14;
 
-    return eval_t {
-        FileWeight[f] + RankWeight[r],
-        CenterWeight * (Center[r] + Center[f])
-    };
+    return {FileWeight[f] + RankWeight[r], CenterWeight * (Center[r] + Center[f])};
 }
 
 static eval_t pawn(int r, int f)
 {
-    const eval_t PCenter = {36, 0};
     eval_t e = {0, 0};
 
     if (f == FILE_D || f == FILE_E) {
         if (r == RANK_3 || r == RANK_5)
-            e += PCenter / 2;
+            e.op = 18;
         else if (r == RANK_4)
-            e += PCenter;
+            e.op = 36;
     }
 
     return e;
