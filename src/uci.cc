@@ -85,7 +85,7 @@ static void position(std::istringstream& is)
     } else
         return;
 
-    pos_set(&p[idx], fen);
+    pos_set(&p[idx], fen.c_str());
     gs_clear(&gameStack);
     gs_push(&gameStack, p[idx].key);
 

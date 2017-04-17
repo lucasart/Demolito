@@ -129,17 +129,18 @@ static void finish(Position *pos)
     pos->pins = calc_pins(pos);
 }
 
-void pos_set(Position *pos, const std::string& fen)
+void pos_set(Position *pos, const char *fen)
 {
     clear(pos);
-    std::istringstream is(fen);
-    std::string token;
+
+    char *buffer = strdup(fen);  // we need a copy, because strtok() will butcher it
+    char *token = strtok(buffer, " ");
 
     // int placement
-    is >> token;
+    char c;
     int s = A8;
 
-    for (char c : token) {
+    while ((c = *token++)) {
         if (isdigit(c))
             s += c - '0';
         else if (c == '/')
@@ -157,9 +158,9 @@ void pos_set(Position *pos, const std::string& fen)
     }
 
     // Turn of play
-    is >> token;
+    token = strtok(NULL, " ");
 
-    if (token == "w")
+    if (token[0] == 'w')
         pos->turn = WHITE;
     else {
         pos->turn = BLACK;
@@ -167,31 +168,36 @@ void pos_set(Position *pos, const std::string& fen)
     }
 
     // Castling rights
-    is >> token;
+    token = strtok(NULL, " ");
 
-    if (token != "-") {
-        for (char c : token) {
-            const int r = isupper(c) ? RANK_1 : RANK_8;
-            c = toupper(c);
+    while ((c = *token++)) {
+        const int r = isupper(c) ? RANK_1 : RANK_8;
+        c = toupper(c);
 
-            if (c == 'K')
-                s = square(r, FILE_H);
-            else if (c == 'Q')
-                s = square(r, FILE_A);
-            else if ('A' <= c && c <= 'H')
-                s = square(r, c - 'A');
+        if (c == 'K')
+            s = square(r, FILE_H);
+        else if (c == 'Q')
+            s = square(r, FILE_A);
+        else if ('A' <= c && c <= 'H')
+            s = square(r, c - 'A');
+        else
+            break;
 
-            bb_set(&pos->castleRooks, s);
-        }
-
-        pos->key ^= zobrist_castling(pos->castleRooks);
+        bb_set(&pos->castleRooks, s);
     }
 
-    // En passant and 50 move
-    is >> token;
+    pos->key ^= zobrist_castling(pos->castleRooks);
+
+    // En passant
+    token = strtok(NULL, " ");
     pos->epSquare = string_to_square(token);
     pos->key ^= ZobristEnPassant[pos->epSquare];
-    is >> pos->rule50;
+
+    // 50 move counter
+    token = strtok(NULL, " ");
+    pos->rule50 = atoi(token);
+
+    free(buffer);
 
     finish(pos);
 }
@@ -293,10 +299,8 @@ bitboard_t pos_pieces_cpp(const Position *pos, int c, int p1, int p2)
     return pos->byColor[c] & (pos->byPiece[p1] | pos->byPiece[p2]);
 }
 
-std::string pos_get_fen(const Position *pos)
+void pos_get(const Position *pos, char *fen)
 {
-    std::ostringstream os;
-
     // int placement
     for (int r = RANK_8; r >= RANK_1; --r) {
         int cnt = 0;
@@ -306,26 +310,27 @@ std::string pos_get_fen(const Position *pos)
 
             if (bb_test(pos_pieces(pos), s)) {
                 if (cnt)
-                    os << char(cnt + '0');
+                    *fen++ = cnt + '0';
 
-                os << PieceLabel[pos_color_on(pos, s)][pos->pieceOn[s]];
+                *fen++ = PieceLabel[pos_color_on(pos, s)][pos->pieceOn[s]];
                 cnt = 0;
             } else
                 cnt++;
         }
 
         if (cnt)
-            os << char(cnt + '0');
+            *fen++ = cnt + '0';
 
-        os << (r == RANK_1 ? ' ' : '/');
+        *fen++ = r == RANK_1 ? ' ' : '/';
     }
 
     // Turn of play
-    os << (pos->turn == WHITE ? "w " : "b ");
+    *fen++ = pos->turn == WHITE ? 'w' : 'b';
+    *fen++ = ' ';
 
     // Castling rights
     if (!pos->castleRooks)
-        os << '-';
+        *fen++ = '-';
     else {
         for (int c = WHITE; c <= BLACK; ++c) {
             const bitboard_t sqs = pos->castleRooks & pos->byColor[c];
@@ -344,30 +349,25 @@ std::string pos_get_fen(const Position *pos)
             // Right side castling
             if (sqs & Ray[king][king + RIGHT]) {
                 if (Chess960)
-                    os << char(file_of(bb_lsb(sqs & Ray[king][king + RIGHT]))
-                               + (c == WHITE ? 'A' : 'a'));
+                    *fen++ = file_of(bb_lsb(sqs & Ray[king][king + RIGHT])) + (c == WHITE ? 'A' : 'a');
                 else
-                    os << PieceLabel[c][KING];
+                    *fen++ = PieceLabel[c][KING];
             }
 
             // Left side castling
             if (sqs & Ray[king][king + LEFT]) {
                 if (Chess960)
-                    os << char(file_of(bb_msb(sqs & Ray[king][king + LEFT]))
-                               + (c == WHITE ? 'A' : 'a'));
+                    *fen++ = file_of(bb_msb(sqs & Ray[king][king + LEFT])) + (c == WHITE ? 'A' : 'a');
                 else
-                    os << PieceLabel[c][QUEEN];
+                    *fen++ = PieceLabel[c][QUEEN];
             }
         }
     }
 
-    os << ' ';
-
     // En passant and 50 move
-    os << (pos->epSquare < NB_SQUARE ? square_to_string(pos->epSquare) : "-") << ' ';
-    os << pos->rule50;
-
-    return os.str();
+    char str[5];
+    square_to_string(pos->epSquare, str);
+    sprintf(fen, " %s %d", str, pos->rule50);
 }
 
 bitboard_t pos_ep_square_bb(const Position *pos)
@@ -419,15 +419,20 @@ void pos_print(const Position *pos)
         puts(line);
     }
 
-    puts(pos_get_fen(pos).c_str());
+    char fen[MAX_FEN];
+    pos_get(pos, fen);
+    puts(fen);
 
     bitboard_t b = pos->checkers;
 
     if (b) {
         puts("checkers:");
+        char str[5];
 
-        while (b)
-            printf(" %s", square_to_string(bb_pop_lsb(&b)).c_str());
+        while (b) {
+            square_to_string(bb_pop_lsb(&b), str);
+            printf(" %s", str);
+        }
 
         puts("");
     }

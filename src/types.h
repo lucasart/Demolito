@@ -39,8 +39,8 @@ int relative_rank(int c, int r);
 int relative_rank_of(int c, int s);
 int square(int r, int f);
 
-std::string square_to_string(int s);
-int string_to_square(const std::string& s);
+void square_to_string(int s, char *str);
+int string_to_square(const char *str);
 
 /* Directions */
 
@@ -73,7 +73,8 @@ enum {
     INF = 32767, MATE = 32000,
     MAX_DEPTH = 127, MIN_DEPTH = -8,
     MAX_PLY = MAX_DEPTH - MIN_DEPTH + 2,
-    MAX_GAME_PLY = 1024
+    MAX_GAME_PLY = 1024,
+    MAX_FEN = 64 + 8 + 2 + 5 + 3 + 4 + 4 + 1
 };
 
 bool score_ok(int score);

@@ -56,7 +56,7 @@ uint64_t test_search(bool perft, int depth, int threads)
     clock_gettime(CLOCK_MONOTONIC, &start);
 
     for (const std::string& fen : fens) {
-        pos_set(&rootPos, fen);
+        pos_set(&rootPos, fen.c_str());
         gs_clear(&gameStack);
         gs_push(&gameStack, rootPos.key);
         pos_print(&rootPos);

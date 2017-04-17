@@ -17,7 +17,9 @@ struct Position {
     eval_t pieceMaterial[NB_COLOR];
 };
 
-void pos_set(Position *pos, const std::string& fen);
+void pos_set(Position *pos, const char *fen);
+void pos_get(const Position *pos, char *fen);
+
 void pos_move(Position *pos, const Position *before, move_t m);
 void pos_switch(Position *pos, const Position *before);
 
@@ -25,7 +27,6 @@ bitboard_t pos_pieces(const Position* pos);
 bitboard_t pos_pieces_cp(const Position *pos, int c, int p);
 bitboard_t pos_pieces_cpp(const Position *pos, int c, int p1, int p2);
 
-std::string pos_get_fen(const Position *pos);
 bitboard_t pos_ep_square_bb(const Position *pos);
 bool pos_insufficient_material(const Position *pos);
 int pos_king_square(const Position *pos, int c);

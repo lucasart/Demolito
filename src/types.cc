@@ -58,17 +58,24 @@ int square(int r, int f)
     return NB_FILE * r + f;
 }
 
-std::string square_to_string(int s)
+void square_to_string(int s, char *str)
 {
-    BOUNDS(s, NB_SQUARE);
+    BOUNDS(s, NB_SQUARE+1);
 
-    return std::string {char(file_of(s) + 'a'), char(rank_of(s) + '1')};
+    if (s == NB_SQUARE)
+        *str++ = '-';
+    else {
+        *str++ = file_of(s) + 'a';
+        *str++ = rank_of(s) + '1';
+    }
+
+    *str = '\0';
 }
 
-int string_to_square(const std::string& s)
+int string_to_square(const char *str)
 {
-    return s != "-"
-           ? square(s[1] - '1', s[0] - 'a')
+    return *str != '-'
+           ? square(str[1] - '1', str[0] - 'a')
            : NB_SQUARE;
 }
 
