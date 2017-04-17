@@ -219,8 +219,11 @@ uint64_t gen_perft(const Position *pos, int depth)
         const uint64_t subTree = gen_perft<false>(&after, depth - 1);
         result += subTree;
 
-        if (Root)
-            printf("%s\t%" PRIu64 "\n", move_to_string(pos, *m).c_str(), subTree);
+        if (Root) {
+            char str[6];
+            move_to_string(pos, *m, str);
+            printf("%s\t%" PRIu64 "\n", str, subTree);
+        }
     }
 
     return result;

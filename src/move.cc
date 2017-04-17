@@ -58,36 +58,36 @@ bool move_is_castling(const Position *pos, move_t m)
     return bb_test(pos->byColor[pos->turn], move_to(m));
 }
 
-std::string move_to_string(const Position *pos, move_t m)
+void move_to_string(const Position *pos, move_t m, char *str)
 {
     assert(move_ok(m));
     const int from = move_from(m), to = move_to(m), prom = move_prom(m);
 
-    std::string s;
+    if (!(from | to | prom)) {
+        strcpy(str, "0000");
+        return;
+    }
 
-    if (!(from | to | prom))
-        return "0000";
+    const int _to = !Chess960 && move_is_castling(pos, m)
+                    ? (to > from ? from + 2 : from - 2)    // e1h1 -> e1g1, e1a1 -> e1c1
+                    : to;
 
-    const int _tsq = !Chess960 && move_is_castling(pos, m)
-                     ? (to > from ? from + 2 : from - 2)    // e1h1 -> e1g1, e1a1 -> e1c1
-                     : to;
-
-    s += file_of(from) + 'a';
-    s += rank_of(from) + '1';
-    s += file_of(_tsq) + 'a';
-    s += rank_of(_tsq) + '1';
+    *str++ = file_of(from) + 'a';
+    *str++ = rank_of(from) + '1';
+    *str++ = file_of(_to) + 'a';
+    *str++ = rank_of(_to) + '1';
 
     if (prom < NB_PIECE)
-        s += PieceLabel[BLACK][prom];
+        *str++ = PieceLabel[BLACK][prom];
 
-    return s;
+    *str = '\0';
 }
 
-void move_from_string(const Position *pos, const std::string& s, move_t *m)
+move_t string_to_move(const Position *pos, const char *str)
 {
-    const int prom = s[4] ? (int)PieceLabel[BLACK].find(s[4]) : NB_PIECE;
-    int from = square(s[1] - '1', s[0] - 'a');
-    int to = square(s[3] - '1', s[2] - 'a');
+    const int prom = str[4] ? (int)(strchr(PieceLabel[BLACK], str[4]) - PieceLabel[BLACK]) : NB_PIECE;
+    int from = square(str[1] - '1', str[0] - 'a');
+    int to = square(str[3] - '1', str[2] - 'a');
 
     if (!Chess960 && pos->pieceOn[from] == KING) {
         if (to == from + 2)  // e1g1 -> e1h1
@@ -96,8 +96,7 @@ void move_from_string(const Position *pos, const std::string& s, move_t *m)
             to -= 2;
     }
 
-    *m = move_build(from, to, prom);
-    assert(move_ok(*m));
+    return move_build(from, to, prom);
 }
 
 bool move_is_legal(const Position *pos, move_t m)

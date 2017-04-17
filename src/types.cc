@@ -13,6 +13,7 @@
  * You should have received a copy of the GNU General Public License along with this program. If
  * not, see <http://www.gnu.org/licenses/>.
 */
+#include <algorithm>
 #include "types.h"
 
 bool Chess960 = false;
@@ -123,4 +124,4 @@ int64_t elapsed_msec(const struct timespec *start)
            + (finish.tv_nsec - start->tv_nsec) / 1000000;
 }
 
-const std::string PieceLabel[NB_COLOR] = {"NBRQKP.", "nbrqkp."};
+const char *PieceLabel[NB_COLOR] = {"NBRQKP.", "nbrqkp."};

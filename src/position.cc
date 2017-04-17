@@ -147,7 +147,7 @@ void pos_set(Position *pos, const char *fen)
             s += 2 * DOWN;
         else {
             for (int col = WHITE; col <= BLACK; ++col) {
-                const int p = PieceLabel[col].find(c);
+                const int p = strchr(PieceLabel[col], c) - PieceLabel[col];
 
                 if (unsigned(p) < NB_PIECE) {
                     set_square(pos, col, p, s);

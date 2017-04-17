@@ -5,7 +5,6 @@
 #include <string.h>
 #include <assert.h>
 #include <stdio.h>
-#include <string>
 #include <time.h>
 
 extern bool Chess960;
@@ -84,4 +83,4 @@ int mate_in(int ply);
 
 extern int64_t elapsed_msec(const struct timespec *start);
 
-extern const std::string PieceLabel[NB_COLOR];
+extern const char *PieceLabel[NB_COLOR];

@@ -91,8 +91,7 @@ static void position(std::istringstream& is)
 
     // Parse moves (if any)
     while (is >> token) {
-        move_t m;
-        move_from_string(&p[idx], token, &m);
+        move_t m = string_to_move(&p[idx], token.c_str());
         pos_move(&p[idx^1], &p[idx], m);
         idx ^= 1;
         gs_push(&gameStack, p[idx].key);
@@ -211,9 +210,8 @@ void info_update(Info *info, int depth, int score, int64_t nodes, move_t pv[], b
 
         info->lastDepth = depth;
 
-        std::ostringstream os;
-        os << "info depth " << depth << " score " << uci_format_score(score)
-           << " time " << elapsed_msec(&info->start) << " nodes " << nodes << " pv";
+        printf("info depth %d score %s time %" PRId64 " nodes %" PRId64 " pv",
+               depth, uci_format_score(score).c_str(), elapsed_msec(&info->start), nodes);
 
         // Because of e1g1 notation when Chess960 = false, we need to play the PV, just to
         // be able to print it. This is a defect of the UCI protocol (which should have
@@ -223,20 +221,24 @@ void info_update(Info *info, int depth, int score, int64_t nodes, move_t pv[], b
         p[idx] = rootPos;
 
         for (int i = 0; pv[i]; i++) {
-            os << ' ' << move_to_string(&p[idx], pv[i]);
+            char str[6];
+            move_to_string(&p[idx], pv[i], str);
+            printf(" %s", str);
             pos_move(&p[idx^1], &p[idx], pv[i]);
             idx ^= 1;
         }
 
-        puts(os.str().c_str());
+        puts("");
     }
 }
 
 void info_print_bestmove(const Info *info)
 {
     std::lock_guard<std::mutex> lk(info->mtx);
-    printf("bestmove %s ponder %s\n", move_to_string(&rootPos, info->best).c_str(),
-           move_to_string(&rootPos, info->ponder).c_str());
+    char best[6], ponder[6];
+    move_to_string(&rootPos, info->best, best);
+    move_to_string(&rootPos, info->ponder, ponder);
+    printf("bestmove %s ponder %s\n", best, ponder);
 }
 
 move_t info_best(const Info *info)
