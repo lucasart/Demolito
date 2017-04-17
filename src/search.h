@@ -12,9 +12,9 @@ extern std::atomic<uint64_t> signal;
 #define STOP    uint64_t(-1)
 
 struct Limits {
-    int depth, movetime, movestogo, time, inc;
-    uint64_t nodes;
+    int depth, movestogo;
+    int64_t movetime, time, inc, nodes;
 };
 
 void search_init();
-uint64_t search_go(const Limits& lim, const GameStack& gameStack);
+int64_t search_go(const Limits& lim, const GameStack& gameStack);

@@ -6,7 +6,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <string>
-#include <chrono>
+#include <time.h>
 
 extern bool Chess960;
 
@@ -76,20 +76,11 @@ enum {
     MAX_GAME_PLY = 1024
 };
 
-/* Clock */
-
-class Clock {
-    std::chrono::time_point<std::chrono::high_resolution_clock> start;
-public:
-    void reset();
-    std::chrono::milliseconds::rep elapsed();
-};
-
 bool score_ok(int score);
 bool is_mate_score(int score);
 int mated_in(int ply);
 int mate_in(int ply);
 
-/* Display */
+extern int64_t elapsed_msec(const struct timespec *start);
 
 extern const std::string PieceLabel[NB_COLOR];

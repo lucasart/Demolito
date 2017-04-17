@@ -27,7 +27,7 @@ GameStack gameStack;
 static std::thread Timer;
 
 static uint64_t Hash = 1;
-static int TimeBuffer = 30;
+static int64_t TimeBuffer = 30;
 
 static void intro()
 {
@@ -38,7 +38,7 @@ static void intro()
     printf("option name Hash type spin default %" PRIu64 " min 1 max 1048576\n", Hash);
     printf("option name Threads type spin default %d min 1 max 64\n", Threads);
     printf("option name Contempt type spin default %d min -100 max 100\n", Contempt);
-    printf("option name Time Buffer type spin default %d min 0 max 1000\n", TimeBuffer);
+    printf("option name Time Buffer type spin default %" PRId64 " min 0 max 1000\n", TimeBuffer);
     puts("uciok");
 }
 
@@ -195,10 +195,10 @@ void info_clear(Info *info)
 {
     info->lastDepth = 0;
     info->best = info->ponder = 0;
-    info->clock.reset();
+    clock_gettime(CLOCK_MONOTONIC, &info->start);
 }
 
-void info_update(Info *info, int depth, int score, uint64_t nodes, move_t pv[], bool partial)
+void info_update(Info *info, int depth, int score, int64_t nodes, move_t pv[], bool partial)
 {
     std::lock_guard<std::mutex> lk(info->mtx);
 
@@ -212,11 +212,8 @@ void info_update(Info *info, int depth, int score, uint64_t nodes, move_t pv[], 
         info->lastDepth = depth;
 
         std::ostringstream os;
-        const auto elapsed = info->clock.elapsed() + 1;  // Prevent division by zero
-
         os << "info depth " << depth << " score " << uci_format_score(score)
-           << " time " << elapsed << " nodes " << nodes
-           << " nps " << (1000 * nodes / elapsed) << " pv";
+           << " time " << elapsed_msec(&info->start) << " nodes " << nodes << " pv";
 
         // Because of e1g1 notation when Chess960 = false, we need to play the PV, just to
         // be able to print it. This is a defect of the UCI protocol (which should have

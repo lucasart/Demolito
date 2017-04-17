@@ -14,7 +14,6 @@
  * not, see <http://www.gnu.org/licenses/>.
 */
 #include <thread>
-#include <chrono>
 #include <algorithm>  // std::min and std::max
 #include <math.h>
 #include "search.h"
@@ -34,11 +33,11 @@ thread_local int ThreadId;
 
 // Per thread data
 GameStack *gameStacks;
-uint64_t *nodeCounts;
+int64_t *nodeCounts;
 
-uint64_t count_nodes()
+int64_t count_nodes()
 {
-    uint64_t total = 0;
+    int64_t total = 0;
 
     for (int i = 0; i < Threads; total += nodeCounts[i++]);
 
@@ -392,17 +391,18 @@ void iterate(const Limits& lim, const GameStack& initialGameStack, int iteration
     signal = STOP;
 }
 
-uint64_t search_go(const Limits& lim, const GameStack& initialGameStack)
+int64_t search_go(const Limits& lim, const GameStack& initialGameStack)
 {
-    using namespace std::chrono;
-    const auto start = high_resolution_clock::now();
+    struct timespec start;
+    static const struct timespec resolution = {0, 5000000};  // 5ms
 
+    clock_gettime(CLOCK_MONOTONIC, &start);
     info_clear(&ui);
     signal = 0;
 
     int *iterations = (int *)calloc(Threads, sizeof(int));  // FIXME: C++ needs cast
     gameStacks = (GameStack *)malloc(Threads * sizeof(GameStack));  // FIXME: C++ needs cast
-    nodeCounts = (uint64_t *)calloc(Threads, sizeof(uint64_t));  // FIXME: C++ needs cast
+    nodeCounts = (int64_t *)calloc(Threads, sizeof(int64_t));  // FIXME: C++ needs cast
 
     std::thread threads[Threads];
 
@@ -416,7 +416,7 @@ uint64_t search_go(const Limits& lim, const GameStack& initialGameStack)
     }
 
     do {
-        std::this_thread::sleep_for(milliseconds(5));
+        nanosleep(&resolution, NULL);
 
         // Check for search termination conditions, but only after depth 1 has been
         // completed, to make sure we do not return an illegal move.
@@ -424,8 +424,7 @@ uint64_t search_go(const Limits& lim, const GameStack& initialGameStack)
             if (lim.nodes && count_nodes() >= lim.nodes) {
                 std::lock_guard<std::mutex> lk(mtxSchedule);
                 signal = STOP;
-            } else if (lim.movetime && duration_cast<milliseconds>
-                       (high_resolution_clock::now() - start).count() >= lim.movetime) {
+            } else if (lim.movetime && elapsed_msec(&start) >= lim.movetime) {
                 std::lock_guard<std::mutex> lk(mtxSchedule);
                 signal = STOP;
             }
@@ -437,7 +436,7 @@ uint64_t search_go(const Limits& lim, const GameStack& initialGameStack)
 
     info_print_bestmove(&ui);
 
-    const uint64_t nodes = count_nodes();
+    const int64_t nodes = count_nodes();
 
     free(gameStacks);
     free(nodeCounts);

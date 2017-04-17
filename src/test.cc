@@ -52,8 +52,8 @@ uint64_t test_search(bool perft, int depth, int threads)
     memset(&lim, 0, sizeof(lim));
     lim.depth = depth;
 
-    Clock clock;
-    clock.reset();
+    struct timespec start;
+    clock_gettime(CLOCK_MONOTONIC, &start);
 
     for (const std::string& fen : fens) {
         pos_set(&rootPos, fen);
@@ -74,7 +74,7 @@ uint64_t test_search(bool perft, int depth, int threads)
     if (dbgCnt[1])
         printf("dbgCnt[0] = %" PRId64 ", dbgCnt[1] = %" PRId64 "\n", dbgCnt[0], dbgCnt[1]);
 
-    printf("kn/s: %" PRIu64 "\n", result / clock.elapsed());
+    printf("kn/s: %" PRIu64 "\n", result / elapsed_msec(&start));
 
     return result;
 }

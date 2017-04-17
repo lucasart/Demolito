@@ -81,20 +81,6 @@ int push_inc(int c)
     return c == WHITE ? UP : DOWN;
 }
 
-/* Clock */
-
-void Clock::reset()
-{
-    start = std::chrono::high_resolution_clock::now();
-}
-
-std::chrono::milliseconds::rep Clock::elapsed()
-{
-    const auto stop = std::chrono::high_resolution_clock::now();
-    return std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count();
-}
-
-
 /* Eval */
 
 const eval_t Material[NB_PIECE] = {{N, N}, {B, B}, {R, R}, {Q, Q}, {0, 0}, {OP, EP}};
@@ -120,6 +106,14 @@ int mate_in(int ply)
     return MATE - ply;
 }
 
-/* Display */
+/* Misc */
+
+int64_t elapsed_msec(const struct timespec *start)
+{
+    struct timespec finish;
+    clock_gettime(CLOCK_MONOTONIC, &finish);
+    return (finish.tv_sec - start->tv_sec) * 1000
+           + (finish.tv_nsec - start->tv_nsec) / 1000000;
+}
 
 const std::string PieceLabel[NB_COLOR] = {"NBRQKP.", "nbrqkp."};
