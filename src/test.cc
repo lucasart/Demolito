@@ -54,7 +54,7 @@ uint64_t test_search(bool perft, int depth, int threads)
     lim.depth = depth;
 
     struct timespec start;
-    clock_gettime(CLOCK_MONOTONIC, &start);
+    clock_gettime(CLOCK_MONOTONIC, &start);  // FIXME: POSIX only
 
     for (int i = 0; fens[i]; i++) {
         pos_set(&rootPos, fens[i]);

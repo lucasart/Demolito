@@ -118,6 +118,7 @@ int mate_in(int ply)
 
 int64_t elapsed_msec(const struct timespec *start)
 {
+    // FIXME: POSIX only
     struct timespec finish;
     clock_gettime(CLOCK_MONOTONIC, &finish);
     return (finish.tv_sec - start->tv_sec) * 1000

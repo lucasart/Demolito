@@ -196,7 +196,7 @@ void info_clear(Info *info)
 {
     info->lastDepth = 0;
     info->best = info->ponder = 0;
-    clock_gettime(CLOCK_MONOTONIC, &info->start);
+    clock_gettime(CLOCK_MONOTONIC, &info->start);  // FIXME: POSIX only
 }
 
 void info_update(Info *info, int depth, int score, int64_t nodes, move_t pv[], bool partial)

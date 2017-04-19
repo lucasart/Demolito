@@ -396,7 +396,7 @@ int64_t search_go(const Limits& lim, const GameStack& initialGameStack)
     struct timespec start;
     static const struct timespec resolution = {0, 5000000};  // 5ms
 
-    clock_gettime(CLOCK_MONOTONIC, &start);
+    clock_gettime(CLOCK_MONOTONIC, &start);  // FIXME: POSIX only
     info_clear(&ui);
     signal = 0;
 
@@ -416,7 +416,7 @@ int64_t search_go(const Limits& lim, const GameStack& initialGameStack)
     }
 
     do {
-        nanosleep(&resolution, NULL);
+        nanosleep(&resolution, NULL);  // FIXME: POSIX only
 
         // Check for search termination conditions, but only after depth 1 has been
         // completed, to make sure we do not return an illegal move.
