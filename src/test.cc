@@ -13,7 +13,6 @@
  * You should have received a copy of the GNU General Public License along with this program. If
  * not, see <http://www.gnu.org/licenses/>.
 */
-#include <string>
 #include "test.h"
 #include "search.h"
 #include "gen.h"
@@ -21,7 +20,7 @@
 
 uint64_t test_search(bool perft, int depth, int threads)
 {
-    const std::string fens[] = {
+    const char *fens[] = {
         "r1bqkbnr/pp1ppppp/2n5/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 0 1",
         "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",
         "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1",
@@ -41,7 +40,8 @@ uint64_t test_search(bool perft, int depth, int threads)
         "2r5/8/1n6/1P1p1pkp/p2P4/R1P1PKP1/8/1R6 w - - 0 1",
         "r2q1rk1/1b1nbppp/4p3/3pP3/p1pP4/PpP2N1P/1P3PP1/R1BQRNK1 b - - 0 1",
         "6k1/5pp1/7p/p1p2n1P/P4N2/6P1/1P3P1K/8 w - - 0 35",
-        "r4rk1/1pp1q1pp/p2p4/3Pn3/1PP1Pp2/P7/3QB1PP/2R2RK1 b - - 0 1"
+        "r4rk1/1pp1q1pp/p2p4/3Pn3/1PP1Pp2/P7/3QB1PP/2R2RK1 b - - 0 1",
+        NULL
     };
 
     hash_resize(1);
@@ -56,8 +56,8 @@ uint64_t test_search(bool perft, int depth, int threads)
     struct timespec start;
     clock_gettime(CLOCK_MONOTONIC, &start);
 
-    for (const std::string& fen : fens) {
-        pos_set(&rootPos, fen.c_str());
+    for (int i = 0; fens[i]; i++) {
+        pos_set(&rootPos, fens[i]);
         gs_clear(&gameStack);
         gs_push(&gameStack, rootPos.key);
         pos_print(&rootPos);

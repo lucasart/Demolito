@@ -139,7 +139,9 @@ static void go(std::istringstream& is)
 static void eval()
 {
     pos_print(&rootPos);
-    printf("score %s\n", uci_format_score(evaluate(&rootPos)).c_str());
+    char str[12];
+    uci_format_score(evaluate(&rootPos), str);
+    printf("score %s\n", str);
 }
 
 static void perft(std::istringstream& is)
@@ -210,8 +212,10 @@ void info_update(Info *info, int depth, int score, int64_t nodes, move_t pv[], b
 
         info->lastDepth = depth;
 
+        char str[12];
+        uci_format_score(score, str);
         printf("info depth %d score %s time %" PRId64 " nodes %" PRId64 " pv",
-               depth, uci_format_score(score).c_str(), elapsed_msec(&info->start), nodes);
+               depth, str, elapsed_msec(&info->start), nodes);
 
         // Because of e1g1 notation when Chess960 = false, we need to play the PV, just to
         // be able to print it. This is a defect of the UCI protocol (which should have
@@ -221,7 +225,6 @@ void info_update(Info *info, int depth, int score, int64_t nodes, move_t pv[], b
         p[idx] = rootPos;
 
         for (int i = 0; pv[i]; i++) {
-            char str[6];
             move_to_string(&p[idx], pv[i], str);
             printf(" %s", str);
             pos_move(&p[idx^1], &p[idx], pv[i]);
@@ -253,17 +256,10 @@ int info_last_depth(const Info *info)
     return info->lastDepth;
 }
 
-std::string uci_format_score(int score)
+void uci_format_score(int score, char *str)
 {
-    std::ostringstream os;
-
-    if (is_mate_score(score)) {
-        const int dtm = score > 0
-                        ? (MATE - score + 1) / 2
-                        : (score - MATE + 1) / 2;
-        os << "mate " << dtm;
-    } else
-        os << "cp " << score * 100 / EP;
-
-    return os.str();
+    if (is_mate_score(score))
+        sprintf(str, "mate %d", score > 0 ? (MATE - score + 1) / 2 : (score - MATE + 1) / 2);
+    else
+        sprintf(str, "cp %d", score * 100 / EP);
 }

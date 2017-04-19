@@ -31,11 +31,9 @@ int main(int argc, char **argv)
     search_init();
 
     if (argc >= 2) {
-        const std::string cmd(argv[1]);
-
-        if ((cmd == "perft" || cmd == "search") && argc >= 4) {
+        if ((!strcmp(argv[1], "perft") || !strcmp(argv[1], "search")) && argc >= 4) {
             const int depth = std::stoi(argv[2]), threads = std::stoi(argv[3]);
-            const uint64_t nodes = test_search(cmd == "perft", depth, threads);
+            const uint64_t nodes = test_search(!strcmp(argv[1], "perft"), depth, threads);
             printf("total = %" PRIu64 "\n", nodes);
         }
     } else

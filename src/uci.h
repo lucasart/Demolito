@@ -21,4 +21,4 @@ void info_print_bestmove(const Info *info);
 move_t info_best(const Info *info);
 int info_last_depth(const Info *info);
 
-std::string uci_format_score(int score);
+void uci_format_score(int score, char *str);
