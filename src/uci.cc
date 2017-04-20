@@ -13,8 +13,6 @@
  * You should have received a copy of the GNU General Public License along with this program. If
  * not, see <http://www.gnu.org/licenses/>.
 */
-#include <iostream>
-#include <sstream>
 #include <thread>
 #include "uci.h"
 #include "eval.h"
@@ -42,56 +40,55 @@ static void intro()
     puts("uciok");
 }
 
-static void setoption(std::istringstream& is)
+static void setoption(char **linePos)
 {
-    std::string token, name;
+    const char *token = strtok_r(NULL, " \n", linePos);
+    char name[32] = "";
 
-    is >> token;
-
-    if (token != "name")
+    if (strcmp(token, "name"))
         return;
 
-    while ((is >> token) && token != "value")
-        name += token;
+    while ((token = strtok_r(NULL, " \n", linePos)) && strcmp(token,"value"))
+        strcat(name, token);
 
-    if (name == "UCI_Chess960")
-        is >> std::boolalpha >> Chess960;
-    else if (name == "Hash") {
-        is >> Hash;
-        Hash = 1ULL << bb_msb(Hash);    // must be a power of two
+    if (!strcmp(name, "UCI_Chess960"))
+        Chess960 = !strcmp(strtok_r(NULL, " \n", linePos), "true");
+    else if (!strcmp(name, "Hash")) {
+        Hash = atoi(strtok_r(NULL, " \n", linePos));
+        Hash = 1ULL << bb_msb(Hash);  // must be a power of two
         hash_resize(Hash);
-    } else if (name == "Threads")
-        is >> Threads;
-    else if (name == "Contempt")
-        is >> Contempt;
-    else if (name == "TimeBuffer")
-        is >> TimeBuffer;
+    } else if (!strcmp(name, "Threads"))
+        Threads = atoi(strtok_r(NULL, " \n", linePos));
+    else if (!strcmp(name, "Contempt"))
+        Contempt = atoi(strtok_r(NULL, " \n", linePos));
+    else if (!strcmp(name, "TimeBuffer"))
+        TimeBuffer = atoi(strtok_r(NULL, " \n", linePos));
 }
 
-static void position(std::istringstream& is)
+static void position(char **linePos)
 {
     Position p[NB_COLOR];
     int idx = 0;
 
-    std::string token, fen;
-    is >> token;
+    const char *token = strtok_r(NULL, " \n", linePos);
+    char fen[MAX_FEN] = "";
 
-    if (token == "startpos") {
-        fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-        is >> token;    // consume "moves" token (if present)
-    } else if (token == "fen") {
-        while (is >> token && token != "moves")
-            fen += token + " ";
+    if (!strcmp(token, "startpos")) {
+        strcpy(fen, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+        strtok_r(NULL, " \n", linePos);  // consume "moves" token (if present)
+    } else if (!strcmp(token, "fen")) {
+        while ((token = strtok_r(NULL, " \n", linePos)) && strcmp(token, "moves"))
+            strcat(strcat(fen, token), " ");
     } else
         return;
 
-    pos_set(&p[idx], fen.c_str());
+    pos_set(&p[idx], fen);
     gs_clear(&gameStack);
     gs_push(&gameStack, p[idx].key);
 
     // Parse moves (if any)
-    while (is >> token) {
-        move_t m = string_to_move(&p[idx], token.c_str());
+    while ((token = strtok_r(NULL, " \n", linePos))) {
+        move_t m = string_to_move(&p[idx], token);
         pos_move(&p[idx^1], &p[idx], m);
         idx ^= 1;
         gs_push(&gameStack, p[idx].key);
@@ -100,29 +97,31 @@ static void position(std::istringstream& is)
     rootPos = p[idx];
 }
 
-static void go(std::istringstream& is)
+static void go(char **linePos)
 {
     Limits lim;
     memset(&lim, 0, sizeof(lim));
     lim.depth = MAX_DEPTH;
     lim.movestogo = 30;
 
-    std::string token;
+    const char *token;
 
-    while (is >> token) {
-        if (token == "depth")
-            is >> lim.depth;
-        else if (token == "nodes")
-            is >> lim.nodes;
-        else if (token == "movetime") {
-            is >> lim.movetime;
+    while ((token = strtok_r(NULL, " \n", linePos))) {
+        if (!strcmp(token, "depth"))
+            lim.depth = atoi(strtok_r(NULL, " \n", linePos));
+        else if (!strcmp(token, "nodes"))
+            lim.nodes = atoll(strtok_r(NULL, " \n", linePos));
+        else if (!strcmp(token, "movetime")) {
+            lim.movetime = atoll(strtok_r(NULL, " \n", linePos));
             lim.movetime -= TimeBuffer;
-        } else if (token == "movestogo")
-            is >> lim.movestogo;
-        else if ((rootPos.turn == WHITE && token == "wtime") || (rootPos.turn == BLACK && token == "btime"))
-            is >> lim.time;
-        else if ((rootPos.turn == WHITE && token == "winc") || (rootPos.turn == BLACK && token == "binc"))
-            is >> lim.inc;
+        } else if (!strcmp(token, "movestogo"))
+            lim.movestogo = atoi(strtok_r(NULL, " \n", linePos));
+        else if ((rootPos.turn == WHITE && !strcmp(token, "wtime")) || (rootPos.turn == BLACK
+                 && !strcmp(token, "btime")))
+            lim.time = atoll(strtok_r(NULL, " \n", linePos));
+        else if ((rootPos.turn == WHITE && !strcmp(token, "winc")) || (rootPos.turn == BLACK
+                 && !strcmp(token, "binc")))
+            lim.inc = atoll(strtok_r(NULL, " \n", linePos));
     }
 
     if (lim.time || lim.inc) {
@@ -144,11 +143,9 @@ static void eval()
     printf("score %s\n", str);
 }
 
-static void perft(std::istringstream& is)
+static void perft(char **linePos)
 {
-    int depth;
-    is >> depth;
-
+    const int depth = atoi(strtok_r(NULL, " \n", linePos));
     pos_print(&rootPos);
     printf("perft = %" PRIu64 "\n", gen_perft(&rootPos, depth));
 }
@@ -157,36 +154,38 @@ Info ui;
 
 void uci_loop()
 {
-    std::string command, token;
+    char *line = NULL, *linePos;
+    size_t n = 0;
 
-    while (std::getline(std::cin, command)) {
-        std::istringstream is(command);
-        is >> token;
+    while (getline(&line, &n, stdin)) {
+        const char *token = strtok_r(line, " \n", &linePos);
 
-        if (token == "uci")
+        if (!strcmp(token, "uci"))
             intro();
-        else if (token == "setoption")
-            setoption(is);
-        else if (token == "isready")
+        else if (!strcmp(token, "setoption"))
+            setoption(&linePos);
+        else if (!strcmp(token, "isready"))
             puts("readyok");
-        else if (token == "ucinewgame") {
+        else if (!strcmp(token, "ucinewgame")) {
             hash_resize(Hash);
             memset(HashTable, 0, Hash << 20);
-        } else if (token == "position")
-            position(is);
-        else if (token == "go")
-            go(is);
-        else if (token == "stop")
+        } else if (!strcmp(token, "position"))
+            position(&linePos);
+        else if (!strcmp(token, "go"))
+            go(&linePos);
+        else if (!strcmp(token, "stop"))
             signal = STOP;
-        else if (token == "eval")
+        else if (!strcmp(token, "eval"))
             eval();
-        else if (token == "perft")
-            perft(is);
-        else if (token == "quit")
+        else if (!strcmp(token, "perft"))
+            perft(&linePos);
+        else if (!strcmp(token, "quit"))
             break;
         else
-            printf("unknown command: %s\n", command.c_str());
+            printf("unknown command: %s\n", line);
     }
+
+    free(line);
 
     if (Timer.joinable())
         Timer.join();

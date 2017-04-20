@@ -134,8 +134,8 @@ void pos_set(Position *pos, const char *fen)
 {
     clear(pos);
 
-    char *buffer = strdup(fen);  // we need a copy, because strtok() will butcher it
-    char *token = strtok(buffer, " ");
+    char *str = strdup(fen), *strPos;
+    char *token = strtok_r(str, " ", &strPos);
 
     // int placement
     char c;
@@ -159,7 +159,7 @@ void pos_set(Position *pos, const char *fen)
     }
 
     // Turn of play
-    token = strtok(NULL, " ");
+    token = strtok_r(NULL, " ", &strPos);
 
     if (token[0] == 'w')
         pos->turn = WHITE;
@@ -169,7 +169,7 @@ void pos_set(Position *pos, const char *fen)
     }
 
     // Castling rights
-    token = strtok(NULL, " ");
+    token = strtok_r(NULL, " ", &strPos);
 
     while ((c = *token++)) {
         const int r = isupper(c) ? RANK_1 : RANK_8;
@@ -190,15 +190,15 @@ void pos_set(Position *pos, const char *fen)
     pos->key ^= zobrist_castling(pos->castleRooks);
 
     // En passant
-    token = strtok(NULL, " ");
+    token = strtok_r(NULL, " ", &strPos);
     pos->epSquare = string_to_square(token);
     pos->key ^= ZobristEnPassant[pos->epSquare];
 
     // 50 move counter
-    token = strtok(NULL, " ");
+    token = strtok_r(NULL, " ", &strPos);
     pos->rule50 = atoi(token);
 
-    free(buffer);
+    free(str);
 
     finish(pos);
 }
