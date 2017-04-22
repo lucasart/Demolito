@@ -17,20 +17,11 @@
 #include "move.h"
 #include "bitboard.h"
 
-template <bool Promotion>
-static move_t *serialize_moves(int from, bitboard_t tss, move_t *mList, bool subPromotions = true)
+static move_t *serialize_moves(int from, bitboard_t tss, move_t *mList)
 {
     while (tss) {
         const int to = bb_pop_lsb(&tss);
-
-        if (Promotion) {
-            if (subPromotions) {
-                for (int prom = QUEEN; prom >= KNIGHT; --prom)
-                    *mList++ = move_build(from, to, prom);
-            } else
-                *mList++ = move_build(from, to, QUEEN);
-        } else
-            *mList++ = move_build(from, to, NB_PIECE);
+        *mList++ = move_build(from, to, NB_PIECE);
     }
 
     return mList;
@@ -63,7 +54,7 @@ move_t *gen_pawn_moves(const Position *pos, move_t *mList, bitboard_t targets, b
         }
 
         // Generate moves
-        mList = serialize_moves<false>(from, tss, mList);
+        mList = serialize_moves(from, tss, mList);
     }
 
     // Promotions
@@ -78,8 +69,16 @@ move_t *gen_pawn_moves(const Position *pos, move_t *mList, bitboard_t targets, b
         if (bb_test(targets & ~pos_pieces(pos), from + push))
             bb_set(&tss, from + push);
 
-        // Generate moves (or promotions)
-        mList = serialize_moves<true>(from, tss, mList, subPromotions);
+        // Generate promotions
+        while (tss) {
+            const int to = bb_pop_lsb(&tss);
+
+            if (subPromotions) {
+                for (int prom = QUEEN; prom >= KNIGHT; --prom)
+                    *mList++ = move_build(from, to, prom);
+            } else
+                *mList++ = move_build(from, to, QUEEN);
+        }
     }
 
     return mList;
@@ -95,7 +94,7 @@ move_t *gen_piece_moves(const Position *pos, move_t *mList, bitboard_t targets, 
     if (kingMoves) {
         from = pos_king_square(pos, us);
         tss = KAttacks[from] & targets;
-        mList = serialize_moves<false>(from, tss, mList);
+        mList = serialize_moves(from, tss, mList);
     }
 
     // Knight moves
@@ -104,7 +103,7 @@ move_t *gen_piece_moves(const Position *pos, move_t *mList, bitboard_t targets, 
     while (fss) {
         from = bb_pop_lsb(&fss);
         tss = NAttacks[from] & targets;
-        mList = serialize_moves<false>(from, tss, mList);
+        mList = serialize_moves(from, tss, mList);
     }
 
     // Rook moves
@@ -113,7 +112,7 @@ move_t *gen_piece_moves(const Position *pos, move_t *mList, bitboard_t targets, 
     while (fss) {
         from = bb_pop_lsb(&fss);
         tss = bb_rattacks(from, pos_pieces(pos)) & targets;
-        mList = serialize_moves<false>(from, tss, mList);
+        mList = serialize_moves(from, tss, mList);
     }
 
     // Bishop moves
@@ -122,7 +121,7 @@ move_t *gen_piece_moves(const Position *pos, move_t *mList, bitboard_t targets, 
     while (fss) {
         from = bb_pop_lsb(&fss);
         tss = bb_battacks(from, pos_pieces(pos)) & targets;
-        mList = serialize_moves<false>(from, tss, mList);
+        mList = serialize_moves(from, tss, mList);
     }
 
     return mList;
@@ -157,7 +156,7 @@ move_t *gen_check_escapes(const Position *pos, move_t *mList, bool subPromotions
 
     // King moves
     tss = KAttacks[king] & ~ours;
-    mList = serialize_moves<false>(king, tss, mList);
+    mList = serialize_moves(king, tss, mList);
 
     if (!bb_several(pos->checkers)) {
         // Single checker
@@ -187,20 +186,19 @@ move_t *gen_check_escapes(const Position *pos, move_t *mList, bool subPromotions
 move_t *gen_all_moves(const Position *pos, move_t *mList)
 {
     if (pos->checkers)
-        return gen_check_escapes(pos, mList);
+        return gen_check_escapes(pos, mList, true);
     else {
         bitboard_t targets = ~pos->byColor[pos->turn];
         move_t *m = mList;
 
-        m = gen_pawn_moves(pos, m, targets);
-        m = gen_piece_moves(pos, m, targets);
+        m = gen_pawn_moves(pos, m, targets, true);
+        m = gen_piece_moves(pos, m, targets, true);
         m = gen_castling_moves(pos, m);
         return m;
     }
 }
 
-template <bool Root>
-uint64_t gen_perft(const Position *pos, int depth)
+uint64_t gen_perft(const Position *pos, int depth, int ply)
 {
     // Do not use bulk-counting. It's faster, but falses profiling results.
     if (depth <= 0)
@@ -216,10 +214,10 @@ uint64_t gen_perft(const Position *pos, int depth)
             continue;
 
         pos_move(&after, pos, *m);
-        const uint64_t subTree = gen_perft<false>(&after, depth - 1);
+        const uint64_t subTree = gen_perft(&after, depth-1, ply+1);
         result += subTree;
 
-        if (Root) {
+        if (!ply) {
             char str[6];
             move_to_string(pos, *m, str);
             printf("%s\t%" PRIu64 "\n", str, subTree);
@@ -228,5 +226,3 @@ uint64_t gen_perft(const Position *pos, int depth)
 
     return result;
 }
-
-template uint64_t gen_perft<true>(const Position *pos, int depth);

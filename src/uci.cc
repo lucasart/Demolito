@@ -155,7 +155,7 @@ static void perft(char **linePos)
 {
     const int depth = atoi(strtok_r(NULL, " \n", linePos));
     pos_print(&rootPos);
-    printf("perft = %" PRIu64 "\n", gen_perft(&rootPos, depth));
+    printf("perft = %" PRIu64 "\n", gen_perft(&rootPos, depth, 0));
 }
 
 Info ui;

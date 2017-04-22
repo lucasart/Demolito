@@ -63,7 +63,7 @@ uint64_t test_search(bool perft, int depth, int threads)
         pos_print(&rootPos);
 
         if (perft) {
-            nodes = gen_perft(&rootPos, depth);
+            nodes = gen_perft(&rootPos, depth, 0);
             printf("perft(%d) = %" PRIu64 "\n", depth, nodes);
         } else
             nodes = search_go(lim, gameStack);

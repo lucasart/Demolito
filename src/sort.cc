@@ -32,7 +32,7 @@ void sort_generate(Sort *s, const Position *pos, int depth)
         const bitboard_t pawnTargets = pieceTargets | pos_ep_square_bb(pos) | bb_rank(relative_rank(us,
                                        RANK_8));
 
-        it = gen_piece_moves(pos, it, pieceTargets);
+        it = gen_piece_moves(pos, it, pieceTargets, true);
         it = gen_pawn_moves(pos, it, pawnTargets, depth > 0);
 
         if (depth > 0)
