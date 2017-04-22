@@ -26,7 +26,7 @@
 Position rootPos;
 
 // Protect thread scheduling decisions
-static std::mutex mtxSchedule;
+static mtx_t mtxSchedule;
 
 // Set at thread creation, so each thread can know its unique id
 thread_local int ThreadId;
@@ -325,35 +325,39 @@ void iterate(const Limits& lim, const GameStack& initialGameStack, int iteration
     memset(HistoryTable, 0, sizeof(HistoryTable));
 
     for (int depth = 1; depth <= lim.depth; depth++) {
-        {
-            std::lock_guard<std::mutex> lk(mtxSchedule);
+        mtx_lock(&mtxSchedule);
 
-            if (signal == STOP)
-                return;
-            else
-                signal &= ~(1ULL << ThreadId);
-
-            // If half of the threads are searching >= depth, then move to the next iteration.
-            // Special cases where this does not apply:
-            // depth == 1: we want all threads to finish depth == 1 asap.
-            // depth == lim.depth: there is no next iteration.
-            if (Threads >= 2 && depth >= 2 && depth < lim.depth) {
-                int cnt = 0;
-
-                for (int i = 0; i < Threads; i++)
-                    cnt += i != ThreadId && iterations[i] >= depth;
-
-                if (cnt >= Threads / 2)
-                    continue;
-            }
-
-            iterations[ThreadId] = depth;
-
-            if (signal == STOP)
-                return;
-
+        if (signal == STOP) {
+            mtx_unlock(&mtxSchedule);
+            return;
+        } else
             signal &= ~(1ULL << ThreadId);
+
+        // If half of the threads are searching >= depth, then move to the next iteration.
+        // Special cases where this does not apply:
+        // depth == 1: we want all threads to finish depth == 1 asap.
+        // depth == lim.depth: there is no next iteration.
+        if (Threads >= 2 && depth >= 2 && depth < lim.depth) {
+            int cnt = 0;
+
+            for (int i = 0; i < Threads; i++)
+                cnt += i != ThreadId && iterations[i] >= depth;
+
+            if (cnt >= Threads / 2) {
+                mtx_unlock(&mtxSchedule);
+                continue;
+            }
         }
+
+        iterations[ThreadId] = depth;
+
+        if (signal == STOP) {
+            mtx_unlock(&mtxSchedule);
+            return;
+        }
+
+        signal &= ~(1ULL << ThreadId);
+        mtx_unlock(&mtxSchedule);
 
         try {
             score = aspirate(depth, pv, score);
@@ -361,16 +365,15 @@ void iterate(const Limits& lim, const GameStack& initialGameStack, int iteration
             // Iteration was completed normally. Now we need to see who is working on
             // obsolete iterations, and raise the appropriate signal, to make them move
             // on to the next iteration.
-            {
-                std::lock_guard<std::mutex> lk(mtxSchedule);
-                uint64_t s = 0;
+            mtx_lock(&mtxSchedule);
+            uint64_t s = 0;
 
-                for (int i = 0; i < Threads; i++)
-                    if (i != ThreadId && iterations[i] <= depth)
-                        s |= 1ULL << i;
+            for (int i = 0; i < Threads; i++)
+                if (i != ThreadId && iterations[i] <= depth)
+                    s |= 1ULL << i;
 
-                signal |= s;
-            }
+            signal |= s;
+            mtx_unlock(&mtxSchedule);
         } catch (const Abort e) {
             assert(signal & (1ULL << ThreadId));
             gameStacks[ThreadId] = initialGameStack;    // Restore an orderly state
@@ -387,8 +390,9 @@ void iterate(const Limits& lim, const GameStack& initialGameStack, int iteration
     }
 
     // Max depth completed by current thread. All threads should stop.
-    std::lock_guard<std::mutex> lk(mtxSchedule);
+    mtx_lock(&mtxSchedule);
     signal = STOP;
+    mtx_unlock(&mtxSchedule);
 }
 
 int64_t search_go(const Limits& lim, const GameStack& initialGameStack)
@@ -397,7 +401,8 @@ int64_t search_go(const Limits& lim, const GameStack& initialGameStack)
     static const struct timespec resolution = {0, 5000000};  // 5ms
 
     clock_gettime(CLOCK_MONOTONIC, &start);  // FIXME: POSIX only
-    info_clear(&ui);
+    info_create(&ui);
+    mtx_init(&mtxSchedule, mtx_plain);
     signal = 0;
 
     int *iterations = (int *)calloc(Threads, sizeof(int));  // FIXME: C++ needs cast
@@ -422,11 +427,13 @@ int64_t search_go(const Limits& lim, const GameStack& initialGameStack)
         // completed, to make sure we do not return an illegal move.
         if (info_last_depth(&ui) > 0) {
             if (lim.nodes && count_nodes() >= lim.nodes) {
-                std::lock_guard<std::mutex> lk(mtxSchedule);
+                mtx_lock(&mtxSchedule);
                 signal = STOP;
+                mtx_unlock(&mtxSchedule);
             } else if (lim.movetime && elapsed_msec(&start) >= lim.movetime) {
-                std::lock_guard<std::mutex> lk(mtxSchedule);
+                mtx_lock(&mtxSchedule);
                 signal = STOP;
+                mtx_unlock(&mtxSchedule);
             }
         }
     } while (signal != STOP);
@@ -435,6 +442,8 @@ int64_t search_go(const Limits& lim, const GameStack& initialGameStack)
         threads[i].join();
 
     info_print_bestmove(&ui);
+    info_destroy(&ui);
+    mtx_destroy(&mtxSchedule);
 
     const int64_t nodes = count_nodes();
 

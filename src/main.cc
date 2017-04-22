@@ -13,6 +13,7 @@
  * You should have received a copy of the GNU General Public License along with this program. If
  * not, see <http://www.gnu.org/licenses/>.
 */
+#include <stdlib.h>
 #include "bitboard.h"
 #include "eval.h"
 #include "htable.h"
@@ -32,7 +33,7 @@ int main(int argc, char **argv)
 
     if (argc >= 2) {
         if ((!strcmp(argv[1], "perft") || !strcmp(argv[1], "search")) && argc >= 4) {
-            const int depth = std::stoi(argv[2]), threads = std::stoi(argv[3]);
+            const int depth = atoi(argv[2]), threads = atoi(argv[3]);
             const uint64_t nodes = test_search(!strcmp(argv[1], "perft"), depth, threads);
             printf("total = %" PRIu64 "\n", nodes);
         }

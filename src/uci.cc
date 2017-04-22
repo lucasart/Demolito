@@ -27,6 +27,14 @@ static std::thread Timer;
 static uint64_t Hash = 1;
 static int64_t TimeBuffer = 30;
 
+static void uci_format_score(int score, char *str)
+{
+    if (is_mate_score(score))
+        sprintf(str, "mate %d", score > 0 ? (MATE - score + 1) / 2 : (score - MATE + 1) / 2);
+    else
+        sprintf(str, "cp %d", score * 100 / EP);
+}
+
 static void intro()
 {
     setvbuf(stdout, NULL, _IOLBF, BUFSIZ);
@@ -191,23 +199,31 @@ void uci_loop()
         Timer.join();
 }
 
-void info_clear(Info *info)
+void info_create(Info *info)
 {
     info->lastDepth = 0;
     info->best = info->ponder = 0;
     clock_gettime(CLOCK_MONOTONIC, &info->start);  // FIXME: POSIX only
+    mtx_init(&info->mtx, mtx_plain);
+}
+
+void info_destroy(Info *info)
+{
+    mtx_destroy(&info->mtx);
 }
 
 void info_update(Info *info, int depth, int score, int64_t nodes, move_t pv[], bool partial)
 {
-    std::lock_guard<std::mutex> lk(info->mtx);
+    mtx_lock(&info->mtx);
 
     if (depth > info->lastDepth) {
         info->best = pv[0];
         info->ponder = pv[1];
 
-        if (partial)
+        if (partial) {
+            mtx_unlock(&info->mtx);
             return;
+        }
 
         info->lastDepth = depth;
 
@@ -232,33 +248,36 @@ void info_update(Info *info, int depth, int score, int64_t nodes, move_t pv[], b
 
         puts("");
     }
+
+    mtx_unlock(&info->mtx);
 }
 
-void info_print_bestmove(const Info *info)
+void info_print_bestmove(Info *info)
 {
-    std::lock_guard<std::mutex> lk(info->mtx);
     char best[6], ponder[6];
+
+    mtx_lock(&info->mtx);
     move_to_string(&rootPos, info->best, best);
     move_to_string(&rootPos, info->ponder, ponder);
+    mtx_unlock(&info->mtx);
+
     printf("bestmove %s ponder %s\n", best, ponder);
 }
 
-move_t info_best(const Info *info)
+move_t info_best(Info *info)
 {
-    std::lock_guard<std::mutex> lk(info->mtx);
-    return info->best;
+    mtx_lock(&info->mtx);
+    const move_t best = info->best;
+    mtx_unlock(&info->mtx);
+
+    return best;
 }
 
-int info_last_depth(const Info *info)
+int info_last_depth(Info *info)
 {
-    std::lock_guard<std::mutex> lk(info->mtx);
-    return info->lastDepth;
-}
+    mtx_lock(&info->mtx);
+    const int lastDepth = info->lastDepth;
+    mtx_unlock(&info->mtx);
 
-void uci_format_score(int score, char *str)
-{
-    if (is_mate_score(score))
-        sprintf(str, "mate %d", score > 0 ? (MATE - score + 1) / 2 : (score - MATE + 1) / 2);
-    else
-        sprintf(str, "cp %d", score * 100 / EP);
+    return lastDepth;
 }
