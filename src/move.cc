@@ -145,7 +145,7 @@ int move_see(const Position *pos, move_t m)
     bitboard_t occ = pos_pieces(pos);
 
     // General case
-    int gain[32] = {see_value[pos->pieceOn[to]]};
+    int gain[32] = {see_value[(int)pos->pieceOn[to]]};
     int capture = pos->pieceOn[from];
     bb_clear(&occ, from);
 

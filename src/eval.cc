@@ -13,7 +13,6 @@
  * You should have received a copy of the GNU General Public License along with this program. If
  * not, see <http://www.gnu.org/licenses/>.
 */
-#include <algorithm>  // std::max
 #include "eval.h"
 
 thread_local PawnEntry PawnHash[NB_PAWN_ENTRY];
@@ -324,8 +323,7 @@ void eval_init()
 
     for (int s1 = A1; s1 <= H8; ++s1)
         for (int s2 = A1; s2 <= H8; ++s2)
-            KingDistance[s1][s2] = std::max(std::abs(rank_of(s1) - rank_of(s2)),
-                                            std::abs(file_of(s1) - file_of(s2)));
+            KingDistance[s1][s2] = max(abs(rank_of(s1) - rank_of(s2)), abs(file_of(s1) - file_of(s2)));
 }
 
 int evaluate(const Position *pos)

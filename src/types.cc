@@ -13,7 +13,6 @@
  * You should have received a copy of the GNU General Public License along with this program. If
  * not, see <http://www.gnu.org/licenses/>.
 */
-#include <algorithm>
 #include "types.h"
 
 bool Chess960 = false;
@@ -95,13 +94,13 @@ const eval_t Material[NB_PIECE] = {{N, N}, {B, B}, {R, R}, {Q, Q}, {0, 0}, {OP, 
 
 bool score_ok(int score)
 {
-    return std::abs(score) < MATE;
+    return abs(score) < MATE;
 }
 
 bool is_mate_score(int score)
 {
     score_ok(score);
-    return std::abs(score) >= MATE - MAX_PLY;
+    return abs(score) >= MATE - MAX_PLY;
 }
 
 int mated_in(int ply)

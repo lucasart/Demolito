@@ -14,7 +14,6 @@
  * not, see <http://www.gnu.org/licenses/>.
 */
 #include <thread>
-#include <algorithm>  // std::min and std::max
 #include <math.h>
 #include "search.h"
 #include "sort.h"
@@ -221,7 +220,8 @@ int recurse(const Position *pos, int ply, int depth, int alpha, int beta, move_t
                 int reduction = see < 0 || !move_is_capture(pos, currentMove);
 
                 if (!move_is_capture(pos, currentMove)) {
-                    reduction = Reduction[std::min(31, nextDepth)][std::min(31, ++lmrCount)];
+                    lmrCount++;
+                    reduction = Reduction[min(31, nextDepth)][min(31, lmrCount)];
                     assert(nextDepth >= 1);
                     assert(lmrCount >= 1);
                 }

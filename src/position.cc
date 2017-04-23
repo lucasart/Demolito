@@ -14,7 +14,6 @@
  * not, see <http://www.gnu.org/licenses/>.
 */
 #include <ctype.h>
-#include <stdlib.h>
 #include "bitboard.h"
 #include "position.h"
 #include "pst.h"
@@ -313,7 +312,7 @@ void pos_get(const Position *pos, char *fen)
                 if (cnt)
                     *fen++ = cnt + '0';
 
-                *fen++ = PieceLabel[pos_color_on(pos, s)][pos->pieceOn[s]];
+                *fen++ = PieceLabel[pos_color_on(pos, s)][(int)pos->pieceOn[s]];
                 cnt = 0;
             } else
                 cnt++;
@@ -413,7 +412,7 @@ void pos_print(const Position *pos)
         for (int f = FILE_A; f <= FILE_H; ++f) {
             const int s = square(r, f);
             line[2 * f] = bb_test(pos_pieces(pos), s)
-                          ? PieceLabel[pos_color_on(pos, s)][pos->pieceOn[s]]
+                          ? PieceLabel[pos_color_on(pos, s)][(int)pos->pieceOn[s]]
                           : s == pos->epSquare ? '*' : '.';
         }
 

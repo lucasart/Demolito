@@ -134,7 +134,7 @@ static void go(char **linePos)
 
     if (lim.time || lim.inc) {
         lim.movetime = ((lim.movestogo - 1) * lim.inc + lim.time) / lim.movestogo;
-        lim.movetime = std::min(lim.movetime, lim.time - TimeBuffer);
+        lim.movetime = min(lim.movetime, lim.time - TimeBuffer);
     }
 
     if (Timer.joinable())

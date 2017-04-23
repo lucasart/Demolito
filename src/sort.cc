@@ -13,7 +13,6 @@
  * You should have received a copy of the GNU General Public License along with this program. If
  * not, see <http://www.gnu.org/licenses/>.
 */
-#include <algorithm>
 #include "sort.h"
 
 #define HISTORY_MAX 2000
@@ -89,8 +88,8 @@ move_t sort_next(Sort *s, const Position *pos, int *see)
         }
 
     if (maxIdx != s->idx) {
-        std::swap(s->moves[s->idx], s->moves[maxIdx]);
-        std::swap(s->scores[s->idx], s->scores[maxIdx]);
+        swap(s->moves[s->idx], s->moves[maxIdx]);
+        swap(s->scores[s->idx], s->scores[maxIdx]);
     }
 
     const int score = s->scores[s->idx];

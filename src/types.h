@@ -2,10 +2,15 @@
 #include <assert.h>
 #define __STDC_FORMAT_MACROS  // C++
 #include <inttypes.h>
+#include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 #include <stdio.h>
 #include <time.h>
+
+#define min(x, y) ((x) < (y) ? (x) : (y))
+#define max(x, y) ((x) > (y) ? (x) : (y))
+#define swap(x, y) do { typeof(x) tmp = x; x = y; y = tmp; } while (0)
 
 extern bool Chess960;
 
