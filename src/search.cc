@@ -137,12 +137,24 @@ int recurse(const Position *pos, int ply, int depth, int alpha, int beta, move_t
     if (ply >= MAX_PLY)
         return refinedEval;
 
+    // Razoring
+    if (!Qsearch && !pvNode && depth == 1 && !pos->checkers) {
+        const int lbound = alpha - P*3/2;
+
+        if (refinedEval <= lbound) {
+            score = recurse<true>(pos, ply, 0, lbound, lbound+1, childPv);
+
+            if (score <= lbound)
+                return score;
+        }
+    }
+
     // Null search
     if (!Qsearch && depth >= 2 && !pvNode
             && staticEval >= beta && pos->pieceMaterial[us].eg) {
+        const int nextDepth = depth - (2 + depth/3) - (refinedEval >= beta+P);
         pos_switch(&nextPos, pos);
         gs_push(&gameStacks[ThreadId], nextPos.key);
-        const int nextDepth = depth - (2 + depth/3) - (refinedEval >= beta+P);
         score = nextDepth <= 0
                 ? -recurse<true>(&nextPos, ply+1, nextDepth, -beta, -(beta-1), childPv)
                 : -recurse(&nextPos, ply+1, nextDepth, -beta, -(beta-1), childPv);
