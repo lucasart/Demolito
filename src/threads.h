@@ -1,7 +1,6 @@
 // glibc doesn't have C11 threads.h yet. So write a crude replacement, for just
 // what is needed, but exposing a C11 API to make the client code future-proof.
 #pragma once
-#include <assert.h>
 #include <pthread.h>
 
 typedef pthread_mutex_t mtx_t;
