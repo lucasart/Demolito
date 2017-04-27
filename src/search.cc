@@ -138,8 +138,8 @@ int recurse(const Position *pos, int ply, int depth, int alpha, int beta, move_t
         return refinedEval;
 
     // Razoring
-    if (!Qsearch && !pvNode && depth == 1 && !pos->checkers) {
-        const int lbound = alpha - P*3/2;
+    if (!Qsearch && depth <= 2 && !pos->checkers && !pvNode) {
+        const int lbound = alpha - (depth == 1 ? P*3/2 : P*5/2);
 
         if (refinedEval <= lbound) {
             score = recurse<true>(pos, ply, 0, lbound, lbound+1, childPv);
