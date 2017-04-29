@@ -15,6 +15,7 @@
 */
 #include <thread>
 #include <math.h>
+#include <setjmp.h>
 #include "search.h"
 #include "sort.h"
 #include "eval.h"
@@ -43,11 +44,9 @@ int64_t count_nodes()
     return total;
 }
 
-std::atomic<uint64_t> signal;    // signal: bit #i is set if thread #i should stop
-enum Abort {
-    ABORT_NEXT,    // current thread aborts the current iteration to be scheduled to the next one
-    ABORT_STOP    // current thread aborts the current iteration to stop iterating completely
-};
+std::atomic<uint64_t> signal;  // bit #i is set if thread #i should abort
+static thread_local jmp_buf jbuf;  // exception jump buffer
+enum {ABORT_ONE = 1, ABORT_ALL};  // exceptions: abort current or all threads
 
 const int Tempo = 16;
 
@@ -88,9 +87,9 @@ int recurse(const Position *pos, int ply, int depth, int alpha, int beta, move_t
 
         if (s) {
             if (s == STOP)
-                throw ABORT_STOP;
+                longjmp(jbuf, ABORT_ALL);
             else if (s & (1ULL << ThreadId))
-                throw ABORT_NEXT;
+                longjmp(jbuf, ABORT_ONE);
         }
     }
 
@@ -332,7 +331,8 @@ void iterate(const Limits& lim, const GameStack& initialGameStack, int iteration
 {
     ThreadId = threadId;
     move_t pv[MAX_PLY + 1];
-    int score = 0;  // Silence bogus GCC warning (score may be uninitialized)
+    int volatile score = 0;  /* Silence GCC warnings: (1) uninitialized warning (bogus); (2) clobber
+        warning due to longjmp (technically correct but inconsequential) */
 
     memset(PawnHash, 0, sizeof(PawnHash));
     memset(HistoryTable, 0, sizeof(HistoryTable));
@@ -372,7 +372,9 @@ void iterate(const Limits& lim, const GameStack& initialGameStack, int iteration
         signal &= ~(1ULL << ThreadId);
         mtx_unlock(&mtxSchedule);
 
-        try {
+        const int exception = setjmp(jbuf);
+
+        if (exception == 0) {
             score = aspirate(depth, pv, score);
 
             // Iteration was completed normally. Now we need to see who is working on
@@ -387,15 +389,15 @@ void iterate(const Limits& lim, const GameStack& initialGameStack, int iteration
 
             signal |= s;
             mtx_unlock(&mtxSchedule);
-        } catch (const Abort e) {
+        } else {
             assert(signal & (1ULL << ThreadId));
-            gameStacks[ThreadId] = initialGameStack;    // Restore an orderly state
+            gameStacks[ThreadId] = initialGameStack;  // Restore an orderly state
 
-            if (e == ABORT_STOP)
-                break;
-            else {
-                assert(e == ABORT_NEXT);
+            if (exception == ABORT_ONE)
                 continue;
+            else {
+                assert(exception == ABORT_ALL);
+                break;
             }
         }
 
