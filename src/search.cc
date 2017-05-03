@@ -137,8 +137,8 @@ int recurse(const Position *pos, int ply, int depth, int alpha, int beta, move_t
         return refinedEval;
 
     // Razoring
-    if (!Qsearch && depth <= 3 && !pos->checkers && !pvNode) {
-        static const int RazorMargin[] = {0, P*3/2, P*5/2, P*7/2};
+    if (!Qsearch && depth <= 4 && !pos->checkers && !pvNode) {
+        static const int RazorMargin[] = {0, P*3/2, P*5/2, P*7/2, P*9/2};
         const int lbound = alpha - RazorMargin[depth];
 
         if (refinedEval <= lbound) {
