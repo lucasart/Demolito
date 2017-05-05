@@ -83,7 +83,7 @@ int generic_search(const Position *pos, int ply, int depth, int alpha, int beta,
         return refinedEval;
 
     // Eval pruning
-    if (!Qsearch && (depth == 1 || depth == 3) && !pos->checkers && !pvNode && pos->pieceMaterial[us].eg
+    if (!Qsearch && depth <= 4 && !pos->checkers && !pvNode && pos->pieceMaterial[us].eg
             && refinedEval >= beta + depth*P*3/4)
         return refinedEval;
 
