@@ -44,7 +44,7 @@ static eval_t score_mobility(int p0, int p, bitboard_t tss)
     static const eval_t Weight[] = {{6, 10}, {11, 12}, {6, 6}, {4, 6}};
 
     const int c = AdjustCount[p0][bb_count(tss)];
-    return {Weight[p].op * c, Weight[p].eg *c};
+    return (eval_t){Weight[p].op * c, Weight[p].eg *c};
 }
 
 static eval_t mobility(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE+1])
@@ -104,8 +104,8 @@ static eval_t bishop_pair(const Position *pos, int us)
 
     const bitboard_t bishops = pos_pieces_cp(pos, us, BISHOP);
 
-    return (bishops & WhiteSquares) && (bishops & ~WhiteSquares) ? eval_t{102, 114} :
-           eval_t{0, 0};
+    return (bishops & WhiteSquares) && (bishops & ~WhiteSquares) ? (eval_t){102, 114} :
+           (eval_t){0, 0};
 }
 
 static int tactics(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE+1])
@@ -261,7 +261,7 @@ static eval_t do_pawns(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
         if (chained) {
             const int rr = relative_rank(us, r) - RANK_2;
             const int bonus = rr * (rr + phalanx) * 3;
-            eval_add(&result, {8 + bonus / 2, bonus});
+            eval_add(&result, (eval_t){8 + bonus / 2, bonus});
         } else if (hole)
             eval_sub(&result, Hole[exposed]);
         else if (isolated)
