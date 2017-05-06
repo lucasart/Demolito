@@ -60,7 +60,7 @@ int square(int r, int f)
 
 void square_to_string(int s, char *str)
 {
-    BOUNDS(s, NB_SQUARE+1);
+    BOUNDS(s, NB_SQUARE + 1);
 
     if (s == NB_SQUARE)
         *str++ = '-';

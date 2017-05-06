@@ -64,7 +64,7 @@ void search_init()
 {
     for (int d = 1; d < 32; d++)
         for (int c = 1; c < 32; c++)
-            Reduction[d][c] = .4*log(d) + .8*log(c);
+            Reduction[d][c] = 0.4 * log(d) + 0.8 * log(c);
 }
 
 // The below is a bit ugly, but the idea is simple. I don't want to maintain 2 separate
@@ -76,13 +76,13 @@ int qsearch(const Position *pos, int ply, int depth, int alpha, int beta, move_t
 
 #define Qsearch true
 #define generic_search qsearch
-#include "recurse.inc"
+#include "recurse.h"
 #undef generic_search
 #undef Qsearch
 
 #define Qsearch false
 #define generic_search search
-#include "recurse.inc"
+#include "recurse.h"
 #undef generic_search
 #undef Qsearch
 

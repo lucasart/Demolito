@@ -214,7 +214,7 @@ uint64_t gen_perft(const Position *pos, int depth, int ply)
             continue;
 
         pos_move(&after, pos, *m);
-        const uint64_t subTree = gen_perft(&after, depth-1, ply+1);
+        const uint64_t subTree = gen_perft(&after, depth - 1, ply + 1);
         result += subTree;
 
         if (!ply) {

@@ -84,16 +84,16 @@ int generic_search(const Position *pos, int ply, int depth, int alpha, int beta,
 
     // Eval pruning
     if (!Qsearch && depth <= 4 && !pos->checkers && !pvNode && pos->pieceMaterial[us].eg
-            && refinedEval >= beta + depth*P*3/4)
+            && refinedEval >= beta + depth * P * 3 / 4)
         return refinedEval;
 
     // Razoring
     if (!Qsearch && depth <= 4 && !pos->checkers && !pvNode) {
-        static const int RazorMargin[] = {0, P*3/2, P*5/2, P*7/2, P*9/2};
+        static const int RazorMargin[] = {0, P * 3 / 2, P * 5 / 2, P * 7 / 2, P * 9 / 2};
         const int lbound = alpha - RazorMargin[depth];
 
         if (refinedEval <= lbound) {
-            score = qsearch(pos, ply, 0, lbound, lbound+1, childPv);
+            score = qsearch(pos, ply, 0, lbound, lbound + 1, childPv);
 
             if (score <= lbound)
                 return score;
@@ -103,12 +103,12 @@ int generic_search(const Position *pos, int ply, int depth, int alpha, int beta,
     // Null search
     if (!Qsearch && depth >= 2 && !pvNode
             && staticEval >= beta && pos->pieceMaterial[us].eg) {
-        const int nextDepth = depth - (2 + depth/3) - (refinedEval >= beta+P);
+        const int nextDepth = depth - (2 + depth / 3) - (refinedEval >= beta + P);
         pos_switch(&nextPos, pos);
         gs_push(&gameStacks[ThreadId], nextPos.key);
         score = nextDepth <= 0
-                ? -qsearch(&nextPos, ply+1, nextDepth, -beta, -(beta-1), childPv)
-                : -search(&nextPos, ply+1, nextDepth, -beta, -(beta-1), childPv);
+                ? -qsearch(&nextPos, ply + 1, nextDepth, -beta, -(beta - 1), childPv)
+                : -search(&nextPos, ply + 1, nextDepth, -beta, -(beta - 1), childPv);
         gs_pop(&gameStacks[ThreadId]);
 
         if (score >= beta)
@@ -149,7 +149,7 @@ int generic_search(const Position *pos, int ply, int depth, int alpha, int beta,
             continue;
 
         // SEE proxy tells us we're unlikely to beat alpha
-        if (Qsearch && !pos->checkers && staticEval + P/2 <= alpha && see <= 0)
+        if (Qsearch && !pos->checkers && staticEval + P / 2 <= alpha && see <= 0)
             continue;
 
         // Play move
@@ -174,11 +174,11 @@ int generic_search(const Position *pos, int ply, int depth, int alpha, int beta,
                 if (pvNode)
                     childPv[0] = 0;
             } else
-                score = -qsearch(&nextPos, ply+1, nextDepth, -beta, -alpha, childPv);
+                score = -qsearch(&nextPos, ply + 1, nextDepth, -beta, -alpha, childPv);
         } else {
             // Search recursion (PVS + Reduction)
             if (moveCount == 1)
-                score = -search(&nextPos, ply+1, nextDepth, -beta, -alpha, childPv);
+                score = -search(&nextPos, ply + 1, nextDepth, -beta, -alpha, childPv);
             else {
                 int reduction = see < 0 || !move_is_capture(pos, currentMove);
 
@@ -191,16 +191,16 @@ int generic_search(const Position *pos, int ply, int depth, int alpha, int beta,
 
                 // Reduced depth, zero window
                 score = nextDepth - reduction <= 0
-                        ? -qsearch(&nextPos, ply+1, nextDepth - reduction, -alpha-1, -alpha, childPv)
-                        : -search(&nextPos, ply+1, nextDepth - reduction, -alpha-1, -alpha, childPv);
+                        ? -qsearch(&nextPos, ply + 1, nextDepth - reduction, -(alpha + 1), -alpha, childPv)
+                        : -search(&nextPos, ply + 1, nextDepth - reduction, -(alpha + 1), -alpha, childPv);
 
                 // Fail high: re-search zero window at full depth
                 if (reduction && score > alpha)
-                    score = -search(&nextPos, ply+1, nextDepth, -alpha-1, -alpha, childPv);
+                    score = -search(&nextPos, ply + 1, nextDepth, -(alpha + 1), -alpha, childPv);
 
                 // Fail high at full depth for pvNode: re-search full window
                 if (pvNode && alpha < score && score < beta)
-                    score = -search(&nextPos, ply+1, nextDepth, -beta, -alpha, childPv);
+                    score = -search(&nextPos, ply + 1, nextDepth, -beta, -alpha, childPv);
             }
         }
 

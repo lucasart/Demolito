@@ -21,7 +21,7 @@ uint64_t gs_back(const GameStack *gs);
 bool gs_repetition(const GameStack *gs, int rule50);
 
 extern uint64_t ZobristKey[NB_COLOR][NB_PIECE][NB_SQUARE];
-extern uint64_t ZobristEnPassant[NB_SQUARE+1];
+extern uint64_t ZobristEnPassant[NB_SQUARE + 1];
 extern uint64_t ZobristTurn;
 
 void zobrist_init();

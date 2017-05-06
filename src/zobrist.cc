@@ -18,7 +18,7 @@
 
 uint64_t ZobristKey[NB_COLOR][NB_PIECE][NB_SQUARE];
 static uint64_t ZobristCastling[NB_SQUARE];
-uint64_t ZobristEnPassant[NB_SQUARE+1];
+uint64_t ZobristEnPassant[NB_SQUARE + 1];
 uint64_t ZobristTurn;
 
 static uint64_t rotate(uint64_t x, int k)

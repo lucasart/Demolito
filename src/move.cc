@@ -138,7 +138,7 @@ bool move_is_legal(const Position *pos, move_t m)
 
 int move_see(const Position *pos, move_t m)
 {
-    static const int see_value[NB_PIECE+1] = {N, B, R, Q, MATE, P, 0};
+    static const int see_value[] = {N, B, R, Q, MATE, P, 0};
 
     const int from = move_from(m), to = move_to(m), prom = move_prom(m);
     int us = pos->turn;
@@ -187,7 +187,7 @@ int move_see(const Position *pos, move_t m)
         // Add the new entry to the gain[] array
         idx++;
         assert(idx < 32);
-        gain[idx] = see_value[capture] - gain[idx-1];
+        gain[idx] = see_value[capture] - gain[idx - 1];
 
         if (p == PAWN && relative_rank_of(us, to) == RANK_8) {
             gain[idx] += see_value[QUEEN] - see_value[PAWN];
@@ -197,8 +197,8 @@ int move_see(const Position *pos, move_t m)
     }
 
     do {
-        if (-gain[idx] < gain[idx-1])
-            gain[idx-1] = -gain[idx];
+        if (-gain[idx] < gain[idx - 1])
+            gain[idx - 1] = -gain[idx];
     } while (--idx);
 
     return gain[0];

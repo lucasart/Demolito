@@ -36,7 +36,7 @@ static eval_t score_mobility(int p0, int p, bitboard_t tss)
     assert(KNIGHT <= p0 && p0 <= ROOK);
     assert(KNIGHT <= p && p <= QUEEN);
 
-    static const int AdjustCount[ROOK+1][15] = {
+    static const int AdjustCount[][15] = {
         {-4, -2, -1, 0, 1, 2, 3, 4, 4},
         {-5, -3, -2, -1, 0, 1, 2, 3, 4, 5, 5, 6, 6, 7},
         {-6, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 6, 7, 7}
@@ -44,10 +44,10 @@ static eval_t score_mobility(int p0, int p, bitboard_t tss)
     static const eval_t Weight[] = {{6, 10}, {11, 12}, {6, 6}, {4, 6}};
 
     const int c = AdjustCount[p0][bb_count(tss)];
-    return (eval_t){Weight[p].op * c, Weight[p].eg *c};
+    return (eval_t) {Weight[p].op * c, Weight[p].eg * c};
 }
 
-static eval_t mobility(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE+1])
+static eval_t mobility(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE + 1])
 {
     bitboard_t fss, tss, occ;
     int from, piece;
@@ -101,16 +101,16 @@ static eval_t mobility(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
 static eval_t bishop_pair(const Position *pos, int us)
 {
     static const bitboard_t WhiteSquares = 0x55AA55AA55AA55AAULL;
+    static const eval_t bonus = {102, 114};
 
     const bitboard_t bishops = pos_pieces_cp(pos, us, BISHOP);
 
-    return (bishops & WhiteSquares) && (bishops & ~WhiteSquares) ? (eval_t){102, 114} :
-           (eval_t){0, 0};
+    return (bishops & WhiteSquares) && (bishops & ~WhiteSquares) ? bonus : (eval_t) {0, 0};
 }
 
-static int tactics(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE+1])
+static int tactics(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE + 1])
 {
-    static const int Hanging[QUEEN+1] = {66, 66, 81, 130};
+    static const int Hanging[] = {66, 66, 81, 130};
 
     const int them = opposite(us);
     bitboard_t b = attacks[them][PAWN] & (pos->byColor[us] ^ pos_pieces_cp(pos, us, PAWN));
@@ -127,7 +127,7 @@ static int tactics(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_
     return result;
 }
 
-static int safety(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE+1])
+static int safety(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE + 1])
 {
     static const int AttackWeight[2] = {43, 61};
     static const int CheckWeight = 63;
@@ -153,7 +153,7 @@ static int safety(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_P
 
     const int ks = pos_king_square(pos, us);
     const bitboard_t occ = pos_pieces(pos);
-    const bitboard_t checks[QUEEN+1] = {
+    const bitboard_t checks[] = {
         NAttacks[ks] & attacks[them][KNIGHT],
         bb_battacks(ks, occ) & attacks[them][BISHOP],
         bb_rattacks(ks, occ) & attacks[them][ROOK],
@@ -213,7 +213,7 @@ static eval_t passer(int us, int pawn, int ourKing, int theirKing)
     return result;
 }
 
-static eval_t do_pawns(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE+1])
+static eval_t do_pawns(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE + 1])
 {
     static const eval_t Isolated[2] = {{20, 40}, {40, 40}};
     static const eval_t Hole[2] = {{16, 20}, {32, 20}};
@@ -261,7 +261,7 @@ static eval_t do_pawns(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
         if (chained) {
             const int rr = relative_rank(us, r) - RANK_2;
             const int bonus = rr * (rr + phalanx) * 3;
-            eval_add(&result, (eval_t){8 + bonus / 2, bonus});
+            eval_add(&result, (eval_t) {8 + bonus / 2, bonus});
         } else if (hole)
             eval_sub(&result, Hole[exposed]);
         else if (isolated)
@@ -274,7 +274,7 @@ static eval_t do_pawns(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
     return result;
 }
 
-static eval_t pawns(const Position *pos, bitboard_t attacks[NB_COLOR][NB_PIECE+1])
+static eval_t pawns(const Position *pos, bitboard_t attacks[NB_COLOR][NB_PIECE + 1])
 // Pawn evaluation is directly a diff, from white's pov. This reduces by half the
 // size of the pawn hash table.
 {
@@ -331,7 +331,7 @@ int evaluate(const Position *pos)
     assert(!pos->checkers);
     eval_t e[NB_COLOR] = {pos->pst, {0, 0}};
 
-    bitboard_t attacks[NB_COLOR][NB_PIECE+1];
+    bitboard_t attacks[NB_COLOR][NB_PIECE + 1];
 
     // Mobility first, because it fills in the attacks array
     for (int c = WHITE; c <= BLACK; ++c)
