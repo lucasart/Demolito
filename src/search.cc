@@ -93,7 +93,7 @@ int aspirate(int depth, move_t pv[], int score)
     if (depth == 1)
         return search(&rootPos, 0, depth, -INF, +INF, pv);
 
-    int delta = 32;
+    int delta = 24;
     int alpha = score - delta;
     int beta = score + delta;
 
