@@ -147,13 +147,6 @@ void iterate(const Limits& lim, const GameStack& initialGameStack, int iteration
         }
 
         iterations[ThreadId] = depth;
-
-        if (signal == STOP) {
-            mtx_unlock(&mtxSchedule);
-            return;
-        }
-
-        signal &= ~(1ULL << ThreadId);
         mtx_unlock(&mtxSchedule);
 
         const int exception = setjmp(jbuf);
