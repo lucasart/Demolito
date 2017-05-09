@@ -175,9 +175,9 @@ void pos_set(Position *pos, const char *fen)
         c = toupper(c);
 
         if (c == 'K')
-            s = square(r, FILE_H);
+            s = bb_msb(bb_rank(r) & pos->byPiece[ROOK]);
         else if (c == 'Q')
-            s = square(r, FILE_A);
+            s = bb_lsb(bb_rank(r) & pos->byPiece[ROOK]);
         else if ('A' <= c && c <= 'H')
             s = square(r, c - 'A');
         else
