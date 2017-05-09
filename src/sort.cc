@@ -15,7 +15,7 @@
 */
 #include "sort.h"
 
-#define HISTORY_MAX 2000
+enum {HISTORY_MAX = MAX_DEPTH * MAX_DEPTH};
 
 thread_local int HistoryTable[NB_COLOR][NB_SQUARE][NB_SQUARE];
 

@@ -9,7 +9,7 @@ extern int Threads;
 extern int Contempt;
 
 extern std::atomic<uint64_t> signal;
-#define STOP    uint64_t(-1)
+enum {STOP = (uint64_t)(-1)};
 
 struct Limits {
     int depth, movestogo;

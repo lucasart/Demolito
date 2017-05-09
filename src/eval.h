@@ -6,7 +6,7 @@ struct PawnEntry {
     eval_t eval;
 };
 
-#define NB_PAWN_ENTRY 16384
+enum {NB_PAWN_ENTRY = 16384};
 
 extern thread_local PawnEntry PawnHash[NB_PAWN_ENTRY];
 
