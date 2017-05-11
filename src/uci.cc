@@ -19,8 +19,9 @@
 #include "search.h"
 #include "htable.h"
 #include "gen.h"
+#include "smp.h"
 
-GameStack gameStack;
+Stack rootStack;
 
 static std::thread Timer;
 
@@ -42,7 +43,7 @@ static void intro()
     puts("id name Demolito\nid author lucasart");
     printf("option name UCI_Chess960 type check default %s\n", Chess960 ? "true" : "false");
     printf("option name Hash type spin default %" PRIu64 " min 1 max 1048576\n", Hash);
-    printf("option name Threads type spin default %d min 1 max 64\n", Threads);
+    printf("option name Threads type spin default %d min 1 max 63\n", WorkersCount);
     printf("option name Contempt type spin default %d min -100 max 100\n", Contempt);
     printf("option name Time Buffer type spin default %" PRId64 " min 0 max 1000\n", TimeBuffer);
     puts("uciok");
@@ -66,7 +67,7 @@ static void setoption(char **linePos)
         Hash = 1ULL << bb_msb(Hash);  // must be a power of two
         hash_resize(Hash);
     } else if (!strcmp(name, "Threads"))
-        Threads = atoi(strtok_r(NULL, " \n", linePos));
+        smp_resize(atoi(strtok_r(NULL, " \n", linePos)));
     else if (!strcmp(name, "Contempt"))
         Contempt = atoi(strtok_r(NULL, " \n", linePos));
     else if (!strcmp(name, "TimeBuffer"))
@@ -91,15 +92,15 @@ static void position(char **linePos)
         return;
 
     pos_set(&p[idx], fen);
-    gs_clear(&gameStack);
-    gs_push(&gameStack, p[idx].key);
+    gs_clear(&rootStack);
+    gs_push(&rootStack, p[idx].key);
 
     // Parse moves (if any)
     while ((token = strtok_r(NULL, " \n", linePos))) {
         move_t m = string_to_move(&p[idx], token);
         pos_move(&p[idx^1], &p[idx], m);
         idx ^= 1;
-        gs_push(&gameStack, p[idx].key);
+        gs_push(&rootStack, p[idx].key);
     }
 
     rootPos = p[idx];
@@ -140,7 +141,7 @@ static void go(char **linePos)
     if (Timer.joinable())
         Timer.join();
 
-    Timer = std::thread(search_go, std::cref(lim), std::cref(gameStack));
+    Timer = std::thread(search_go, std::cref(lim), std::cref(rootStack));
 }
 
 static void eval()

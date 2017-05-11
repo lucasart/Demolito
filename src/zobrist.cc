@@ -26,30 +26,30 @@ static uint64_t rotate(uint64_t x, int k)
     return (x << k) | (x >> (64 - k));
 }
 
-void gs_clear(GameStack *gs)
+void gs_clear(Stack *gs)
 {
     gs->idx = 0;
 }
 
-void gs_push(GameStack *gs, uint64_t key)
+void gs_push(Stack *gs, uint64_t key)
 {
     assert(0 <= gs->idx && gs->idx < MAX_GAME_PLY);
     gs->keys[gs->idx++] = key;
 }
 
-void gs_pop(GameStack *gs)
+void gs_pop(Stack *gs)
 {
     assert(0 < gs->idx && gs->idx <= MAX_GAME_PLY);
     gs->idx--;
 }
 
-uint64_t gs_back(const GameStack *gs)
+uint64_t gs_back(const Stack *gs)
 {
     assert(0 < gs->idx && gs->idx <= MAX_GAME_PLY);
     return gs->keys[gs->idx - 1];
 }
 
-bool gs_repetition(const GameStack *gs, int rule50)
+bool gs_repetition(const Stack *gs, int rule50)
 {
     // 50 move rule
     if (rule50 >= 100)

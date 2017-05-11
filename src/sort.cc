@@ -14,10 +14,9 @@
  * not, see <http://www.gnu.org/licenses/>.
 */
 #include "sort.h"
+#include "smp.h"
 
 enum {HISTORY_MAX = MAX_DEPTH * MAX_DEPTH};
-
-thread_local int HistoryTable[NB_COLOR][NB_SQUARE][NB_SQUARE];
 
 void sort_generate(Sort *s, const Position *pos, int depth)
 {
@@ -51,7 +50,7 @@ void sort_score(Sort *s, const Position *pos, move_t ttMove)
                 const int see = move_see(pos, s->moves[i]);
                 s->scores[i] = see >= 0 ? see + HISTORY_MAX : see - HISTORY_MAX;
             } else
-                s->scores[i] = HistoryTable[pos->turn][move_from(s->moves[i])][move_to(s->moves[i])];
+                s->scores[i] = thisWorker->history[pos->turn][move_from(s->moves[i])][move_to(s->moves[i])];
         }
     }
 }
@@ -59,7 +58,7 @@ void sort_score(Sort *s, const Position *pos, move_t ttMove)
 void history_update(int c, move_t m, int bonus)
 {
     const int from = move_from(m), to = move_to(m);
-    int *t = &HistoryTable[c][from][to];
+    int *t = &thisWorker->history[c][from][to];
 
     *t += bonus;
 

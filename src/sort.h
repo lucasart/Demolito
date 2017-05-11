@@ -1,8 +1,6 @@
 #pragma once
 #include "gen.h"
 
-extern thread_local int HistoryTable[NB_COLOR][NB_SQUARE][NB_SQUARE];
-
 void history_update(int c, move_t m, int bonus);
 
 struct Sort {

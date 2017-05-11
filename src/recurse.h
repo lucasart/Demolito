@@ -17,7 +17,7 @@
 int generic_search(const Position *pos, int ply, int depth, int alpha, int beta, move_t pv[])
 {
     assert(Qsearch == (depth <= 0));
-    assert(gs_back(&gameStacks[ThreadId]) == pos->key);
+    assert(gs_back(&thisWorker->stack) == pos->key);
     assert(alpha < beta);
 
     const bool pvNode = beta > alpha + 1;
@@ -34,7 +34,7 @@ int generic_search(const Position *pos, int ply, int depth, int alpha, int beta,
         if (s) {
             if (s == STOP)
                 longjmp(jbuf, ABORT_ALL);
-            else if (s & (1ULL << ThreadId))
+            else if (s & (1ULL << thisWorker->id))
                 longjmp(jbuf, ABORT_ONE);
         }
     }
@@ -44,7 +44,7 @@ int generic_search(const Position *pos, int ply, int depth, int alpha, int beta,
     if (pvNode)
         pv[0] = 0;
 
-    if (ply > 0 && (gs_repetition(&gameStacks[ThreadId], pos->rule50)
+    if (ply > 0 && (gs_repetition(&thisWorker->stack, pos->rule50)
                     || pos_insufficient_material(pos)))
         return draw_score(ply);
 
@@ -77,7 +77,7 @@ int generic_search(const Position *pos, int ply, int depth, int alpha, int beta,
     if (!Qsearch && ply == 0 && info_last_depth(&ui) > 0)
         he.move = info_best(&ui);
 
-    nodeCounts[ThreadId]++;
+    thisWorker->nodes++;
 
     if (ply >= MAX_PLY)
         return refinedEval;
@@ -105,11 +105,11 @@ int generic_search(const Position *pos, int ply, int depth, int alpha, int beta,
             && staticEval >= beta && pos->pieceMaterial[us].eg) {
         const int nextDepth = depth - (2 + depth / 3) - (refinedEval >= beta + P);
         pos_switch(&nextPos, pos);
-        gs_push(&gameStacks[ThreadId], nextPos.key);
+        gs_push(&thisWorker->stack, nextPos.key);
         score = nextDepth <= 0
                 ? -qsearch(&nextPos, ply + 1, nextDepth, -beta, -(beta - 1), childPv)
                 : -search(&nextPos, ply + 1, nextDepth, -beta, -(beta - 1), childPv);
-        gs_pop(&gameStacks[ThreadId]);
+        gs_pop(&thisWorker->stack);
 
         if (score >= beta)
             return score >= mate_in(MAX_PLY) ? beta : score;
@@ -160,7 +160,7 @@ int generic_search(const Position *pos, int ply, int depth, int alpha, int beta,
                 && !move_is_capture(pos, currentMove))
             continue;
 
-        gs_push(&gameStacks[ThreadId], nextPos.key);
+        gs_push(&thisWorker->stack, nextPos.key);
 
         const int ext = see >= 0 && nextPos.checkers;
         const int nextDepth = depth - 1 + ext;
@@ -205,7 +205,7 @@ int generic_search(const Position *pos, int ply, int depth, int alpha, int beta,
         }
 
         // Undo move
-        gs_pop(&gameStacks[ThreadId]);
+        gs_pop(&thisWorker->stack);
 
         // New best score
         if (score > bestScore) {
@@ -224,7 +224,7 @@ int generic_search(const Position *pos, int ply, int depth, int alpha, int beta,
                             break;
 
                     if (!Qsearch && ply == 0 && info_last_depth(&ui) > 0)
-                        info_update(&ui, depth, score, count_nodes(), pv, true);
+                        info_update(&ui, depth, score, smp_nodes(), pv, true);
                 }
             }
         }

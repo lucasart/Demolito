@@ -14,8 +14,7 @@
  * not, see <http://www.gnu.org/licenses/>.
 */
 #include "eval.h"
-
-thread_local PawnEntry PawnHash[NB_PAWN_ENTRY];
+#include "smp.h"
 
 /* Pre-calculated in eval_init() */
 
@@ -280,14 +279,15 @@ static eval_t pawns(const Position *pos, bitboard_t attacks[NB_COLOR][NB_PIECE +
 {
     const uint64_t key = pos->pawnKey;
     const size_t idx = key & (NB_PAWN_ENTRY - 1);
+    PawnEntry *pe = &thisWorker->pawnHash[idx];
 
-    if (PawnHash[idx].key == key)
-        return PawnHash[idx].eval;
+    if (pe->key == key)
+        return pe->eval;
 
-    PawnHash[idx].key = key;
-    PawnHash[idx].eval = do_pawns(pos, WHITE, attacks);
-    eval_sub(&PawnHash[idx].eval, do_pawns(pos, BLACK, attacks));
-    return PawnHash[idx].eval;
+    pe->key = key;
+    pe->eval = do_pawns(pos, WHITE, attacks);
+    eval_sub(&pe->eval, do_pawns(pos, BLACK, attacks));
+    return pe->eval;
 }
 
 static int blend(const Position *pos, eval_t e)

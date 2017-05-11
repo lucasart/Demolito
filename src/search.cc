@@ -20,6 +20,7 @@
 #include "sort.h"
 #include "eval.h"
 #include "htable.h"
+#include "smp.h"
 #include "uci.h"
 #include "zobrist.h"
 
@@ -28,29 +29,12 @@ Position rootPos;
 // Protect thread scheduling decisions
 static mtx_t mtxSchedule;
 
-// Set at thread creation, so each thread can know its unique id
-thread_local int ThreadId;
-
-// Per thread data
-GameStack *gameStacks;
-int64_t *nodeCounts;
-
-int64_t count_nodes()
-{
-    int64_t total = 0;
-
-    for (int i = 0; i < Threads; total += nodeCounts[i++]);
-
-    return total;
-}
-
 std::atomic<uint64_t> signal;  // bit #i is set if thread #i should abort
 static thread_local jmp_buf jbuf;  // exception jump buffer
 enum {ABORT_ONE = 1, ABORT_ALL};  // exceptions: abort current or all threads
 
 const int Tempo = 16;
 
-int Threads = 1;
 int Contempt = 10;
 
 int draw_score(int ply)
@@ -111,15 +95,14 @@ int aspirate(int depth, move_t pv[], int score)
     }
 }
 
-void iterate(const Limits& lim, const GameStack& initialGameStack, int iterations[], int threadId)
+void iterate(const Limits& lim, const Stack& rootStack, int threadId)
 {
-    ThreadId = threadId;
     move_t pv[MAX_PLY + 1];
     int volatile score = 0;  /* Silence GCC warnings: (1) uninitialized warning (bogus); (2) clobber
         warning due to longjmp (technically correct but inconsequential) */
 
-    memset(PawnHash, 0, sizeof(PawnHash));
-    memset(HistoryTable, 0, sizeof(HistoryTable));
+    thisWorker = &Workers[threadId];
+    thisWorker->id = threadId;
 
     for (int depth = 1; depth <= lim.depth; depth++) {
         mtx_lock(&mtxSchedule);
@@ -128,25 +111,25 @@ void iterate(const Limits& lim, const GameStack& initialGameStack, int iteration
             mtx_unlock(&mtxSchedule);
             return;
         } else
-            signal &= ~(1ULL << ThreadId);
+            signal &= ~(1ULL << thisWorker->id);
 
-        // If half of the threads are searching >= depth, then move to the next iteration.
+        // If half of the threads are searching >= depth, then move to the next depth.
         // Special cases where this does not apply:
         // depth == 1: we want all threads to finish depth == 1 asap.
-        // depth == lim.depth: there is no next iteration.
-        if (Threads >= 2 && depth >= 2 && depth < lim.depth) {
+        // depth == lim.depth: there is no next depth.
+        if (WorkersCount >= 2 && depth >= 2 && depth < lim.depth) {
             int cnt = 0;
 
-            for (int i = 0; i < Threads; i++)
-                cnt += i != ThreadId && iterations[i] >= depth;
+            for (int i = 0; i < WorkersCount; i++)
+                cnt += thisWorker->id != i && Workers[i].depth >= depth;
 
-            if (cnt >= Threads / 2) {
+            if (cnt >= WorkersCount / 2) {
                 mtx_unlock(&mtxSchedule);
                 continue;
             }
         }
 
-        iterations[ThreadId] = depth;
+        thisWorker->depth = depth;
         mtx_unlock(&mtxSchedule);
 
         const int exception = setjmp(jbuf);
@@ -156,19 +139,19 @@ void iterate(const Limits& lim, const GameStack& initialGameStack, int iteration
 
             // Iteration was completed normally. Now we need to see who is working on
             // obsolete iterations, and raise the appropriate signal, to make them move
-            // on to the next iteration.
+            // on to the next depth.
             mtx_lock(&mtxSchedule);
             uint64_t s = 0;
 
-            for (int i = 0; i < Threads; i++)
-                if (i != ThreadId && iterations[i] <= depth)
+            for (int i = 0; i < WorkersCount; i++)
+                if (i != thisWorker->id && Workers[i].depth <= depth)
                     s |= 1ULL << i;
 
             signal |= s;
             mtx_unlock(&mtxSchedule);
         } else {
-            assert(signal & (1ULL << ThreadId));
-            gameStacks[ThreadId] = initialGameStack;  // Restore an orderly state
+            assert(signal & (1ULL << thisWorker->id));
+            thisWorker->stack = rootStack;  // Restore an orderly state
 
             if (exception == ABORT_ONE)
                 continue;
@@ -178,7 +161,7 @@ void iterate(const Limits& lim, const GameStack& initialGameStack, int iteration
             }
         }
 
-        info_update(&ui, depth, score, count_nodes(), pv);
+        info_update(&ui, depth, score, smp_nodes(), pv);
     }
 
     // Max depth completed by current thread. All threads should stop.
@@ -187,7 +170,7 @@ void iterate(const Limits& lim, const GameStack& initialGameStack, int iteration
     mtx_unlock(&mtxSchedule);
 }
 
-int64_t search_go(const Limits& lim, const GameStack& initialGameStack)
+int64_t search_go(const Limits& lim, const Stack& rootStack)
 {
     struct timespec start;
     static const struct timespec resolution = {0, 5000000};  // 5ms
@@ -197,20 +180,12 @@ int64_t search_go(const Limits& lim, const GameStack& initialGameStack)
     mtx_init(&mtxSchedule, mtx_plain);
     signal = 0;
 
-    int *iterations = (int *)calloc(Threads, sizeof(int));  // FIXME: C++ needs cast
-    gameStacks = (GameStack *)malloc(Threads * sizeof(GameStack));  // FIXME: C++ needs cast
-    nodeCounts = (int64_t *)calloc(Threads, sizeof(int64_t));  // FIXME: C++ needs cast
+    std::thread threads[WorkersCount];
+    smp_new_search(rootStack);
 
-    std::thread threads[Threads];
-
-    for (int i = 0; i < Threads; i++) {
-        // Initialize per-thread data
-        gameStacks[i] = initialGameStack;
-        nodeCounts[i] = 0;
-
+    for (int i = 0; i < WorkersCount; i++)
         // Start searching thread
-        threads[i] = std::thread(iterate, std::cref(lim), std::cref(initialGameStack), iterations, i);
-    }
+        threads[i] = std::thread(iterate, std::cref(lim), std::cref(rootStack), i);
 
     do {
         nanosleep(&resolution, NULL);  // FIXME: POSIX only
@@ -218,7 +193,7 @@ int64_t search_go(const Limits& lim, const GameStack& initialGameStack)
         // Check for search termination conditions, but only after depth 1 has been
         // completed, to make sure we do not return an illegal move.
         if (info_last_depth(&ui) > 0) {
-            if (lim.nodes && count_nodes() >= lim.nodes) {
+            if (lim.nodes && smp_nodes() >= lim.nodes) {
                 mtx_lock(&mtxSchedule);
                 signal = STOP;
                 mtx_unlock(&mtxSchedule);
@@ -230,18 +205,14 @@ int64_t search_go(const Limits& lim, const GameStack& initialGameStack)
         }
     } while (signal != STOP);
 
-    for (int i = 0; i < Threads; i++)
+    for (int i = 0; i < WorkersCount; i++)
         threads[i].join();
 
     info_print_bestmove(&ui);
     info_destroy(&ui);
     mtx_destroy(&mtxSchedule);
 
-    const int64_t nodes = count_nodes();
-
-    free(gameStacks);
-    free(nodeCounts);
-    free(iterations);
+    const int64_t nodes = smp_nodes();
 
     return nodes;
 }

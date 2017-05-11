@@ -18,6 +18,7 @@
 #include "htable.h"
 #include "pst.h"
 #include "search.h"
+#include "smp.h"
 #include "test.h"
 #include "uci.h"
 #include "zobrist.h"
@@ -29,6 +30,7 @@ int main(int argc, char **argv)
     pst_init();
     eval_init();
     search_init();
+    smp_init();
 
     if (argc >= 2) {
         if ((!strcmp(argv[1], "perft") || !strcmp(argv[1], "search")) && argc >= 4) {
@@ -40,4 +42,5 @@ int main(int argc, char **argv)
         uci_loop();
 
     free(HashTable);
+    smp_destroy();
 }

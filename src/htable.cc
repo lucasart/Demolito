@@ -36,14 +36,12 @@ void hash_resize(uint64_t hashMB)
 {
     const uint64_t newCount = (hashMB << 20) / sizeof(HashEntry);
 
-    if (newCount != HashCount) {
-        HashTable = (HashEntry*)realloc(HashTable, newCount * sizeof(HashEntry));  // FIXME: C++ needs cast
+    HashTable = (HashEntry*)realloc(HashTable, newCount * sizeof(HashEntry));  // FIXME: C++ needs cast
 
-        if (newCount > HashCount)
-            memset(&HashTable[HashCount], 0, (newCount - HashCount) * sizeof(HashEntry));
+    if (newCount > HashCount)
+        memset(&HashTable[HashCount], 0, (newCount - HashCount) * sizeof(HashEntry));
 
-        HashCount = newCount;
-    }
+    HashCount = newCount;
 }
 
 bool hash_read(uint64_t key, HashEntry *e)

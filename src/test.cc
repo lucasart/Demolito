@@ -17,6 +17,7 @@
 #include "search.h"
 #include "gen.h"
 #include "htable.h"
+#include "smp.h"
 
 uint64_t test_search(bool perft, int depth, int threads)
 {
@@ -86,8 +87,8 @@ uint64_t test_search(bool perft, int depth, int threads)
 
     hash_resize(1);
     uint64_t result = 0, nodes;
-    Threads = threads;
-    GameStack gameStack;
+    smp_resize(threads);
+    Stack rootStack;
 
     Chess960 = true;  // Test positions contain some Chess960 ones
 
@@ -100,15 +101,15 @@ uint64_t test_search(bool perft, int depth, int threads)
 
     for (int i = 0; fens[i]; i++) {
         pos_set(&rootPos, fens[i]);
-        gs_clear(&gameStack);
-        gs_push(&gameStack, rootPos.key);
+        gs_clear(&rootStack);
+        gs_push(&rootStack, rootPos.key);
         pos_print(&rootPos);
 
         if (perft) {
             nodes = gen_perft(&rootPos, depth, 0);
             printf("perft(%d) = %" PRIu64 "\n", depth, nodes);
         } else
-            nodes = search_go(lim, gameStack);
+            nodes = search_go(lim, rootStack);
 
         puts("");
         result += nodes;

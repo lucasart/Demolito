@@ -5,7 +5,6 @@
 
 extern Position rootPos;
 
-extern int Threads;
 extern int Contempt;
 
 extern std::atomic<uint64_t> signal;
@@ -17,4 +16,4 @@ struct Limits {
 };
 
 void search_init();
-int64_t search_go(const Limits& lim, const GameStack& gameStack);
+int64_t search_go(const Limits& lim, const Stack& rootStack);
