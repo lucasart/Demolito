@@ -27,4 +27,5 @@ void smp_resize(int count);
 void smp_destroy();
 
 void smp_new_search(const Stack& rootStack);
+void smp_new_game();
 int64_t smp_nodes();

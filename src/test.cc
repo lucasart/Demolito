@@ -88,6 +88,7 @@ uint64_t test_search(bool perft, int depth, int threads)
     hash_resize(1);
     uint64_t result = 0, nodes;
     smp_resize(threads);
+    smp_new_game();
     Stack rootStack;
 
     Chess960 = true;  // Test positions contain some Chess960 ones

@@ -23,13 +23,18 @@ void smp_destroy()
 void smp_new_search(const Stack& rootStack)
 {
     for (int i = 0; i < WorkersCount; i++) {
-        memset(Workers[i].pawnHash, 0, sizeof(Workers[i].pawnHash));
         memset(Workers[i].history, 0, sizeof(Workers[i].history));
         Workers[i].stack = rootStack;
         Workers[i].nodes = 0;
         Workers[i].depth = 0;
         Workers[i].id = i;
     }
+}
+
+void smp_new_game()
+{
+    for (int i = 0; i < WorkersCount; i++)
+        memset(Workers[i].pawnHash, 0, sizeof(Workers[i].pawnHash));
 }
 
 int64_t smp_nodes()
