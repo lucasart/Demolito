@@ -95,14 +95,13 @@ int aspirate(int depth, move_t pv[], int score)
     }
 }
 
-void iterate(const Limits& lim, const Stack& rootStack, int threadId)
+void iterate(const Limits& lim, const Stack& rootStack, Worker *worker)
 {
     move_t pv[MAX_PLY + 1];
     int volatile score = 0;  /* Silence GCC warnings: (1) uninitialized warning (bogus); (2) clobber
         warning due to longjmp (technically correct but inconsequential) */
 
-    thisWorker = &Workers[threadId];
-    thisWorker->id = threadId;
+    thisWorker = worker;
 
     for (int depth = 1; depth <= lim.depth; depth++) {
         mtx_lock(&mtxSchedule);
@@ -121,7 +120,7 @@ void iterate(const Limits& lim, const Stack& rootStack, int threadId)
             int cnt = 0;
 
             for (int i = 0; i < WorkersCount; i++)
-                cnt += thisWorker->id != i && Workers[i].depth >= depth;
+                cnt += thisWorker != &Workers[i] && Workers[i].depth >= depth;
 
             if (cnt >= WorkersCount / 2) {
                 mtx_unlock(&mtxSchedule);
@@ -144,7 +143,7 @@ void iterate(const Limits& lim, const Stack& rootStack, int threadId)
             uint64_t s = 0;
 
             for (int i = 0; i < WorkersCount; i++)
-                if (i != thisWorker->id && Workers[i].depth <= depth)
+                if (thisWorker != &Workers[i] && Workers[i].depth <= depth)
                     s |= 1ULL << i;
 
             signal |= s;
@@ -185,7 +184,7 @@ int64_t search_go(const Limits& lim, const Stack& rootStack)
 
     for (int i = 0; i < WorkersCount; i++)
         // Start searching thread
-        threads[i] = std::thread(iterate, std::cref(lim), std::cref(rootStack), i);
+        threads[i] = std::thread(iterate, std::cref(lim), std::cref(rootStack), &Workers[i]);
 
     do {
         nanosleep(&resolution, NULL);  // FIXME: POSIX only
