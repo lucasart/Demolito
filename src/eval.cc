@@ -114,6 +114,7 @@ static int tactics(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_
     const int them = opposite(us);
     bitboard_t b = attacks[them][PAWN] & (pos->byColor[us] ^ pos_pieces_cp(pos, us, PAWN));
     b |= (attacks[them][KNIGHT] | attacks[them][BISHOP]) & pos_pieces_cpp(pos, us, ROOK, QUEEN);
+    b |= attacks[them][ROOK] & pos_pieces_cp(pos, us, QUEEN);
 
     int result = 0;
 
