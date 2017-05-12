@@ -110,6 +110,7 @@ static eval_t bishop_pair(const Position *pos, int us)
 static int tactics(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE + 1])
 {
     static const int Hanging[] = {66, 66, 81, 130};
+    static const int Ahead = 16;
 
     const int them = opposite(us);
     bitboard_t b = attacks[them][PAWN] & (pos->byColor[us] ^ pos_pieces_cp(pos, us, PAWN));
@@ -123,6 +124,13 @@ static int tactics(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_
         assert(KNIGHT <= p && p <= QUEEN);
         result -= Hanging[p];
     }
+
+    // Penalize pieces ahead of pawns
+    b = bb_shift(pos->byColor[us] ^ pos_pieces_cp(pos, us, PAWN), push_inc(them))
+        & pos_pieces_cp(pos, us, PAWN);
+
+    if (b)
+        result -= Ahead * bb_count(b);
 
     return result;
 }
