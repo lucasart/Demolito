@@ -225,7 +225,7 @@ static eval_t do_pawns(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
 {
     static const eval_t Isolated[2] = {{20, 40}, {40, 40}};
     static const eval_t Hole[2] = {{16, 20}, {32, 20}};
-    static const int shieldBonus[NB_RANK] = {0, 38, 21, 16, 12, 10, 10};
+    static const int shieldBonus[NB_RANK] = {0, 29, 16, 12, 9, 8, 8};
 
     const int them = opposite(us);
     const bitboard_t ourPawns = pos_pieces_cp(pos, us, PAWN);
@@ -236,16 +236,10 @@ static eval_t do_pawns(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
     eval_t result = {0, 0};
 
     // Pawn shield
-
-    bitboard_t b = ourPawns & PawnPath[us][ourKing];
+    bitboard_t b = ourPawns & (PawnPath[us][ourKing] | PawnSpan[us][ourKing]);
 
     while (b)
         result.op += shieldBonus[relative_rank_of(us, bb_pop_lsb(&b))];
-
-    b = ourPawns & PawnSpan[us][ourKing];
-
-    while (b)
-        result.op += shieldBonus[relative_rank_of(us, bb_pop_lsb(&b))] / 2;
 
     // Pawn structure
 
