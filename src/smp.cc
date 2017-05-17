@@ -7,6 +7,7 @@ int WorkersCount = 1;
 void smp_init()
 {
     Workers = (Worker *)calloc(WorkersCount, sizeof(Worker));  // FIXME: C++ needs cast
+    thisWorker = &Workers[0];  // master thread needs pawnHash to call evaluate()
 }
 
 void smp_resize(int count)
