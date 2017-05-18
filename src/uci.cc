@@ -56,7 +56,7 @@ static void intro()
 
     // Prepare .var file for Joona's SPSA tuner with tuning parameters
     for (int i = 0; i < (int)(sizeof(X) / sizeof(int)); i++)
-        printf("X%d,%d,%d,%d,%f,0.002,0\n", i, X[i], min(0, 2 * X[i]), max(0, 2 * X[i]), X[i] / 8.0);
+        printf("X%d,%d,%d,%d,%.2f,0.002,0\n", i, X[i], min(0, 2 * X[i]), max(0, 2 * X[i]), X[i] / 8.0);
 
     puts("uciok");
 }

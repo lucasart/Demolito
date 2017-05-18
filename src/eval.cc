@@ -15,7 +15,6 @@
 */
 #include "eval.h"
 #include "smp.h"
-#include "uci.h"
 
 /* Pre-calculated in eval_init() */
 
@@ -204,7 +203,7 @@ static int safety(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_P
 
 static eval_t passer(int us, int pawn, int ourKing, int theirKing)
 {
-    static const eval_t bonus[] = {{0, 6}, {0, 12}, {22, 30}, {66, 60}, {132, 102}, {220, 156}};
+    static const eval_t bonus[] = {{0, 6}, {0, 13}, {26, 29}, {60, 73}, {142, 138}, {255, 227}};
 
     const int n = relative_rank_of(us, pawn) - RANK_2;
 
