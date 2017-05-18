@@ -15,6 +15,7 @@
 */
 #include "eval.h"
 #include "smp.h"
+#include "uci.h"
 
 /* Pre-calculated in eval_init() */
 

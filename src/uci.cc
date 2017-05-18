@@ -21,9 +21,11 @@
 #include "gen.h"
 #include "smp.h"
 
-Stack rootStack;
+// Tuning parameters
+int X[] = {};
 
 static std::thread Timer;
+static Stack rootStack;
 
 static uint64_t Hash = 1;
 static int64_t TimeBuffer = 30;
@@ -46,6 +48,16 @@ static void intro()
     printf("option name Threads type spin default %d min 1 max 63\n", WorkersCount);
     printf("option name Contempt type spin default %d min -100 max 100\n", Contempt);
     printf("option name Time Buffer type spin default %" PRId64 " min 0 max 1000\n", TimeBuffer);
+
+    // Declare UCI options for tuning parameters
+    for (int i = 0; i < (int)(sizeof(X) / sizeof(int)); i++)
+        printf("option name X%d type spin default %d min %d max %d\n", i, X[i],
+               min(0, 2 * X[i]), max(0, 2 * X[i]));
+
+    // Prepare .var file for Joona's SPSA tuner with tuning parameters
+    for (int i = 0; i < (int)(sizeof(X) / sizeof(int)); i++)
+        printf("X%d,%d,%d,%d,%f,0.002,0\n", i, X[i], min(0, 2 * X[i]), max(0, 2 * X[i]), X[i] / 8.0);
+
     puts("uciok");
 }
 
@@ -72,6 +84,8 @@ static void setoption(char **linePos)
         Contempt = atoi(strtok_r(NULL, " \n", linePos));
     else if (!strcmp(name, "TimeBuffer"))
         TimeBuffer = atoi(strtok_r(NULL, " \n", linePos));
+    else if (*name == 'X')
+        X[atoi(name + 1)] = atoi(strtok_r(NULL, " \n", linePos));
 }
 
 static void position(char **linePos)

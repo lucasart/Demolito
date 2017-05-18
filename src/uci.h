@@ -13,6 +13,7 @@ struct Info {
 };
 
 extern Info ui;
+extern int X[];
 
 void info_create(Info *info);
 void info_destroy(Info *info);
