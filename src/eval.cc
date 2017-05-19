@@ -203,7 +203,8 @@ static int safety(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_P
 
 static eval_t passer(int us, int pawn, int ourKing, int theirKing)
 {
-    static const eval_t bonus[] = {{0, 6}, {0, 13}, {26, 29}, {60, 73}, {142, 138}, {255, 227}};
+    const eval_t bonus[] = {{0, 6}, {0, 14}, {22, 29}, {54, 70}, {138, 150}, {268, 249}};
+    const int adjust[] = {0, 0, 11, 41, 82, 112};
 
     const int n = relative_rank_of(us, pawn) - RANK_2;
 
@@ -213,9 +214,8 @@ static eval_t passer(int us, int pawn, int ourKing, int theirKing)
     // king distance adjustment
     if (n > 1) {
         const int stop = pawn + push_inc(us);
-        const int Q = n * (n - 1);
-        result.eg += KingDistance[stop][theirKing] * 6 * Q;
-        result.eg -= KingDistance[stop][ourKing] * 3 * Q;
+        result.eg += KingDistance[stop][theirKing] * adjust[n];
+        result.eg -= KingDistance[stop][ourKing] * adjust[n] / 2;
     }
 
     return result;
@@ -223,9 +223,9 @@ static eval_t passer(int us, int pawn, int ourKing, int theirKing)
 
 static eval_t do_pawns(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE + 1])
 {
-    static const eval_t Isolated[2] = {{20, 40}, {40, 40}};
-    static const eval_t Hole[2] = {{16, 20}, {32, 20}};
-    static const int shieldBonus[NB_RANK] = {0, 29, 16, 12, 9, 8, 8};
+    const eval_t Isolated[2] = {{20, 36}, {41, 36}};
+    const eval_t Hole[2] = {{17, 18}, {30, 20}};
+    const int shieldBonus[NB_RANK] = {0, 22, 15, 12, 10, 8, 8};
 
     const int them = opposite(us);
     const bitboard_t ourPawns = pos_pieces_cp(pos, us, PAWN);
