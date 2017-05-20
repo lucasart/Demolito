@@ -25,7 +25,6 @@
 int X[] = {};
 
 static std::thread Timer;
-static Stack rootStack;
 
 static uint64_t Hash = 1;
 static int64_t TimeBuffer = 30;
@@ -155,7 +154,7 @@ static void go(char **linePos)
     if (Timer.joinable())
         Timer.join();
 
-    Timer = std::thread(search_go, std::cref(lim), std::cref(rootStack));
+    Timer = std::thread(search_go, std::cref(lim));
 }
 
 static void eval()

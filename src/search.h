@@ -4,6 +4,7 @@
 #include "zobrist.h"
 
 extern Position rootPos;
+extern Stack rootStack;
 
 extern int Contempt;
 
@@ -16,4 +17,4 @@ struct Limits {
 };
 
 void search_init();
-int64_t search_go(const Limits& lim, const Stack& rootStack);
+int64_t search_go(const Limits& lim);

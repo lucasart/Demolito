@@ -1,4 +1,5 @@
 #include "smp.h"
+#include "search.h"
 
 thread_local Worker *thisWorker = NULL;
 Worker *Workers = NULL;
@@ -21,7 +22,7 @@ void smp_destroy()
     free(Workers);
 }
 
-void smp_new_search(const Stack& rootStack)
+void smp_new_search()
 {
     for (int i = 0; i < WorkersCount; i++) {
         memset(Workers[i].history, 0, sizeof(Workers[i].history));

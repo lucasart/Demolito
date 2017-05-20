@@ -25,6 +25,7 @@
 #include "zobrist.h"
 
 Position rootPos;
+Stack rootStack;
 
 // Protect thread scheduling decisions
 static mtx_t mtxSchedule;
@@ -95,7 +96,7 @@ int aspirate(int depth, move_t pv[], int score)
     }
 }
 
-void iterate(const Limits& lim, const Stack& rootStack, Worker *worker)
+void iterate(const Limits& lim, Worker *worker)
 {
     move_t pv[MAX_PLY + 1];
     int volatile score = 0;  /* Silence GCC warnings: (1) uninitialized warning (bogus); (2) clobber
@@ -169,7 +170,7 @@ void iterate(const Limits& lim, const Stack& rootStack, Worker *worker)
     mtx_unlock(&mtxSchedule);
 }
 
-int64_t search_go(const Limits& lim, const Stack& rootStack)
+int64_t search_go(const Limits& lim)
 {
     struct timespec start;
     static const struct timespec resolution = {0, 5000000};  // 5ms
@@ -180,11 +181,11 @@ int64_t search_go(const Limits& lim, const Stack& rootStack)
     signal = 0;
 
     std::thread threads[WorkersCount];
-    smp_new_search(rootStack);
+    smp_new_search();
 
     for (int i = 0; i < WorkersCount; i++)
         // Start searching thread
-        threads[i] = std::thread(iterate, std::cref(lim), std::cref(rootStack), &Workers[i]);
+        threads[i] = std::thread(iterate, std::cref(lim), &Workers[i]);
 
     do {
         nanosleep(&resolution, NULL);  // FIXME: POSIX only

@@ -89,7 +89,6 @@ uint64_t test_search(bool perft, int depth, int threads)
     uint64_t result = 0, nodes;
     smp_resize(threads);
     smp_new_game();
-    Stack rootStack;
 
     Chess960 = true;  // Test positions contain some Chess960 ones
 
@@ -110,7 +109,7 @@ uint64_t test_search(bool perft, int depth, int threads)
             nodes = gen_perft(&rootPos, depth, 0);
             printf("perft(%d) = %" PRIu64 "\n", depth, nodes);
         } else
-            nodes = search_go(lim, rootStack);
+            nodes = search_go(lim);
 
         puts("");
         result += nodes;
