@@ -17,4 +17,4 @@ struct Limits {
 };
 
 void search_init();
-int64_t search_go(const Limits& lim);
+int64_t search_go(const Limits *lim);

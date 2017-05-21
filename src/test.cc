@@ -109,7 +109,7 @@ uint64_t test_search(bool perft, int depth, int threads)
             nodes = gen_perft(&rootPos, depth, 0);
             printf("perft(%d) = %" PRIu64 "\n", depth, nodes);
         } else
-            nodes = search_go(lim);
+            nodes = search_go(&lim);
 
         puts("");
         result += nodes;

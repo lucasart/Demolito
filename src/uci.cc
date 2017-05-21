@@ -24,7 +24,7 @@
 // Tuning parameters
 int X[] = {};
 
-static std::thread Timer;
+static thrd_t Timer = 0;
 
 static uint64_t Hash = 1;
 static int64_t TimeBuffer = 30;
@@ -151,10 +151,12 @@ static void go(char **linePos)
         lim.movetime = min(lim.movetime, lim.time - TimeBuffer);
     }
 
-    if (Timer.joinable())
-        Timer.join();
+    if (Timer) {
+        thrd_join(Timer, NULL);
+        Timer = 0;
+    }
 
-    Timer = std::thread(search_go, std::cref(lim));
+    thrd_create(&Timer, search_go, (void *)&lim);
 }
 
 static void eval()
@@ -210,8 +212,10 @@ void uci_loop()
 
     free(line);
 
-    if (Timer.joinable())
-        Timer.join();
+    if (Timer) {
+        thrd_join(Timer, NULL);
+        Timer = 0;
+    }
 }
 
 void info_create(Info *info)
