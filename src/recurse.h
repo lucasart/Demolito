@@ -16,6 +16,9 @@
 
 int generic_search(const Position *pos, int ply, int depth, int alpha, int beta, move_t pv[])
 {
+    const int EvalMargin[] = {0, 137, 265, 396, 511};
+    const int RazorMargin[] = {0, 241, 449, 516, 818};
+
     assert(Qsearch == (depth <= 0));
     assert(gs_back(&thisWorker->stack) == pos->key);
     assert(alpha < beta);
@@ -84,12 +87,11 @@ int generic_search(const Position *pos, int ply, int depth, int alpha, int beta,
 
     // Eval pruning
     if (!Qsearch && depth <= 4 && !pos->checkers && !pvNode && pos->pieceMaterial[us].eg
-            && refinedEval >= beta + depth * P * 3 / 4)
+            && refinedEval >= beta + EvalMargin[depth])
         return refinedEval;
 
     // Razoring
     if (!Qsearch && depth <= 4 && !pos->checkers && !pvNode) {
-        static const int RazorMargin[] = {0, P * 3 / 2, P * 5 / 2, P * 7 / 2, P * 9 / 2};
         const int lbound = alpha - RazorMargin[depth];
 
         if (refinedEval <= lbound) {

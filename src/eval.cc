@@ -137,14 +137,14 @@ static int tactics(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_
 
 static int safety(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE + 1])
 {
-    static const int AttackWeight[2] = {43, 61};
-    static const int CheckWeight = 63;
+    const int AttackWeight[2] = {39, 63};
+    const int CheckWeight = 64;
+    const int BishopXRay = 57, RookXRay = 66;
 
     const int them = opposite(us);
     int result = 0, cnt = 0;
 
     // Attacks around the King
-
     const bitboard_t dangerZone = attacks[us][KING] & ~attacks[us][PAWN];
 
     for (int p = KNIGHT; p <= QUEEN; ++p) {
@@ -158,7 +158,6 @@ static int safety(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_P
     }
 
     // Check threats
-
     const int ks = pos_king_square(pos, us);
     const bitboard_t occ = pos_pieces(pos);
     const bitboard_t checks[] = {
@@ -179,23 +178,21 @@ static int safety(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_P
         }
 
     // Bishop X-Ray threats
-
     bitboard_t bishops = BPseudoAttacks[ks] & pos_pieces_cpp(pos, them, BISHOP, QUEEN);
 
     while (bishops)
         if (!(Segment[ks][bb_pop_lsb(&bishops)] & pos->byPiece[PAWN])) {
             cnt++;
-            result -= CheckWeight;
+            result -= BishopXRay;
         }
 
     // Rook X-Ray threats
-
     bitboard_t rooks = RPseudoAttacks[ks] & pos_pieces_cpp(pos, them, ROOK, QUEEN);
 
     while (rooks)
         if (!(Segment[ks][bb_pop_lsb(&rooks)] & pos->byPiece[PAWN])) {
             cnt++;
-            result -= CheckWeight;
+            result -= RookXRay;
         }
 
     return result * (2 + cnt) / 4;

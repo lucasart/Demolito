@@ -34,7 +34,7 @@ std::atomic<uint64_t> signal;  // bit #i is set if thread #i should abort
 static thread_local jmp_buf jbuf;  // exception jump buffer
 enum {ABORT_ONE = 1, ABORT_ALL};  // exceptions: abort current or all threads
 
-const int Tempo = 16;
+const int Tempo = 17;
 
 int Contempt = 10;
 
@@ -49,7 +49,7 @@ void search_init()
 {
     for (int d = 1; d < 32; d++)
         for (int c = 1; c < 32; c++)
-            Reduction[d][c] = 0.4 * log(d) + 0.8 * log(c);
+            Reduction[d][c] = 0.393 * log(d) + 0.852 * log(c);
 }
 
 // The below is a bit ugly, but the idea is simple. I don't want to maintain 2 separate
@@ -78,11 +78,11 @@ int aspirate(int depth, move_t pv[], int score)
     if (depth == 1)
         return search(&rootPos, 0, depth, -INF, +INF, pv);
 
-    int delta = 24;
+    int delta = 16;
     int alpha = score - delta;
     int beta = score + delta;
 
-    for ( ; ; delta += delta) {
+    for ( ; ; delta += delta * 0.959) {
         score = search(&rootPos, 0, depth, alpha, beta, pv);
 
         if (score <= alpha) {
