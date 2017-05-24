@@ -43,8 +43,8 @@ static eval_t queen(int r, int f)
 
 static eval_t king(int r, int f)
 {
-    static const int FileWeight[NB_FILE] = {54, 84, 40, 0, 0, 40, 84, 54};
-    static const int RankWeight[NB_RANK] = {28, 0,-28,-46,-58,-70,-70,-70};
+    const int FileWeight[NB_FILE] = {53, 76, 43, 0, 0, 43, 76, 53};
+    const int RankWeight[NB_RANK] = {30, 0, -27, -46, -57, -64, -64, -64};
     static const int CenterWeight = 14;
 
     return (eval_t) {FileWeight[f] + RankWeight[r], CenterWeight * (Center[r] + Center[f])};
