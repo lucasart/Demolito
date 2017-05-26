@@ -13,7 +13,6 @@
  * You should have received a copy of the GNU General Public License along with this program. If
  * not, see <http://www.gnu.org/licenses/>.
 */
-#include <thread>
 #include <math.h>
 #include <setjmp.h>
 #include "search.h"
@@ -26,6 +25,7 @@
 
 Position rootPos;
 Stack rootStack;
+Limits lim;
 
 // Protect thread scheduling decisions
 static mtx_t mtxSchedule;
@@ -96,7 +96,7 @@ int aspirate(int depth, move_t pv[], int score)
     }
 }
 
-void iterate(const Limits *lim, Worker *worker)
+void iterate(Worker *worker)
 {
     move_t pv[MAX_PLY + 1];
     int volatile score = 0;  /* Silence GCC warnings: (1) uninitialized warning (bogus); (2) clobber
@@ -104,7 +104,7 @@ void iterate(const Limits *lim, Worker *worker)
 
     thisWorker = worker;
 
-    for (int depth = 1; depth <= lim->depth; depth++) {
+    for (int depth = 1; depth <= lim.depth; depth++) {
         mtx_lock(&mtxSchedule);
 
         if (signal == STOP) {
@@ -116,8 +116,8 @@ void iterate(const Limits *lim, Worker *worker)
         // If half of the threads are searching >= depth, then move to the next depth.
         // Special cases where this does not apply:
         // depth == 1: we want all threads to finish depth == 1 asap.
-        // depth == lim->depth: there is no next depth.
-        if (WorkersCount >= 2 && depth >= 2 && depth < lim->depth) {
+        // depth == lim.depth: there is no next depth.
+        if (WorkersCount >= 2 && depth >= 2 && depth < lim.depth) {
             int cnt = 0;
 
             for (int i = 0; i < WorkersCount; i++)
@@ -170,7 +170,7 @@ void iterate(const Limits *lim, Worker *worker)
     mtx_unlock(&mtxSchedule);
 }
 
-int64_t search_go(const Limits *lim)
+int64_t search_go(void *)
 {
     struct timespec start;
     static const struct timespec resolution = {0, 5000000};  // 5ms
@@ -180,12 +180,12 @@ int64_t search_go(const Limits *lim)
     mtx_init(&mtxSchedule, mtx_plain);
     signal = 0;
 
-    std::thread threads[WorkersCount];
+    thrd_t threads[WorkersCount];
     smp_new_search();
 
     for (int i = 0; i < WorkersCount; i++)
         // Start searching thread
-        threads[i] = std::thread(iterate, lim, &Workers[i]);
+        thrd_create(&threads[i], iterate, &Workers[i]);
 
     do {
         nanosleep(&resolution, NULL);  // FIXME: POSIX only
@@ -193,11 +193,11 @@ int64_t search_go(const Limits *lim)
         // Check for search termination conditions, but only after depth 1 has been
         // completed, to make sure we do not return an illegal move.
         if (info_last_depth(&ui) > 0) {
-            if (lim->nodes && smp_nodes() >= lim->nodes) {
+            if (lim.nodes && smp_nodes() >= lim.nodes) {
                 mtx_lock(&mtxSchedule);
                 signal = STOP;
                 mtx_unlock(&mtxSchedule);
-            } else if (lim->movetime && elapsed_msec(&start) >= lim->movetime) {
+            } else if (lim.movetime && elapsed_msec(&start) >= lim.movetime) {
                 mtx_lock(&mtxSchedule);
                 signal = STOP;
                 mtx_unlock(&mtxSchedule);
@@ -206,7 +206,7 @@ int64_t search_go(const Limits *lim)
     } while (signal != STOP);
 
     for (int i = 0; i < WorkersCount; i++)
-        threads[i].join();
+        thrd_join(threads[i], NULL);
 
     info_print_bestmove(&ui);
     info_destroy(&ui);

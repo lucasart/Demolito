@@ -13,13 +13,12 @@
  * You should have received a copy of the GNU General Public License along with this program. If
  * not, see <http://www.gnu.org/licenses/>.
 */
-#include <thread>
-#include "uci.h"
 #include "eval.h"
-#include "search.h"
-#include "htable.h"
 #include "gen.h"
+#include "htable.h"
+#include "search.h"
 #include "smp.h"
+#include "uci.h"
 
 // Tuning parameters
 int X[] = {};
@@ -51,11 +50,12 @@ static void intro()
     // Declare UCI options for tuning parameters
     for (int i = 0; i < (int)(sizeof(X) / sizeof(int)); i++)
         printf("option name X%d type spin default %d min %d max %d\n", i, X[i],
-               min(0, 2 * X[i]), max(0, 2 * X[i]));
+               X[i] > 0 ? 0 : 2 * X[i], X[i] > 0 ? 2 * X[i] : 0);
 
     // Prepare .var file for Joona's SPSA tuner with tuning parameters
     for (int i = 0; i < (int)(sizeof(X) / sizeof(int)); i++)
-        printf("X%d,%d,%d,%d,%.2f,0.002,0\n", i, X[i], min(0, 2 * X[i]), max(0, 2 * X[i]), abs(X[i]) / 8.0);
+        printf("X%d,%d,%d,%d,%.2f,0.002,0\n", i, X[i], X[i] > 0 ? 0 : 2 * X[i], X[i] > 0 ? 2 * X[i] : 0,
+               abs(X[i]) / 8.0);
 
     puts("uciok");
 }
@@ -121,7 +121,6 @@ static void position(char **linePos)
 
 static void go(char **linePos)
 {
-    Limits lim;
     memset(&lim, 0, sizeof(lim));
     lim.depth = MAX_DEPTH;
     lim.movestogo = 30;
@@ -148,7 +147,9 @@ static void go(char **linePos)
 
     if (lim.time || lim.inc) {
         lim.movetime = ((lim.movestogo - 1) * lim.inc + lim.time) / lim.movestogo;
-        lim.movetime = min(lim.movetime, lim.time - TimeBuffer);
+
+        if (lim.movetime > lim.time - TimeBuffer)
+            lim.movetime = lim.time - TimeBuffer;
     }
 
     if (Timer) {
@@ -156,7 +157,7 @@ static void go(char **linePos)
         Timer = 0;
     }
 
-    thrd_create(&Timer, search_go, (void *)&lim);
+    thrd_create(&Timer, search_go, NULL);
 }
 
 static void eval()

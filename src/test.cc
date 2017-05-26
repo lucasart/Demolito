@@ -92,7 +92,6 @@ uint64_t test_search(bool perft, int depth, int threads)
 
     Chess960 = true;  // Test positions contain some Chess960 ones
 
-    Limits lim;
     memset(&lim, 0, sizeof(lim));
     lim.depth = depth;
 
@@ -109,7 +108,7 @@ uint64_t test_search(bool perft, int depth, int threads)
             nodes = gen_perft(&rootPos, depth, 0);
             printf("perft(%d) = %" PRIu64 "\n", depth, nodes);
         } else
-            nodes = search_go(&lim);
+            nodes = search_go(NULL);
 
         puts("");
         result += nodes;
