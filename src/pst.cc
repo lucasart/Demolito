@@ -22,32 +22,31 @@ static const int Center[NB_FILE] = {-5,-2, 0, 2, 2, 0,-2,-5};
 static eval_t knight(int r, int f)
 {
     const int c = Center[r] + Center[f];
-    return (eval_t) {10 * c, 3 * c};
+    return (eval_t) {10 * c, 51 * c / 16};
 }
 
 static eval_t bishop(int r, int f)
 {
     const int c = Center[r] + Center[f];
-    return (eval_t) {2 * c + 8 * (r + f == 7 || r - f == 0) - 20 * (r == RANK_1), 3 * c};
+    return (eval_t) {2 * c + 127 * (r + f == 7 || r - f == 0) / 16 - 73 * (r == RANK_1) / 4, 23 * c / 8};
 }
 
 static eval_t rook(int r, int f)
 {
-    return (eval_t) {3 * Center[f] + 16 * (r == RANK_7), 16 * (r == RANK_7)};
+    return (eval_t) {11 * Center[f] / 4 + 127 * (r == RANK_7) / 8, 137 * (r == RANK_7) / 8};
 }
 
 static eval_t queen(int r, int f)
 {
-    return (eval_t) {-10 * (r == RANK_1), 4 * (Center[r] + Center[f])};
+    return (eval_t) {-75 * (r == RANK_1) / 8, 67 * (Center[r] + Center[f]) / 16};
 }
 
 static eval_t king(int r, int f)
 {
-    const int FileWeight[NB_FILE] = {53, 76, 43, 0, 0, 43, 76, 53};
-    const int RankWeight[NB_RANK] = {30, 0, -27, -46, -57, -64, -64, -64};
-    static const int CenterWeight = 14;
+    const int FileWeight[NB_FILE] = {55, 70, 42, 0, 0, 42, 70, 55};
+    const int RankWeight[NB_RANK] = {26, 0, -26, -44, -58, -60, -60, -60};
 
-    return (eval_t) {FileWeight[f] + RankWeight[r], CenterWeight * (Center[r] + Center[f])};
+    return (eval_t) {FileWeight[f] + RankWeight[r], 107 * (Center[r] + Center[f]) / 8};
 }
 
 static eval_t pawn(int r, int f)
@@ -56,9 +55,9 @@ static eval_t pawn(int r, int f)
 
     if (f == FILE_D || f == FILE_E) {
         if (r == RANK_3 || r == RANK_5)
-            e.op = 18;
+            e.op = 17;
         else if (r == RANK_4)
-            e.op = 36;
+            e.op = 38;
     }
 
     return e;
