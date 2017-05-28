@@ -34,6 +34,11 @@ int move_to(move_t m)
     return (m >> 6) & 077;
 }
 
+int move_from_to(move_t m)
+{
+    return m & 07777;
+}
+
 int move_prom(move_t m)
 {
     return m >> 12;

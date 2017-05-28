@@ -48,7 +48,8 @@ void sort_generate(Sort *s, const Position *pos, int depth)
 
 void sort_score(Sort *s, const Position *pos, move_t ttMove)
 {
-    const uint64_t moveKey = stack_move_key(&thisWorker->stack);
+    const move_t refutation = thisWorker->refutation[stack_move_key(&thisWorker->stack) &
+                              (NB_REFUTATION - 1)];
 
     for (size_t i = 0; i < s->cnt; i++) {
         if (s->moves[i] == ttMove)
@@ -58,17 +59,15 @@ void sort_score(Sort *s, const Position *pos, move_t ttMove)
                 const int see = move_see(pos, s->moves[i]);
                 s->scores[i] = see >= 0 ? see + SEPARATION : see - SEPARATION;
             } else
-                s->scores[i] = s->moves[i] == thisWorker->refutation[moveKey & (NB_REFUTATION - 1)]
-                               ? HISTORY_MAX + 1
-                               : thisWorker->history[pos->turn][move_from(s->moves[i])][move_to(s->moves[i])];
+                s->scores[i] = s->moves[i] == refutation ? HISTORY_MAX + 1
+                               : thisWorker->history[pos->turn][move_from_to(s->moves[i])];
         }
     }
 }
 
 void history_update(int c, move_t m, int bonus)
 {
-    const int from = move_from(m), to = move_to(m);
-    int *t = &thisWorker->history[c][from][to];
+    int *t = &thisWorker->history[c][move_from_to(m)];
 
     *t += bonus;
 
