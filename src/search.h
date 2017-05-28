@@ -1,15 +1,14 @@
 #pragma once
 #include <atomic>
-#include "position.h"
 #include "zobrist.h"
 
 extern std::atomic<uint64_t> signal;
 enum {STOP = (uint64_t)(-1)};
 
-struct Limits {
+typedef struct {
     int depth, movestogo;
     int64_t movetime, time, inc, nodes;
-};
+} Limits;
 
 extern Position rootPos;
 extern Stack rootStack;

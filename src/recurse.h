@@ -186,9 +186,9 @@ int generic_search(const Position *pos, int ply, int depth, int alpha, int beta,
 
                 if (!move_is_capture(pos, currentMove)) {
                     lmrCount++;
-                    reduction = Reduction[min(31, nextDepth)][min(31, lmrCount)];
-                    assert(nextDepth >= 1);
-                    assert(lmrCount >= 1);
+                    assert(1 <= nextDepth && nextDepth <= MAX_DEPTH);
+                    assert(1 <= lmrCount && lmrCount <= MAX_MOVES);
+                    reduction = Reduction[nextDepth][lmrCount];
                 }
 
                 // Reduced depth, zero window

@@ -1,8 +1,6 @@
 #pragma once
 #include "types.h"
 
-typedef uint64_t bitboard_t;
-
 void bb_init();
 
 /* Bitboard Accessors */

@@ -2,21 +2,6 @@
 #include "types.h"
 #include "move.h"
 
-struct Position {
-    bitboard_t byColor[NB_COLOR];
-    bitboard_t byPiece[NB_PIECE];
-    int turn;
-    bitboard_t castleRooks;
-    int epSquare;
-    int rule50;
-
-    bitboard_t attacked, checkers, pins;
-    uint64_t key, pawnKey;
-    eval_t pst;
-    char pieceOn[NB_SQUARE];
-    eval_t pieceMaterial[NB_COLOR];
-};
-
 void pos_set(Position *pos, const char *fen);
 void pos_get(const Position *pos, char *fen);
 

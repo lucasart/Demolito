@@ -8,10 +8,6 @@
 #include <stdio.h>
 #include <time.h>
 
-#define min(x, y) ((x) < (y) ? (x) : (y))
-#define max(x, y) ((x) > (y) ? (x) : (y))
-#define swap(x, y) do { typeof(x) tmp = x; x = y; y = tmp; } while (0)
-
 extern bool Chess960;
 
 extern int64_t dbgCnt[2];
@@ -64,9 +60,9 @@ enum {
 
 enum {OPENING, ENDGAME, NB_PHASE};
 
-struct eval_t {
+typedef struct {
     int op, eg;
-};
+} eval_t;
 
 static inline void eval_add(eval_t *e1, eval_t e2) { e1->op += e2.op; e1->eg += e2.eg; }
 static inline void eval_sub(eval_t *e1, eval_t e2) { e1->op -= e2.op; e1->eg -= e2.eg; }
@@ -85,6 +81,25 @@ bool score_ok(int score);
 bool is_mate_score(int score);
 int mated_in(int ply);
 int mate_in(int ply);
+
+/* Position maintains the board state */
+
+typedef uint64_t bitboard_t;
+
+typedef struct {
+    bitboard_t byColor[NB_COLOR];
+    bitboard_t byPiece[NB_PIECE];
+    int turn;
+    bitboard_t castleRooks;
+    int epSquare;
+    int rule50;
+
+    bitboard_t attacked, checkers, pins;
+    uint64_t key, pawnKey;
+    eval_t pst;
+    char pieceOn[NB_SQUARE];
+    eval_t pieceMaterial[NB_COLOR];
+} Position;
 
 extern int64_t elapsed_msec(const struct timespec *start);
 

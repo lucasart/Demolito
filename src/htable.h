@@ -3,7 +3,7 @@
 
 enum {LBOUND, EXACT, UBOUND};
 
-struct HashEntry {
+typedef struct {
     uint64_t keyXorData;
     union {
         uint64_t data;
@@ -12,7 +12,7 @@ struct HashEntry {
             int8_t depth, bound;
         };
     };
-};
+} HashEntry;
 
 // Adjust mate scores to plies from current position, instead of plies from root
 int score_to_hash(int score, int ply);

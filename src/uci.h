@@ -4,13 +4,13 @@
 
 void uci_loop();
 
-struct Info {
+typedef struct {
     struct timespec start;
 
     int lastDepth;
     move_t best, ponder;
     mtx_t mtx;
-};
+} Info;
 
 extern Info ui;
 extern int X[];

@@ -1,18 +1,17 @@
 #pragma once
-#include "bitboard.h"
 #include "types.h"
 
-struct PRNG {
+typedef struct {
     uint64_t a, b, c, d;
-};
+} PRNG;
 
 void prng_init(PRNG *prng, uint64_t seed);
 uint64_t prng_rand(PRNG *prng);
 
-struct Stack {
+typedef struct {
     uint64_t keys[MAX_GAME_PLY];
     int idx;
-};
+} Stack;
 
 void gs_clear(Stack *gs);
 void gs_push(Stack *gs, uint64_t key);

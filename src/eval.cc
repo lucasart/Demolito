@@ -13,7 +13,9 @@
  * You should have received a copy of the GNU General Public License along with this program. If
  * not, see <http://www.gnu.org/licenses/>.
 */
+#include "bitboard.h"
 #include "eval.h"
+#include "position.h"
 #include "smp.h"
 
 /* Pre-calculated in eval_init() */
@@ -322,8 +324,11 @@ void eval_init()
                            | (f < FILE_H ? bb_file(f + 1) : 0);
 
     for (int s1 = A1; s1 <= H8; ++s1)
-        for (int s2 = A1; s2 <= H8; ++s2)
-            KingDistance[s1][s2] = max(abs(rank_of(s1) - rank_of(s2)), abs(file_of(s1) - file_of(s2)));
+        for (int s2 = A1; s2 <= H8; ++s2) {
+            const int rankDiff = abs(rank_of(s1) - rank_of(s2));
+            const int fileDiff = abs(file_of(s1) - file_of(s2));
+            KingDistance[s1][s2] = rankDiff > fileDiff ? rankDiff : fileDiff;
+        }
 }
 
 int evaluate(const Position *pos)

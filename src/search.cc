@@ -15,11 +15,12 @@
 */
 #include <math.h>
 #include <setjmp.h>
-#include "search.h"
-#include "sort.h"
 #include "eval.h"
 #include "htable.h"
+#include "position.h"
+#include "search.h"
 #include "smp.h"
+#include "sort.h"
 #include "uci.h"
 #include "zobrist.h"
 
@@ -43,13 +44,13 @@ int draw_score(int ply)
     return (ply & 1 ? Contempt : -Contempt) * EP / 100;
 }
 
-int Reduction[32][32];
+int Reduction[MAX_DEPTH + 1][MAX_MOVES];
 
 void search_init()
 {
-    for (int d = 1; d < 32; d++)
-        for (int c = 1; c < 32; c++)
-            Reduction[d][c] = 0.393 * log(d) + 0.852 * log(c);
+    for (int d = 1; d <= MAX_DEPTH; d++)
+        for (int c = 1; c < MAX_MOVES; c++)
+            Reduction[d][c] = 0.393 * log(d > 31 ? 31 : d) + 0.852 * log(c > 31 ? 31 : c);
 }
 
 // The below is a bit ugly, but the idea is simple. I don't want to maintain 2 separate
