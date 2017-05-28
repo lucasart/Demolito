@@ -101,8 +101,8 @@ static eval_t mobility(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
 
 static eval_t bishop_pair(const Position *pos, int us)
 {
-    static const bitboard_t WhiteSquares = 0x55AA55AA55AA55AAULL;
-    static const eval_t bonus = {102, 114};
+    const bitboard_t WhiteSquares = 0x55AA55AA55AA55AAULL;
+    const eval_t bonus = {96, 114};
 
     const bitboard_t bishops = pos_pieces_cp(pos, us, BISHOP);
 
@@ -111,8 +111,8 @@ static eval_t bishop_pair(const Position *pos, int us)
 
 static int tactics(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE + 1])
 {
-    const int Hanging[] = {77, 64, 83, 158};
-    const int Ahead = 16;
+    const int Hanging[] = {83, 68, 92, 179};
+    const int Ahead[] = {15, 17, 16, 15, 16};
 
     const int them = opposite(us);
     bitboard_t b = attacks[them][PAWN] & (pos->byColor[us] ^ pos_pieces_cp(pos, us, PAWN));
@@ -131,17 +131,20 @@ static int tactics(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_
     b = bb_shift(pos_pieces_cp(pos, us, PAWN), push_inc(us))
         & (pos->byColor[us] ^ pos_pieces_cp(pos, us, PAWN));
 
-    if (b)
-        result -= Ahead * bb_count(b);
+    while (b) {
+        const int p = pos->pieceOn[bb_pop_lsb(&b)];
+        assert(KNIGHT <= p && p <= KING);
+        result -= Ahead[p];
+    }
 
     return result;
 }
 
 static int safety(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE + 1])
 {
-    const int AttackWeight[] = {39, 61};
-    const int CheckWeight[] = {65, 69};
-    const int BishopXRay = 52, RookXRay = 68;
+    const int AttackWeight[] = {36, 40, 66, 60};
+    const int CheckWeight[] = {61, 69, 66, 69};
+    const int BishopXRay = 52, RookXRay = 73;
 
     const int them = opposite(us);
     int result = 0, cnt = 0;
@@ -154,8 +157,8 @@ static int safety(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_P
 
         if (attacked) {
             cnt++;
-            result -= bb_count(attacked) * AttackWeight[p / 2]
-                      - bb_count(attacked & attacks[us][NB_PIECE]) * AttackWeight[p / 2] / 2;
+            result -= bb_count(attacked) * AttackWeight[p]
+                      - bb_count(attacked & attacks[us][NB_PIECE]) * AttackWeight[p] / 2;
         }
     }
 
@@ -175,7 +178,7 @@ static int safety(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_P
 
             if (b) {
                 cnt++;
-                result -= bb_count(b) * CheckWeight[p / 2];
+                result -= bb_count(b) * CheckWeight[p];
             }
         }
 
@@ -202,8 +205,8 @@ static int safety(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_P
 
 static eval_t passer(int us, int pawn, int ourKing, int theirKing)
 {
-    const eval_t bonus[] = {{0, 6}, {0, 14}, {22, 29}, {54, 70}, {138, 150}, {268, 249}};
-    const int adjust[] = {0, 0, 11, 41, 82, 112};
+    const eval_t bonus[] = {{0, 6}, {0, 14}, {23, 27}, {54, 70}, {137, 152}, {278, 250}};
+    const int adjust[] = {0, 0, 10, 41, 80, 114};
 
     const int n = relative_rank_of(us, pawn) - RANK_2;
 
@@ -222,9 +225,9 @@ static eval_t passer(int us, int pawn, int ourKing, int theirKing)
 
 static eval_t do_pawns(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE + 1])
 {
-    const eval_t Isolated[2] = {{20, 36}, {41, 36}};
-    const eval_t Hole[2] = {{17, 18}, {30, 20}};
-    const int shieldBonus[NB_RANK] = {0, 22, 15, 12, 10, 8, 8};
+    const eval_t Isolated[2] = {{19, 33}, {42, 34}};
+    const eval_t Hole[2] = {{18, 18}, {29, 22}};
+    const int shieldBonus[NB_RANK] = {0, 23, 17, 12, 10, 8, 8};
 
     const int them = opposite(us);
     const bitboard_t ourPawns = pos_pieces_cp(pos, us, PAWN);
@@ -241,7 +244,6 @@ static eval_t do_pawns(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
         result.op += shieldBonus[relative_rank_of(us, bb_pop_lsb(&b))];
 
     // Pawn structure
-
     b = ourPawns;
 
     while (b) {
@@ -294,7 +296,7 @@ static eval_t pawns(const Position *pos, bitboard_t attacks[NB_COLOR][NB_PIECE +
 
 static int blend(const Position *pos, eval_t e)
 {
-    static const int full = 4 * (N + B + R) + 2 * Q;
+    const int full = 4 * (N + B + R) + 2 * Q;
     const int total = pos->pieceMaterial[WHITE].eg+ pos->pieceMaterial[BLACK].eg;
     return e.op * total / full + e.eg * (full - total) / full;
 }
