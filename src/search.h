@@ -1,9 +1,9 @@
 #pragma once
-#include <atomic>
+#include <stdatomic.h>
 #include "zobrist.h"
 
-extern std::atomic<uint64_t> signal;
-enum {STOP = (uint64_t)(-1)};
+extern atomic_uint_fast64_t signal;
+enum {STOP = (uint_fast64_t)(-1)};
 
 typedef struct {
     int depth, movestogo;

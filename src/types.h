@@ -1,7 +1,7 @@
 #pragma once
 #include <assert.h>
-#define __STDC_FORMAT_MACROS  // C++
 #include <inttypes.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>

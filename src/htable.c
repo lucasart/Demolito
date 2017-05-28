@@ -36,7 +36,7 @@ void hash_resize(uint64_t hashMB)
 {
     const uint64_t newCount = (hashMB << 20) / sizeof(HashEntry);
 
-    HashTable = (HashEntry*)realloc(HashTable, newCount * sizeof(HashEntry));  // FIXME: C++ needs cast
+    HashTable = realloc(HashTable, newCount * sizeof(HashEntry));
 
     if (newCount > HashCount)
         memset(&HashTable[HashCount], 0, (newCount - HashCount) * sizeof(HashEntry));

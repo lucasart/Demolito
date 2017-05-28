@@ -32,7 +32,7 @@ Limits lim;
 // Protect thread scheduling decisions
 static mtx_t mtxSchedule;
 
-std::atomic<uint64_t> signal;  // bit #i is set if thread #i should abort
+atomic_uint_fast64_t signal;  // bit #i is set if thread #i should abort
 static thread_local jmp_buf jbuf;  // exception jump buffer
 enum {ABORT_ONE = 1, ABORT_ALL};  // exceptions: abort current or all threads
 
@@ -101,12 +101,11 @@ int aspirate(int depth, move_t pv[], int score)
 void iterate(Worker *worker)
 {
     move_t pv[MAX_PLY + 1];
-    int volatile score = 0;  /* Silence GCC warnings: (1) uninitialized warning (bogus); (2) clobber
-        warning due to longjmp (technically correct but inconsequential) */
+    int volatile score = 0;
 
     thisWorker = worker;
 
-    for (int depth = 1; depth <= lim.depth; depth++) {
+    for (volatile int depth = 1; depth <= lim.depth; depth++) {
         mtx_lock(&mtxSchedule);
 
         if (signal == STOP) {
@@ -163,7 +162,7 @@ void iterate(Worker *worker)
             }
         }
 
-        info_update(&ui, depth, score, smp_nodes(), pv);
+        info_update(&ui, depth, score, smp_nodes(), pv, false);
     }
 
     // Max depth completed by current thread. All threads should stop.
@@ -172,8 +171,10 @@ void iterate(Worker *worker)
     mtx_unlock(&mtxSchedule);
 }
 
-int64_t search_go(void *)
+int64_t search_go(void *dummy)
 {
+    (void)dummy;  // Silence compiler warning
+
     struct timespec start;
     static const struct timespec resolution = {0, 5000000};  // 5ms
 

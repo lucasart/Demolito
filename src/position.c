@@ -134,7 +134,7 @@ void pos_set(Position *pos, const char *fen)
 {
     clear(pos);
 
-    char *str = strdup(fen), *strPos;
+    char *str = strdup(fen), *strPos = NULL;
     char *token = strtok_r(str, " ", &strPos);
 
     // int placement
@@ -150,7 +150,7 @@ void pos_set(Position *pos, const char *fen)
             for (int col = WHITE; col <= BLACK; ++col) {
                 const int p = strchr(PieceLabel[col], c) - PieceLabel[col];
 
-                if (unsigned(p) < NB_PIECE) {
+                if ((unsigned)p < NB_PIECE) {
                     set_square(pos, col, p, s);
                     ++s;
                 }

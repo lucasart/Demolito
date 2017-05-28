@@ -3,6 +3,7 @@
 #pragma once
 #include <pthread.h>
 
+#define thread_local _Thread_local
 typedef pthread_mutex_t mtx_t;
 typedef pthread_t thrd_t;
 typedef int (*thrd_start_t)(void*);
