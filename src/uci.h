@@ -1,6 +1,6 @@
 #pragma once
 #include "threads.h"
-#include "move.h"
+#include "types.h"
 
 void uci_loop();
 

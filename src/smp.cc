@@ -26,6 +26,7 @@ void smp_new_search()
 {
     for (int i = 0; i < WorkersCount; i++) {
         memset(Workers[i].history, 0, sizeof(Workers[i].history));
+        memset(Workers[i].refutation, 0, sizeof(Workers[i].refutation));
         Workers[i].stack = rootStack;
         Workers[i].nodes = 0;
         Workers[i].depth = 0;

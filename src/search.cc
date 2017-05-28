@@ -17,6 +17,7 @@
 #include <setjmp.h>
 #include "eval.h"
 #include "htable.h"
+#include "move.h"
 #include "position.h"
 #include "search.h"
 #include "smp.h"

@@ -82,9 +82,8 @@ bool is_mate_score(int score);
 int mated_in(int ply);
 int mate_in(int ply);
 
-/* Position maintains the board state */
-
 typedef uint64_t bitboard_t;
+typedef uint16_t move_t;  // from:6, to:6, prom: 3 (NB_PIECE if none)
 
 typedef struct {
     bitboard_t byColor[NB_COLOR];

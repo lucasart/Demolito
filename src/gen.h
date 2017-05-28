@@ -1,5 +1,5 @@
 #pragma once
-#include "move.h"
+#include "types.h"
 
 enum {MAX_MOVES = 192};
 

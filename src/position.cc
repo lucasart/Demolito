@@ -15,6 +15,7 @@
 */
 #include <ctype.h>
 #include "bitboard.h"
+#include "move.h"
 #include "position.h"
 #include "pst.h"
 #include "zobrist.h"

@@ -1,8 +1,6 @@
 #pragma once
 #include "types.h"
 
-typedef uint16_t move_t;  // from:6, to:6, prom: 3 (NB_PIECE if none)
-
 bool move_ok(move_t m);
 
 int move_from(move_t m);

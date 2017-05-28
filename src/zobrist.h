@@ -13,11 +13,12 @@ typedef struct {
     int idx;
 } Stack;
 
-void gs_clear(Stack *gs);
-void gs_push(Stack *gs, uint64_t key);
-void gs_pop(Stack *gs);
-uint64_t gs_back(const Stack *gs);
-bool gs_repetition(const Stack *gs, int rule50);
+void stack_clear(Stack *gs);
+void stack_push(Stack *gs, uint64_t key);
+void stack_pop(Stack *gs);
+uint64_t stack_back(const Stack *gs);
+uint64_t stack_move_key(const Stack *gs);
+bool stack_repetition(const Stack *gs, int rule50);
 
 extern uint64_t ZobristKey[NB_COLOR][NB_PIECE][NB_SQUARE];
 extern uint64_t ZobristEnPassant[NB_SQUARE + 1];

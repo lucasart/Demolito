@@ -1,6 +1,5 @@
 #pragma once
 #include "types.h"
-#include "move.h"
 
 void pos_set(Position *pos, const char *fen);
 void pos_get(const Position *pos, char *fen);

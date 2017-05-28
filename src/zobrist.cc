@@ -26,30 +26,36 @@ static uint64_t rotate(uint64_t x, int k)
     return (x << k) | (x >> (64 - k));
 }
 
-void gs_clear(Stack *gs)
+void stack_clear(Stack *gs)
 {
     gs->idx = 0;
 }
 
-void gs_push(Stack *gs, uint64_t key)
+void stack_push(Stack *gs, uint64_t key)
 {
     assert(0 <= gs->idx && gs->idx < MAX_GAME_PLY);
     gs->keys[gs->idx++] = key;
 }
 
-void gs_pop(Stack *gs)
+void stack_pop(Stack *gs)
 {
     assert(0 < gs->idx && gs->idx <= MAX_GAME_PLY);
     gs->idx--;
 }
 
-uint64_t gs_back(const Stack *gs)
+uint64_t stack_back(const Stack *gs)
 {
     assert(0 < gs->idx && gs->idx <= MAX_GAME_PLY);
     return gs->keys[gs->idx - 1];
 }
 
-bool gs_repetition(const Stack *gs, int rule50)
+uint64_t stack_move_key(const Stack *gs)
+{
+    assert(0 < gs->idx && gs->idx <= MAX_GAME_PLY);
+    return gs->idx > 1 ? gs->keys[gs->idx - 1] ^ gs->keys[gs->idx - 2] : 0;
+}
+
+bool stack_repetition(const Stack *gs, int rule50)
 {
     // 50 move rule
     if (rule50 >= 100)

@@ -20,7 +20,7 @@ int generic_search(const Position *pos, int ply, int depth, int alpha, int beta,
     const int RazorMargin[] = {0, 241, 449, 516, 818};
 
     assert(Qsearch == (depth <= 0));
-    assert(gs_back(&thisWorker->stack) == pos->key);
+    assert(stack_back(&thisWorker->stack) == pos->key);
     assert(alpha < beta);
 
     const bool pvNode = beta > alpha + 1;
@@ -47,7 +47,7 @@ int generic_search(const Position *pos, int ply, int depth, int alpha, int beta,
     if (pvNode)
         pv[0] = 0;
 
-    if (ply > 0 && (gs_repetition(&thisWorker->stack, pos->rule50)
+    if (ply > 0 && (stack_repetition(&thisWorker->stack, pos->rule50)
                     || pos_insufficient_material(pos)))
         return draw_score(ply);
 
@@ -107,11 +107,11 @@ int generic_search(const Position *pos, int ply, int depth, int alpha, int beta,
             && staticEval >= beta && pos->pieceMaterial[us].eg) {
         const int nextDepth = depth - (2 + depth / 3) - (refinedEval >= beta + P);
         pos_switch(&nextPos, pos);
-        gs_push(&thisWorker->stack, nextPos.key);
+        stack_push(&thisWorker->stack, nextPos.key);
         score = nextDepth <= 0
                 ? -qsearch(&nextPos, ply + 1, nextDepth, -beta, -(beta - 1), childPv)
                 : -search(&nextPos, ply + 1, nextDepth, -beta, -(beta - 1), childPv);
-        gs_pop(&thisWorker->stack);
+        stack_pop(&thisWorker->stack);
 
         if (score >= beta)
             return score >= mate_in(MAX_PLY) ? beta : score;
@@ -162,7 +162,7 @@ int generic_search(const Position *pos, int ply, int depth, int alpha, int beta,
                 && !move_is_capture(pos, currentMove))
             continue;
 
-        gs_push(&thisWorker->stack, nextPos.key);
+        stack_push(&thisWorker->stack, nextPos.key);
 
         const int ext = see >= 0 && nextPos.checkers;
         const int nextDepth = depth - 1 + ext;
@@ -207,7 +207,7 @@ int generic_search(const Position *pos, int ply, int depth, int alpha, int beta,
         }
 
         // Undo move
-        gs_pop(&thisWorker->stack);
+        stack_pop(&thisWorker->stack);
 
         // New best score
         if (score > bestScore) {
@@ -241,6 +241,7 @@ int generic_search(const Position *pos, int ply, int depth, int alpha, int beta,
         for (size_t i = 0; i < s.idx; i++) {
             const int bonus = depth * depth;
             history_update(us, s.moves[i], s.moves[i] == bestMove ? bonus : -bonus);
+            thisWorker->refutation[stack_move_key(&thisWorker->stack) & (NB_REFUTATION - 1)] = bestMove;
         }
 
     // TT write

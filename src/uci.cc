@@ -17,6 +17,7 @@
 #include "eval.h"
 #include "gen.h"
 #include "htable.h"
+#include "move.h"
 #include "position.h"
 #include "search.h"
 #include "smp.h"
@@ -107,15 +108,15 @@ static void position(char **linePos)
         return;
 
     pos_set(&p[idx], fen);
-    gs_clear(&rootStack);
-    gs_push(&rootStack, p[idx].key);
+    stack_clear(&rootStack);
+    stack_push(&rootStack, p[idx].key);
 
     // Parse moves (if any)
     while ((token = strtok_r(NULL, " \n", linePos))) {
         move_t m = string_to_move(&p[idx], token);
         pos_move(&p[idx^1], &p[idx], m);
         idx ^= 1;
-        gs_push(&rootStack, p[idx].key);
+        stack_push(&rootStack, p[idx].key);
     }
 
     rootPos = p[idx];

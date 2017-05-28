@@ -7,11 +7,15 @@ typedef struct {
     eval_t eval;
 } PawnEntry;
 
-enum {NB_PAWN_ENTRY = 0x4000};
+enum {
+    NB_PAWN_ENTRY = 0x4000,
+    NB_REFUTATION = 2 * 64 * 64
+};
 
 typedef struct {
     PawnEntry pawnHash[0x4000];
     int history[NB_COLOR][NB_SQUARE][NB_SQUARE];
+    move_t refutation[NB_REFUTATION];
     Stack stack;
     int64_t nodes;
     int depth;

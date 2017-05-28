@@ -101,8 +101,8 @@ uint64_t test_search(bool perft, int depth, int threads)
 
     for (int i = 0; fens[i]; i++) {
         pos_set(&rootPos, fens[i]);
-        gs_clear(&rootStack);
-        gs_push(&rootStack, rootPos.key);
+        stack_clear(&rootStack);
+        stack_push(&rootStack, rootPos.key);
         pos_print(&rootPos);
 
         if (perft) {

@@ -14,11 +14,15 @@
  * not, see <http://www.gnu.org/licenses/>.
 */
 #include "bitboard.h"
+#include "move.h"
 #include "position.h"
 #include "smp.h"
 #include "sort.h"
 
-enum {HISTORY_MAX = MAX_DEPTH * MAX_DEPTH};
+enum {
+    HISTORY_MAX = MAX_DEPTH * MAX_DEPTH,
+    SEPARATION = HISTORY_MAX + 2
+};
 
 void sort_generate(Sort *s, const Position *pos, int depth)
 {
@@ -44,15 +48,19 @@ void sort_generate(Sort *s, const Position *pos, int depth)
 
 void sort_score(Sort *s, const Position *pos, move_t ttMove)
 {
+    const uint64_t moveKey = stack_move_key(&thisWorker->stack);
+
     for (size_t i = 0; i < s->cnt; i++) {
         if (s->moves[i] == ttMove)
             s->scores[i] = +INF;
         else {
             if (move_is_capture(pos, s->moves[i])) {
                 const int see = move_see(pos, s->moves[i]);
-                s->scores[i] = see >= 0 ? see + HISTORY_MAX : see - HISTORY_MAX;
+                s->scores[i] = see >= 0 ? see + SEPARATION : see - SEPARATION;
             } else
-                s->scores[i] = thisWorker->history[pos->turn][move_from(s->moves[i])][move_to(s->moves[i])];
+                s->scores[i] = s->moves[i] == thisWorker->refutation[moveKey & (NB_REFUTATION - 1)]
+                               ? HISTORY_MAX + 1
+                               : thisWorker->history[pos->turn][move_from(s->moves[i])][move_to(s->moves[i])];
         }
     }
 }
@@ -101,11 +109,11 @@ move_t sort_next(Sort *s, const Position *pos, int *see)
     const move_t m = s->moves[s->idx];
 
     if (move_is_capture(pos, m)) {
-        if (score >= HISTORY_MAX)
-            *see = score - HISTORY_MAX;
+        if (score >= SEPARATION)
+            *see = score - SEPARATION;
         else {
-            assert(score < -HISTORY_MAX);
-            *see = score + HISTORY_MAX;
+            assert(score < -SEPARATION);
+            *see = score + SEPARATION;
         }
     } else
         *see = move_see(pos, m);
