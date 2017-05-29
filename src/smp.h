@@ -9,8 +9,8 @@ typedef struct {
 } PawnEntry;
 
 enum {
-    NB_PAWN_ENTRY = 0x4000,
-    NB_REFUTATION = 2 * 64 * 64
+    NB_PAWN_ENTRY = 16384,
+    NB_REFUTATION = 8192
 };
 
 typedef struct {
