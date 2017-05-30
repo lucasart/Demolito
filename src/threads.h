@@ -19,3 +19,4 @@ enum {thrd_success/*, thrd_timedout, thrd_busy, thrd_error, thrd_nomem*/};
 
 #define thrd_create(thrd, func, args) pthread_create(thrd, 0, (void*(*)(void*))func, args)
 #define thrd_join(thrd, dummy) pthread_join(thrd, NULL);
+#define thrd_sleep nanosleep

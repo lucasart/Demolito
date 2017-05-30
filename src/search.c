@@ -178,7 +178,7 @@ int64_t search_go(void *dummy)
     struct timespec start;
     static const struct timespec resolution = {0, 5000000};  // 5ms
 
-    clock_gettime(CLOCK_MONOTONIC, &start);  // FIXME: POSIX only
+    timespec_get(&start, TIME_UTC);
     info_create(&ui);
     mtx_init(&mtxSchedule, mtx_plain);
     signal = 0;
@@ -191,7 +191,7 @@ int64_t search_go(void *dummy)
         thrd_create(&threads[i], iterate, &Workers[i]);
 
     do {
-        nanosleep(&resolution, NULL);  // FIXME: POSIX only
+        thrd_sleep(&resolution, NULL);
 
         // Check for search termination conditions, but only after depth 1 has been
         // completed, to make sure we do not return an illegal move.

@@ -226,7 +226,7 @@ void info_create(Info *info)
 {
     info->lastDepth = 0;
     info->best = info->ponder = 0;
-    clock_gettime(CLOCK_MONOTONIC, &info->start);  // FIXME: POSIX only
+    timespec_get(&info->start, TIME_UTC);
     mtx_init(&info->mtx, mtx_plain);
 }
 
