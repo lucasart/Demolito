@@ -8,6 +8,12 @@
 #include <stdio.h>
 #include <time.h>
 
+#ifdef __STDC_NO_THREADS__
+#include "threads.h"  // glibc doesn't support C11 threads yet
+#else
+#include <threads.h>  // but musl does
+#endif
+
 extern bool Chess960;
 
 extern int64_t dbgCnt[2];

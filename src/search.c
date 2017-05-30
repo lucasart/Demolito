@@ -98,7 +98,7 @@ int aspirate(int depth, move_t pv[], int score)
     }
 }
 
-void iterate(Worker *worker)
+int iterate(void *worker)
 {
     move_t pv[MAX_PLY + 1];
     int volatile score = 0;
@@ -110,7 +110,7 @@ void iterate(Worker *worker)
 
         if (signal == STOP) {
             mtx_unlock(&mtxSchedule);
-            return;
+            return 0;
         } else
             signal &= ~(1ULL << thisWorker->id);
 
@@ -169,12 +169,12 @@ void iterate(Worker *worker)
     mtx_lock(&mtxSchedule);
     signal = STOP;
     mtx_unlock(&mtxSchedule);
+
+    return 0;
 }
 
-int64_t search_go(void *dummy)
+int64_t search_go()
 {
-    (void)dummy;  // Silence compiler warning
-
     struct timespec start;
     static const struct timespec resolution = {0, 5000000};  // 5ms
 
@@ -218,4 +218,11 @@ int64_t search_go(void *dummy)
     const int64_t nodes = smp_nodes();
 
     return nodes;
+}
+
+int search_wrapper(void *dummy)
+{
+    (void)dummy;
+    search_go();
+    return 0;
 }

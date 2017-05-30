@@ -160,7 +160,7 @@ static void go(char **linePos)
         Timer = 0;
     }
 
-    thrd_create(&Timer, search_go, NULL);
+    thrd_create(&Timer, search_wrapper, NULL);
 }
 
 static void eval()
