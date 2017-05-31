@@ -34,19 +34,14 @@ int score_from_hash(int hashScore, int ply)
 
 void hash_resize(uint64_t hashMB)
 {
-    const uint64_t newCount = (hashMB << 20) / sizeof(HashEntry);
-
-    HashTable = realloc(HashTable, newCount * sizeof(HashEntry));
-
-    if (newCount > HashCount)
-        memset(&HashTable[HashCount], 0, (newCount - HashCount) * sizeof(HashEntry));
-
-    HashCount = newCount;
+    free(HashTable);
+    HashTable = aligned_alloc(sizeof(HashEntry), hashMB << 20);
+    HashCount = (hashMB << 20) / sizeof(HashEntry);
 }
 
 bool hash_read(uint64_t key, HashEntry *e)
 {
-    const size_t idx = key & (HashCount - 1);
+    const uint64_t idx = key & (HashCount - 1);
     *e = HashTable[idx];
     return (e->keyXorData ^ e->data) == key;
 }

@@ -23,4 +23,4 @@ bool hash_read(uint64_t key, HashEntry *e);
 void hash_write(uint64_t key, const HashEntry *e);
 
 extern HashEntry *HashTable;
-extern size_t HashCount;
+extern uint64_t HashCount;
