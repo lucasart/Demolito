@@ -5,3 +5,6 @@ O="-O3 -flto -march=native -DNDEBUG"
 musl-gcc -static -std=gnu11 $W $O -o $1 ./src/*.c -lpthread -lm
 strip $1
 $1 search 12 1
+
+# For Android
+# arm-linux-gnueabi-gcc -static -std=gnu11 -Wfatal-errors -Wall -Wextra -Wshadow -O3 -flto -march=armv8-a -DNDEBUG ./src/*.c -lpthread -lm -s
