@@ -43,7 +43,7 @@ static void intro()
 {
     setvbuf(stdout, NULL, _IOLBF, BUFSIZ);
 
-    puts("id name Demolito\nid author lucasart");
+    puts("id name Demolito " VERSION "\nid author lucasart");
     printf("option name UCI_Chess960 type check default %s\n", Chess960 ? "true" : "false");
     printf("option name Hash type spin default %" PRIu64 " min 1 max 1048576\n", Hash);
     printf("option name Threads type spin default %d min 1 max 63\n", WorkersCount);

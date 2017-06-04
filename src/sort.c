@@ -49,7 +49,7 @@ void sort_generate(Sort *s, const Position *pos, int depth)
 void sort_score(Sort *s, const Position *pos, move_t ttMove)
 {
     const move_t refutation = thisWorker->refutation[stack_move_key(&thisWorker->stack) &
-                              (NB_REFUTATION - 1)];
+                                                                 (NB_REFUTATION - 1)];
 
     for (size_t i = 0; i < s->cnt; i++) {
         if (s->moves[i] == ttMove)
