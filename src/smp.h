@@ -16,6 +16,7 @@ typedef struct {
     PawnEntry pawnHash[0x4000];
     int history[NB_COLOR][NB_SQUARE * NB_SQUARE];
     move_t refutation[NB_REFUTATION];
+    move_t killers[MAX_DEPTH * 3 / 2];  // Conservative upper-bound (for search extensions)
     Stack stack;
     int64_t nodes;
     int depth;

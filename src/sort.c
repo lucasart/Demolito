@@ -21,7 +21,7 @@
 
 enum {
     HISTORY_MAX = MAX_DEPTH * MAX_DEPTH,
-    SEPARATION = HISTORY_MAX + 2
+    SEPARATION = HISTORY_MAX + 3
 };
 
 void sort_generate(Sort *s, const Position *pos, int depth)
@@ -46,7 +46,7 @@ void sort_generate(Sort *s, const Position *pos, int depth)
     s->cnt = it - s->moves;
 }
 
-void sort_score(Sort *s, const Position *pos, move_t ttMove)
+void sort_score(Sort *s, const Position *pos, move_t ttMove, int ply)
 {
     const move_t refutation = thisWorker->refutation[stack_move_key(&thisWorker->stack) &
                                                                  (NB_REFUTATION - 1)];
@@ -58,9 +58,14 @@ void sort_score(Sort *s, const Position *pos, move_t ttMove)
             if (move_is_capture(pos, s->moves[i])) {
                 const int see = move_see(pos, s->moves[i]);
                 s->scores[i] = see >= 0 ? see + SEPARATION : see - SEPARATION;
-            } else
-                s->scores[i] = s->moves[i] == refutation ? HISTORY_MAX + 1
-                               : thisWorker->history[pos->turn][move_from_to(s->moves[i])];
+            } else {
+                if (s->moves[i] == refutation)
+                    s->scores[i] = HISTORY_MAX + 2;
+                else if (s->moves[i] == thisWorker->killers[ply])
+                    s->scores[i] = HISTORY_MAX + 1;
+                else
+                    s->scores[i] = thisWorker->history[pos->turn][move_from_to(s->moves[i])];
+            }
         }
     }
 }
@@ -77,10 +82,10 @@ void history_update(int c, move_t m, int bonus)
         *t = -HISTORY_MAX;
 }
 
-void sort_init(Sort *s, const Position *pos, int depth, move_t ttMove)
+void sort_init(Sort *s, const Position *pos, int depth, move_t ttMove, int ply)
 {
     sort_generate(s, pos, depth);
-    sort_score(s, pos, ttMove);
+    sort_score(s, pos, ttMove, ply);
     s->idx = 0;
 }
 

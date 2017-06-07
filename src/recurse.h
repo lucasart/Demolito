@@ -131,7 +131,7 @@ int generic_search(const Position *pos, int ply, int depth, int alpha, int beta,
 
     // Generate and score moves
     Sort s;
-    sort_init(&s, pos, depth, he.move);
+    sort_init(&s, pos, depth, he.move, ply);
 
     int moveCount = 0, lmrCount = 0;
     move_t currentMove;
@@ -242,6 +242,7 @@ int generic_search(const Position *pos, int ply, int depth, int alpha, int beta,
             const int bonus = depth * depth;
             history_update(us, s.moves[i], s.moves[i] == bestMove ? bonus : -bonus);
             thisWorker->refutation[stack_move_key(&thisWorker->stack) & (NB_REFUTATION - 1)] = bestMove;
+            thisWorker->killers[ply] = bestMove;
         }
 
     // TT write

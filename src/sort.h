@@ -9,5 +9,5 @@ typedef struct {
     size_t cnt, idx;
 } Sort;
 
-void sort_init(Sort *s, const Position *pos, int depth, move_t ttMove);
+void sort_init(Sort *s, const Position *pos, int depth, move_t ttMove, int ply);
 move_t sort_next(Sort *s, const Position *pos, int *see);
