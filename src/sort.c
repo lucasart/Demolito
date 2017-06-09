@@ -60,9 +60,9 @@ void sort_score(Sort *s, const Position *pos, move_t ttMove, int ply)
                 s->scores[i] = see >= 0 ? see + SEPARATION : see - SEPARATION;
             } else {
                 if (s->moves[i] == refutation)
-                    s->scores[i] = HISTORY_MAX + 2;
-                else if (s->moves[i] == thisWorker->killers[ply])
                     s->scores[i] = HISTORY_MAX + 1;
+                else if (s->moves[i] == thisWorker->killers[ply])
+                    s->scores[i] = HISTORY_MAX + 2;
                 else
                     s->scores[i] = thisWorker->history[pos->turn][move_from_to(s->moves[i])];
             }
