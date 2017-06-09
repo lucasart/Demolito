@@ -32,7 +32,7 @@ int generic_search(const Position *pos, int ply, int depth, int alpha, int beta,
     Position nextPos;
 
     if (!Qsearch) {
-        const uint64_t s = atomic_load_explicit(&signal, memory_order_relaxed);
+        const uint64_t s = atomic_load_explicit(&Signal, memory_order_relaxed);
 
         if (s) {
             if (s == STOP)

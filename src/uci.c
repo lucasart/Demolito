@@ -203,7 +203,7 @@ void uci_loop()
         else if (!strcmp(token, "go"))
             go(&linePos);
         else if (!strcmp(token, "stop"))
-            signal = STOP;
+            Signal = STOP;
         else if (!strcmp(token, "eval"))
             eval();
         else if (!strcmp(token, "perft"))

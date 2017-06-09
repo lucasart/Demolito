@@ -2,7 +2,7 @@
 #include <stdatomic.h>
 #include "zobrist.h"
 
-extern atomic_uint_fast64_t signal;
+extern atomic_uint_fast64_t Signal;
 enum {STOP = (uint_fast64_t)(-1)};
 
 typedef struct {

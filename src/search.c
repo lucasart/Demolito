@@ -32,7 +32,7 @@ Limits lim;
 // Protect thread scheduling decisions
 static mtx_t mtxSchedule;
 
-atomic_uint_fast64_t signal;  // bit #i is set if thread #i should abort
+atomic_uint_fast64_t Signal;  // bit #i is set if thread #i should abort
 static thread_local jmp_buf jbuf;  // exception jump buffer
 enum {ABORT_ONE = 1, ABORT_ALL};  // exceptions: abort current or all threads
 
@@ -108,11 +108,11 @@ int iterate(void *worker)
     for (volatile int depth = 1; depth <= lim.depth; depth++) {
         mtx_lock(&mtxSchedule);
 
-        if (signal == STOP) {
+        if (Signal == STOP) {
             mtx_unlock(&mtxSchedule);
             return 0;
         } else
-            signal &= ~(1ULL << thisWorker->id);
+            Signal &= ~(1ULL << thisWorker->id);
 
         // If half of the threads are searching >= depth, then move to the next depth.
         // Special cases where this does not apply:
@@ -139,7 +139,7 @@ int iterate(void *worker)
             score = aspirate(depth, pv, score);
 
             // Iteration was completed normally. Now we need to see who is working on
-            // obsolete iterations, and raise the appropriate signal, to make them move
+            // obsolete iterations, and raise the appropriate Signal, to make them move
             // on to the next depth.
             mtx_lock(&mtxSchedule);
             uint64_t s = 0;
@@ -148,10 +148,10 @@ int iterate(void *worker)
                 if (thisWorker != &Workers[i] && Workers[i].depth <= depth)
                     s |= 1ULL << i;
 
-            signal |= s;
+            Signal |= s;
             mtx_unlock(&mtxSchedule);
         } else {
-            assert(signal & (1ULL << thisWorker->id));
+            assert(Signal & (1ULL << thisWorker->id));
             thisWorker->stack = rootStack;  // Restore an orderly state
 
             if (exception == ABORT_ONE)
@@ -167,7 +167,7 @@ int iterate(void *worker)
 
     // Max depth completed by current thread. All threads should stop.
     mtx_lock(&mtxSchedule);
-    signal = STOP;
+    Signal = STOP;
     mtx_unlock(&mtxSchedule);
 
     return 0;
@@ -181,7 +181,7 @@ int64_t search_go()
     timespec_get(&start, TIME_UTC);
     info_create(&ui);
     mtx_init(&mtxSchedule, mtx_plain);
-    signal = 0;
+    Signal = 0;
 
     thrd_t threads[WorkersCount];
     smp_new_search();
@@ -198,15 +198,15 @@ int64_t search_go()
         if (info_last_depth(&ui) > 0) {
             if (lim.nodes && smp_nodes() >= lim.nodes) {
                 mtx_lock(&mtxSchedule);
-                signal = STOP;
+                Signal = STOP;
                 mtx_unlock(&mtxSchedule);
             } else if (lim.movetime && elapsed_msec(&start) >= lim.movetime) {
                 mtx_lock(&mtxSchedule);
-                signal = STOP;
+                Signal = STOP;
                 mtx_unlock(&mtxSchedule);
             }
         }
-    } while (signal != STOP);
+    } while (Signal != STOP);
 
     for (int i = 0; i < WorkersCount; i++)
         thrd_join(threads[i], NULL);
