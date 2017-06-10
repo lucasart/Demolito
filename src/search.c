@@ -51,7 +51,7 @@ void search_init()
 {
     for (int d = 1; d <= MAX_DEPTH; d++)
         for (int c = 1; c < MAX_MOVES; c++)
-            Reduction[d][c] = 0.393 * log(d > 31 ? 31 : d) + 0.852 * log(c > 31 ? 31 : c);
+            Reduction[d][c] = 0.387 * log(d > 31 ? 31 : d) + 0.863 * log(c > 31 ? 31 : c);
 }
 
 // The below is a bit ugly, but the idea is simple. I don't want to maintain 2 separate
@@ -84,7 +84,7 @@ int aspirate(int depth, move_t pv[], int score)
     int alpha = score - delta;
     int beta = score + delta;
 
-    for ( ; ; delta += delta * 0.959) {
+    for ( ; ; delta += delta * 0.884) {
         score = search(&rootPos, 0, depth, alpha, beta, pv);
 
         if (score <= alpha) {

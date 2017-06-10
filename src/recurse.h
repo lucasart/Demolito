@@ -16,8 +16,8 @@
 
 int generic_search(const Position *pos, int ply, int depth, int alpha, int beta, move_t pv[])
 {
-    const int EvalMargin[] = {0, 137, 265, 396, 511};
-    const int RazorMargin[] = {0, 241, 449, 516, 818};
+    const int EvalMargin[] = {0, 132, 266, 405, 524};
+    const int RazorMargin[] = {0, 227, 455, 502, 853};
 
     assert(Qsearch == (depth <= 0));
     assert(stack_back(&thisWorker->stack) == pos->key);
@@ -105,7 +105,7 @@ int generic_search(const Position *pos, int ply, int depth, int alpha, int beta,
     // Null search
     if (!Qsearch && depth >= 2 && !pvNode
             && staticEval >= beta && pos->pieceMaterial[us].eg) {
-        const int nextDepth = depth - (2 + depth / 3) - (refinedEval >= beta + P);
+        const int nextDepth = depth - (2 + depth / 3) - (refinedEval >= beta + 178);
         pos_switch(&nextPos, pos);
         stack_push(&thisWorker->stack, nextPos.key);
         score = nextDepth <= 0
