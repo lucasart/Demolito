@@ -226,7 +226,7 @@ static eval_t passer(int us, int pawn, int ourKing, int theirKing)
 static eval_t do_pawns(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE + 1])
 {
     const eval_t Isolated[2] = {{19, 33}, {42, 34}};
-    const eval_t Hole[2] = {{18, 18}, {29, 22}};
+    const eval_t Backward[2] = {{18, 18}, {29, 22}};
     const int shieldBonus[NB_RANK] = {0, 23, 17, 12, 10, 8, 8};
 
     const int them = opposite(us);
@@ -250,27 +250,20 @@ static eval_t do_pawns(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
         const int s = bb_pop_lsb(&b);
         const int stop = s + push_inc(us);
         const int r = rank_of(s), f = file_of(s);
-
-        const bitboard_t adjacentFiles = AdjacentFiles[f];
-        const bitboard_t besides = ourPawns & adjacentFiles;
-
-        const bool chained = besides & (bb_rank(r) | bb_rank(us == WHITE ? r - 1 : r + 1));
-        const bool phalanx = chained && (ourPawns & PAttacks[them][stop]);
-        const bool hole = !(PawnSpan[them][stop] & ourPawns) && bb_test(attacks[them][PAWN], stop);
-        const bool isolated = !(adjacentFiles & ourPawns);
+        const bitboard_t besides = ourPawns & AdjacentFiles[f];
         const bool exposed = !(PawnPath[us][s] & pos->byPiece[PAWN]);
-        const bool passed = exposed && !(PawnSpan[us][s] & theirPawns);
 
-        if (chained) {
+        if (besides & (bb_rank(r) | bb_rank(us == WHITE ? r - 1 : r + 1))) {
             const int rr = relative_rank(us, r) - RANK_2;
+            const bool phalanx = ourPawns & PAttacks[them][stop];
             const int bonus = rr * (rr + phalanx) * 3;
             eval_add(&result, (eval_t) {8 + bonus / 2, bonus});
-        } else if (hole)
-            eval_sub(&result, Hole[exposed]);
-        else if (isolated)
+        } else if (!(PawnSpan[them][stop] & ourPawns) && bb_test(attacks[them][PAWN], stop))
+            eval_sub(&result, Backward[exposed]);
+        else if (!besides)
             eval_sub(&result, Isolated[exposed]);
 
-        if (passed)
+        if (exposed && !(PawnSpan[us][s] & theirPawns))
             eval_add(&result, passer(us, s, ourKing, theirKing));
     }
 
