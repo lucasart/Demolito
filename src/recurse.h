@@ -236,14 +236,16 @@ int generic_search(const Position *pos, int ply, int depth, int alpha, int beta,
     if ((!Qsearch || pos->checkers) && !moveCount)
         return pos->checkers ? mated_in(ply) : draw_score(ply);
 
-    // Update History
-    if (!Qsearch && alpha > oldAlpha && !move_is_capture(pos, bestMove))
+    // Update move sorting statistics
+    if (!Qsearch && alpha > oldAlpha && !move_is_capture(pos, bestMove)) {
         for (size_t i = 0; i < s.idx; i++) {
             const int bonus = depth * depth;
             history_update(us, s.moves[i], s.moves[i] == bestMove ? bonus : -bonus);
-            thisWorker->refutation[stack_move_key(&thisWorker->stack) & (NB_REFUTATION - 1)] = bestMove;
-            thisWorker->killers[ply] = bestMove;
         }
+
+        thisWorker->refutation[stack_move_key(&thisWorker->stack) & (NB_REFUTATION - 1)] = bestMove;
+        thisWorker->killers[ply] = bestMove;
+    }
 
     // TT write
     he.bound = bestScore <= oldAlpha ? UBOUND : bestScore >= beta ? LBOUND : EXACT;
