@@ -290,7 +290,7 @@ static eval_t pawns(const Position *pos, bitboard_t attacks[NB_COLOR][NB_PIECE +
 static int blend(const Position *pos, eval_t e)
 {
     const int full = 4 * (N + B + R) + 2 * Q;
-    const int total = pos->pieceMaterial[WHITE].eg+ pos->pieceMaterial[BLACK].eg;
+    const int total = pos->pieceMaterial[WHITE].eg + pos->pieceMaterial[BLACK].eg;
     return e.op * total / full + e.eg * (full - total) / full;
 }
 
@@ -329,6 +329,7 @@ void eval_init()
 int evaluate(const Position *pos)
 {
     assert(!pos->checkers);
+    const int us = pos->turn, them = opposite(us);
     eval_t e[NB_COLOR] = {pos->pst, {0, 0}};
 
     bitboard_t attacks[NB_COLOR][NB_PIECE + 1];
@@ -345,8 +346,12 @@ int evaluate(const Position *pos)
 
     eval_add(&e[WHITE], pawns(pos, attacks));
 
-    eval_t stm = e[pos->turn];
-    eval_sub(&stm, e[opposite(pos->turn)]);
+    eval_t stm = e[us];
+    eval_sub(&stm, e[them]);
+
+    // Strong side has no pawns: scale down endgame score
+    if (!pos_pieces_cp(pos, stm.eg > 0 ? us : them, PAWN))
+        stm.eg -= stm.eg / 4;
 
     return blend(pos, stm);
 }
