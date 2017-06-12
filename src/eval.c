@@ -346,9 +346,18 @@ int evaluate(const Position *pos)
     eval_t stm = e[us];
     eval_sub(&stm, e[them]);
 
-    // Strong side has no pawns: scale down endgame score
-    if (!pos_pieces_cp(pos, stm.eg > 0 ? us : them, PAWN))
-        stm.eg -= stm.eg / 4;
+    // Scaling rule for endgame
+    const int winner = stm.eg > 0 ? us : them, loser = opposite(winner);
+    const bitboard_t winnerPawns = pos_pieces_cp(pos, winner, PAWN);
+
+    if (!bb_several(winnerPawns) && pos->pieceMaterial[winner].eg - pos->pieceMaterial[loser].eg < R) {
+        if (!winnerPawns)
+            stm.eg /= 2;
+        else {
+            assert(bb_count(winnerPawns) == 1);
+            stm.eg -= stm.eg / 4;
+        }
+    }
 
     return blend(pos, stm);
 }
