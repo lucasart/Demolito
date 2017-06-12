@@ -18,6 +18,7 @@ int generic_search(const Position *pos, int ply, int depth, int alpha, int beta,
 {
     const int EvalMargin[] = {0, 132, 266, 405, 524};
     const int RazorMargin[] = {0, 227, 455, 502, 853};
+    const int Tempo = 17;
 
     assert(Qsearch == (depth <= 0));
     assert(stack_back(&thisWorker->stack) == pos->key);

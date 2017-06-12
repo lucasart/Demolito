@@ -102,7 +102,7 @@ static eval_t mobility(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
 static eval_t bishop_pair(const Position *pos, int us)
 {
     const bitboard_t WhiteSquares = 0x55AA55AA55AA55AAULL;
-    const eval_t bonus = {96, 114};
+    const eval_t bonus = {87, 113};
 
     const bitboard_t bishops = pos_pieces_cp(pos, us, BISHOP);
 
@@ -111,8 +111,8 @@ static eval_t bishop_pair(const Position *pos, int us)
 
 static int tactics(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE + 1])
 {
-    const int Hanging[] = {83, 68, 92, 179};
-    const int Ahead[] = {15, 17, 16, 15, 16};
+    const int Hanging[] = {88, 66, 95, 179};
+    const int Ahead = 16;
 
     const int them = opposite(us);
     bitboard_t b = attacks[them][PAWN] & (pos->byColor[us] ^ pos_pieces_cp(pos, us, PAWN));
@@ -131,20 +131,17 @@ static int tactics(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_
     b = bb_shift(pos_pieces_cp(pos, us, PAWN), push_inc(us))
         & (pos->byColor[us] ^ pos_pieces_cp(pos, us, PAWN));
 
-    while (b) {
-        const int p = pos->pieceOn[bb_pop_lsb(&b)];
-        assert(KNIGHT <= p && p <= KING);
-        result -= Ahead[p];
-    }
+    if (b)
+        result -= Ahead * bb_count(b);
 
     return result;
 }
 
 static int safety(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE + 1])
 {
-    const int AttackWeight[] = {36, 40, 66, 60};
-    const int CheckWeight[] = {61, 69, 66, 69};
-    const int BishopXRay = 52, RookXRay = 73;
+    const int AttackWeight[] = {36, 39, 66, 60};
+    const int CheckWeight[] = {59, 71, 65, 72};
+    const int BishopXRay = 54, RookXRay = 76;
 
     const int them = opposite(us);
     int result = 0, cnt = 0;

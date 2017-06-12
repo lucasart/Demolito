@@ -126,7 +126,7 @@ static void go(char **linePos)
 {
     memset(&lim, 0, sizeof(lim));
     lim.depth = MAX_DEPTH;
-    lim.movestogo = 30;
+    lim.movestogo = 26;
 
     const char *token;
 
