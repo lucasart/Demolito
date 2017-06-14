@@ -182,10 +182,9 @@ Info ui;
 
 void uci_loop()
 {
-    char *line = NULL, *linePos;
-    size_t n = 0;
+    char line[8192], *linePos;
 
-    while (getline(&line, &n, stdin)) {
+    while (fgets(line, 8182, stdin)) {
         const char *token = strtok_r(line, " \n", &linePos);
 
         if (!strcmp(token, "uci"))
@@ -214,8 +213,6 @@ void uci_loop()
             printf("unknown command: %s\n", line);
     }
 
-    free(line);
-
     if (Timer) {
         thrd_join(Timer, NULL);
         Timer = 0;
@@ -226,7 +223,7 @@ void info_create(Info *info)
 {
     info->lastDepth = 0;
     info->best = info->ponder = 0;
-    timespec_get(&info->start, TIME_UTC);
+    clock_gettime(CLOCK_MONOTONIC, &info->start);
     mtx_init(&info->mtx, mtx_plain);
 }
 

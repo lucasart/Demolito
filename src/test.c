@@ -97,7 +97,7 @@ uint64_t test_search(bool perft, int depth, int threads)
     lim.depth = depth;
 
     struct timespec start;
-    timespec_get(&start, TIME_UTC);
+    clock_gettime(CLOCK_MONOTONIC, &start);
 
     for (int i = 0; fens[i]; i++) {
         pos_set(&rootPos, fens[i]);

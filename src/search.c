@@ -176,7 +176,7 @@ int64_t search_go()
     struct timespec start;
     static const struct timespec resolution = {0, 5000000};  // 5ms
 
-    timespec_get(&start, TIME_UTC);
+    clock_gettime(CLOCK_MONOTONIC, &start);
     info_create(&ui);
     mtx_init(&mtxSchedule, mtx_plain);
     Signal = 0;

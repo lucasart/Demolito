@@ -118,7 +118,7 @@ int mate_in(int ply)
 int64_t elapsed_msec(const struct timespec *start)
 {
     struct timespec finish;
-    timespec_get(&finish, TIME_UTC);
+    clock_gettime(CLOCK_MONOTONIC, &finish);
     return (finish.tv_sec - start->tv_sec) * 1000 + (finish.tv_nsec - start->tv_nsec) / 1000000;
 }
 

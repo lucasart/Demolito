@@ -35,7 +35,11 @@ int score_from_hash(int hashScore, int ply)
 void hash_resize(uint64_t hashMB)
 {
     free(HashTable);
+#ifdef _WIN64  // C11 support lacking
+    HashTable = malloc(hashMB << 20);
+#else
     HashTable = aligned_alloc(sizeof(HashEntry), hashMB << 20);
+#endif
     HashCount = (hashMB << 20) / sizeof(HashEntry);
 }
 

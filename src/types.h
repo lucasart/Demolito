@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <time.h>
 
-#ifdef __STDC_NO_THREADS__
+#if defined(__STDC_NO_THREADS__) || defined(_WIN64)
 #include "threads.h"  // glibc doesn't support C11 threads yet
 #else
 #include <threads.h>  // but musl does
