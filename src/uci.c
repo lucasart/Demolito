@@ -41,7 +41,11 @@ static void uci_format_score(int score, char *str)
 
 static void intro()
 {
+#ifdef _WIN64
+    setvbuf(stdout, NULL, _IONBF, BUFSIZ);  // Line Buffering doesn't work on Windows
+#else
     setvbuf(stdout, NULL, _IOLBF, BUFSIZ);
+#endif
 
     puts("id name Demolito " VERSION "\nid author lucasart");
     printf("option name UCI_Chess960 type check default %s\n", Chess960 ? "true" : "false");
