@@ -23,6 +23,9 @@
 #include "smp.h"
 #include "uci.h"
 
+#define uci_printf(...) printf(__VA_ARGS__), fflush(stdout)
+#define uci_puts(s) puts(s), fflush(stdout)
+
 // Tuning parameters
 int X[] = {};
 
@@ -41,30 +44,24 @@ static void uci_format_score(int score, char *str)
 
 static void intro()
 {
-#ifdef _WIN64
-    setvbuf(stdout, NULL, _IONBF, BUFSIZ);  // Line Buffering doesn't work on Windows
-#else
-    setvbuf(stdout, NULL, _IOLBF, BUFSIZ);
-#endif
-
-    puts("id name Demolito " VERSION "\nid author lucasart");
-    printf("option name UCI_Chess960 type check default %s\n", Chess960 ? "true" : "false");
-    printf("option name Hash type spin default %" PRIu64 " min 1 max 1048576\n", Hash);
-    printf("option name Threads type spin default %d min 1 max 63\n", WorkersCount);
-    printf("option name Contempt type spin default %d min -100 max 100\n", Contempt);
-    printf("option name Time Buffer type spin default %" PRId64 " min 0 max 1000\n", TimeBuffer);
+    uci_puts("id name Demolito " VERSION "\nid author lucasart");
+    uci_printf("option name UCI_Chess960 type check default %s\n", Chess960 ? "true" : "false");
+    uci_printf("option name Hash type spin default %" PRIu64 " min 1 max 1048576\n", Hash);
+    uci_printf("option name Threads type spin default %d min 1 max 63\n", WorkersCount);
+    uci_printf("option name Contempt type spin default %d min -100 max 100\n", Contempt);
+    uci_printf("option name Time Buffer type spin default %" PRId64 " min 0 max 1000\n", TimeBuffer);
 
     // Declare UCI options for tuning parameters
     for (int i = 0; i < (int)(sizeof(X) / sizeof(int)); i++)
-        printf("option name X%d type spin default %d min %d max %d\n", i, X[i],
-               X[i] > 0 ? 0 : 2 * X[i], X[i] > 0 ? 2 * X[i] : 0);
+        uci_printf("option name X%d type spin default %d min %d max %d\n", i, X[i],
+                   X[i] > 0 ? 0 : 2 * X[i], X[i] > 0 ? 2 * X[i] : 0);
 
     // Prepare .var file for Joona's SPSA tuner with tuning parameters
     for (int i = 0; i < (int)(sizeof(X) / sizeof(int)); i++)
-        printf("X%d,%d,%d,%d,%.2f,0.002,0\n", i, X[i], X[i] > 0 ? 0 : 2 * X[i], X[i] > 0 ? 2 * X[i] : 0,
-               abs(X[i]) / 8.0);
+        uci_printf("X%d,%d,%d,%d,%.2f,0.002,0\n", i, X[i], X[i] > 0 ? 0 : 2 * X[i], X[i] > 0 ? 2 * X[i] : 0,
+                   abs(X[i]) / 8.0);
 
-    puts("uciok");
+    uci_puts("uciok");
 }
 
 static void setoption(char **linePos)
@@ -196,7 +193,7 @@ void uci_loop()
         else if (!strcmp(token, "setoption"))
             setoption(&linePos);
         else if (!strcmp(token, "isready"))
-            puts("readyok");
+            uci_puts("readyok");
         else if (!strcmp(token, "ucinewgame")) {
             hash_resize(Hash);
             memset(HashTable, 0, Hash << 20);
@@ -214,7 +211,7 @@ void uci_loop()
         else if (!strcmp(token, "quit"))
             break;
         else
-            printf("unknown command: %s\n", line);
+            uci_printf("unknown command: %s\n", line);
     }
 
     if (Timer) {
@@ -253,8 +250,8 @@ void info_update(Info *info, int depth, int score, int64_t nodes, move_t pv[], b
 
         char str[12];
         uci_format_score(score, str);
-        printf("info depth %d score %s time %" PRId64 " nodes %" PRId64 " pv",
-               depth, str, elapsed_msec(&info->start), nodes);
+        uci_printf("info depth %d score %s time %" PRId64 " nodes %" PRId64 " pv",
+                   depth, str, elapsed_msec(&info->start), nodes);
 
         // Because of e1g1 notation when Chess960 = false, we need to play the PV, just to
         // be able to print it. This is a defect of the UCI protocol (which should have
@@ -265,12 +262,12 @@ void info_update(Info *info, int depth, int score, int64_t nodes, move_t pv[], b
 
         for (int i = 0; pv[i]; i++) {
             move_to_string(&p[idx], pv[i], str);
-            printf(" %s", str);
+            uci_printf(" %s", str);
             pos_move(&p[idx^1], &p[idx], pv[i]);
             idx ^= 1;
         }
 
-        puts("");
+        uci_puts("");
     }
 
     mtx_unlock(&info->mtx);
@@ -285,7 +282,7 @@ void info_print_bestmove(Info *info)
     move_to_string(&rootPos, info->ponder, ponder);
     mtx_unlock(&info->mtx);
 
-    printf("bestmove %s ponder %s\n", best, ponder);
+    uci_printf("bestmove %s ponder %s\n", best, ponder);
 }
 
 move_t info_best(Info *info)
