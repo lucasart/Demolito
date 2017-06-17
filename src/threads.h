@@ -1,9 +1,8 @@
-// glibc doesn't have C11 threads.h yet. So write a crude replacement, for just
-// what is needed, but exposing a C11 API to make the client code future-proof.
+// glibc doesn't have C11 <threads.h> yet. So write a crude replacement, for just what is needed, but
+// exposing a C11 API to make the client code future-proof.
 #pragma once
 #include <pthread.h>
 
-#define thread_local _Thread_local
 typedef pthread_mutex_t mtx_t;
 typedef pthread_t thrd_t;
 typedef int (*thrd_start_t)(void*);

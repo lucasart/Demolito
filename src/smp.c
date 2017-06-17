@@ -1,15 +1,8 @@
 #include "smp.h"
 #include "search.h"
 
-thread_local Worker *thisWorker = NULL;
 Worker *Workers = NULL;
-int WorkersCount = 1;
-
-void smp_init()
-{
-    Workers = calloc(WorkersCount, sizeof(Worker));
-    thisWorker = &Workers[0];  // master thread needs pawnHash to call evaluate()
-}
+int WorkersCount;
 
 void smp_resize(int count)
 {

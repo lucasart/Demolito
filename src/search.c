@@ -14,7 +14,6 @@
  * not, see <http://www.gnu.org/licenses/>.
 */
 #include <math.h>
-#include <setjmp.h>
 #include "eval.h"
 #include "htable.h"
 #include "move.h"
@@ -33,7 +32,6 @@ Limits lim;
 static mtx_t mtxSchedule;
 
 atomic_uint_fast64_t Signal;  // bit #i is set if thread #i should abort
-static thread_local jmp_buf jbuf;  // exception jump buffer
 enum {ABORT_ONE = 1, ABORT_ALL};  // exceptions: abort current or all threads
 
 int Contempt = 10;
@@ -56,8 +54,10 @@ void search_init()
 // functions: one for search, one for qsearch. So I generate both with a single codebase,
 // using the pre-processor. Basically a poor man's template function in C.
 
-int search(const Position *pos, int ply, int depth, int alpha, int beta, move_t pv[]);
-int qsearch(const Position *pos, int ply, int depth, int alpha, int beta, move_t pv[]);
+int search(Worker *worker, const Position *pos, int ply, int depth, int alpha, int beta,
+           move_t pv[]);
+int qsearch(Worker *worker, const Position *pos, int ply, int depth, int alpha, int beta,
+            move_t pv[]);
 
 #define Qsearch true
 #define generic_search qsearch
@@ -71,19 +71,19 @@ int qsearch(const Position *pos, int ply, int depth, int alpha, int beta, move_t
 #undef generic_search
 #undef Qsearch
 
-int aspirate(int depth, move_t pv[], int score)
+int aspirate(Worker *worker, int depth, move_t pv[], int score)
 {
     assert(depth > 0);
 
     if (depth == 1)
-        return search(&rootPos, 0, depth, -INF, +INF, pv);
+        return search(worker, &rootPos, 0, depth, -INF, +INF, pv);
 
     int delta = 15;
     int alpha = score - delta;
     int beta = score + delta;
 
     for ( ; ; delta += delta * 0.876) {
-        score = search(&rootPos, 0, depth, alpha, beta, pv);
+        score = search(worker, &rootPos, 0, depth, alpha, beta, pv);
 
         if (score <= alpha) {
             beta = (alpha + beta) / 2;
@@ -96,12 +96,10 @@ int aspirate(int depth, move_t pv[], int score)
     }
 }
 
-int iterate(void *worker)
+int iterate(Worker *worker)
 {
     move_t pv[MAX_PLY + 1];
     int volatile score = 0;
-
-    thisWorker = worker;
 
     for (volatile int depth = 1; depth <= lim.depth; depth++) {
         mtx_lock(&mtxSchedule);
@@ -110,7 +108,7 @@ int iterate(void *worker)
             mtx_unlock(&mtxSchedule);
             return 0;
         } else
-            Signal &= ~(1ULL << thisWorker->id);
+            Signal &= ~(1ULL << worker->id);
 
         // If half of the threads are searching >= depth, then move to the next depth.
         // Special cases where this does not apply:
@@ -120,7 +118,7 @@ int iterate(void *worker)
             int cnt = 0;
 
             for (int i = 0; i < WorkersCount; i++)
-                cnt += thisWorker != &Workers[i] && Workers[i].depth >= depth;
+                cnt += worker != &Workers[i] && Workers[i].depth >= depth;
 
             if (cnt >= WorkersCount / 2) {
                 mtx_unlock(&mtxSchedule);
@@ -128,13 +126,13 @@ int iterate(void *worker)
             }
         }
 
-        thisWorker->depth = depth;
+        worker->depth = depth;
         mtx_unlock(&mtxSchedule);
 
-        const int exception = setjmp(jbuf);
+        const int exception = setjmp(worker->jbuf);
 
         if (exception == 0) {
-            score = aspirate(depth, pv, score);
+            score = aspirate(worker, depth, pv, score);
 
             // Iteration was completed normally. Now we need to see who is working on
             // obsolete iterations, and raise the appropriate Signal, to make them move
@@ -143,14 +141,13 @@ int iterate(void *worker)
             uint64_t s = 0;
 
             for (int i = 0; i < WorkersCount; i++)
-                if (thisWorker != &Workers[i] && Workers[i].depth <= depth)
+                if (worker != &Workers[i] && Workers[i].depth <= depth)
                     s |= 1ULL << i;
 
             Signal |= s;
             mtx_unlock(&mtxSchedule);
         } else {
-            assert(Signal & (1ULL << thisWorker->id));
-            thisWorker->stack = rootStack;  // Restore an orderly state
+            worker->stack = rootStack;  // Restore an orderly state
 
             if (exception == ABORT_ONE)
                 continue;

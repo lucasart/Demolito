@@ -30,7 +30,7 @@ int main(int argc, char **argv)
     pst_init();
     eval_init();
     search_init();
-    smp_init();
+    smp_resize(1);
 
     if (argc >= 2) {
         if ((!strcmp(argv[1], "perft") || !strcmp(argv[1], "search")) && argc >= 4) {

@@ -46,10 +46,10 @@ void sort_generate(Sort *s, const Position *pos, int depth)
     s->cnt = it - s->moves;
 }
 
-void sort_score(Sort *s, const Position *pos, move_t ttMove, int ply)
+void sort_score(Worker *worker, Sort *s, const Position *pos, move_t ttMove, int ply)
 {
-    const move_t refutation = thisWorker->refutation[stack_move_key(&thisWorker->stack) &
-                                                                 (NB_REFUTATION - 1)];
+    const move_t refutation = worker->refutation[stack_move_key(&worker->stack) &
+                                                             (NB_REFUTATION - 1)];
 
     for (size_t i = 0; i < s->cnt; i++) {
         if (s->moves[i] == ttMove)
@@ -61,18 +61,18 @@ void sort_score(Sort *s, const Position *pos, move_t ttMove, int ply)
             } else {
                 if (s->moves[i] == refutation)
                     s->scores[i] = HISTORY_MAX + 1;
-                else if (s->moves[i] == thisWorker->killers[ply])
+                else if (s->moves[i] == worker->killers[ply])
                     s->scores[i] = HISTORY_MAX + 2;
                 else
-                    s->scores[i] = thisWorker->history[pos->turn][move_from_to(s->moves[i])];
+                    s->scores[i] = worker->history[pos->turn][move_from_to(s->moves[i])];
             }
         }
     }
 }
 
-void history_update(int c, move_t m, int bonus)
+void history_update(Worker *worker, int c, move_t m, int bonus)
 {
-    int *t = &thisWorker->history[c][move_from_to(m)];
+    int *t = &worker->history[c][move_from_to(m)];
 
     *t += bonus;
 
@@ -82,10 +82,10 @@ void history_update(int c, move_t m, int bonus)
         *t = -HISTORY_MAX;
 }
 
-void sort_init(Sort *s, const Position *pos, int depth, move_t ttMove, int ply)
+void sort_init(Worker *worker, Sort *s, const Position *pos, int depth, move_t ttMove, int ply)
 {
     sort_generate(s, pos, depth);
-    sort_score(s, pos, ttMove, ply);
+    sort_score(worker, s, pos, ttMove, ply);
     s->idx = 0;
 }
 

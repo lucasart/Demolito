@@ -1,4 +1,5 @@
 #pragma once
+#include <setjmp.h>
 #include "types.h"
 #include "zobrist.h"
 
@@ -16,18 +17,17 @@ typedef struct {
     PawnEntry pawnHash[0x4000];
     int history[NB_COLOR][NB_SQUARE * NB_SQUARE];
     move_t refutation[NB_REFUTATION];
-    move_t killers[MAX_DEPTH * 3 / 2];  // Conservative upper-bound (for search extensions)
+    move_t killers[MAX_DEPTH * 3 / 2];  // Conservative upper-bound (for qsearch and extensions)
     Stack stack;
+    jmp_buf jbuf;
     int64_t nodes;
     int depth;
     int id;
 } Worker;
 
-extern thread_local Worker *thisWorker;
 extern Worker *Workers;
 extern int WorkersCount;
 
-void smp_init();
 void smp_resize(int count);
 void smp_destroy();
 

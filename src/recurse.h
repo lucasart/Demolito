@@ -14,14 +14,15 @@
  * not, see <http://www.gnu.org/licenses/>.
 */
 
-int generic_search(const Position *pos, int ply, int depth, int alpha, int beta, move_t pv[])
+int generic_search(Worker *worker, const Position *pos, int ply, int depth, int alpha, int beta,
+                   move_t pv[])
 {
     const int EvalMargin[] = {0, 132, 266, 405, 524};
     const int RazorMargin[] = {0, 227, 455, 502, 853};
     const int Tempo = 17;
 
     assert(Qsearch == (depth <= 0));
-    assert(stack_back(&thisWorker->stack) == pos->key);
+    assert(stack_back(&worker->stack) == pos->key);
     assert(alpha < beta);
 
     const bool pvNode = beta > alpha + 1;
@@ -37,9 +38,9 @@ int generic_search(const Position *pos, int ply, int depth, int alpha, int beta,
 
         if (s) {
             if (s == STOP)
-                longjmp(jbuf, ABORT_ALL);
-            else if (s & (1ULL << thisWorker->id))
-                longjmp(jbuf, ABORT_ONE);
+                longjmp(worker->jbuf, ABORT_ALL);
+            else if (s & (1ULL << worker->id))
+                longjmp(worker->jbuf, ABORT_ONE);
         }
     }
 
@@ -48,7 +49,7 @@ int generic_search(const Position *pos, int ply, int depth, int alpha, int beta,
     if (pvNode)
         pv[0] = 0;
 
-    if (ply > 0 && (stack_repetition(&thisWorker->stack, pos->rule50)
+    if (ply > 0 && (stack_repetition(&worker->stack, pos->rule50)
                     || pos_insufficient_material(pos)))
         return draw_score(ply);
 
@@ -73,7 +74,7 @@ int generic_search(const Position *pos, int ply, int depth, int alpha, int beta,
             refinedEval = he.score;
     } else {
         he.move = 0;
-        refinedEval = staticEval = pos->checkers ? -INF : evaluate(pos) + Tempo;
+        refinedEval = staticEval = pos->checkers ? -INF : evaluate(worker, pos) + Tempo;
     }
 
     // At Root, ensure that the last best move is searched first. This is not guaranteed,
@@ -81,7 +82,7 @@ int generic_search(const Position *pos, int ply, int depth, int alpha, int beta,
     if (!Qsearch && ply == 0 && info_last_depth(&ui) > 0)
         he.move = info_best(&ui);
 
-    thisWorker->nodes++;
+    worker->nodes++;
 
     if (ply >= MAX_PLY)
         return refinedEval;
@@ -96,7 +97,7 @@ int generic_search(const Position *pos, int ply, int depth, int alpha, int beta,
         const int lbound = alpha - RazorMargin[depth];
 
         if (refinedEval <= lbound) {
-            score = qsearch(pos, ply, 0, lbound, lbound + 1, childPv);
+            score = qsearch(worker, pos, ply, 0, lbound, lbound + 1, childPv);
 
             if (score <= lbound)
                 return score;
@@ -108,11 +109,11 @@ int generic_search(const Position *pos, int ply, int depth, int alpha, int beta,
             && staticEval >= beta && pos->pieceMaterial[us].eg) {
         const int nextDepth = depth - (2 + depth / 3) - (refinedEval >= beta + 178);
         pos_switch(&nextPos, pos);
-        stack_push(&thisWorker->stack, nextPos.key);
+        stack_push(&worker->stack, nextPos.key);
         score = nextDepth <= 0
-                ? -qsearch(&nextPos, ply + 1, nextDepth, -beta, -(beta - 1), childPv)
-                : -search(&nextPos, ply + 1, nextDepth, -beta, -(beta - 1), childPv);
-        stack_pop(&thisWorker->stack);
+                ? -qsearch(worker, &nextPos, ply + 1, nextDepth, -beta, -(beta - 1), childPv)
+                : -search(worker, &nextPos, ply + 1, nextDepth, -beta, -(beta - 1), childPv);
+        stack_pop(&worker->stack);
 
         if (score >= beta)
             return score >= mate_in(MAX_PLY) ? beta : score;
@@ -132,7 +133,7 @@ int generic_search(const Position *pos, int ply, int depth, int alpha, int beta,
 
     // Generate and score moves
     Sort s;
-    sort_init(&s, pos, depth, he.move, ply);
+    sort_init(worker, &s, pos, depth, he.move, ply);
 
     int moveCount = 0, lmrCount = 0;
     move_t currentMove;
@@ -163,7 +164,7 @@ int generic_search(const Position *pos, int ply, int depth, int alpha, int beta,
                 && !move_is_capture(pos, currentMove))
             continue;
 
-        stack_push(&thisWorker->stack, nextPos.key);
+        stack_push(&worker->stack, nextPos.key);
 
         const int ext = see >= 0 && nextPos.checkers;
         const int nextDepth = depth - 1 + ext;
@@ -177,11 +178,11 @@ int generic_search(const Position *pos, int ply, int depth, int alpha, int beta,
                 if (pvNode)
                     childPv[0] = 0;
             } else
-                score = -qsearch(&nextPos, ply + 1, nextDepth, -beta, -alpha, childPv);
+                score = -qsearch(worker, &nextPos, ply + 1, nextDepth, -beta, -alpha, childPv);
         } else {
             // Search recursion (PVS + Reduction)
             if (moveCount == 1)
-                score = -search(&nextPos, ply + 1, nextDepth, -beta, -alpha, childPv);
+                score = -search(worker, &nextPos, ply + 1, nextDepth, -beta, -alpha, childPv);
             else {
                 int reduction = see < 0 || !move_is_capture(pos, currentMove);
 
@@ -194,21 +195,21 @@ int generic_search(const Position *pos, int ply, int depth, int alpha, int beta,
 
                 // Reduced depth, zero window
                 score = nextDepth - reduction <= 0
-                        ? -qsearch(&nextPos, ply + 1, nextDepth - reduction, -(alpha + 1), -alpha, childPv)
-                        : -search(&nextPos, ply + 1, nextDepth - reduction, -(alpha + 1), -alpha, childPv);
+                        ? -qsearch(worker, &nextPos, ply + 1, nextDepth - reduction, -(alpha + 1), -alpha, childPv)
+                        : -search(worker, &nextPos, ply + 1, nextDepth - reduction, -(alpha + 1), -alpha, childPv);
 
                 // Fail high: re-search zero window at full depth
                 if (reduction && score > alpha)
-                    score = -search(&nextPos, ply + 1, nextDepth, -(alpha + 1), -alpha, childPv);
+                    score = -search(worker, &nextPos, ply + 1, nextDepth, -(alpha + 1), -alpha, childPv);
 
                 // Fail high at full depth for pvNode: re-search full window
                 if (pvNode && alpha < score && score < beta)
-                    score = -search(&nextPos, ply + 1, nextDepth, -beta, -alpha, childPv);
+                    score = -search(worker, &nextPos, ply + 1, nextDepth, -beta, -alpha, childPv);
             }
         }
 
         // Undo move
-        stack_pop(&thisWorker->stack);
+        stack_pop(&worker->stack);
 
         // New best score
         if (score > bestScore) {
@@ -241,11 +242,11 @@ int generic_search(const Position *pos, int ply, int depth, int alpha, int beta,
     if (!Qsearch && alpha > oldAlpha && !move_is_capture(pos, bestMove)) {
         for (size_t i = 0; i < s.idx; i++) {
             const int bonus = depth * depth;
-            history_update(us, s.moves[i], s.moves[i] == bestMove ? bonus : -bonus);
+            history_update(worker, us, s.moves[i], s.moves[i] == bestMove ? bonus : -bonus);
         }
 
-        thisWorker->refutation[stack_move_key(&thisWorker->stack) & (NB_REFUTATION - 1)] = bestMove;
-        thisWorker->killers[ply] = bestMove;
+        worker->refutation[stack_move_key(&worker->stack) & (NB_REFUTATION - 1)] = bestMove;
+        worker->killers[ply] = bestMove;
     }
 
     // TT write

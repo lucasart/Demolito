@@ -267,13 +267,14 @@ static eval_t do_pawns(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
     return result;
 }
 
-static eval_t pawns(const Position *pos, bitboard_t attacks[NB_COLOR][NB_PIECE + 1])
+static eval_t pawns(Worker *worker, const Position *pos,
+                    bitboard_t attacks[NB_COLOR][NB_PIECE + 1])
 // Pawn evaluation is directly a diff, from white's pov. This reduces by half the
 // size of the pawn hash table.
 {
     const uint64_t key = pos->pawnKey;
     const size_t idx = key & (NB_PAWN_ENTRY - 1);
-    PawnEntry *pe = &thisWorker->pawnHash[idx];
+    PawnEntry *pe = &worker->pawnHash[idx];
 
     if (pe->key == key)
         return pe->eval;
@@ -323,7 +324,7 @@ void eval_init()
         }
 }
 
-int evaluate(const Position *pos)
+int evaluate(Worker *worker, const Position *pos)
 {
     assert(!pos->checkers);
     const int us = pos->turn, them = opposite(us);
@@ -341,7 +342,7 @@ int evaluate(const Position *pos)
         e[c].op += safety(pos, c, attacks);
     }
 
-    eval_add(&e[WHITE], pawns(pos, attacks));
+    eval_add(&e[WHITE], pawns(worker, pos, attacks));
 
     eval_t stm = e[us];
     eval_sub(&stm, e[them]);

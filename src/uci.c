@@ -168,7 +168,7 @@ static void eval()
 {
     pos_print(&rootPos);
     char str[12];
-    uci_format_score(evaluate(&rootPos), str);
+    uci_format_score(evaluate(&Workers[0], &rootPos), str);
     printf("score %s\n", str);
 }
 
