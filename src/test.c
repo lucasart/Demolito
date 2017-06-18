@@ -96,8 +96,7 @@ uint64_t test_search(bool perft, int depth, int threads)
     memset(&lim, 0, sizeof(lim));
     lim.depth = depth;
 
-    struct timespec start;
-    clock_gettime(CLOCK_MONOTONIC, &start);
+    int64_t start = system_msec();
 
     for (int i = 0; fens[i]; i++) {
         pos_set(&rootPos, fens[i]);
@@ -118,7 +117,7 @@ uint64_t test_search(bool perft, int depth, int threads)
     if (dbgCnt[1])
         printf("dbgCnt[0] = %" PRId64 ", dbgCnt[1] = %" PRId64 "\n", dbgCnt[0], dbgCnt[1]);
 
-    printf("kn/s: %" PRIu64 "\n", result / elapsed_msec(&start));
+    printf("kn/s: %" PRIu64 "\n", result / (system_msec() - start));
 
     return result;
 }

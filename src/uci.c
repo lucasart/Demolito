@@ -161,7 +161,7 @@ static void go(char **linePos)
         Timer = 0;
     }
 
-    thrd_create(&Timer, search_wrapper, NULL);
+    thrd_create(&Timer, search_go, NULL);
 }
 
 static void eval()
@@ -224,7 +224,7 @@ void info_create(Info *info)
 {
     info->lastDepth = 0;
     info->best = info->ponder = 0;
-    clock_gettime(CLOCK_MONOTONIC, &info->start);
+    info->start = system_msec();
     mtx_init(&info->mtx, mtx_plain);
 }
 
@@ -251,7 +251,7 @@ void info_update(Info *info, int depth, int score, int64_t nodes, move_t pv[], b
         char str[12];
         uci_format_score(score, str);
         uci_printf("info depth %d score %s time %" PRId64 " nodes %" PRId64 " pv",
-                   depth, str, elapsed_msec(&info->start), nodes);
+                   depth, str, system_msec() - info->start, nodes);
 
         // Because of e1g1 notation when Chess960 = false, we need to play the PV, just to
         // be able to print it. This is a defect of the UCI protocol (which should have

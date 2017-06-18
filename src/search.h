@@ -17,4 +17,3 @@ extern int Contempt;
 
 void search_init();
 int64_t search_go();
-int search_wrapper(void *);  // dummy wrapper to satisfy C11 thread API

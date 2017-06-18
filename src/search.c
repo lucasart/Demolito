@@ -170,10 +170,8 @@ int iterate(Worker *worker)
 
 int64_t search_go()
 {
-    struct timespec start;
-    static const struct timespec resolution = {0, 5000000};  // 5ms
+    int64_t start = system_msec();
 
-    clock_gettime(CLOCK_MONOTONIC, &start);
     info_create(&ui);
     mtx_init(&mtxSchedule, mtx_plain);
     Signal = 0;
@@ -186,7 +184,7 @@ int64_t search_go()
         thrd_create(&threads[i], iterate, &Workers[i]);
 
     do {
-        thrd_sleep(&resolution, NULL);
+        thrd_sleep(5);
 
         // Check for search termination conditions, but only after depth 1 has been
         // completed, to make sure we do not return an illegal move.
@@ -195,7 +193,7 @@ int64_t search_go()
                 mtx_lock(&mtxSchedule);
                 Signal = STOP;
                 mtx_unlock(&mtxSchedule);
-            } else if (lim.movetime && elapsed_msec(&start) >= lim.movetime) {
+            } else if (lim.movetime && system_msec() - start >= lim.movetime) {
                 mtx_lock(&mtxSchedule);
                 Signal = STOP;
                 mtx_unlock(&mtxSchedule);
@@ -213,11 +211,4 @@ int64_t search_go()
     const int64_t nodes = smp_nodes();
 
     return nodes;
-}
-
-int search_wrapper(void *dummy)
-{
-    (void)dummy;
-    search_go();
-    return 0;
 }

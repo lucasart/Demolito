@@ -4,8 +4,7 @@
 void uci_loop();
 
 typedef struct {
-    struct timespec start;
-
+    int64_t start;
     int lastDepth;
     move_t best, ponder;
     mtx_t mtx;

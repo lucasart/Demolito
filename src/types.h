@@ -8,11 +8,7 @@
 #include <stdio.h>
 #include <time.h>
 
-#if defined(__STDC_NO_THREADS__) || defined(_WIN64)
-#include "threads.h"  // glibc doesn't support C11 threads yet
-#else
-#include <threads.h>  // but musl does
-#endif
+#include "platform.h"
 
 extern bool Chess960;
 
@@ -105,7 +101,5 @@ typedef struct {
     char pieceOn[NB_SQUARE];
     eval_t pieceMaterial[NB_COLOR];
 } Position;
-
-extern int64_t elapsed_msec(const struct timespec *start);
 
 extern const char *PieceLabel[NB_COLOR];

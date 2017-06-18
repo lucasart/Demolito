@@ -1,5 +1,4 @@
-rm $1
-astyle -A3 -s4 -f -xn -xc -xl -xC100 -O ./src/* && rm ./src/*.orig
+rm -f $1
 VERSION="-DVERSION=\"$(git show -s --format=%ci | cut -d\  -f1)\""
 W="-Wfatal-errors -Wall -Wextra -Wshadow"
 O="-O3 -flto -march=native -DNDEBUG"
