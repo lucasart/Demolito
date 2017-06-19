@@ -102,7 +102,6 @@ uint64_t test_search(bool perft, int depth, int threads)
         pos_set(&rootPos, fens[i]);
         stack_clear(&rootStack);
         stack_push(&rootStack, rootPos.key);
-        pos_print(&rootPos);
 
         if (perft) {
             nodes = gen_perft(&rootPos, depth, 0);
@@ -117,7 +116,7 @@ uint64_t test_search(bool perft, int depth, int threads)
     if (dbgCnt[1])
         printf("dbgCnt[0] = %" PRId64 ", dbgCnt[1] = %" PRId64 "\n", dbgCnt[0], dbgCnt[1]);
 
-    printf("kn/s: %" PRIu64 "\n", result / (system_msec() - start));
+    fprintf(stderr, "kn/s: %" PRIu64 "\n", result / (system_msec() - start));
 
     return result;
 }

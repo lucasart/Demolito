@@ -36,7 +36,7 @@ int main(int argc, char **argv)
         if ((!strcmp(argv[1], "perft") || !strcmp(argv[1], "search")) && argc >= 4) {
             const int depth = atoi(argv[2]), threads = atoi(argv[3]);
             const uint64_t nodes = test_search(!strcmp(argv[1], "perft"), depth, threads);
-            printf("total = %" PRIu64 "\n", nodes);
+            fprintf(stderr, "total = %" PRIu64 "\n", nodes);
         }
     } else
         uci_loop();
