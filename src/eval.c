@@ -139,9 +139,10 @@ static int tactics(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_
 
 static int safety(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE + 1])
 {
-    const int AttackWeight[] = {36, 39, 66, 60};
-    const int CheckWeight[] = {59, 71, 65, 72};
-    const int BishopXRay = 54, RookXRay = 76;
+    const int AttackWeight[] = {33, 37, 66, 58};
+    const int DefenseWeight[] = {19, 19, 33, 31};
+    const int CheckWeight[] = {58, 72, 63, 73};
+    const int BishopXRay = 50, RookXRay = 80;
 
     const int them = opposite(us);
     int result = 0, cnt = 0;
@@ -154,8 +155,8 @@ static int safety(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_P
 
         if (attacked) {
             cnt++;
-            result -= bb_count(attacked) * AttackWeight[p]
-                      - bb_count(attacked & attacks[us][NB_PIECE]) * AttackWeight[p] / 2;
+            result -= bb_count(attacked) * AttackWeight[p];
+            result += bb_count(attacked & attacks[us][NB_PIECE]) * DefenseWeight[p];
         }
     }
 
