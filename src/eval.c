@@ -139,10 +139,11 @@ static int tactics(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_
 
 static int safety(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE + 1])
 {
-    const int AttackWeight[] = {33, 37, 66, 58};
-    const int DefenseWeight[] = {19, 19, 33, 31};
-    const int CheckWeight[] = {58, 72, 63, 73};
-    const int BishopXRay = 50, RookXRay = 80;
+    const int RingAttack[] = {32, 37, 67, 61};
+    const int RingDefense[] = {19, 18, 30, 31};
+    const int CheckAttack[] = {60, 80, 73, 77};
+    const int CheckDefense[] = {26, 33, 31, 35};
+    const int BishopXRay = 52, RookXRay = 81;
 
     const int them = opposite(us);
     int result = 0, cnt = 0;
@@ -155,8 +156,8 @@ static int safety(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_P
 
         if (attacked) {
             cnt++;
-            result -= bb_count(attacked) * AttackWeight[p];
-            result += bb_count(attacked & attacks[us][NB_PIECE]) * DefenseWeight[p];
+            result -= bb_count(attacked) * RingAttack[p];
+            result += bb_count(attacked & attacks[us][NB_PIECE]) * RingDefense[p];
         }
     }
 
@@ -172,11 +173,13 @@ static int safety(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_P
 
     for (int p = KNIGHT; p <= QUEEN; ++p)
         if (checks[p]) {
-            const bitboard_t b = checks[p] & ~(pos->byColor[them] | attacks[us][PAWN] | attacks[us][KING]);
+            const bitboard_t b = checks[p] & ~(pos->byColor[them] | attacks[us][PAWN]
+                | attacks[us][KING]);
 
             if (b) {
                 cnt++;
-                result -= bb_count(b) * CheckWeight[p];
+                result -= bb_count(b) * CheckAttack[p];
+                result += bb_count(b & attacks[us][NB_PIECE]) * CheckDefense[p];
             }
         }
 
@@ -352,7 +355,8 @@ int evaluate(Worker *worker, const Position *pos)
     const int winner = stm.eg > 0 ? us : them, loser = opposite(winner);
     const bitboard_t winnerPawns = pos_pieces_cp(pos, winner, PAWN);
 
-    if (!bb_several(winnerPawns) && pos->pieceMaterial[winner].eg - pos->pieceMaterial[loser].eg < R) {
+    if (!bb_several(winnerPawns)
+            && pos->pieceMaterial[winner].eg - pos->pieceMaterial[loser].eg < R) {
         if (!winnerPawns)
             stm.eg /= 2;
         else {
