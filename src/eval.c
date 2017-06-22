@@ -102,7 +102,7 @@ static eval_t mobility(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
 static eval_t bishop_pair(const Position *pos, int us)
 {
     const bitboard_t WhiteSquares = 0x55AA55AA55AA55AAULL;
-    const eval_t bonus = {87, 113};
+    const eval_t bonus = {83, 110};
 
     const bitboard_t bishops = pos_pieces_cp(pos, us, BISHOP);
 
@@ -111,7 +111,7 @@ static eval_t bishop_pair(const Position *pos, int us)
 
 static int tactics(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE + 1])
 {
-    const int Hanging[] = {88, 66, 95, 179};
+    const int Hanging[] = {92, 64, 98, 181};
     const int Ahead = 16;
 
     const int them = opposite(us);
@@ -139,11 +139,11 @@ static int tactics(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_
 
 static int safety(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE + 1])
 {
-    const int RingAttack[] = {32, 37, 67, 61};
-    const int RingDefense[] = {19, 18, 30, 31};
-    const int CheckAttack[] = {60, 80, 73, 77};
-    const int CheckDefense[] = {26, 33, 31, 35};
-    const int BishopXRay = 52, RookXRay = 81;
+    const int RingAttack[] = {31, 38, 67, 60};
+    const int RingDefense[] = {18, 18, 31, 32};
+    const int CheckAttack[] = {61, 76, 74, 81};
+    const int CheckDefense[] = {26, 34, 30, 34};
+    const int BishopXRay = 56, RookXRay = 83;
 
     const int them = opposite(us);
     int result = 0, cnt = 0;
@@ -206,8 +206,8 @@ static int safety(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_P
 
 static eval_t passer(int us, int pawn, int ourKing, int theirKing)
 {
-    const eval_t bonus[] = {{0, 6}, {0, 14}, {23, 27}, {54, 70}, {137, 152}, {278, 250}};
-    const int adjust[] = {0, 0, 10, 41, 80, 114};
+    const eval_t bonus[] = {{0, 6}, {0, 14}, {23, 28}, {51, 69}, {144, 149}, {285, 264}};
+    const int adjust[] = {0, 0, 10, 41, 82, 112};
 
     const int n = relative_rank_of(us, pawn) - RANK_2;
 
@@ -226,8 +226,8 @@ static eval_t passer(int us, int pawn, int ourKing, int theirKing)
 
 static eval_t do_pawns(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE + 1])
 {
-    const eval_t Isolated[2] = {{19, 33}, {42, 34}};
-    const eval_t Backward[2] = {{18, 18}, {29, 22}};
+    const eval_t Isolated[2] = {{19, 33}, {41, 34}};
+    const eval_t Backward[2] = {{17, 18}, {29, 22}};
     const int shieldBonus[NB_RANK] = {0, 23, 17, 12, 10, 8, 8};
 
     const int them = opposite(us);
