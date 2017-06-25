@@ -15,6 +15,7 @@
 */
 #include "gen.h"
 #include "htable.h"
+#include "platform.h"
 #include "position.h"
 #include "search.h"
 #include "smp.h"
