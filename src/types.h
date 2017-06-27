@@ -10,7 +10,7 @@ extern bool Chess960;
 
 extern int64_t dbgCnt[2];
 
-#define BOUNDS(v, ub) assert(unsigned(v) < ub)
+#define BOUNDS(v, ub) assert((unsigned)(v) < (ub))
 
 enum {WHITE, BLACK, NB_COLOR};
 enum {KNIGHT, BISHOP, ROOK, QUEEN, KING, PAWN, NB_PIECE};

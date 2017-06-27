@@ -50,26 +50,366 @@ void search_init()
             Reduction[d][c] = 0.403 * log(d > 31 ? 31 : d) + 0.877 * log(c > 31 ? 31 : c);
 }
 
-// The below is a bit ugly, but the idea is simple. I don't want to maintain 2 separate
-// functions: one for search, one for qsearch. So I generate both with a single codebase,
-// using the pre-processor. Basically a poor man's template function in C.
+const int Tempo = 17;
+
+int qsearch(Worker *worker, const Position *pos, int ply, int depth, int alpha, int beta,
+                   move_t pv[])
+{
+    assert(depth <= 0);
+    assert(stack_back(&worker->stack) == pos->key);
+    assert(alpha < beta);
+
+    const bool pvNode = beta > alpha + 1;
+    const int oldAlpha = alpha;
+    int bestScore = -INF;
+    move_t bestMove = 0;
+    int score;
+    Position nextPos;
+
+    move_t childPv[MAX_PLY - ply];
+
+    if (pvNode)
+        pv[0] = 0;
+
+    if (ply > 0 && (stack_repetition(&worker->stack, pos->rule50)
+                    || pos_insufficient_material(pos)))
+        return draw_score(ply);
+
+    // TT probe
+    HashEntry he;
+    int staticEval, refinedEval;
+
+    if (hash_read(pos->key, &he)) {
+        he.score = score_from_hash(he.score, ply);
+
+        if (he.depth >= depth && !pvNode && ((he.score <= alpha && he.bound >= EXACT) || (he.score >= beta
+                                             && he.bound <= EXACT)))
+            return he.score;
+
+        refinedEval = staticEval = he.eval;
+
+        if ((he.score > refinedEval && he.bound <= EXACT)
+                || (he.score < refinedEval && he.bound >= EXACT))
+            refinedEval = he.score;
+    } else {
+        he.move = 0;
+        refinedEval = staticEval = pos->checkers ? -INF : evaluate(worker, pos) + Tempo;
+    }
+
+    worker->nodes++;
+
+    if (ply >= MAX_PLY)
+        return refinedEval;
+
+    // QSearch stand pat
+    if (!pos->checkers) {
+        bestScore = refinedEval;
+
+        if (bestScore > alpha) {
+            alpha = bestScore;
+
+            if (bestScore >= beta)
+                return bestScore;
+        }
+    }
+
+    // Generate and score moves
+    Sort s;
+    sort_init(worker, &s, pos, depth, he.move, ply);
+
+    int moveCount = 0;
+    move_t currentMove;
+
+    // Move loop
+    while ((s.idx != s.cnt) && alpha < beta) {
+        int see;
+        currentMove = sort_next(&s, pos, &see);
+
+        if (!move_is_legal(pos, currentMove))
+            continue;
+
+        moveCount++;
+
+        // Prune losing captures in the qsearch
+        if (see < 0 && !pos->checkers)
+            continue;
+
+        // SEE proxy tells us we're unlikely to beat alpha
+        if (!pos->checkers && staticEval + P / 2 <= alpha && see <= 0)
+            continue;
+
+        // Play move
+        pos_move(&nextPos, pos, currentMove);
+
+        stack_push(&worker->stack, nextPos.key);
+
+        const int ext = see >= 0 && nextPos.checkers;
+        const int nextDepth = depth - 1 + ext;
+
+        // Recursion (plain alpha/beta)
+        if (depth <= MIN_DEPTH && !pos->checkers) {
+            score = staticEval + see;    // guard against QSearch explosion
+
+            if (pvNode)
+                childPv[0] = 0;
+        } else
+                score = -qsearch(worker, &nextPos, ply + 1, nextDepth, -beta, -alpha, childPv);
+
+        // Undo move
+        stack_pop(&worker->stack);
+
+        // New best score
+        if (score > bestScore) {
+            bestScore = score;
+
+            // New alpha
+            if (score > alpha) {
+                alpha = score;
+                bestMove = currentMove;
+
+                if (pvNode) {
+                    pv[0] = currentMove;
+
+                    for (int i = 0; i < MAX_PLY - ply; i++)
+                        if (!(pv[i + 1] = childPv[i]))
+                            break;
+                }
+            }
+        }
+    }
+
+    // No legal move: mated or stalemated
+    if (pos->checkers && !moveCount)
+        return pos->checkers ? mated_in(ply) : draw_score(ply);
+
+    // TT write
+    he.bound = bestScore <= oldAlpha ? UBOUND : bestScore >= beta ? LBOUND : EXACT;
+    he.score = score_to_hash(bestScore, ply);
+    he.eval = pos->checkers ? -INF : staticEval;
+    he.depth = depth;
+    he.move = bestMove;
+    he.keyXorData = pos->key ^ he.data;
+    hash_write(pos->key, &he);
+
+    return bestScore;
+}
 
 int search(Worker *worker, const Position *pos, int ply, int depth, int alpha, int beta,
-           move_t pv[]);
-int qsearch(Worker *worker, const Position *pos, int ply, int depth, int alpha, int beta,
-            move_t pv[]);
+                   move_t pv[])
+{
+    const int EvalMargin[] = {0, 132, 266, 405, 524};
+    const int RazorMargin[] = {0, 227, 455, 502, 853};
 
-#define Qsearch true
-#define generic_search qsearch
-#include "recurse.h"
-#undef generic_search
-#undef Qsearch
+    assert(depth > 0);
+    assert(stack_back(&worker->stack) == pos->key);
+    assert(alpha < beta);
 
-#define Qsearch false
-#define generic_search search
-#include "recurse.h"
-#undef generic_search
-#undef Qsearch
+    const bool pvNode = beta > alpha + 1;
+    const int oldAlpha = alpha;
+    const int us = pos->turn;
+    int bestScore = -INF;
+    move_t bestMove = 0;
+    int score;
+    Position nextPos;
+
+    const uint64_t tmp = atomic_load_explicit(&Signal, memory_order_relaxed);
+
+    if (tmp) {
+        if (tmp == STOP)
+            longjmp(worker->jbuf, ABORT_ALL);
+        else if (tmp & (1ULL << worker->id))
+            longjmp(worker->jbuf, ABORT_ONE);
+    }
+
+    move_t childPv[MAX_PLY - ply];
+
+    if (pvNode)
+        pv[0] = 0;
+
+    if (ply > 0 && (stack_repetition(&worker->stack, pos->rule50)
+                    || pos_insufficient_material(pos)))
+        return draw_score(ply);
+
+    // TT probe
+    HashEntry he;
+    int staticEval, refinedEval;
+
+    if (hash_read(pos->key, &he)) {
+        he.score = score_from_hash(he.score, ply);
+
+        if (he.depth >= depth && !pvNode && ((he.score <= alpha && he.bound >= EXACT) || (he.score >= beta
+                                             && he.bound <= EXACT)))
+            return he.score;
+
+        if (he.depth <= 0)
+            he.move = 0;
+
+        refinedEval = staticEval = he.eval;
+
+        if ((he.score > refinedEval && he.bound <= EXACT)
+                || (he.score < refinedEval && he.bound >= EXACT))
+            refinedEval = he.score;
+    } else {
+        he.move = 0;
+        refinedEval = staticEval = pos->checkers ? -INF : evaluate(worker, pos) + Tempo;
+    }
+
+    // At Root, ensure that the last best move is searched first. This is not guaranteed,
+    // as the TT entry could have got overriden by other search threads.
+    if (ply == 0 && info_last_depth(&ui) > 0)
+        he.move = info_best(&ui);
+
+    worker->nodes++;
+
+    if (ply >= MAX_PLY)
+        return refinedEval;
+
+    // Eval pruning
+    if (depth <= 4 && !pos->checkers && !pvNode && pos->pieceMaterial[us].eg
+            && refinedEval >= beta + EvalMargin[depth])
+        return refinedEval;
+
+    // Razoring
+    if (depth <= 4 && !pos->checkers && !pvNode) {
+        const int lbound = alpha - RazorMargin[depth];
+
+        if (refinedEval <= lbound) {
+            score = qsearch(worker, pos, ply, 0, lbound, lbound + 1, childPv);
+
+            if (score <= lbound)
+                return score;
+        }
+    }
+
+    // Null search
+    if (depth >= 2 && !pvNode
+            && staticEval >= beta && pos->pieceMaterial[us].eg) {
+        const int nextDepth = depth - (2 + depth / 3) - (refinedEval >= beta + 178);
+        pos_switch(&nextPos, pos);
+        stack_push(&worker->stack, nextPos.key);
+        score = nextDepth <= 0
+                ? -qsearch(worker, &nextPos, ply + 1, nextDepth, -beta, -(beta - 1), childPv)
+                : -search(worker, &nextPos, ply + 1, nextDepth, -beta, -(beta - 1), childPv);
+        stack_pop(&worker->stack);
+
+        if (score >= beta)
+            return score >= mate_in(MAX_PLY) ? beta : score;
+    }
+
+    // Generate and score moves
+    Sort s;
+    sort_init(worker, &s, pos, depth, he.move, ply);
+
+    int moveCount = 0, lmrCount = 0;
+    move_t currentMove;
+
+    // Move loop
+    while ((s.idx != s.cnt) && alpha < beta) {
+        int see;
+        currentMove = sort_next(&s, pos, &see);
+
+        if (!move_is_legal(pos, currentMove))
+            continue;
+
+        moveCount++;
+
+        // Play move
+        pos_move(&nextPos, pos, currentMove);
+
+        // Prune losing captures in the search, near the leaves
+        if (depth <= 4 && see < 0 && !pvNode && !pos->checkers && !nextPos.checkers
+                && !move_is_capture(pos, currentMove))
+            continue;
+
+        stack_push(&worker->stack, nextPos.key);
+
+        const int ext = see >= 0 && nextPos.checkers;
+        const int nextDepth = depth - 1 + ext;
+
+        // Recursion
+        if (nextDepth <= 0)
+            score = -qsearch(worker, &nextPos, ply + 1, nextDepth, -beta, -alpha, childPv);
+        else {
+            // Search recursion (PVS + Reduction)
+            if (moveCount == 1)
+                score = -search(worker, &nextPos, ply + 1, nextDepth, -beta, -alpha, childPv);
+            else {
+                int reduction = see < 0 || !move_is_capture(pos, currentMove);
+
+                if (!move_is_capture(pos, currentMove)) {
+                    lmrCount++;
+                    assert(1 <= nextDepth && nextDepth <= MAX_DEPTH);
+                    assert(1 <= lmrCount && lmrCount <= MAX_MOVES);
+                    reduction = Reduction[nextDepth][lmrCount];
+                }
+
+                // Reduced depth, zero window
+                score = nextDepth - reduction <= 0
+                        ? -qsearch(worker, &nextPos, ply + 1, nextDepth - reduction, -(alpha + 1), -alpha, childPv)
+                        : -search(worker, &nextPos, ply + 1, nextDepth - reduction, -(alpha + 1), -alpha, childPv);
+
+                // Fail high: re-search zero window at full depth
+                if (reduction && score > alpha)
+                    score = -search(worker, &nextPos, ply + 1, nextDepth, -(alpha + 1), -alpha, childPv);
+
+                // Fail high at full depth for pvNode: re-search full window
+                if (pvNode && alpha < score && score < beta)
+                    score = -search(worker, &nextPos, ply + 1, nextDepth, -beta, -alpha, childPv);
+            }
+        }
+
+        // Undo move
+        stack_pop(&worker->stack);
+
+        // New best score
+        if (score > bestScore) {
+            bestScore = score;
+
+            // New alpha
+            if (score > alpha) {
+                alpha = score;
+                bestMove = currentMove;
+
+                if (pvNode) {
+                    pv[0] = currentMove;
+
+                    for (int i = 0; i < MAX_PLY - ply; i++)
+                        if (!(pv[i + 1] = childPv[i]))
+                            break;
+
+                    if (ply == 0 && info_last_depth(&ui) > 0)
+                        info_update(&ui, depth, score, smp_nodes(), pv, true);
+                }
+            }
+        }
+    }
+
+    // No legal move: mated or stalemated
+    if (!moveCount)
+        return pos->checkers ? mated_in(ply) : draw_score(ply);
+
+    // Update move sorting statistics
+    if (alpha > oldAlpha && !move_is_capture(pos, bestMove)) {
+        for (size_t i = 0; i < s.idx; i++) {
+            const int bonus = depth * depth;
+            history_update(worker, us, s.moves[i], s.moves[i] == bestMove ? bonus : -bonus);
+        }
+
+        worker->refutation[stack_move_key(&worker->stack) & (NB_REFUTATION - 1)] = bestMove;
+        worker->killers[ply] = bestMove;
+    }
+
+    // TT write
+    he.bound = bestScore <= oldAlpha ? UBOUND : bestScore >= beta ? LBOUND : EXACT;
+    he.score = score_to_hash(bestScore, ply);
+    he.eval = pos->checkers ? -INF : staticEval;
+    he.depth = depth;
+    he.move = bestMove;
+    he.keyXorData = pos->key ^ he.data;
+    hash_write(pos->key, &he);
+
+    return bestScore;
+}
 
 int aspirate(Worker *worker, int depth, move_t pv[], int score)
 {
