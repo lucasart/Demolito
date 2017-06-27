@@ -53,7 +53,7 @@ void search_init()
 const int Tempo = 17;
 
 int qsearch(Worker *worker, const Position *pos, int ply, int depth, int alpha, int beta,
-                   move_t pv[])
+    move_t pv[])
 {
     assert(depth <= 0);
     assert(stack_back(&worker->stack) == pos->key);
@@ -82,8 +82,8 @@ int qsearch(Worker *worker, const Position *pos, int ply, int depth, int alpha, 
     if (hash_read(pos->key, &he)) {
         he.score = score_from_hash(he.score, ply);
 
-        if (he.depth >= depth && !pvNode && ((he.score <= alpha && he.bound >= EXACT) || (he.score >= beta
-                                             && he.bound <= EXACT)))
+        if (he.depth >= depth && !pvNode && ((he.score <= alpha && he.bound >= EXACT)
+                || (he.score >= beta && he.bound <= EXACT)))
             return he.score;
 
         refinedEval = staticEval = he.eval;
@@ -195,7 +195,7 @@ int qsearch(Worker *worker, const Position *pos, int ply, int depth, int alpha, 
 }
 
 int search(Worker *worker, const Position *pos, int ply, int depth, int alpha, int beta,
-                   move_t pv[])
+                   move_t pv[], move_t singularMove)
 {
     const int EvalMargin[] = {0, 132, 266, 405, 524};
     const int RazorMargin[] = {0, 227, 455, 502, 853};
@@ -233,12 +233,13 @@ int search(Worker *worker, const Position *pos, int ply, int depth, int alpha, i
     // TT probe
     HashEntry he;
     int staticEval, refinedEval;
+    const uint64_t key = pos->key ^ singularMove;
 
-    if (hash_read(pos->key, &he)) {
+    if (hash_read(key, &he)) {
         he.score = score_from_hash(he.score, ply);
 
-        if (he.depth >= depth && !pvNode && ((he.score <= alpha && he.bound >= EXACT) || (he.score >= beta
-                                             && he.bound <= EXACT)))
+        if (he.depth >= depth && !pvNode && ((he.score <= alpha && he.bound >= EXACT)
+                || (he.score >= beta && he.bound <= EXACT)))
             return he.score;
 
         if (he.depth <= 0)
@@ -289,7 +290,7 @@ int search(Worker *worker, const Position *pos, int ply, int depth, int alpha, i
         stack_push(&worker->stack, nextPos.key);
         score = nextDepth <= 0
                 ? -qsearch(worker, &nextPos, ply + 1, nextDepth, -beta, -(beta - 1), childPv)
-                : -search(worker, &nextPos, ply + 1, nextDepth, -beta, -(beta - 1), childPv);
+                : -search(worker, &nextPos, ply + 1, nextDepth, -beta, -(beta - 1), childPv, 0);
         stack_pop(&worker->stack);
 
         if (score >= beta)
@@ -308,7 +309,7 @@ int search(Worker *worker, const Position *pos, int ply, int depth, int alpha, i
         int see;
         currentMove = sort_next(&s, pos, &see);
 
-        if (!move_is_legal(pos, currentMove))
+        if (!move_is_legal(pos, currentMove) || currentMove == singularMove)
             continue;
 
         moveCount++;
@@ -321,10 +322,24 @@ int search(Worker *worker, const Position *pos, int ply, int depth, int alpha, i
                 && !move_is_capture(pos, currentMove))
             continue;
 
-        stack_push(&worker->stack, nextPos.key);
+        // Search extension
+        int ext = 0;
 
-        const int ext = see >= 0 && nextPos.checkers;
+        if (currentMove == he.move && ply > 0 && depth >= 8 && he.bound <= EXACT && he.depth >= depth - 3) {
+            // Singular Extension: extend if hash move is singular
+            const int lbound = he.score - 2 * depth;
+
+            if (abs(lbound) < MATE) {
+                score = search(worker, pos, ply, depth / 2, lbound, lbound + 1, childPv, currentMove);
+                ext = score <= lbound;
+            }
+        } else
+            // Check extension
+            ext = see >= 0 && nextPos.checkers;
+
         const int nextDepth = depth - 1 + ext;
+
+        stack_push(&worker->stack, nextPos.key);
 
         // Recursion
         if (nextDepth <= 0)
@@ -332,7 +347,7 @@ int search(Worker *worker, const Position *pos, int ply, int depth, int alpha, i
         else {
             // Search recursion (PVS + Reduction)
             if (moveCount == 1)
-                score = -search(worker, &nextPos, ply + 1, nextDepth, -beta, -alpha, childPv);
+                score = -search(worker, &nextPos, ply + 1, nextDepth, -beta, -alpha, childPv, 0);
             else {
                 int reduction = see < 0 || !move_is_capture(pos, currentMove);
 
@@ -346,15 +361,15 @@ int search(Worker *worker, const Position *pos, int ply, int depth, int alpha, i
                 // Reduced depth, zero window
                 score = nextDepth - reduction <= 0
                         ? -qsearch(worker, &nextPos, ply + 1, nextDepth - reduction, -(alpha + 1), -alpha, childPv)
-                        : -search(worker, &nextPos, ply + 1, nextDepth - reduction, -(alpha + 1), -alpha, childPv);
+                        : -search(worker, &nextPos, ply + 1, nextDepth - reduction, -(alpha + 1), -alpha, childPv, 0);
 
                 // Fail high: re-search zero window at full depth
                 if (reduction && score > alpha)
-                    score = -search(worker, &nextPos, ply + 1, nextDepth, -(alpha + 1), -alpha, childPv);
+                    score = -search(worker, &nextPos, ply + 1, nextDepth, -(alpha + 1), -alpha, childPv, 0);
 
                 // Fail high at full depth for pvNode: re-search full window
                 if (pvNode && alpha < score && score < beta)
-                    score = -search(worker, &nextPos, ply + 1, nextDepth, -beta, -alpha, childPv);
+                    score = -search(worker, &nextPos, ply + 1, nextDepth, -beta, -alpha, childPv, 0);
             }
         }
 
@@ -386,7 +401,7 @@ int search(Worker *worker, const Position *pos, int ply, int depth, int alpha, i
 
     // No legal move: mated or stalemated
     if (!moveCount)
-        return pos->checkers ? mated_in(ply) : draw_score(ply);
+        return singularMove ? alpha : pos->checkers ? mated_in(ply) : draw_score(ply);
 
     // Update move sorting statistics
     if (alpha > oldAlpha && !move_is_capture(pos, bestMove)) {
@@ -405,8 +420,8 @@ int search(Worker *worker, const Position *pos, int ply, int depth, int alpha, i
     he.eval = pos->checkers ? -INF : staticEval;
     he.depth = depth;
     he.move = bestMove;
-    he.keyXorData = pos->key ^ he.data;
-    hash_write(pos->key, &he);
+    he.keyXorData = key ^ he.data;
+    hash_write(key, &he);
 
     return bestScore;
 }
@@ -416,14 +431,14 @@ int aspirate(Worker *worker, int depth, move_t pv[], int score)
     assert(depth > 0);
 
     if (depth == 1)
-        return search(worker, &rootPos, 0, depth, -INF, +INF, pv);
+        return search(worker, &rootPos, 0, depth, -INF, +INF, pv, 0);
 
     int delta = 15;
     int alpha = score - delta;
     int beta = score + delta;
 
     for ( ; ; delta += delta * 0.876) {
-        score = search(worker, &rootPos, 0, depth, alpha, beta, pv);
+        score = search(worker, &rootPos, 0, depth, alpha, beta, pv, 0);
 
         if (score <= alpha) {
             beta = (alpha + beta) / 2;
