@@ -325,7 +325,7 @@ int search(Worker *worker, const Position *pos, int ply, int depth, int alpha, i
         // Search extension
         int ext = 0;
 
-        if (currentMove == he.move && ply > 0 && depth >= 7 && he.bound <= EXACT && he.depth >= depth - 3) {
+        if (currentMove == he.move && ply > 0 && depth >= 6 && he.bound <= EXACT && he.depth >= depth - 3) {
             // Singular Extension: extend if hash move is singular
             const int lbound = he.score - 2 * depth;
 
