@@ -37,7 +37,7 @@ static void safe_set_bit(bitboard_t *b, int r, int f)
 
 static void init_leaper_attacks()
 {
-    for (int s = A1; s <= H8; ++s) {
+    for (int s = A1; s <= H8; s++) {
         const int r = rank_of(s), f = file_of(s);
 
         for (int d = 0; d < 8; d++) {
@@ -54,7 +54,7 @@ static void init_leaper_attacks()
 
 static void init_rays()
 {
-    for (int s1 = A1; s1 <= H8; ++s1) {
+    for (int s1 = A1; s1 <= H8; s1++) {
         const int r1 = rank_of(s1), f1 = file_of(s1);
 
         for (int d = 0; d < 8; d++) {
@@ -78,15 +78,132 @@ static void init_rays()
     }
 }
 
+static const bitboard_t RMagic[NB_SQUARE] = {
+    0x0080001020400080ull, 0x0040001000200040ull, 0x0080081000200080ull, 0x0080040800100080ull,
+    0x0080020400080080ull, 0x0080010200040080ull, 0x0080008001000200ull, 0x0080002040800100ull,
+    0x0000800020400080ull, 0x0000400020005000ull, 0x0000801000200080ull, 0x0000800800100080ull,
+    0x0000800400080080ull, 0x0000800200040080ull, 0x0000800100020080ull, 0x0000800040800100ull,
+    0x0000208000400080ull, 0x0000404000201000ull, 0x0000808010002000ull, 0x0000808008001000ull,
+    0x0000808004000800ull, 0x0000808002000400ull, 0x0000010100020004ull, 0x0000020000408104ull,
+    0x0000208080004000ull, 0x0000200040005000ull, 0x0000100080200080ull, 0x0000080080100080ull,
+    0x0000040080080080ull, 0x0000020080040080ull, 0x0000010080800200ull, 0x0000800080004100ull,
+    0x0000204000800080ull, 0x0000200040401000ull, 0x0000100080802000ull, 0x0000080080801000ull,
+    0x0000040080800800ull, 0x0000020080800400ull, 0x0000020001010004ull, 0x0000800040800100ull,
+    0x0000204000808000ull, 0x0000200040008080ull, 0x0000100020008080ull, 0x0000080010008080ull,
+    0x0000040008008080ull, 0x0000020004008080ull, 0x0000010002008080ull, 0x0000004081020004ull,
+    0x0000204000800080ull, 0x0000200040008080ull, 0x0000100020008080ull, 0x0000080010008080ull,
+    0x0000040008008080ull, 0x0000020004008080ull, 0x0000800100020080ull, 0x0000800041000080ull,
+    0x00FFFCDDFCED714Aull, 0x007FFCDDFCED714Aull, 0x003FFFCDFFD88096ull, 0x0000040810002101ull,
+    0x0001000204080011ull, 0x0001000204000801ull, 0x0001000082000401ull, 0x0001FFFAABFAD1A2ull
+};
+
+static const bitboard_t BMagic[NB_SQUARE] = {
+    0x0002020202020200ull, 0x0002020202020000ull, 0x0004010202000000ull, 0x0004040080000000ull,
+    0x0001104000000000ull, 0x0000821040000000ull, 0x0000410410400000ull, 0x0000104104104000ull,
+    0x0000040404040400ull, 0x0000020202020200ull, 0x0000040102020000ull, 0x0000040400800000ull,
+    0x0000011040000000ull, 0x0000008210400000ull, 0x0000004104104000ull, 0x0000002082082000ull,
+    0x0004000808080800ull, 0x0002000404040400ull, 0x0001000202020200ull, 0x0000800802004000ull,
+    0x0000800400A00000ull, 0x0000200100884000ull, 0x0000400082082000ull, 0x0000200041041000ull,
+    0x0002080010101000ull, 0x0001040008080800ull, 0x0000208004010400ull, 0x0000404004010200ull,
+    0x0000840000802000ull, 0x0000404002011000ull, 0x0000808001041000ull, 0x0000404000820800ull,
+    0x0001041000202000ull, 0x0000820800101000ull, 0x0000104400080800ull, 0x0000020080080080ull,
+    0x0000404040040100ull, 0x0000808100020100ull, 0x0001010100020800ull, 0x0000808080010400ull,
+    0x0000820820004000ull, 0x0000410410002000ull, 0x0000082088001000ull, 0x0000002011000800ull,
+    0x0000080100400400ull, 0x0001010101000200ull, 0x0002020202000400ull, 0x0001010101000200ull,
+    0x0000410410400000ull, 0x0000208208200000ull, 0x0000002084100000ull, 0x0000000020880000ull,
+    0x0000001002020000ull, 0x0000040408020000ull, 0x0004040404040000ull, 0x0002020202020000ull,
+    0x0000104104104000ull, 0x0000002082082000ull, 0x0000000020841000ull, 0x0000000000208800ull,
+    0x0000000010020200ull, 0x0000000404080200ull, 0x0000040404040400ull, 0x0002020202020200ull
+};
+
+static bitboard_t RMagicDB[0x19000], BMagicDB[0x1480];
+
+bitboard_t BMask[NB_SQUARE];
+bitboard_t RMask[NB_SQUARE];
+
+int BShift[NB_SQUARE];
+int RShift[NB_SQUARE];
+
+bitboard_t *BMagicArray[NB_SQUARE];
+bitboard_t *RMagicArray[NB_SQUARE];
+
+static bitboard_t calc_sliding_attacks(int s, bitboard_t occ, const int dir[4][2])
+{
+    const int r = rank_of(s), f = file_of(s);
+    bitboard_t result = 0;
+
+    for (int i = 0; i < 4; i++) {
+        int dr = dir[i][0], df = dir[i][1];
+        int _r = r + dr, _f = f + df;
+
+        while (0 <= _r && _r < NB_RANK && 0 <= _f && _f < NB_FILE) {
+            const int _sq = square(_r, _f);
+            bb_set(&result, _sq);
+
+            if (bb_test(occ, _sq))
+                break;
+
+            _r += dr, _f += df;
+        }
+    }
+
+    return result;
+}
+
+static void do_slider_attacks(int s, bitboard_t mask[], const bitboard_t magic[], int shift[],
+                        bitboard_t *magicArray[], const int dir[4][2])
+{
+    bitboard_t edges = ((bb_rank(RANK_1) | bb_rank(RANK_8)) & ~bb_rank(rank_of(s))) |
+        ((bb_file(RANK_1) | bb_file(RANK_8)) & ~bb_file(file_of(s)));
+    mask[s] = calc_sliding_attacks(s, 0, dir) & ~edges;
+
+    shift[s] = 64 - bb_count(mask[s]);
+
+    if (s < H8)
+        magicArray[s + 1] = magicArray[s] + (1 << bb_count(mask[s]));
+
+    // Use the Carry-Rippler trick to loop over the subsets of mask[s]
+    bitboard_t occ = 0;
+
+    do {
+        magicArray[s][(occ * magic[s]) >> shift[s]] = calc_sliding_attacks(s, occ, dir);
+        occ = (occ - mask[s]) & mask[s];
+    } while (occ);
+}
+
+void init_slider_attacks()
+{
+    const int Bdir[4][2] = {{-1,-1}, {-1,1}, {1,-1}, {1,1}};
+    const int Rdir[4][2] = {{-1,0}, {0,-1}, {0,1}, {1,0}};
+
+    BMagicArray[0] = BMagicDB;
+    RMagicArray[0] = RMagicDB;
+
+    for (int s = A1; s <= H8; s++) {
+        do_slider_attacks(s, BMask, BMagic, BShift, BMagicArray, Bdir);
+        do_slider_attacks(s, RMask, RMagic, RShift, RMagicArray, Rdir);
+    }
+}
+
+bitboard_t bb_battacks(int s, bitboard_t occ)
+{
+    BOUNDS(s, NB_SQUARE);
+    return BMagicArray[s][((occ & BMask[s]) * BMagic[s]) >> BShift[s]];
+}
+
+bitboard_t bb_rattacks(int s, bitboard_t occ)
+{
+    BOUNDS(s, NB_SQUARE);
+    return RMagicArray[s][((occ & RMask[s]) * RMagic[s]) >> RShift[s]];
+}
+
 static void init_slider_pseudo_attacks()
 {
-    for (int s = A1; s <= H8; ++s) {
+    for (int s = A1; s <= H8; s++) {
         BPseudoAttacks[s] = bb_battacks(s, 0);
         RPseudoAttacks[s] = bb_rattacks(s, 0);
     }
 }
-
-void init_slider_attacks();    // in magic.cc
 
 void bb_init()
 {
@@ -171,10 +288,10 @@ int bb_count(bitboard_t b)
 
 void bb_print(bitboard_t b)
 {
-    for (int r = RANK_8; r >= RANK_1; --r) {
+    for (int r = RANK_8; r >= RANK_1; r--) {
         char line[] = ". . . . . . . .";
 
-        for (int f = FILE_A; f <= FILE_H; ++f) {
+        for (int f = FILE_A; f <= FILE_H; f++) {
             if (bb_test(b, square(r, f)))
                 line[2 * f] = 'X';
         }
