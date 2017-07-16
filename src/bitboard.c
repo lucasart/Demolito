@@ -79,94 +79,92 @@ static void init_rays()
 }
 
 static const bitboard_t RMagic[NB_SQUARE] = {
-    0x0080001020400080ull, 0x0040001000200040ull, 0x0080081000200080ull, 0x0080040800100080ull,
-    0x0080020400080080ull, 0x0080010200040080ull, 0x0080008001000200ull, 0x0080002040800100ull,
-    0x0000800020400080ull, 0x0000400020005000ull, 0x0000801000200080ull, 0x0000800800100080ull,
-    0x0000800400080080ull, 0x0000800200040080ull, 0x0000800100020080ull, 0x0000800040800100ull,
-    0x0000208000400080ull, 0x0000404000201000ull, 0x0000808010002000ull, 0x0000808008001000ull,
-    0x0000808004000800ull, 0x0000808002000400ull, 0x0000010100020004ull, 0x0000020000408104ull,
-    0x0000208080004000ull, 0x0000200040005000ull, 0x0000100080200080ull, 0x0000080080100080ull,
-    0x0000040080080080ull, 0x0000020080040080ull, 0x0000010080800200ull, 0x0000800080004100ull,
-    0x0000204000800080ull, 0x0000200040401000ull, 0x0000100080802000ull, 0x0000080080801000ull,
-    0x0000040080800800ull, 0x0000020080800400ull, 0x0000020001010004ull, 0x0000800040800100ull,
-    0x0000204000808000ull, 0x0000200040008080ull, 0x0000100020008080ull, 0x0000080010008080ull,
-    0x0000040008008080ull, 0x0000020004008080ull, 0x0000010002008080ull, 0x0000004081020004ull,
-    0x0000204000800080ull, 0x0000200040008080ull, 0x0000100020008080ull, 0x0000080010008080ull,
-    0x0000040008008080ull, 0x0000020004008080ull, 0x0000800100020080ull, 0x0000800041000080ull,
-    0x00FFFCDDFCED714Aull, 0x007FFCDDFCED714Aull, 0x003FFFCDFFD88096ull, 0x0000040810002101ull,
-    0x0001000204080011ull, 0x0001000204000801ull, 0x0001000082000401ull, 0x0001FFFAABFAD1A2ull
+    0x808000645080c000ULL, 0x208020001480c000ULL, 0x4180100160008048ULL, 0x8180100018001680ULL,
+    0x4200082010040201ULL, 0x8300220400010008ULL, 0x3100120000890004ULL, 0x4080004500012180ULL,
+    0x1548000a1804008ULL, 0x4881004005208900ULL, 0x480802000801008ULL, 0x2e8808010008800ULL,
+    0x8cd804800240080ULL, 0x8a058002008c0080ULL, 0x514000c480a1001ULL, 0x101000282004d00ULL,
+    0x2048848000204000ULL, 0x3020088020804000ULL, 0x4806020020841240ULL, 0x6080420008102202ULL,
+    0x10050011000800ULL, 0xac00808004000200ULL, 0x10100020004ULL, 0x1500020004004581ULL,
+    0x4c00180052080ULL, 0x220028480254000ULL, 0x2101200580100080ULL, 0x407201200084200ULL,
+    0x18004900100500ULL, 0x100200020008e410ULL, 0x81020400100811ULL, 0x12200024494ULL,
+    0x8006c002808006a5ULL, 0x4201000404000ULL, 0x5402202001180ULL, 0x81001002100ULL,
+    0x100801000500ULL, 0x4000020080800400ULL, 0x4005050214001008ULL, 0x810100118b000042ULL,
+    0xd01020040820020ULL, 0x140a010014000ULL, 0x420001500210040ULL, 0x54210010030009ULL,
+    0x4000408008080ULL, 0x2000400090100ULL, 0x840200010100ULL, 0x233442820004ULL,
+    0x800a42002b008200ULL, 0x240200040009080ULL, 0x242001020408200ULL, 0x4000801000480480ULL,
+    0x2288008044000880ULL, 0xa800400020180ULL, 0x30011002880c00ULL, 0x41110880440200ULL,
+    0x2001100442082ULL, 0x1a0104002208101ULL, 0x80882014010200aULL, 0x100100600409ULL,
+    0x2011048204402ULL, 0x12000168041002ULL, 0x80100008a000421ULL, 0x240022044031182ULL
 };
 
 static const bitboard_t BMagic[NB_SQUARE] = {
-    0x0002020202020200ull, 0x0002020202020000ull, 0x0004010202000000ull, 0x0004040080000000ull,
-    0x0001104000000000ull, 0x0000821040000000ull, 0x0000410410400000ull, 0x0000104104104000ull,
-    0x0000040404040400ull, 0x0000020202020200ull, 0x0000040102020000ull, 0x0000040400800000ull,
-    0x0000011040000000ull, 0x0000008210400000ull, 0x0000004104104000ull, 0x0000002082082000ull,
-    0x0004000808080800ull, 0x0002000404040400ull, 0x0001000202020200ull, 0x0000800802004000ull,
-    0x0000800400A00000ull, 0x0000200100884000ull, 0x0000400082082000ull, 0x0000200041041000ull,
-    0x0002080010101000ull, 0x0001040008080800ull, 0x0000208004010400ull, 0x0000404004010200ull,
-    0x0000840000802000ull, 0x0000404002011000ull, 0x0000808001041000ull, 0x0000404000820800ull,
-    0x0001041000202000ull, 0x0000820800101000ull, 0x0000104400080800ull, 0x0000020080080080ull,
-    0x0000404040040100ull, 0x0000808100020100ull, 0x0001010100020800ull, 0x0000808080010400ull,
-    0x0000820820004000ull, 0x0000410410002000ull, 0x0000082088001000ull, 0x0000002011000800ull,
-    0x0000080100400400ull, 0x0001010101000200ull, 0x0002020202000400ull, 0x0001010101000200ull,
-    0x0000410410400000ull, 0x0000208208200000ull, 0x0000002084100000ull, 0x0000000020880000ull,
-    0x0000001002020000ull, 0x0000040408020000ull, 0x0004040404040000ull, 0x0002020202020000ull,
-    0x0000104104104000ull, 0x0000002082082000ull, 0x0000000020841000ull, 0x0000000000208800ull,
-    0x0000000010020200ull, 0x0000000404080200ull, 0x0000040404040400ull, 0x0002020202020200ull
+    0x88b030028800d040ULL, 0x18242044c008010ULL, 0x10008200440000ULL, 0x4311040888800a00ULL,
+    0x1910400000410aULL, 0x2444240440000000ULL, 0xcd2080108090008ULL, 0x2048242410041004ULL,
+    0x8884441064080180ULL, 0x42131420a0240ULL, 0x28882800408400ULL, 0x204384040b820200ULL,
+    0x402040420800020ULL, 0x20910282304ULL, 0x96004b10082200ULL, 0x4000a44218410802ULL,
+    0x808034002081241ULL, 0x101805210e1408ULL, 0x9020400208010220ULL, 0x820050c010044ULL,
+    0x24005480a00000ULL, 0x200200900890ULL, 0x808040049c100808ULL, 0x9020202200820802ULL,
+    0x410282124200400ULL, 0x90106008010110ULL, 0x8001100501004201ULL, 0x104080004030c10ULL,
+    0x80840040802008ULL, 0x2008008102406000ULL, 0x2000888004040460ULL, 0xd0421242410410ULL,
+    0x8410100401280800ULL, 0x801012000108428ULL, 0x402080300b04ULL, 0xc20020080480080ULL,
+    0x40100e0201502008ULL, 0x4014208200448800ULL, 0x4050020607084501ULL, 0x1002820180020288ULL,
+    0x800610040540a0c0ULL, 0x301009014081004ULL, 0x2200610040502800ULL, 0x300442011002800ULL,
+    0x1022009002208ULL, 0x110011000202100ULL, 0x1464082204080240ULL, 0x21310205800200ULL,
+    0x814020210040109ULL, 0xc102008208c200a0ULL, 0xc100702128080000ULL, 0x1044205040000ULL,
+    0x1041002020000ULL, 0x4200040408021000ULL, 0x4004040c494000ULL, 0x2010108900408080ULL,
+    0x820801040284ULL, 0x800004118111000ULL, 0x203040201108800ULL, 0x2504040804208803ULL,
+    0x228000908030400ULL, 0x10402082020200ULL, 0xa0402208010100ULL, 0x30c0214202044104ULL
 };
 
-static bitboard_t RMagicDB[0x19000], BMagicDB[0x1480];
+static bitboard_t RAttacks[0x19000], BAttacks[0x1480];
 
-bitboard_t BMask[NB_SQUARE];
-bitboard_t RMask[NB_SQUARE];
+static bitboard_t BMask[NB_SQUARE];
+static bitboard_t RMask[NB_SQUARE];
 
-int BShift[NB_SQUARE];
-int RShift[NB_SQUARE];
+static int BShift[NB_SQUARE];
+static int RShift[NB_SQUARE];
 
-bitboard_t *BMagicArray[NB_SQUARE];
-bitboard_t *RMagicArray[NB_SQUARE];
+static bitboard_t *BAttacksPtr[NB_SQUARE];
+static bitboard_t *RAttacksPtr[NB_SQUARE];
 
-static bitboard_t calc_sliding_attacks(int s, bitboard_t occ, const int dir[4][2])
+static bitboard_t calc_slider_mask(int s, bitboard_t occ, const int dir[4][2])
 {
-    const int r = rank_of(s), f = file_of(s);
     bitboard_t result = 0;
 
     for (int i = 0; i < 4; i++) {
         int dr = dir[i][0], df = dir[i][1];
-        int _r = r + dr, _f = f + df;
+        int r, f;
 
-        while (0 <= _r && _r < NB_RANK && 0 <= _f && _f < NB_FILE) {
-            const int _sq = square(_r, _f);
-            bb_set(&result, _sq);
+        for (r = rank_of(s) + dr, f = file_of(s) + df;
+                (unsigned)r < NB_RANK && (unsigned)f < NB_FILE;
+                r += dr, f += df) {
+            const int sq = square(r, f);
+            bb_set(&result, sq);
 
-            if (bb_test(occ, _sq))
+            if (bb_test(occ, sq))
                 break;
-
-            _r += dr, _f += df;
         }
     }
 
     return result;
 }
 
-static void do_slider_attacks(int s, bitboard_t mask[], const bitboard_t magic[], int shift[],
-                        bitboard_t *magicArray[], const int dir[4][2])
+static void do_init_slider_attacks(int s, bitboard_t mask[], const bitboard_t magic[], int shift[],
+                        bitboard_t *attacksPtr[], const int dir[4][2])
 {
     bitboard_t edges = ((bb_rank(RANK_1) | bb_rank(RANK_8)) & ~bb_rank(rank_of(s))) |
         ((bb_file(RANK_1) | bb_file(RANK_8)) & ~bb_file(file_of(s)));
-    mask[s] = calc_sliding_attacks(s, 0, dir) & ~edges;
-
+    mask[s] = calc_slider_mask(s, 0, dir) & ~edges;
     shift[s] = 64 - bb_count(mask[s]);
 
     if (s < H8)
-        magicArray[s + 1] = magicArray[s] + (1 << bb_count(mask[s]));
+        attacksPtr[s + 1] = attacksPtr[s] + (1 << bb_count(mask[s]));
 
     // Use the Carry-Rippler trick to loop over the subsets of mask[s]
     bitboard_t occ = 0;
 
     do {
-        magicArray[s][(occ * magic[s]) >> shift[s]] = calc_sliding_attacks(s, occ, dir);
+        attacksPtr[s][(occ * magic[s]) >> shift[s]] = calc_slider_mask(s, occ, dir);
         occ = (occ - mask[s]) & mask[s];
     } while (occ);
 }
@@ -176,25 +174,25 @@ void init_slider_attacks()
     const int Bdir[4][2] = {{-1,-1}, {-1,1}, {1,-1}, {1,1}};
     const int Rdir[4][2] = {{-1,0}, {0,-1}, {0,1}, {1,0}};
 
-    BMagicArray[0] = BMagicDB;
-    RMagicArray[0] = RMagicDB;
+    BAttacksPtr[0] = BAttacks;
+    RAttacksPtr[0] = RAttacks;
 
     for (int s = A1; s <= H8; s++) {
-        do_slider_attacks(s, BMask, BMagic, BShift, BMagicArray, Bdir);
-        do_slider_attacks(s, RMask, RMagic, RShift, RMagicArray, Rdir);
+        do_init_slider_attacks(s, BMask, BMagic, BShift, BAttacksPtr, Bdir);
+        do_init_slider_attacks(s, RMask, RMagic, RShift, RAttacksPtr, Rdir);
     }
 }
 
 bitboard_t bb_battacks(int s, bitboard_t occ)
 {
     BOUNDS(s, NB_SQUARE);
-    return BMagicArray[s][((occ & BMask[s]) * BMagic[s]) >> BShift[s]];
+    return BAttacksPtr[s][((occ & BMask[s]) * BMagic[s]) >> BShift[s]];
 }
 
 bitboard_t bb_rattacks(int s, bitboard_t occ)
 {
     BOUNDS(s, NB_SQUARE);
-    return RMagicArray[s][((occ & RMask[s]) * RMagic[s]) >> RShift[s]];
+    return RAttacksPtr[s][((occ & RMask[s]) * RMagic[s]) >> RShift[s]];
 }
 
 static void init_slider_pseudo_attacks()
