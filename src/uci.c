@@ -37,7 +37,7 @@ static int64_t TimeBuffer = 30;
 static void uci_format_score(int score, char *str)
 {
     if (is_mate_score(score))
-        sprintf(str, "mate %d", score > 0 ? (MATE - score + 1) / 2 : (score - MATE + 1) / 2);
+        sprintf(str, "mate %d", score > 0 ? (MATE - score + 1) / 2 : -(score + MATE + 1) / 2);
     else
         sprintf(str, "cp %d", score * 100 / EP);
 }
