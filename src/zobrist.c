@@ -21,11 +21,6 @@ static uint64_t ZobristCastling[NB_SQUARE];
 uint64_t ZobristEnPassant[NB_SQUARE + 1];
 uint64_t ZobristTurn;
 
-static uint64_t rotate(uint64_t x, int k)
-{
-    return (x << k) | (x >> (64 - k));
-}
-
 void stack_clear(Stack *gs)
 {
     gs->idx = 0;
@@ -69,43 +64,42 @@ bool stack_repetition(const Stack *gs, int rule50)
     return false;
 }
 
-void prng_init(PRNG *prng, uint64_t seed)
+// SplitMix64 PRNG, by Sebastiano Vigna: http://xoroshiro.di.unimi.it/splitmix64.c
+// 64-bit state is enough:
+//   * 2^64 period is long enough to generate a few zobrist keys.
+//   * Statistically strong: passes TestU01's BigCrunch.
+// 64-bit state is, in fact, a huge bonus:
+//   * Easy to seed: Any seed is fine, even zero!
+//   * Escapes immediately from zero land, unlike large seed generators (MT being, by far, the
+//     worst, taking up to hundreds of thousands of drawings to fully escape zero land; which is
+//     why proper seeding is crucial with large generators, that need another generator just to
+//     seed themselves).
+// Fast enough: 1.31ns per drawing on i7 7700 CPU @ 3.6 GHz (Kaby Lake).
+uint64_t prng(uint64_t *state)
 {
-    prng->a = 0xf1ea5eed;
-    prng->b = prng->c = prng->d = seed;
-
-    for (int i = 0; i < 20; ++i)
-        prng_rand(prng);
-}
-
-uint64_t prng_rand(PRNG *prng)
-{
-    uint64_t e = prng->a - rotate(prng->b, 7);
-    prng->a = prng->b ^ rotate(prng->c, 13);
-    prng->b = prng->c + rotate(prng->d, 37);
-    prng->c = prng->d + e;
-    return prng->d = e + prng->a;
+    uint64_t s = (*state += 0x9E3779B97F4A7C15ULL);
+    s = (s ^ (s >> 30)) * 0xBF58476D1CE4E5B9ULL;
+    s = (s ^ (s >> 27)) * 0x94D049BB133111EBULL;
+    return s ^ (s >> 31);
 }
 
 void zobrist_init()
 {
-    PRNG prng;
-    prng_init(&prng, 0);
+    uint64_t state = 0;
 
     for (int c = WHITE; c <= BLACK; ++c)
         for (int p = KNIGHT; p < NB_PIECE; ++p)
             for (int s = A1; s <= H8; ++s)
-                ZobristKey[c][p][s] = prng_rand(&prng);
+                ZobristKey[c][p][s] = prng(&state);
 
     for (int s = A1; s <= H8; ++s)
-        ZobristCastling[s] = prng_rand(&prng);
+        ZobristCastling[s] = prng(&state);
 
     for (int s = A1; s <= H8; ++s)
-        ZobristEnPassant[s] = prng_rand(&prng);
+        ZobristEnPassant[s] = prng(&state);
 
-    ZobristEnPassant[NB_SQUARE] = prng_rand(&prng);
-
-    ZobristTurn = prng_rand(&prng);
+    ZobristEnPassant[NB_SQUARE] = prng(&state);
+    ZobristTurn = prng(&state);
 }
 
 uint64_t zobrist_keys(int c, int p, uint64_t sqs)

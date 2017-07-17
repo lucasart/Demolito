@@ -1,12 +1,7 @@
 #pragma once
 #include "types.h"
 
-typedef struct {
-    uint64_t a, b, c, d;
-} PRNG;
-
-void prng_init(PRNG *prng, uint64_t seed);
-uint64_t prng_rand(PRNG *prng);
+uint64_t prng(uint64_t *x);
 
 typedef struct {
     uint64_t keys[MAX_GAME_PLY];
