@@ -33,8 +33,8 @@ void sort_generate(Sort *s, const Position *pos, int depth)
     else {
         const int us = pos->turn;
         const bitboard_t pieceTargets = depth > 0 ? ~pos->byColor[us] : pos->byColor[opposite(us)];
-        const bitboard_t pawnTargets = pieceTargets | pos_ep_square_bb(pos) | bb_rank(relative_rank(us,
-                                       RANK_8));
+        const bitboard_t pawnTargets = pieceTargets | pos_ep_square_bb(pos) | Rank[relative_rank(us,
+            RANK_8)];
 
         it = gen_piece_moves(pos, it, pieceTargets, true);
         it = gen_pawn_moves(pos, it, pawnTargets, depth > 0);
@@ -48,8 +48,8 @@ void sort_generate(Sort *s, const Position *pos, int depth)
 
 void sort_score(Worker *worker, Sort *s, const Position *pos, move_t ttMove, int ply)
 {
-    const move_t refutation = worker->refutation[stack_move_key(&worker->stack) &
-                                                             (NB_REFUTATION - 1)];
+    const move_t refutation = worker->refutation[stack_move_key(&worker->stack)
+        & (NB_REFUTATION - 1)];
 
     for (size_t i = 0; i < s->cnt; i++) {
         if (s->moves[i] == ttMove)

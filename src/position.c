@@ -78,9 +78,9 @@ static bitboard_t attacked_by(const Position *pos, int c)
         result |= NAttacks[bb_pop_lsb(&fss)];
 
     // Pawn captures
-    fss = pos_pieces_cp(pos, c, PAWN) & ~bb_file(FILE_A);
+    fss = pos_pieces_cp(pos, c, PAWN) & ~File[FILE_A];
     result |= bb_shift(fss, push_inc(c) + LEFT);
-    fss = pos_pieces_cp(pos, c, PAWN) & ~bb_file(FILE_H);
+    fss = pos_pieces_cp(pos, c, PAWN) & ~File[FILE_H];
     result |= bb_shift(fss, push_inc(c) + RIGHT);
 
     // Sliders
@@ -176,9 +176,9 @@ void pos_set(Position *pos, const char *fen)
         c = toupper(c);
 
         if (c == 'K')
-            s = bb_msb(bb_rank(r) & pos->byPiece[ROOK]);
+            s = bb_msb(Rank[r] & pos->byPiece[ROOK]);
         else if (c == 'Q')
-            s = bb_lsb(bb_rank(r) & pos->byPiece[ROOK]);
+            s = bb_lsb(Rank[r] & pos->byPiece[ROOK]);
         else if ('A' <= c && c <= 'H')
             s = square(r, c - 'A');
         else
@@ -249,7 +249,7 @@ void pos_move(Position *pos, const Position *before, move_t m)
             pos->castleRooks &= ~(1ULL << from);
         else if (p == KING) {
             // Lose all castling rights
-            pos->castleRooks &= ~bb_rank(us * RANK_8);
+            pos->castleRooks &= ~Rank[us * RANK_8];
 
             // Castling
             if (bb_test(before->byColor[us], to)) {

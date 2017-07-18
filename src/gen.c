@@ -37,7 +37,7 @@ move_t *gen_pawn_moves(const Position *pos, move_t *mList, bitboard_t targets, b
     int from;
 
     // Non promotions
-    fss = pos_pieces_cp(pos, us, PAWN) & ~bb_rank(relative_rank(us, RANK_7));
+    fss = pos_pieces_cp(pos, us, PAWN) & ~Rank[relative_rank(us, RANK_7)];
 
     while (fss) {
         from = bb_pop_lsb(&fss);
@@ -59,7 +59,7 @@ move_t *gen_pawn_moves(const Position *pos, move_t *mList, bitboard_t targets, b
     }
 
     // Promotions
-    fss = pos_pieces_cp(pos, us, PAWN) & bb_rank(relative_rank(us, RANK_7));
+    fss = pos_pieces_cp(pos, us, PAWN) & Rank[relative_rank(us, RANK_7)];
 
     while (fss) {
         from = bb_pop_lsb(&fss);

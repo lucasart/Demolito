@@ -28,8 +28,8 @@ static int KingDistance[NB_SQUARE][NB_SQUARE];
 static bitboard_t pawn_attacks(const Position *pos, int c)
 {
     const bitboard_t pawns = pos_pieces_cp(pos, c, PAWN);
-    return bb_shift(pawns & ~bb_file(FILE_A), push_inc(c) + LEFT)
-           | bb_shift(pawns & ~bb_file(FILE_H), push_inc(c) + RIGHT);
+    return bb_shift(pawns & ~File[FILE_A], push_inc(c) + LEFT)
+           | bb_shift(pawns & ~File[FILE_H], push_inc(c) + RIGHT);
 }
 
 static eval_t score_mobility(int p0, int p, bitboard_t tss)
@@ -254,7 +254,7 @@ static eval_t do_pawns(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
         const bitboard_t besides = ourPawns & AdjacentFiles[f];
         const bool exposed = !(PawnPath[us][s] & pos->byPiece[PAWN]);
 
-        if (besides & (bb_rank(r) | bb_rank(us == WHITE ? r - 1 : r + 1))) {
+        if (besides & (Rank[r] | Rank[us == WHITE ? r - 1 : r + 1])) {
             const int rr = relative_rank(us, r) - RANK_2;
             const bool phalanx = ourPawns & PAttacks[them][stop];
             const int bonus = rr * (rr + phalanx) * 3;
@@ -317,8 +317,8 @@ void eval_init()
     }
 
     for (int f = FILE_A; f <= FILE_H; ++f)
-        AdjacentFiles[f] = (f > FILE_A ? bb_file(f - 1) : 0)
-                           | (f < FILE_H ? bb_file(f + 1) : 0);
+        AdjacentFiles[f] = (f > FILE_A ? File[f - 1] : 0)
+                           | (f < FILE_H ? File[f + 1] : 0);
 
     for (int s1 = A1; s1 <= H8; ++s1)
         for (int s2 = A1; s2 <= H8; ++s2) {
