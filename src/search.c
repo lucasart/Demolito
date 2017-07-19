@@ -404,7 +404,7 @@ int search(Worker *worker, const Position *pos, int ply, int depth, int alpha, i
         return singularMove ? alpha : pos->checkers ? mated_in(ply) : draw_score(ply);
 
     // Update move sorting statistics
-    if (alpha > oldAlpha && !move_is_capture(pos, bestMove)) {
+    if (alpha > oldAlpha && !singularMove && !move_is_capture(pos, bestMove)) {
         for (size_t i = 0; i < s.idx; i++) {
             const int bonus = depth * depth;
             history_update(worker, us, s.moves[i], s.moves[i] == bestMove ? bonus : -bonus);
