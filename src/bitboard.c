@@ -15,6 +15,11 @@
 */
 #include "bitboard.h"
 
+#ifdef PEXT
+    #include <immintrin.h> // Header for _pext_u64() intrinsic
+    #define pext(b, m) _pext_u64(b, m)
+#endif
+
 bitboard_t Rank[NB_RANK], File[NB_FILE];
 bitboard_t PAttacks[NB_COLOR][NB_SQUARE], NAttacks[NB_SQUARE], KAttacks[NB_SQUARE];
 bitboard_t BPseudoAttacks[NB_SQUARE], RPseudoAttacks[NB_SQUARE];
@@ -65,14 +70,11 @@ static const bitboard_t BMagic[NB_SQUARE] = {
 };
 
 static bitboard_t RAttacks[0x19000], BAttacks[0x1480];
-static bitboard_t BMask[NB_SQUARE];
-static bitboard_t RMask[NB_SQUARE];
-static int BShift[NB_SQUARE];
-static int RShift[NB_SQUARE];
-static bitboard_t *BAttacksPtr[NB_SQUARE];
-static bitboard_t *RAttacksPtr[NB_SQUARE];
+static bitboard_t BMask[NB_SQUARE], RMask[NB_SQUARE];
+static int BShift[NB_SQUARE], RShift[NB_SQUARE];
+static bitboard_t *BAttacksPtr[NB_SQUARE], *RAttacksPtr[NB_SQUARE];
 
-static bitboard_t calc_slider_mask(int s, bitboard_t occ, const int dir[4][2])
+static bitboard_t slider_attacks(int s, bitboard_t occ, const int dir[4][2])
 {
     bitboard_t result = 0;
 
@@ -100,7 +102,7 @@ static void init_slider_attacks(int s, bitboard_t mask[NB_SQUARE],
 {
     bitboard_t edges = ((Rank[RANK_1] | Rank[RANK_8]) & ~Rank[rank_of(s)]) |
         ((File[RANK_1] | File[RANK_8]) & ~File[file_of(s)]);
-    mask[s] = calc_slider_mask(s, 0, dir) & ~edges;
+    mask[s] = slider_attacks(s, 0, dir) & ~edges;
     shift[s] = 64 - bb_count(mask[s]);
 
     if (s < H8)
@@ -110,7 +112,12 @@ static void init_slider_attacks(int s, bitboard_t mask[NB_SQUARE],
     bitboard_t occ = 0;
 
     do {
-        attacksPtr[s][(occ * magic[s]) >> shift[s]] = calc_slider_mask(s, occ, dir);
+#ifdef PEXT
+        (void)magic;  // Silence compiler warning (unused variable)
+        attacksPtr[s][pext(occ, mask[s])] = slider_attacks(s, occ, dir);
+#else
+        attacksPtr[s][(occ * magic[s]) >> shift[s]] = slider_attacks(s, occ, dir);
+#endif
         occ = (occ - mask[s]) & mask[s];
     } while (occ);
 }
@@ -184,13 +191,21 @@ void bb_init()
 bitboard_t bb_battacks(int s, bitboard_t occ)
 {
     BOUNDS(s, NB_SQUARE);
+#ifdef PEXT
+    return BAttacksPtr[s][pext(occ, BMask[s])];
+#else
     return BAttacksPtr[s][((occ & BMask[s]) * BMagic[s]) >> BShift[s]];
+#endif
 }
 
 bitboard_t bb_rattacks(int s, bitboard_t occ)
 {
     BOUNDS(s, NB_SQUARE);
+#ifdef PEXT
+    return RAttacksPtr[s][pext(occ, RMask[s])];
+#else
     return RAttacksPtr[s][((occ & RMask[s]) * RMagic[s]) >> RShift[s]];
+#endif
 }
 
 bool bb_test(bitboard_t b, int s)
