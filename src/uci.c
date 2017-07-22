@@ -32,7 +32,7 @@ int X[] = {};
 static thrd_t Timer = 0;
 
 static uint64_t Hash = 1;
-static int64_t TimeBuffer = 30;
+static int64_t TimeBuffer = 60;
 
 static void uci_format_score(int score, char *str)
 {
