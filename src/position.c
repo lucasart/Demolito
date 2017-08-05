@@ -130,10 +130,9 @@ static void finish(Position *pos)
     pos->pins = calc_pins(pos);
 }
 
-void pos_set(Position *pos, const char *fen)
+void pos_set(Position *pos, const char *fen, bool chess960)
 {
     clear(pos);
-
     char *str = strdup(fen), *strPos = NULL;
     char *token = strtok_r(str, " ", &strPos);
 
@@ -189,17 +188,13 @@ void pos_set(Position *pos, const char *fen)
 
     pos->key ^= zobrist_castling(pos->castleRooks);
 
-    // En passant
-    token = strtok_r(NULL, " ", &strPos);
-    pos->epSquare = string_to_square(token);
+    // en-passant, 50 move, chess960
+    pos->epSquare = string_to_square(strtok_r(NULL, " ", &strPos));
     pos->key ^= ZobristEnPassant[pos->epSquare];
-
-    // 50 move counter
-    token = strtok_r(NULL, " ", &strPos);
-    pos->rule50 = atoi(token);
+    pos->rule50 = atoi(strtok_r(NULL, " ", &strPos));
+    pos->chess960 = chess960;
 
     free(str);
-
     finish(pos);
 }
 
@@ -349,7 +344,7 @@ void pos_get(const Position *pos, char *fen)
 
             // Right side castling
             if (sqs & Ray[king][king + RIGHT]) {
-                if (Chess960)
+                if (pos->chess960)
                     *fen++ = file_of(bb_lsb(sqs & Ray[king][king + RIGHT])) + (c == WHITE ? 'A' : 'a');
                 else
                     *fen++ = PieceLabel[c][KING];
@@ -357,7 +352,7 @@ void pos_get(const Position *pos, char *fen)
 
             // Left side castling
             if (sqs & Ray[king][king + LEFT]) {
-                if (Chess960)
+                if (pos->chess960)
                     *fen++ = file_of(bb_msb(sqs & Ray[king][king + LEFT])) + (c == WHITE ? 'A' : 'a');
                 else
                     *fen++ = PieceLabel[c][QUEEN];

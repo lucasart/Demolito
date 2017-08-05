@@ -153,7 +153,7 @@ int qsearch(Worker *worker, const Position *pos, int ply, int depth, int alpha, 
             if (pvNode)
                 childPv[0] = 0;
         } else
-                score = -qsearch(worker, &nextPos, ply + 1, nextDepth, -beta, -alpha, childPv);
+            score = -qsearch(worker, &nextPos, ply + 1, nextDepth, -beta, -alpha, childPv);
 
         // Undo move
         stack_pop(&worker->stack);

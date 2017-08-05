@@ -45,7 +45,7 @@ static void uci_format_score(int score, char *str)
 static void intro()
 {
     uci_puts("id name Demolito " VERSION "\nid author lucasart");
-    uci_printf("option name UCI_Chess960 type check default %s\n", Chess960 ? "true" : "false");
+    uci_printf("option name UCI_Chess960 type check default %s\n", rootPos.chess960 ? "true" : "false");
     uci_printf("option name Hash type spin default %" PRIu64 " min 1 max 1048576\n", Hash);
     uci_printf("option name Threads type spin default %d min 1 max 63\n", WorkersCount);
     uci_printf("option name Contempt type spin default %d min -100 max 100\n", Contempt);
@@ -76,7 +76,7 @@ static void setoption(char **linePos)
         strcat(name, token);
 
     if (!strcmp(name, "UCI_Chess960"))
-        Chess960 = !strcmp(strtok_r(NULL, " \n", linePos), "true");
+        rootPos.chess960 = !strcmp(strtok_r(NULL, " \n", linePos), "true");
     else if (!strcmp(name, "Hash")) {
         Hash = atoi(strtok_r(NULL, " \n", linePos));
         Hash = 1ULL << bb_msb(Hash);  // must be a power of two
@@ -108,7 +108,7 @@ static void position(char **linePos)
     } else
         return;
 
-    pos_set(&p[idx], fen);
+    pos_set(&p[idx], fen, rootPos.chess960);
     stack_clear(&rootStack);
     stack_push(&rootStack, p[idx].key);
 
@@ -184,8 +184,9 @@ Info ui;
 void uci_loop()
 {
     char line[8192], *linePos;
+    rootPos.chess960 = false;
 
-    while (fgets(line, 8182, stdin)) {
+    while (fgets(line, 8192, stdin)) {
         const char *token = strtok_r(line, " \n", &linePos);
 
         if (!strcmp(token, "uci"))
@@ -253,9 +254,9 @@ void info_update(Info *info, int depth, int score, int64_t nodes, move_t pv[], b
         uci_printf("info depth %d score %s time %" PRId64 " nodes %" PRId64 " pv",
                    depth, str, system_msec() - info->start, nodes);
 
-        // Because of e1g1 notation when Chess960 = false, we need to play the PV, just to
-        // be able to print it. This is a defect of the UCI protocol (which should have
-        // encoded castling as e1h1 regardless of Chess960 allowing coherent treatement).
+        // Because of e1g1 notation when Chess960 = false, we need to play the PV, just to be able
+        // to print it. This is a defect of the UCI protocol (which should have encoded castling as
+        // e1h1 regardless of Chess960 allowing coherent treatement).
         Position p[2];
         int idx = 0;
         p[idx] = rootPos;

@@ -15,8 +15,6 @@
 */
 #include "types.h"
 
-bool Chess960 = false;
-
 int64_t dbgCnt[2] = {0, 0};
 
 /* int, int, int */

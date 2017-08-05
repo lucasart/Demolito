@@ -73,8 +73,8 @@ void move_to_string(const Position *pos, move_t m, char *str)
         return;
     }
 
-    const int _to = !Chess960 && move_is_castling(pos, m)
-                    ? (to > from ? from + 2 : from - 2)    // e1h1 -> e1g1, e1a1 -> e1c1
+    const int _to = !pos->chess960 && move_is_castling(pos, m)
+                    ? (to > from ? from + 2 : from - 2)  // e1h1 -> e1g1, e1a1 -> e1c1
                     : to;
 
     *str++ = file_of(from) + 'a';
@@ -94,7 +94,7 @@ move_t string_to_move(const Position *pos, const char *str)
     int from = square(str[1] - '1', str[0] - 'a');
     int to = square(str[3] - '1', str[2] - 'a');
 
-    if (!Chess960 && pos->pieceOn[from] == KING) {
+    if (!pos->chess960 && pos->pieceOn[from] == KING) {
         if (to == from + 2)  // e1g1 -> e1h1
             ++to;
         else if (to == from - 2)  // e1c1 -> e1a1

@@ -6,8 +6,6 @@
 #include <string.h>
 #include <stdio.h>
 
-extern bool Chess960;
-
 extern int64_t dbgCnt[2];
 
 #define BOUNDS(v, ub) assert((unsigned)(v) < (ub))
@@ -90,6 +88,7 @@ typedef struct {
     bitboard_t castleRooks;
     int epSquare;
     int rule50;
+    bool chess960;
 
     bitboard_t attacked, checkers, pins;
     uint64_t key, pawnKey;

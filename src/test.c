@@ -92,15 +92,13 @@ uint64_t test_search(bool perft, int depth, int threads)
     smp_resize(threads);
     smp_new_game();
 
-    Chess960 = true;  // Test positions contain some Chess960 ones
-
     memset(&lim, 0, sizeof(lim));
     lim.depth = depth;
 
     int64_t start = system_msec();
 
     for (int i = 0; fens[i]; i++) {
-        pos_set(&rootPos, fens[i]);
+        pos_set(&rootPos, fens[i], true);
         stack_clear(&rootStack);
         stack_push(&rootStack, rootPos.key);
 

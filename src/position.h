@@ -1,7 +1,7 @@
 #pragma once
 #include "types.h"
 
-void pos_set(Position *pos, const char *fen);
+void pos_set(Position *pos, const char *fen, bool chess960);
 void pos_get(const Position *pos, char *fen);
 
 void pos_move(Position *pos, const Position *before, move_t m);
