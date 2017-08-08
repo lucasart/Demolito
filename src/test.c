@@ -18,7 +18,6 @@
 #include "platform.h"
 #include "position.h"
 #include "search.h"
-#include "smp.h"
 #include "test.h"
 
 uint64_t test_search(bool perft, int depth, int threads)

@@ -16,17 +16,17 @@
 #include "bitboard.h"
 #include "eval.h"
 #include "htable.h"
+#include "position.h"
 #include "pst.h"
 #include "search.h"
 #include "smp.h"
 #include "test.h"
 #include "uci.h"
-#include "zobrist.h"
 
 int main(int argc, char **argv)
 {
     bb_init();
-    zobrist_init();
+    pos_init();
     pst_init();
     eval_init();
     search_init();

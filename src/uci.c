@@ -20,7 +20,6 @@
 #include "move.h"
 #include "position.h"
 #include "search.h"
-#include "smp.h"
 #include "uci.h"
 
 #define uci_printf(...) printf(__VA_ARGS__), fflush(stdout)

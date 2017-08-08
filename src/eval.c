@@ -16,7 +16,6 @@
 #include "bitboard.h"
 #include "eval.h"
 #include "position.h"
-#include "smp.h"
 
 /* Pre-calculated in eval_init() */
 

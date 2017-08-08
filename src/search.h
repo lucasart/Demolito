@@ -1,6 +1,6 @@
 #pragma once
 #include <stdatomic.h>
-#include "zobrist.h"
+#include "smp.h"
 
 extern atomic_uint_fast64_t Signal;
 enum {STOP = (uint_fast64_t)(-1)};

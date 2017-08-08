@@ -19,10 +19,8 @@
 #include "move.h"
 #include "position.h"
 #include "search.h"
-#include "smp.h"
 #include "sort.h"
 #include "uci.h"
-#include "zobrist.h"
 
 Position rootPos;
 Stack rootStack;

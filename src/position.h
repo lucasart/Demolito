@@ -1,6 +1,8 @@
 #pragma once
 #include "types.h"
 
+void pos_init();
+
 void pos_set(Position *pos, const char *fen, bool chess960);
 void pos_get(const Position *pos, char *fen);
 

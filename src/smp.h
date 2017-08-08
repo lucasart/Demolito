@@ -1,7 +1,18 @@
 #pragma once
 #include <setjmp.h>
 #include "types.h"
-#include "zobrist.h"
+
+typedef struct {
+    uint64_t keys[MAX_GAME_PLY];
+    int idx;
+} Stack;
+
+void stack_clear(Stack *gs);
+void stack_push(Stack *gs, uint64_t key);
+void stack_pop(Stack *gs);
+uint64_t stack_back(const Stack *gs);
+uint64_t stack_move_key(const Stack *gs);
+bool stack_repetition(const Stack *gs, int rule50);
 
 typedef struct {
     uint64_t key;
