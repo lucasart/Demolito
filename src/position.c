@@ -59,11 +59,10 @@ void pos_init()
             for (int s = A1; s <= H8; ++s)
                 ZobristKey[c][p][s] = prng(&state);
 
-    for (int s = A1; s <= H8; ++s)
+    for (int s = A1; s <= H8; ++s) {
         ZobristCastling[s] = prng(&state);
-
-    for (int s = A1; s <= H8; ++s)
         ZobristEnPassant[s] = prng(&state);
+    }
 
     ZobristEnPassant[NB_SQUARE] = prng(&state);
     ZobristTurn = prng(&state);
