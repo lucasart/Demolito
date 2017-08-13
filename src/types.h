@@ -6,6 +6,9 @@
 #include <string.h>
 #include <stdio.h>
 
+#define min(x, y) ((x) < (y) ? (x) : (y))
+#define max(x, y) ((x) > (y) ? (x) : (y))
+
 extern int64_t dbgCnt[2];
 
 #define BOUNDS(v, ub) assert((unsigned)(v) < (ub))

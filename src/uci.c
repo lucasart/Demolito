@@ -149,10 +149,12 @@ static void go(char **linePos)
     }
 
     if (lim.time || lim.inc) {
-        lim.movetime = ((lim.movestogo - 1) * lim.inc + lim.time) / lim.movestogo;
+        const int remaining = (lim.movestogo - 1) * lim.inc + lim.time;
+        lim.minTime = 0.57 * remaining / lim.movestogo;
+        lim.maxTime = 2.21 * remaining / lim.movestogo;
 
-        if (lim.movetime > lim.time - TimeBuffer)
-            lim.movetime = lim.time - TimeBuffer;
+        lim.minTime = min(lim.minTime, lim.time - TimeBuffer);
+        lim.maxTime = min(lim.maxTime, lim.time - TimeBuffer);
     }
 
     if (Timer) {
@@ -223,6 +225,7 @@ void uci_loop()
 void info_create(Info *info)
 {
     info->lastDepth = 0;
+    info->variability = 0;
     info->best = info->ponder = 0;
     info->start = system_msec();
     mtx_init(&info->mtx, mtx_plain);
@@ -238,6 +241,7 @@ void info_update(Info *info, int depth, int score, int64_t nodes, move_t pv[], b
     mtx_lock(&info->mtx);
 
     if (depth > info->lastDepth) {
+        const bool bestMoveChanged = info->best != pv[0];
         info->best = pv[0];
         info->ponder = pv[1];
 
@@ -246,6 +250,7 @@ void info_update(Info *info, int depth, int score, int64_t nodes, move_t pv[], b
             return;
         }
 
+        info->variability += bestMoveChanged ? 0.184 : -0.108;
         info->lastDepth = depth;
 
         char str[12];
@@ -301,4 +306,13 @@ int info_last_depth(Info *info)
     mtx_unlock(&info->mtx);
 
     return lastDepth;
+}
+
+int info_variability(Info *info)
+{
+    mtx_lock(&info->mtx);
+    const int variability = info->variability;
+    mtx_unlock(&info->mtx);
+
+    return variability;
 }

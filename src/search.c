@@ -550,6 +550,15 @@ int64_t search_go()
                 mtx_lock(&mtxSchedule);
                 Signal = STOP;
                 mtx_unlock(&mtxSchedule);
+            } else if (lim.time || lim.inc) {
+                const double x = 1 / (1 + exp(-info_variability(&ui)));
+                const int64_t t = x * lim.maxTime + (1 - x) * lim.minTime;
+
+                if (system_msec() - start >= t) {
+                    mtx_lock(&mtxSchedule);
+                    Signal = STOP;
+                    mtx_unlock(&mtxSchedule);
+                }
             }
         }
     } while (Signal != STOP);

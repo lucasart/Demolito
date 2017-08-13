@@ -328,7 +328,7 @@ void eval_init()
         for (int s2 = A1; s2 <= H8; ++s2) {
             const int rankDiff = abs(rank_of(s1) - rank_of(s2));
             const int fileDiff = abs(file_of(s1) - file_of(s2));
-            KingDistance[s1][s2] = rankDiff > fileDiff ? rankDiff : fileDiff;
+            KingDistance[s1][s2] = max(rankDiff, fileDiff);
         }
 }
 

@@ -7,6 +7,7 @@ void uci_loop();
 typedef struct {
     int64_t start;
     int lastDepth;
+    double variability;
     move_t best, ponder;
     mtx_t mtx;
 } Info;
@@ -21,3 +22,4 @@ void info_update(Info *info, int depth, int score, int64_t nodes, move_t pv[], b
 void info_print_bestmove(Info *info);
 move_t info_best(Info *info);
 int info_last_depth(Info *info);
+int info_variability(Info *info);
