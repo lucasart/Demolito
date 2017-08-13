@@ -8,7 +8,6 @@ enum {STOP = (uint_fast64_t)(-1)};
 typedef struct {
     int depth, movestogo;
     int64_t movetime, time, inc, nodes;
-    int64_t minTime, maxTime;
 } Limits;
 
 extern Position rootPos;

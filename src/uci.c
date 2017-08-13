@@ -31,7 +31,7 @@ int X[] = {};
 static thrd_t Timer = 0;
 
 static uint64_t Hash = 1;
-static int64_t TimeBuffer = 60;
+int64_t TimeBuffer = 60;
 
 static void uci_format_score(int score, char *str)
 {
@@ -126,7 +126,7 @@ static void go(char **linePos)
 {
     memset(&lim, 0, sizeof(lim));
     lim.depth = MAX_DEPTH;
-    lim.movestogo = 26;
+    lim.movestogo = 0;
 
     const char *token;
 
@@ -146,15 +146,6 @@ static void go(char **linePos)
         else if ((rootPos.turn == WHITE && !strcmp(token, "winc")) || (rootPos.turn == BLACK
                  && !strcmp(token, "binc")))
             lim.inc = atoll(strtok_r(NULL, " \n", linePos));
-    }
-
-    if (lim.time || lim.inc) {
-        const int remaining = (lim.movestogo - 1) * lim.inc + lim.time;
-        lim.minTime = 0.57 * remaining / lim.movestogo;
-        lim.maxTime = 2.21 * remaining / lim.movestogo;
-
-        lim.minTime = min(lim.minTime, lim.time - TimeBuffer);
-        lim.maxTime = min(lim.maxTime, lim.time - TimeBuffer);
     }
 
     if (Timer) {

@@ -532,6 +532,18 @@ int64_t search_go()
     thrd_t threads[WorkersCount];
     smp_new_search();
 
+    int minTime, maxTime;
+
+    if (!lim.movetime && (lim.time || lim.inc)) {
+        const int movesToGo = lim.movestogo ? lim.movestogo : 26;
+        const int remaining = (movesToGo - 1) * lim.inc + lim.time;
+        minTime = 0.57 * remaining / movesToGo;
+        maxTime = 2.21 * remaining / movesToGo;
+
+        minTime = min(minTime, lim.time - TimeBuffer);
+        maxTime = min(maxTime, lim.time - TimeBuffer);
+    }
+
     for (int i = 0; i < WorkersCount; i++)
         // Start searching thread
         thrd_create(&threads[i], iterate, &Workers[i]);
@@ -552,7 +564,7 @@ int64_t search_go()
                 mtx_unlock(&mtxSchedule);
             } else if (lim.time || lim.inc) {
                 const double x = 1 / (1 + exp(-info_variability(&ui)));
-                const int64_t t = x * lim.maxTime + (1 - x) * lim.minTime;
+                const int64_t t = x * maxTime + (1 - x) * minTime;
 
                 if (system_msec() - start >= t) {
                     mtx_lock(&mtxSchedule);
