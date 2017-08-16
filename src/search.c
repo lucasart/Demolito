@@ -532,7 +532,7 @@ int64_t search_go()
     thrd_t threads[WorkersCount];
     smp_new_search();
 
-    int minTime, maxTime;
+    int minTime = 0, maxTime = 0;  // Silence bogus gcc warning (maybe uninitialized)
 
     if (!lim.movetime && (lim.time || lim.inc)) {
         const int movesToGo = lim.movestogo ? lim.movestogo : 26;
