@@ -15,13 +15,54 @@
 */
 #include "bitboard.h"
 #include "eval.h"
+#include "gen.h"
 #include "htable.h"
+#include "platform.h"
 #include "position.h"
 #include "pst.h"
 #include "search.h"
 #include "smp.h"
-#include "test.h"
 #include "uci.h"
+
+uint64_t test(bool perft, int depth, int threads)
+{
+    const char *fens[] = {
+        #include "test.csv"
+        NULL
+    };
+
+    hash_resize(1);
+    uint64_t result = 0, nodes;
+    smp_resize(threads);
+    smp_new_game();
+
+    memset(&lim, 0, sizeof(lim));
+    lim.depth = depth;
+
+    int64_t start = system_msec();
+
+    for (int i = 0; fens[i]; i++) {
+        pos_set(&rootPos, fens[i], true);
+        stack_clear(&rootStack);
+        stack_push(&rootStack, rootPos.key);
+
+        if (perft) {
+            nodes = gen_perft(&rootPos, depth, 0);
+            printf("perft(%d) = %" PRIu64 "\n", depth, nodes);
+        } else
+            nodes = search_go();
+
+        puts("");
+        result += nodes;
+    }
+
+    if (dbgCnt[1])
+        printf("dbgCnt[0] = %" PRId64 ", dbgCnt[1] = %" PRId64 "\n", dbgCnt[0], dbgCnt[1]);
+
+    fprintf(stderr, "kn/s: %" PRIu64 "\n", result / (system_msec() - start));
+
+    return result;
+}
 
 int main(int argc, char **argv)
 {
@@ -35,7 +76,7 @@ int main(int argc, char **argv)
     if (argc >= 2) {
         if ((!strcmp(argv[1], "perft") || !strcmp(argv[1], "search")) && argc >= 4) {
             const int depth = atoi(argv[2]), threads = atoi(argv[3]);
-            const uint64_t nodes = test_search(!strcmp(argv[1], "perft"), depth, threads);
+            const uint64_t nodes = test(!strcmp(argv[1], "perft"), depth, threads);
             fprintf(stderr, "total = %" PRIu64 "\n", nodes);
         }
     } else
