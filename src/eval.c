@@ -232,6 +232,7 @@ static eval_t do_pawns(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
 {
     const eval_t Isolated[2] = {{19, 33}, {41, 34}};
     const eval_t Backward[2] = {{17, 18}, {29, 22}};
+    const eval_t Doubled = {15, 30};
     const int shieldBonus[NB_RANK] = {0, 23, 17, 12, 10, 8, 8};
 
     const int them = opposite(us);
@@ -267,6 +268,9 @@ static eval_t do_pawns(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
             eval_sub(&result, Backward[exposed]);
         else if (!besides)
             eval_sub(&result, Isolated[exposed]);
+
+        if (bb_test(ourPawns, stop))
+            eval_sub(&result, Doubled);
 
         if (exposed && !(PawnSpan[us][s] & theirPawns))
             eval_add(&result, passer(us, s, ourKing, theirKing));
