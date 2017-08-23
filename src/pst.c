@@ -28,17 +28,17 @@ static eval_t knight(int r, int f)
 static eval_t bishop(int r, int f)
 {
     const int c = Center[r] + Center[f];
-    return (eval_t) {2 * c + 127 * (r + f == 7 || r - f == 0) / 16 - 73 * (r == RANK_1) / 4, 23 * c / 8};
+    return (eval_t) {2 * c + 7 * (r + f == 7 || r - f == 0) - 18 * (r == RANK_1), 23 * c / 8};
 }
 
 static eval_t rook(int r, int f)
 {
-    return (eval_t) {11 * Center[f] / 4 + 127 * (r == RANK_7) / 8, 137 * (r == RANK_7) / 8};
+    return (eval_t) {11 * Center[f] / 4 + 15 * (r == RANK_7), 17 * (r == RANK_7)};
 }
 
 static eval_t queen(int r, int f)
 {
-    return (eval_t) {-75 * (r == RANK_1) / 8, 67 * (Center[r] + Center[f]) / 16};
+    return (eval_t) {-9 * (r == RANK_1), 67 * (Center[r] + Center[f]) / 16};
 }
 
 static eval_t king(int r, int f)
