@@ -108,13 +108,13 @@ static eval_t bishop_pair(const Position *pos, int us)
     return (bishops & WhiteSquares) && (bishops & ~WhiteSquares) ? bonus : (eval_t) {0, 0};
 }
 
-static eval_t pattern(const Position *pos, int us)
+static int pattern(const Position *pos, int us)
 {
-    const eval_t RookOpen[] = {{16, 8}, {24, 12}};  // 0: semi-open, 1: fully-open
+    const int RookOpen[] = {20, 30};  // 0: semi-open, 1: fully-open
 
     const bitboard_t ourPawns = pos_pieces_cp(pos, us, PAWN);
     const bitboard_t theirPawns = pos->byPiece[PAWN] ^ ourPawns;
-    eval_t result = {0, 0};
+    int result = 0;
 
     // Rook on open file
     bitboard_t rooks = pos_pieces_cp(pos, us, ROOK);
@@ -123,7 +123,7 @@ static eval_t pattern(const Position *pos, int us)
         const bitboard_t ahead = PawnPath[us][bb_pop_lsb(&rooks)];
 
         if (!(ourPawns & ahead))
-            eval_add(&result, RookOpen[!(theirPawns & ahead)]);
+            result += RookOpen[!(theirPawns & ahead)];
     }
 
     return result;
@@ -373,7 +373,7 @@ int evaluate(Worker *worker, const Position *pos)
         eval_add(&e[c], bishop_pair(pos, c));
         e[c].op += tactics(pos, c, attacks);
         e[c].op += safety(pos, c, attacks);
-        eval_add(&e[c], pattern(pos, c));
+        e[c].op += pattern(pos, c);
     }
 
     eval_add(&e[WHITE], pawns(worker, pos, attacks));
