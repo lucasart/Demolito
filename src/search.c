@@ -195,7 +195,7 @@ int qsearch(Worker *worker, const Position *pos, int ply, int depth, int alpha, 
 int search(Worker *worker, const Position *pos, int ply, int depth, int alpha, int beta,
                    move_t pv[], move_t singularMove)
 {
-    const int EvalMargin[] = {0, 132, 266, 405, 524};
+    const int EvalMargin[] = {0, 132, 266, 405, 524, 663};
     const int RazorMargin[] = {0, 227, 455, 502, 853};
 
     assert(depth > 0);
@@ -264,7 +264,7 @@ int search(Worker *worker, const Position *pos, int ply, int depth, int alpha, i
         return refinedEval;
 
     // Eval pruning
-    if (depth <= 4 && !pos->checkers && !pvNode && pos->pieceMaterial[us].eg
+    if (depth <= 5 && !pos->checkers && !pvNode && pos->pieceMaterial[us].eg
             && refinedEval >= beta + EvalMargin[depth])
         return refinedEval;
 
