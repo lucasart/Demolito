@@ -4,44 +4,44 @@
 Worker *Workers = NULL;
 int WorkersCount;
 
-void stack_clear(Stack *gs)
+void stack_clear(Stack *st)
 {
-    gs->idx = 0;
+    st->idx = 0;
 }
 
-void stack_push(Stack *gs, uint64_t key)
+void stack_push(Stack *st, uint64_t key)
 {
-    assert(0 <= gs->idx && gs->idx < MAX_GAME_PLY);
-    gs->keys[gs->idx++] = key;
+    assert(0 <= st->idx && st->idx < MAX_GAME_PLY);
+    st->keys[st->idx++] = key;
 }
 
-void stack_pop(Stack *gs)
+void stack_pop(Stack *st)
 {
-    assert(0 < gs->idx && gs->idx <= MAX_GAME_PLY);
-    gs->idx--;
+    assert(0 < st->idx && st->idx <= MAX_GAME_PLY);
+    st->idx--;
 }
 
-uint64_t stack_back(const Stack *gs)
+uint64_t stack_back(const Stack *st)
 {
-    assert(0 < gs->idx && gs->idx <= MAX_GAME_PLY);
-    return gs->keys[gs->idx - 1];
+    assert(0 < st->idx && st->idx <= MAX_GAME_PLY);
+    return st->keys[st->idx - 1];
 }
 
-uint64_t stack_move_key(const Stack *gs)
+uint64_t stack_move_key(const Stack *st)
 {
-    assert(0 < gs->idx && gs->idx <= MAX_GAME_PLY);
-    return gs->idx > 1 ? gs->keys[gs->idx - 1] ^ gs->keys[gs->idx - 2] : 0;
+    assert(0 < st->idx && st->idx <= MAX_GAME_PLY);
+    return st->idx > 1 ? st->keys[st->idx - 1] ^ st->keys[st->idx - 2] : 0;
 }
 
-bool stack_repetition(const Stack *gs, int rule50)
+bool stack_repetition(const Stack *st, int rule50)
 {
     // 50 move rule
     if (rule50 >= 100)
         return true;
 
     // TODO: use 3 repetition past root position
-    for (int i = 4; i <= rule50 && i < gs->idx; i += 2)
-        if (gs->keys[gs->idx - 1 - i] == gs->keys[gs->idx - 1])
+    for (int i = 4; i <= rule50 && i < st->idx; i += 2)
+        if (st->keys[st->idx - 1 - i] == st->keys[st->idx - 1])
             return true;
 
     return false;

@@ -20,10 +20,8 @@
 
 static move_t *serialize_moves(int from, bitboard_t tss, move_t *mList)
 {
-    while (tss) {
-        const int to = bb_pop_lsb(&tss);
-        *mList++ = move_build(from, to, NB_PIECE);
-    }
+    while (tss)
+        *mList++ = move_build(from, bb_pop_lsb(&tss), NB_PIECE);
 
     return mList;
 }

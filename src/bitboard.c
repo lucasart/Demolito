@@ -141,8 +141,8 @@ void bb_init()
     }
 
     // Initialise Ray[][] and Segment[][]
-    for (int s1 = A1; s1 <= H8; s1++) {
-        const int r1 = rank_of(s1), f1 = file_of(s1);
+    for (int s = A1; s <= H8; s++) {
+        const int r1 = rank_of(s), f1 = file_of(s);
 
         for (int d = 0; d < 8; d++) {
             bitboard_t mask = 0;
@@ -151,16 +151,14 @@ void bb_init()
             while (0 <= r2 && r2 < NB_RANK && 0 <= f2 && f2 < NB_FILE) {
                 const int s2 = square(r2, f2);
                 bb_set(&mask, s2);
-                Segment[s1][s2] = mask;
+                Segment[s][s2] = mask;
                 r2 += KDir[d][0], f2 += KDir[d][1];
             }
 
             bitboard_t sqs = mask;
 
-            while (sqs) {
-                int s2 = bb_pop_lsb(&sqs);
-                Ray[s1][s2] = mask;
-            }
+            while (sqs)
+                Ray[s][bb_pop_lsb(&sqs)] = mask;
         }
     }
 

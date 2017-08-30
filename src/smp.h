@@ -7,12 +7,12 @@ typedef struct {
     int idx;
 } Stack;
 
-void stack_clear(Stack *gs);
-void stack_push(Stack *gs, uint64_t key);
-void stack_pop(Stack *gs);
-uint64_t stack_back(const Stack *gs);
-uint64_t stack_move_key(const Stack *gs);
-bool stack_repetition(const Stack *gs, int rule50);
+void stack_clear(Stack *st);
+void stack_push(Stack *st, uint64_t key);
+void stack_pop(Stack *st);
+uint64_t stack_back(const Stack *st);
+uint64_t stack_move_key(const Stack *st);
+bool stack_repetition(const Stack *st, int rule50);
 
 typedef struct {
     uint64_t key;
