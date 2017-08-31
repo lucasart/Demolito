@@ -72,7 +72,7 @@ enum {
     INF = 32767, MATE = 32000,
     MAX_DEPTH = 127, MIN_DEPTH = -8,
     MAX_PLY = MAX_DEPTH - MIN_DEPTH + 2,
-    MAX_GAME_PLY = 1024,
+    MAX_GAME_PLY = 2048,
     MAX_FEN = 64 + 8 + 2 + 5 + 3 + 4 + 4 + 1
 };
 
