@@ -281,10 +281,8 @@ static eval_t do_pawns(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
         const bool exposed = !(PawnPath[us][s] & pos->byPiece[PAWN]);
 
         if (besides & (Rank[r] | Rank[us == WHITE ? r - 1 : r + 1])) {
-            const int rr = relative_rank(us, r) - RANK_2;
-            const bool phalanx = ourPawns & PAttacks[them][stop];
-            const int bonus = rr * (rr + phalanx) * 3;
-            eval_add(&result, (eval_t) {8 + bonus / 2, bonus});
+            const eval_t Connected[] = {{8, 0}, {9, 3}, {14, 11}, {22, 27}, {33, 50}, {45, 74}};
+            eval_add(&result, Connected[relative_rank(us, r) - RANK_2]);
         } else if (!(PawnSpan[them][stop] & ourPawns) && bb_test(attacks[them][PAWN], stop))
             eval_sub(&result, Backward[exposed]);
         else if (!besides)
