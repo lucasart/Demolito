@@ -50,7 +50,7 @@ void search_init()
 
 const int Tempo = 17;
 
-int qsearch(Worker *worker, const Position *pos, int ply, int depth, int alpha, int beta,
+static int qsearch(Worker *worker, const Position *pos, int ply, int depth, int alpha, int beta,
     move_t pv[])
 {
     assert(depth <= 0);
@@ -192,8 +192,8 @@ int qsearch(Worker *worker, const Position *pos, int ply, int depth, int alpha, 
     return bestScore;
 }
 
-int search(Worker *worker, const Position *pos, int ply, int depth, int alpha, int beta,
-                   move_t pv[], move_t singularMove)
+static int search(Worker *worker, const Position *pos, int ply, int depth, int alpha, int beta,
+    move_t pv[], move_t singularMove)
 {
     const int EvalMargin[] = {0, 132, 266, 405, 524, 663};
     const int RazorMargin[] = {0, 227, 455, 502, 853};
@@ -424,7 +424,7 @@ int search(Worker *worker, const Position *pos, int ply, int depth, int alpha, i
     return bestScore;
 }
 
-int aspirate(Worker *worker, int depth, move_t pv[], int score)
+static int aspirate(Worker *worker, int depth, move_t pv[], int score)
 {
     assert(depth > 0);
 
@@ -449,7 +449,7 @@ int aspirate(Worker *worker, int depth, move_t pv[], int score)
     }
 }
 
-int iterate(Worker *worker)
+static void iterate(Worker *worker)
 {
     move_t pv[MAX_PLY + 1];
     int volatile score = 0;
@@ -457,10 +457,9 @@ int iterate(Worker *worker)
     for (volatile int depth = 1; depth <= lim.depth; depth++) {
         mtx_lock(&mtxSchedule);
 
-        if (Signal == STOP) {
+        if (Signal == STOP)
             mtx_unlock(&mtxSchedule);
-            return 0;
-        } else
+        else
             Signal &= ~(1ULL << worker->id);
 
         // If half of the threads are searching >= depth, then move to the next depth.
@@ -517,8 +516,6 @@ int iterate(Worker *worker)
     mtx_lock(&mtxSchedule);
     Signal = STOP;
     mtx_unlock(&mtxSchedule);
-
-    return 0;
 }
 
 int64_t search_go()

@@ -17,8 +17,7 @@
 #include "eval.h"
 #include "position.h"
 
-/* Pre-calculated in eval_init() */
-
+// Pre-calculated in eval_init()
 static bitboard_t PawnSpan[NB_COLOR][NB_SQUARE];
 static bitboard_t PawnPath[NB_COLOR][NB_SQUARE];
 static bitboard_t AdjacentFiles[NB_FILE];
@@ -36,12 +35,12 @@ static eval_t score_mobility(int p0, int p, bitboard_t tss)
     assert(KNIGHT <= p0 && p0 <= ROOK);
     assert(KNIGHT <= p && p <= QUEEN);
 
-    static const int AdjustCount[][15] = {
+    const int AdjustCount[][15] = {
         {-4, -2, -1, 0, 1, 2, 3, 4, 4},
         {-5, -3, -2, -1, 0, 1, 2, 3, 4, 5, 5, 6, 6, 7},
         {-6, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 6, 7, 7}
     };
-    static const eval_t Weight[] = {{6, 10}, {11, 12}, {6, 6}, {4, 6}};
+    const eval_t Weight[] = {{6, 10}, {11, 12}, {6, 6}, {4, 6}};
 
     const int c = AdjustCount[p0][bb_count(tss)];
     return (eval_t) {Weight[p].op * c, Weight[p].eg * c};
@@ -58,8 +57,7 @@ static eval_t mobility(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
     attacks[us][KING] = KAttacks[pos_king_square(pos, us)];
     attacks[them][PAWN] = pawn_attacks(pos, them);
 
-    for (piece = KNIGHT; piece <= QUEEN; ++piece)
-        attacks[us][piece] = 0;
+    for (piece = KNIGHT; piece <= QUEEN; attacks[us][piece++] = 0);
 
     const bitboard_t targets = ~(pos_pieces_cpp(pos, us, KING, PAWN) | attacks[them][PAWN]);
 
@@ -74,22 +72,22 @@ static eval_t mobility(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
 
     // Lateral mobility
     fss = pos_pieces_cpp(pos, us, ROOK, QUEEN);
-    occ = pos_pieces(pos) ^ fss;    // RQ see through each other
+    occ = pos_pieces(pos) ^ fss;  // RQ see through each other
 
     while (fss) {
         tss = bb_rattacks(from = bb_pop_lsb(&fss), occ);
         attacks[us][piece = pos->pieceOn[from]] |= tss;
-        eval_add(&result, score_mobility(ROOK, pos->pieceOn[from], tss & targets));
+        eval_add(&result, score_mobility(ROOK, piece, tss & targets));
     }
 
     // Diagonal mobility
     fss = pos_pieces_cpp(pos, us, BISHOP, QUEEN);
-    occ = pos_pieces(pos) ^ fss;    // BQ see through each other
+    occ = pos_pieces(pos) ^ fss;  // BQ see through each other
 
     while (fss) {
         tss = bb_battacks(from = bb_pop_lsb(&fss), occ);
         attacks[us][piece = pos->pieceOn[from]] |= tss;
-        eval_add(&result, score_mobility(BISHOP, pos->pieceOn[from], tss & targets));
+        eval_add(&result, score_mobility(BISHOP, piece, tss & targets));
     }
 
     attacks[us][NB_PIECE] = attacks[us][KNIGHT] | attacks[us][BISHOP] | attacks[us][ROOK] |
@@ -298,14 +296,11 @@ static eval_t do_pawns(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
     return result;
 }
 
-static eval_t pawns(Worker *worker, const Position *pos,
-                    bitboard_t attacks[NB_COLOR][NB_PIECE + 1])
-// Pawn evaluation is directly a diff, from white's pov. This reduces by half the
-// size of the pawn hash table.
+static eval_t pawns(Worker *worker, const Position *pos, bitboard_t attacks[NB_COLOR][NB_PIECE + 1])
+// Pawn evaluation is directly a diff, from white's pov. This halves the size of the table.
 {
     const uint64_t key = pos->pawnKey;
-    const size_t idx = key & (NB_PAWN_ENTRY - 1);
-    PawnEntry *pe = &worker->pawnHash[idx];
+    PawnEntry *pe = &worker->pawnHash[key & (NB_PAWN_ENTRY - 1)];
 
     if (pe->key == key)
         return pe->eval;
@@ -320,6 +315,7 @@ static int blend(const Position *pos, eval_t e)
 {
     const int full = 4 * (N + B + R) + 2 * Q;
     const int total = pos->pieceMaterial[WHITE].eg + pos->pieceMaterial[BLACK].eg;
+
     return e.op * total / full + e.eg * (full - total) / full;
 }
 
@@ -351,6 +347,7 @@ void eval_init()
         for (int s2 = A1; s2 <= H8; ++s2) {
             const int rankDiff = abs(rank_of(s1) - rank_of(s2));
             const int fileDiff = abs(file_of(s1) - file_of(s2));
+
             KingDistance[s1][s2] = max(rankDiff, fileDiff);
         }
 }

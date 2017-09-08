@@ -2,6 +2,12 @@
 #include <setjmp.h>
 #include "types.h"
 
+enum {
+    MAX_GAME_PLY = 2048,
+    NB_PAWN_ENTRY = 16384,
+    NB_REFUTATION = 8192
+};
+
 typedef struct {
     uint64_t keys[MAX_GAME_PLY];
     int idx;
@@ -19,13 +25,8 @@ typedef struct {
     eval_t eval;
 } PawnEntry;
 
-enum {
-    NB_PAWN_ENTRY = 16384,
-    NB_REFUTATION = 8192
-};
-
 typedef struct {
-    PawnEntry pawnHash[0x4000];
+    PawnEntry pawnHash[NB_PAWN_ENTRY];
     int history[NB_COLOR][NB_SQUARE * NB_SQUARE];
     move_t refutation[NB_REFUTATION];
     move_t killers[MAX_DEPTH * 3 / 2];  // Conservative upper-bound (for qsearch and extensions)

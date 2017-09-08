@@ -1,6 +1,8 @@
 #pragma once
 #include "types.h"
 
+enum {MAX_FEN = 64 + 8 + 2 + 5 + 3 + 4 + 4 + 1};
+
 void pos_init();
 
 void pos_set(Position *pos, const char *fen, bool chess960);

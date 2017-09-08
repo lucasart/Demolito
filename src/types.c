@@ -17,19 +17,23 @@
 
 int64_t dbgCnt[2] = {0, 0};
 
-/* int, int, int */
+int opposite(int c)
+{
+    BOUNDS(c, NB_COLOR);
+    return c ^ BLACK;
+}
+
+/* Rank, File, Square */
 
 int rank_of(int s)
 {
     BOUNDS(s, NB_SQUARE);
-
     return s / NB_FILE;
 }
 
 int file_of(int s)
 {
     BOUNDS(s, NB_SQUARE);
-
     return s % NB_FILE;
 }
 
@@ -37,14 +41,12 @@ int relative_rank(int c, int r)
 {
     BOUNDS(c, NB_COLOR);
     BOUNDS(r, NB_RANK);
-
     return r ^ (7 * c);
 }
 
 int relative_rank_of(int c, int s)
 {
     BOUNDS(s, NB_SQUARE);
-
     return relative_rank(c, rank_of(s));
 }
 
@@ -52,7 +54,6 @@ int square(int r, int f)
 {
     BOUNDS(r, NB_RANK);
     BOUNDS(f, NB_FILE);
-
     return NB_FILE * r + f;
 }
 
@@ -82,7 +83,6 @@ int string_to_square(const char *str)
 int push_inc(int c)
 {
     BOUNDS(c, NB_COLOR);
-
     return c == WHITE ? UP : DOWN;
 }
 
@@ -90,14 +90,9 @@ int push_inc(int c)
 
 const eval_t Material[NB_PIECE] = {{N, N}, {B, B}, {R, R}, {Q, Q}, {0, 0}, {OP, EP}};
 
-bool score_ok(int score)
-{
-    return abs(score) < MATE;
-}
-
 bool is_mate_score(int score)
 {
-    score_ok(score);
+    assert(abs(score) < MATE);
     return abs(score) >= MATE - MAX_PLY;
 }
 

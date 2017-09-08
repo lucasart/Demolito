@@ -8,15 +8,16 @@
 
 #define min(x, y) ((x) < (y) ? (x) : (y))
 #define max(x, y) ((x) > (y) ? (x) : (y))
-
-extern int64_t dbgCnt[2];
+#define swap(x, y) do { typeof(x) tmp = x; x = y; y = tmp; } while (0);
 
 #define BOUNDS(v, ub) assert((unsigned)(v) < (ub))
+
+extern int64_t dbgCnt[2];
 
 enum {WHITE, BLACK, NB_COLOR};
 enum {KNIGHT, BISHOP, ROOK, QUEEN, KING, PAWN, NB_PIECE};
 
-inline int opposite(int c) { return c ^ BLACK; }
+int opposite(int c);
 
 enum {RANK_1, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8, NB_RANK};
 enum {FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H, NB_FILE};
@@ -45,7 +46,7 @@ int string_to_square(const char *str);
 
 enum {UP = 8, DOWN = -8, LEFT = -1, RIGHT = 1};
 
-int push_inc(int c);    // pawn push increment
+int push_inc(int c);  // pawn push increment
 
 /* Material values */
 
@@ -71,12 +72,9 @@ extern const eval_t Material[NB_PIECE];
 enum {
     INF = 32767, MATE = 32000,
     MAX_DEPTH = 127, MIN_DEPTH = -8,
-    MAX_PLY = MAX_DEPTH - MIN_DEPTH + 2,
-    MAX_GAME_PLY = 2048,
-    MAX_FEN = 64 + 8 + 2 + 5 + 3 + 4 + 4 + 1
+    MAX_PLY = MAX_DEPTH - MIN_DEPTH + 2
 };
 
-bool score_ok(int score);
 bool is_mate_score(int score);
 int mated_in(int ply);
 int mate_in(int ply);

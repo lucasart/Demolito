@@ -44,7 +44,7 @@
     #define thrd_create(thrd, func, args) pthread_create(thrd, 0, (void*(*)(void*))func, args)
     #define thrd_join(thrd, dummy) pthread_join(thrd, NULL)
     #define thrd_sleep(msec) nanosleep(&(struct timespec){.tv_sec = msec / 1000, \
-        .tv_nsec = msec * 1000000LL}, NULL)
+        .tv_nsec = (msec % 1000) * 1000000LL}, NULL)
 
     // Timer
     static inline int64_t system_msec() {
