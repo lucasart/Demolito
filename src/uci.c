@@ -135,10 +135,9 @@ static void go(char **linePos)
             lim.depth = atoi(strtok_r(NULL, " \n", linePos));
         else if (!strcmp(token, "nodes"))
             lim.nodes = atoll(strtok_r(NULL, " \n", linePos));
-        else if (!strcmp(token, "movetime")) {
+        else if (!strcmp(token, "movetime"))
             lim.movetime = atoll(strtok_r(NULL, " \n", linePos));
-            lim.movetime -= TimeBuffer;
-        } else if (!strcmp(token, "movestogo"))
+        else if (!strcmp(token, "movestogo"))
             lim.movestogo = atoi(strtok_r(NULL, " \n", linePos));
         else if ((rootPos.turn == WHITE && !strcmp(token, "wtime")) || (rootPos.turn == BLACK
                  && !strcmp(token, "btime")))

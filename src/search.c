@@ -70,7 +70,7 @@ static int qsearch(Worker *worker, const Position *pos, int ply, int depth, int 
         pv[0] = 0;
 
     if (ply > 0 && (stack_repetition(&worker->stack, pos->rule50)
-                    || pos_insufficient_material(pos)))
+            || pos_insufficient_material(pos)))
         return draw_score(ply);
 
     // TT probe
@@ -225,7 +225,7 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
         pv[0] = 0;
 
     if (ply > 0 && (stack_repetition(&worker->stack, pos->rule50)
-                    || pos_insufficient_material(pos)))
+            || pos_insufficient_material(pos)))
         return draw_score(ply);
 
     // TT probe
@@ -457,9 +457,10 @@ static void iterate(Worker *worker)
     for (volatile int depth = 1; depth <= lim.depth; depth++) {
         mtx_lock(&mtxSchedule);
 
-        if (Signal == STOP)
+        if (Signal == STOP) {
             mtx_unlock(&mtxSchedule);
-        else
+            return;
+        } else
             Signal &= ~(1ULL << worker->id);
 
         // If half of the threads are searching >= depth, then move to the next depth.
@@ -551,11 +552,8 @@ int64_t search_go()
         // Check for search termination conditions, but only after depth 1 has been
         // completed, to make sure we do not return an illegal move.
         if (info_last_depth(&ui) > 0) {
-            if (lim.nodes && smp_nodes() >= lim.nodes) {
-                mtx_lock(&mtxSchedule);
-                Signal = STOP;
-                mtx_unlock(&mtxSchedule);
-            } else if (lim.movetime && system_msec() - start >= lim.movetime) {
+            if ((lim.movetime && system_msec() - start >= lim.movetime - TimeBuffer)
+                    || (lim.nodes && smp_nodes() >= lim.nodes)) {
                 mtx_lock(&mtxSchedule);
                 Signal = STOP;
                 mtx_unlock(&mtxSchedule);
