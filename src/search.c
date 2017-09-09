@@ -514,9 +514,7 @@ static void iterate(Worker *worker)
     }
 
     // Max depth completed by current thread. All threads should stop.
-    mtx_lock(&mtxSchedule);
     Signal = STOP;
-    mtx_unlock(&mtxSchedule);
 }
 
 int64_t search_go()
@@ -553,19 +551,14 @@ int64_t search_go()
         // completed, to make sure we do not return an illegal move.
         if (info_last_depth(&ui) > 0) {
             if ((lim.movetime && system_msec() - start >= lim.movetime - TimeBuffer)
-                    || (lim.nodes && smp_nodes() >= lim.nodes)) {
-                mtx_lock(&mtxSchedule);
+                    || (lim.nodes && smp_nodes() >= lim.nodes))
                 Signal = STOP;
-                mtx_unlock(&mtxSchedule);
-            } else if (lim.time || lim.inc) {
+            else if (lim.time || lim.inc) {
                 const double x = 1 / (1 + exp(-info_variability(&ui)));
                 const int64_t t = x * maxTime + (1 - x) * minTime;
 
-                if (system_msec() - start >= t) {
-                    mtx_lock(&mtxSchedule);
+                if (system_msec() - start >= t)
                     Signal = STOP;
-                    mtx_unlock(&mtxSchedule);
-                }
             }
         }
     } while (Signal != STOP);
