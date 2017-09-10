@@ -37,11 +37,16 @@ static uint64_t prng(uint64_t *state)
     uint64_t s = (*state += 0x9E3779B97F4A7C15ULL);
     s = (s ^ (s >> 30)) * 0xBF58476D1CE4E5B9ULL;
     s = (s ^ (s >> 27)) * 0x94D049BB133111EBULL;
-    return s ^ (s >> 31);
+    s ^= s >> 31;
+    assert(s);  // We cannot have a zero key. If it happens, change the seed.
+    return s;
 }
 
 static uint64_t zobrist_castling(bitboard_t castlableRooks)
 {
+    assert(bb_count(Rank[RANK_1] & castlableRooks) <= 2);
+    assert(bb_count(Rank[RANK_8] & castlableRooks) <= 2);
+    assert(!(castlableRooks & ~Rank[RANK_1] & ~Rank[RANK_8]));
     bitboard_t k = 0;
 
     while (castlableRooks)
@@ -82,7 +87,6 @@ static void clear_square(Position *pos, int c, int p, int s)
 
     bb_clear(&pos->byColor[c], s);
     bb_clear(&pos->byPiece[p], s);
-
     pos->pieceOn[s] = NB_PIECE;
     eval_sub(&pos->pst, pst[c][p][s]);
     pos->key ^= ZobristKey[c][p][s];
@@ -101,7 +105,6 @@ static void set_square(Position *pos, int c, int p, int s)
 
     bb_set(&pos->byColor[c], s);
     bb_set(&pos->byPiece[p], s);
-
     pos->pieceOn[s] = p;
     eval_add(&pos->pst, pst[c][p][s]);
     pos->key ^= ZobristKey[c][p][s];
@@ -246,6 +249,7 @@ void pos_set(Position *pos, const char *fen, bool chess960)
 
 void pos_move(Position *pos, const Position *before, move_t m)
 {
+    assert(move_ok(m));
     *pos = *before;
     pos->rule50++;
 
@@ -327,6 +331,8 @@ void pos_switch(Position *pos, const Position *before)
 
 bitboard_t pos_pieces_cp(const Position *pos, int c, int p)
 {
+    BOUNDS(c, NB_COLOR);
+    BOUNDS(p, NB_PIECE);
     return pos->byColor[c] & pos->byPiece[p];
 }
 
@@ -338,6 +344,9 @@ bitboard_t pos_pieces(const Position *pos)
 
 bitboard_t pos_pieces_cpp(const Position *pos, int c, int p1, int p2)
 {
+    BOUNDS(c, NB_COLOR);
+    BOUNDS(p1, NB_PIECE);
+    BOUNDS(p2, NB_PIECE);
     return pos->byColor[c] & (pos->byPiece[p1] | pos->byPiece[p2]);
 }
 

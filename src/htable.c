@@ -20,6 +20,7 @@ uint64_t HashCount = 0;
 
 int score_to_hash(int score, int ply)
 {
+    assert(abs(score) < MATE);
     return score >= mate_in(MAX_PLY) ? score + ply
            : score <= mated_in(MAX_PLY) ? score - ply
            : score;
@@ -27,6 +28,7 @@ int score_to_hash(int score, int ply)
 
 int score_from_hash(int hashScore, int ply)
 {
+    assert(abs(hashScore) < MATE);
     return hashScore >= mate_in(MAX_PLY) ? hashScore - ply
            : hashScore <= mated_in(MAX_PLY) ? hashScore + ply
            : hashScore;

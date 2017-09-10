@@ -20,8 +20,8 @@
 bool move_ok(move_t m)
 {
     const int from = move_from(m), to = move_to(m), prom = move_prom(m);
-    return (unsigned)from < NB_SQUARE && (unsigned)to < NB_SQUARE
-           && ((KNIGHT <= prom && prom <= QUEEN) || prom == NB_PIECE);
+    return bb_test(RPseudoAttacks[from] | BPseudoAttacks[from] | NAttacks[from], to) && from != to
+        && ((unsigned)prom <= QUEEN || prom == NB_PIECE);
 }
 
 int move_from(move_t m)
@@ -46,11 +46,14 @@ int move_prom(move_t m)
 
 move_t move_build(int from, int to, int prom)
 {
-    return from | (to << 6) | (prom << 12);
+    move_t m = from | (to << 6) | (prom << 12);
+    assert(move_ok(m));
+    return m;
 }
 
 bool move_is_capture(const Position *pos, move_t m)
 {
+    assert(move_ok(m));
     const int us = pos->turn, them = opposite(us);
     const int from = move_from(m), to = move_to(m);
     return (bb_test(pos->byColor[them], to))
@@ -145,6 +148,7 @@ int move_see(const Position *pos, move_t m)
 {
     static const int see_value[] = {N, B, R, Q, MATE, P, 0};
 
+    assert(move_ok(m));
     const int from = move_from(m), to = move_to(m), prom = move_prom(m);
     int us = pos->turn;
     bitboard_t occ = pos_pieces(pos);
