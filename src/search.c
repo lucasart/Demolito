@@ -500,7 +500,7 @@ static void iterate(Worker *worker)
             Signal |= s;
             mtx_unlock(&mtxSchedule);
         } else {
-            worker->stack = rootStack;  // Restore an orderly state
+            worker->stack.idx = rootStack.idx;  // Restore stack position
 
             if (exception == ABORT_ONE)
                 continue;
@@ -570,7 +570,5 @@ int64_t search_go()
     info_destroy(&ui);
     mtx_destroy(&mtxSchedule);
 
-    const int64_t nodes = smp_nodes();
-
-    return nodes;
+    return smp_nodes();
 }
