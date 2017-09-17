@@ -34,7 +34,6 @@ uint64_t test(bool perft, int depth, int threads)
     hash_resize(1);
     uint64_t result = 0, nodes;
     smp_resize(threads);
-    smp_new_game();
 
     memset(&lim, 0, sizeof(lim));
     lim.depth = depth;

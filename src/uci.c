@@ -189,7 +189,6 @@ void uci_loop()
         else if (!strcmp(token, "ucinewgame")) {
             hash_resize(Hash);
             memset(HashTable, 0, Hash << 20);
-            smp_new_game();
         } else if (!strcmp(token, "position"))
             position(&linePos);
         else if (!strcmp(token, "go"))
