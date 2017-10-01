@@ -13,7 +13,6 @@ typedef struct {
 } Info;
 
 extern Info ui;
-extern int X[];
 extern int64_t TimeBuffer;
 
 void info_create(Info *info);

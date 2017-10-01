@@ -25,9 +25,6 @@
 #define uci_printf(...) printf(__VA_ARGS__), fflush(stdout)
 #define uci_puts(s) puts(s), fflush(stdout)
 
-// Tuning parameters
-int X[] = {};
-
 static thrd_t Timer = 0;
 
 static uint64_t Hash = 1;
@@ -49,17 +46,6 @@ static void intro()
     uci_printf("option name Threads type spin default %d min 1 max 63\n", WorkersCount);
     uci_printf("option name Contempt type spin default %d min -100 max 100\n", Contempt);
     uci_printf("option name Time Buffer type spin default %" PRId64 " min 0 max 1000\n", TimeBuffer);
-
-    // Declare UCI options for tuning parameters
-    for (int i = 0; i < (int)(sizeof(X) / sizeof(int)); i++)
-        uci_printf("option name X%d type spin default %d min %d max %d\n", i, X[i],
-                   X[i] > 0 ? 0 : 2 * X[i], X[i] > 0 ? 2 * X[i] : 0);
-
-    // Prepare .var file for Joona's SPSA tuner with tuning parameters
-    for (int i = 0; i < (int)(sizeof(X) / sizeof(int)); i++)
-        uci_printf("X%d,%d,%d,%d,%.2f,0.002,0\n", i, X[i], X[i] > 0 ? 0 : 2 * X[i], X[i] > 0 ? 2 * X[i] : 0,
-                   abs(X[i]) / 8.0);
-
     uci_puts("uciok");
 }
 
@@ -86,8 +72,6 @@ static void setoption(char **linePos)
         Contempt = atoi(strtok_r(NULL, " \n", linePos));
     else if (!strcmp(name, "TimeBuffer"))
         TimeBuffer = atoi(strtok_r(NULL, " \n", linePos));
-    else if (*name == 'X')
-        X[atoi(name + 1)] = atoi(strtok_r(NULL, " \n", linePos));
 }
 
 static void position(char **linePos)
