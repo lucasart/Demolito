@@ -3,16 +3,24 @@
 Demolito is a [UCI](http://www.shredderchess.com/chess-info/features/uci-universal-chess-interface.html) chess
 engine written in C. As such, it is a command line program, which is not designed to be used directly, but
 instead through an UCI capable GUI, such as [CuteChess](http://github.com/cutechess/cutechess.git) or
-[Lucas Chess](https://github.com/lukasmonk/lucaschess). There are no releases at this point. The source code
-gets continually updated, so you need to compile it yourself.
+[Lucas Chess](https://github.com/lukasmonk/lucaschess).
+
+### Versions
+
+The version number is simply the ISO date of the last commit (ie. YYYY-MM-DD). From time to time, I publish some binaries.
+[Here](http://open-chess.org/viewtopic.php?f=7&t=3069&start=10#p23534) are the latest ones. If you really want the newest
+possible one, you'll need to compile yourself (see below).
 
 ### Engine Strength
-About 3000 elo on a human scale, or 2900 on the
-[CCRL 40/40](http://www.computerchess.org.uk/ccrl/4040/rating_list_pure.html) scale.
+Much stronger than you, even if you are a GM. But nowhere near the top engines like Stockfish, Houdini, and Komodo.
+- [CCRL 40/4](http://www.computerchess.org.uk/ccrl/404/rating_list_pure.html)
+- [CCRL 40/4 FRC](http://www.computerchess.org.uk/ccrl/404FRC/rating_list_pure.html)
 
 ### Compilation
-Please use the `make.sh` script provided. It compiles with GCC on Linux. It should also compile the same way using a
-C11 capable compiler, and POSIX operating system (eg. Linux, MacOSX, iOS, Android), but I have not tested.
+Using GCC on Linux, type: `./make.sh ./demolito`. This will compile the program and run a verification test.
+You should also be able to compile it on any platform (POSIX or Windows), using a C11 compiler (eg. GCC or Clang).
+But you'll have to figure out the exact commands for yourself, depending on your compiler, your libc, and your system.
+No spoon feeding here.
 
 ### UCI Options
 - **Contempt**: This is used to score draws by chess rules (such as repetition) in the search. A positive value will
