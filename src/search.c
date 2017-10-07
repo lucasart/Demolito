@@ -180,6 +180,12 @@ static int qsearch(Worker *worker, const Position *pos, int ply, int depth, int 
     if (pos->checkers && !moveCount)
         return pos->checkers ? mated_in(ply) : draw_score(ply);
 
+    // Return alpha when all moves are pruned
+    if (bestScore <= -MATE) {
+        assert(bestScore == -INF);
+        return alpha;
+    }
+
     // TT write
     he.bound = bestScore <= oldAlpha ? UBOUND : bestScore >= beta ? LBOUND : EXACT;
     he.score = score_to_hash(bestScore, ply);
@@ -400,6 +406,12 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
     // No legal move: mated or stalemated
     if (!moveCount)
         return singularMove ? alpha : pos->checkers ? mated_in(ply) : draw_score(ply);
+
+    // Return alpha when all moves are pruned
+    if (bestScore <= -MATE) {
+        assert(bestScore == -INF);
+        return alpha;
+    }
 
     // Update move sorting statistics
     if (alpha > oldAlpha && !singularMove && !move_is_capture(pos, bestMove)) {
