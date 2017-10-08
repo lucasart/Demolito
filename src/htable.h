@@ -9,7 +9,8 @@ typedef struct {
         uint64_t data;
         struct {
             int16_t score, eval, move;
-            int8_t depth, bound;
+            int8_t depth;
+            uint8_t misc;  // bits 0..2: bound; 3: singular
         };
     };
 } HashEntry;
