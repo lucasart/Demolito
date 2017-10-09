@@ -79,16 +79,15 @@ static int qsearch(Worker *worker, const Position *pos, int ply, int depth, int 
 
     if (hash_read(pos->key, &he)) {
         he.score = score_from_hash(he.score, ply);
-        const int bound = he.misc & 3;
 
-        if (he.depth >= depth && !pvNode && ((he.score <= alpha && bound >= EXACT)
-                || (he.score >= beta && bound <= EXACT)))
+        if (he.depth >= depth && !pvNode && ((he.score <= alpha && he.bound >= EXACT)
+                || (he.score >= beta && he.bound <= EXACT)))
             return he.score;
 
         refinedEval = staticEval = he.eval;
 
-        if ((he.score > refinedEval && bound <= EXACT)
-                || (he.score < refinedEval && bound >= EXACT))
+        if ((he.score > refinedEval && he.bound <= EXACT)
+                || (he.score < refinedEval && he.bound >= EXACT))
             refinedEval = he.score;
     } else {
         he.move = 0;
@@ -188,7 +187,8 @@ static int qsearch(Worker *worker, const Position *pos, int ply, int depth, int 
     }
 
     // TT write
-    he.misc = bestScore <= oldAlpha ? UBOUND : bestScore >= beta ? LBOUND : EXACT;
+    he.bound = bestScore <= oldAlpha ? UBOUND : bestScore >= beta ? LBOUND : EXACT;
+    he.singular = 0;
     he.score = score_to_hash(bestScore, ply);
     he.eval = pos->checkers ? -INF : staticEval;
     he.depth = depth;
@@ -237,15 +237,14 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
 
     // TT probe
     HashEntry he;
-    int staticEval, refinedEval, bound = 0;
+    int staticEval, refinedEval;
     const uint64_t key = pos->key ^ singularMove;
 
     if (hash_read(key, &he)) {
         he.score = score_from_hash(he.score, ply);
-        bound = he.misc & 3;
 
-        if (he.depth >= depth && !pvNode && ((he.score <= alpha && bound >= EXACT)
-                || (he.score >= beta && bound <= EXACT)))
+        if (he.depth >= depth && !pvNode && ((he.score <= alpha && he.bound >= EXACT)
+                || (he.score >= beta && he.bound <= EXACT)))
             return he.score;
 
         if (he.depth <= 0)
@@ -253,8 +252,8 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
 
         refinedEval = staticEval = he.eval;
 
-        if ((he.score > refinedEval && bound <= EXACT)
-                || (he.score < refinedEval && bound >= EXACT))
+        if ((he.score > refinedEval && he.bound <= EXACT)
+                || (he.score < refinedEval && he.bound >= EXACT))
             refinedEval = he.score;
     } else {
         he.move = 0;
@@ -332,10 +331,10 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
         // Search extension
         int ext = 0;
 
-        if (currentMove == he.move && ply > 0 && depth >= 6 && bound <= EXACT && he.depth >= depth - 4) {
+        if (currentMove == he.move && ply > 0 && depth >= 6 && he.bound <= EXACT && he.depth >= depth - 4) {
             // See if the Hash Move is Singular, and should be extended
             // Try to retrieve from HT first
-            ext = he.depth >= depth && (he.misc >> 2);
+            ext = he.depth >= depth && he.singular;
 
             if (!ext) {
                 // Otherwise do a Singular Extension Search
@@ -436,8 +435,8 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
     }
 
     // TT write
-    he.misc = bestScore <= oldAlpha ? UBOUND : bestScore >= beta ? LBOUND : EXACT;
-    he.misc |= hashMoveWasSingular << 2;
+    he.bound = bestScore <= oldAlpha ? UBOUND : bestScore >= beta ? LBOUND : EXACT;
+    he.singular = hashMoveWasSingular;
     he.score = score_to_hash(bestScore, ply);
     he.eval = pos->checkers ? -INF : staticEval;
     he.depth = depth;

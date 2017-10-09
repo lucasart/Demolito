@@ -10,7 +10,7 @@ typedef struct {
         struct {
             int16_t score, eval, move;
             int8_t depth;
-            uint8_t misc;  // bits 0..2: bound; 3: singular
+            uint8_t bound: 2, singular: 1;
         };
     };
 } HashEntry;
