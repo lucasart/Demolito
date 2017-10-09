@@ -96,41 +96,42 @@ static eval_t mobility(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
     return result;
 }
 
-static eval_t bishop_pair(const Position *pos, int us)
-{
-    const bitboard_t WhiteSquares = 0x55AA55AA55AA55AAULL;
-    const eval_t bonus = {83, 110};
-
-    const bitboard_t bishops = pos_pieces_cp(pos, us, BISHOP);
-
-    return (bishops & WhiteSquares) && (bishops & ~WhiteSquares) ? bonus : (eval_t) {0, 0};
-}
-
-static int pattern(const Position *pos, int us)
+static eval_t pattern(const Position *pos, int us)
 {
     const int RookOpen[] = {20, 30};  // 0: semi-open, 1: fully-open
+    const eval_t BishopPair[] = {{0, 0}, {83, 110}};  // 0: false, 1: true
+    const int Ahead = 16;
 
+    const bitboard_t WhiteSquares = 0x55AA55AA55AA55AAULL;
     const bitboard_t ourPawns = pos_pieces_cp(pos, us, PAWN);
     const bitboard_t theirPawns = pos->byPiece[PAWN] ^ ourPawns;
-    int result = 0;
+    const bitboard_t ourBishops = pos_pieces_cp(pos, us, BISHOP);
+
+    // Bishop pair
+    eval_t result = BishopPair[(ourBishops & WhiteSquares) && (ourBishops & ~WhiteSquares)];
 
     // Rook on open file
-    bitboard_t rooks = pos_pieces_cp(pos, us, ROOK);
+    bitboard_t b = pos_pieces_cp(pos, us, ROOK);
 
-    while (rooks) {
-        const bitboard_t ahead = PawnPath[us][bb_pop_lsb(&rooks)];
+    while (b) {
+        const bitboard_t ahead = PawnPath[us][bb_pop_lsb(&b)];
 
         if (!(ourPawns & ahead))
-            result += RookOpen[!(theirPawns & ahead)];
+            result.op += RookOpen[!(theirPawns & ahead)];
     }
+
+    // Penalize pieces ahead of pawns
+    const bitboard_t pawnsBehindPieces = bb_shift(ourPawns, push_inc(us)) & (pos->byColor[us] ^ ourPawns);
+
+    if (pawnsBehindPieces)
+        result.op -= Ahead * bb_count(pawnsBehindPieces);
 
     return result;
 }
 
-static int tactics(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE + 1])
+static int hanging(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE + 1])
 {
     const int Hanging[] = {98, 64, 102, 181};
-    const int Ahead = 16;
 
     const int them = opposite(us);
     int result = 0, cnt = 0;
@@ -149,13 +150,6 @@ static int tactics(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_
 
     if (cnt >= 2)  // Quadratic with number of hanging pieces
         result *= cnt;
-
-    // Penalize pieces ahead of pawns
-    b = bb_shift(pos_pieces_cp(pos, us, PAWN), push_inc(us))
-        & (pos->byColor[us] ^ pos_pieces_cp(pos, us, PAWN));
-
-    if (b)
-        result -= Ahead * bb_count(b);
 
     return result;
 }
@@ -365,10 +359,9 @@ int evaluate(Worker *worker, const Position *pos)
         eval_add(&e[c], mobility(pos, c, attacks));
 
     for (int c = WHITE; c <= BLACK; ++c) {
-        eval_add(&e[c], bishop_pair(pos, c));
-        e[c].op += tactics(pos, c, attacks);
+        e[c].op += hanging(pos, c, attacks);
         e[c].op += safety(pos, c, attacks);
-        e[c].op += pattern(pos, c);
+        eval_add(&e[c], pattern(pos, c));
     }
 
     eval_add(&e[WHITE], pawns(worker, pos, attacks));
