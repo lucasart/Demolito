@@ -35,12 +35,12 @@ static eval_t score_mobility(int p0, int p, bitboard_t tss)
     assert(KNIGHT <= p0 && p0 <= ROOK);
     assert(KNIGHT <= p && p <= QUEEN);
 
-    const int AdjustCount[][15] = {
+    static const int AdjustCount[][15] = {  // GCC bug: cannot remove static (causes huge slowdown)
         {-4, -2, -1, 0, 1, 2, 3, 4, 4},
         {-5, -3, -2, -1, 0, 1, 2, 3, 4, 5, 5, 6, 6, 7},
         {-6, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 6, 7, 7}
     };
-    const eval_t Weight[] = {{6, 10}, {11, 12}, {6, 6}, {4, 6}};
+    static const eval_t Weight[] = {{6, 10}, {11, 12}, {6, 6}, {4, 6}};  // GCC bug: cannot remove static
 
     const int c = AdjustCount[p0][bb_count(tss)];
     return (eval_t) {Weight[p].op * c, Weight[p].eg * c};
