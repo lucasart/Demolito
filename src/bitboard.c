@@ -142,11 +142,9 @@ void bb_init()
 
     // Initialise Ray[][] and Segment[][]
     for (int s = A1; s <= H8; s++) {
-        const int r1 = rank_of(s), f1 = file_of(s);
-
         for (int d = 0; d < 8; d++) {
             bitboard_t mask = 0;
-            int r2 = r1, f2 = f1;
+            int r2 = rank_of(s), f2 = file_of(s);
 
             while (0 <= r2 && r2 < NB_RANK && 0 <= f2 && f2 < NB_FILE) {
                 const int s2 = square(r2, f2);
@@ -224,7 +222,7 @@ void bb_set(bitboard_t *b, int s)
 
 bitboard_t bb_shift(bitboard_t b, int i)
 {
-    assert(-63 <= i && i <= 63);    // forbid oversized shift (undefined behaviour)
+    assert(-63 <= i && i <= 63);  // forbid oversized shift (undefined behaviour)
     return i > 0 ? b << i : b >> -i;
 }
 

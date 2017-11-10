@@ -69,14 +69,11 @@ void pst_init()
     const pst_fn PstFn[NB_PIECE] = {&knight, &bishop, &rook, &queen, &king, &pawn};
 
     // Calculate PST, based on specialized functions for each piece
-    for (int c = WHITE; c <= BLACK; ++c)
-        for (int p = KNIGHT; p < NB_PIECE; ++p)
-            for (int s = A1; s <= H8; ++s) {
-                const int rr = relative_rank_of(c, s);
-                const int f = file_of(s);
-
+    for (int c = WHITE; c <= BLACK; c++)
+        for (int p = KNIGHT; p < NB_PIECE; p++)
+            for (int s = A1; s <= H8; s++) {
                 pst[c][p][s] = Material[p];
-                eval_add(&pst[c][p][s], (*PstFn[p])(rr, f));
+                eval_add(&pst[c][p][s], (*PstFn[p])(relative_rank_of(c, s), file_of(s)));
 
                 if (c == BLACK)
                     pst[c][p][s].op *= -1, pst[c][p][s].eg *= -1;

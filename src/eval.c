@@ -27,7 +27,7 @@ static bitboard_t pawn_attacks(const Position *pos, int c)
 {
     const bitboard_t pawns = pos_pieces_cp(pos, c, PAWN);
     return bb_shift(pawns & ~File[FILE_A], push_inc(c) + LEFT)
-           | bb_shift(pawns & ~File[FILE_H], push_inc(c) + RIGHT);
+        | bb_shift(pawns & ~File[FILE_H], push_inc(c) + RIGHT);
 }
 
 static eval_t score_mobility(int p0, int p, bitboard_t tss)
@@ -35,12 +35,12 @@ static eval_t score_mobility(int p0, int p, bitboard_t tss)
     assert(KNIGHT <= p0 && p0 <= ROOK);
     assert(KNIGHT <= p && p <= QUEEN);
 
-    static const int AdjustCount[][15] = {  // GCC bug: cannot remove static (causes huge slowdown)
+    static /* <-- GCC bug */ const int AdjustCount[][15] = {
         {-4, -2, -1, 0, 1, 2, 3, 4, 4},
         {-5, -3, -2, -1, 0, 1, 2, 3, 4, 5, 5, 6, 6, 7},
         {-6, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 6, 7, 7}
     };
-    static const eval_t Weight[] = {{6, 10}, {11, 12}, {6, 6}, {4, 6}};  // GCC bug: cannot remove static
+    static /* <-- GCC bug */ const eval_t Weight[] = {{6, 10}, {11, 12}, {6, 6}, {4, 6}};
 
     const int c = AdjustCount[p0][bb_count(tss)];
     return (eval_t) {Weight[p].op * c, Weight[p].eg * c};
@@ -48,11 +48,10 @@ static eval_t score_mobility(int p0, int p, bitboard_t tss)
 
 static eval_t mobility(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE + 1])
 {
-    bitboard_t fss, tss, occ;
-    int from, piece;
-
     const int them = opposite(us);
     eval_t result = {0, 0};
+    bitboard_t fss, tss, occ;
+    int from, piece;
 
     attacks[us][KING] = KAttacks[pos_king_square(pos, us)];
     attacks[them][PAWN] = pawn_attacks(pos, them);
@@ -90,8 +89,8 @@ static eval_t mobility(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
         eval_add(&result, score_mobility(BISHOP, piece, tss & targets));
     }
 
-    attacks[us][NB_PIECE] = attacks[us][KNIGHT] | attacks[us][BISHOP] | attacks[us][ROOK] |
-                            attacks[us][QUEEN];
+    attacks[us][NB_PIECE] = attacks[us][KNIGHT] | attacks[us][BISHOP] | attacks[us][ROOK]
+        | attacks[us][QUEEN];
 
     return result;
 }
@@ -121,10 +120,10 @@ static eval_t pattern(const Position *pos, int us)
     }
 
     // Penalize pieces ahead of pawns
-    const bitboard_t pawnsBehindPieces = bb_shift(ourPawns, push_inc(us)) & (pos->byColor[us] ^ ourPawns);
+    const bitboard_t pawnsBehind = bb_shift(ourPawns, push_inc(us)) & (pos->byColor[us] ^ ourPawns);
 
-    if (pawnsBehindPieces)
-        result.op -= Ahead * bb_count(pawnsBehindPieces);
+    if (pawnsBehind)
+        result.op -= Ahead * bb_count(pawnsBehind);
 
     return result;
 }
@@ -168,7 +167,7 @@ static int safety(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_P
     // Attacks around the King
     const bitboard_t dangerZone = attacks[us][KING] & ~attacks[us][PAWN];
 
-    for (int p = KNIGHT; p <= QUEEN; ++p) {
+    for (int p = KNIGHT; p <= QUEEN; p++) {
         const bitboard_t attacked = attacks[them][p] & dangerZone;
 
         if (attacked) {
@@ -188,7 +187,7 @@ static int safety(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_P
         (bb_battacks(ks, occ) | bb_rattacks(ks, occ)) & attacks[them][QUEEN]
     };
 
-    for (int p = KNIGHT; p <= QUEEN; ++p)
+    for (int p = KNIGHT; p <= QUEEN; p++)
         if (checks[p]) {
             const bitboard_t b = checks[p] & ~(pos->byColor[them] | attacks[us][PAWN]
                 | attacks[us][KING]);
@@ -246,7 +245,7 @@ static eval_t do_pawns(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
     const eval_t Isolated[2] = {{19, 33}, {41, 34}};
     const eval_t Backward[2] = {{17, 18}, {29, 22}};
     const eval_t Doubled = {15, 30};
-    const int shieldBonus[NB_RANK] = {0, 23, 17, 12, 10, 8, 8};
+    const int Shield[NB_RANK] = {0, 23, 17, 12, 10, 8, 8};
 
     const int them = opposite(us);
     const bitboard_t ourPawns = pos_pieces_cp(pos, us, PAWN);
@@ -260,7 +259,7 @@ static eval_t do_pawns(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
     bitboard_t b = ourPawns & (PawnPath[us][ourKing] | PawnSpan[us][ourKing]);
 
     while (b)
-        result.op += shieldBonus[relative_rank_of(us, bb_pop_lsb(&b))];
+        result.op += Shield[relative_rank_of(us, bb_pop_lsb(&b))];
 
     // Pawn structure
     b = ourPawns;
@@ -315,7 +314,7 @@ static int blend(const Position *pos, eval_t e)
 
 void eval_init()
 {
-    for (int s = H8; s >= A1; --s) {
+    for (int s = H8; s >= A1; s--) {
         if (rank_of(s) == RANK_8)
             PawnSpan[WHITE][s] = PawnPath[WHITE][s] = 0;
         else {
@@ -324,7 +323,7 @@ void eval_init()
         }
     }
 
-    for (int s = A1; s <= H8; ++s) {
+    for (int s = A1; s <= H8; s++) {
         if (rank_of(s) == RANK_1)
             PawnSpan[BLACK][s] = PawnPath[BLACK][s] = 0;
         else {
@@ -333,16 +332,14 @@ void eval_init()
         }
     }
 
-    for (int f = FILE_A; f <= FILE_H; ++f)
-        AdjacentFiles[f] = (f > FILE_A ? File[f - 1] : 0)
-                           | (f < FILE_H ? File[f + 1] : 0);
+    for (int f = FILE_A; f <= FILE_H; f++)
+        AdjacentFiles[f] = (f > FILE_A ? File[f - 1] : 0) | (f < FILE_H ? File[f + 1] : 0);
 
     for (int s1 = A1; s1 <= H8; ++s1)
         for (int s2 = A1; s2 <= H8; ++s2) {
-            const int rankDiff = abs(rank_of(s1) - rank_of(s2));
-            const int fileDiff = abs(file_of(s1) - file_of(s2));
-
-            KingDistance[s1][s2] = max(rankDiff, fileDiff);
+            const int rankDist = abs(rank_of(s1) - rank_of(s2));
+            const int fileDist = abs(file_of(s1) - file_of(s2));
+            KingDistance[s1][s2] = max(rankDist, fileDist);
         }
 }
 
@@ -355,10 +352,10 @@ int evaluate(Worker *worker, const Position *pos)
     bitboard_t attacks[NB_COLOR][NB_PIECE + 1];
 
     // Mobility first, because it fills in the attacks array
-    for (int c = WHITE; c <= BLACK; ++c)
+    for (int c = WHITE; c <= BLACK; c++)
         eval_add(&e[c], mobility(pos, c, attacks));
 
-    for (int c = WHITE; c <= BLACK; ++c) {
+    for (int c = WHITE; c <= BLACK; c++) {
         e[c].op += hanging(pos, c, attacks);
         e[c].op += safety(pos, c, attacks);
         eval_add(&e[c], pattern(pos, c));

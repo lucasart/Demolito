@@ -59,12 +59,12 @@ void pos_init()
 {
     uint64_t state = 0;
 
-    for (int c = WHITE; c <= BLACK; ++c)
-        for (int p = KNIGHT; p < NB_PIECE; ++p)
-            for (int s = A1; s <= H8; ++s)
+    for (int c = WHITE; c <= BLACK; c++)
+        for (int p = KNIGHT; p < NB_PIECE; p++)
+            for (int s = A1; s <= H8; s++)
                 ZobristKey[c][p][s] = prng(&state);
 
-    for (int s = A1; s <= H8; ++s) {
+    for (int s = A1; s <= H8; s++) {
         ZobristCastling[s] = prng(&state);
         ZobristEnPassant[s] = prng(&state);
     }
@@ -152,7 +152,7 @@ static bitboard_t calc_pins(const Position *pos)
     const int us = pos->turn, them = opposite(us);
     const int king = pos_king_square(pos, us);
     bitboard_t pinners = (pos_pieces_cpp(pos, them, ROOK, QUEEN) & RPseudoAttacks[king])
-                         | (pos_pieces_cpp(pos, them, BISHOP, QUEEN) & BPseudoAttacks[king]);
+        | (pos_pieces_cpp(pos, them, BISHOP, QUEEN) & BPseudoAttacks[king]);
     bitboard_t result = 0;
 
     while (pinners) {
@@ -174,8 +174,8 @@ static void finish(Position *pos)
     const int ksq = pos_king_square(pos, us);
 
     pos->attacked = attacked_by(pos, them);
-    pos->checkers = bb_test(pos->attacked, ksq) ? pos_attackers_to(pos, ksq,
-                    pos_pieces(pos)) & pos->byColor[them] : 0;
+    pos->checkers = bb_test(pos->attacked, ksq)
+        ? pos_attackers_to(pos, ksq, pos_pieces(pos)) & pos->byColor[them] : 0;
     pos->pins = calc_pins(pos);
 }
 
@@ -196,10 +196,10 @@ void pos_set(Position *pos, const char *fen, bool chess960)
             s += 2 * DOWN;
         else {
             for (int col = WHITE; col <= BLACK; ++col) {
-                const int p = strchr(PieceLabel[col], c) - PieceLabel[col];
+                const char *p = strchr(PieceLabel[col], c);
 
-                if ((unsigned)p < NB_PIECE) {
-                    set_square(pos, col, p, s);
+                if (p) {
+                    set_square(pos, col, p - PieceLabel[col], s);
                     ++s;
                 }
             }
@@ -353,10 +353,10 @@ bitboard_t pos_pieces_cpp(const Position *pos, int c, int p1, int p2)
 void pos_get(const Position *pos, char *fen)
 {
     // int placement
-    for (int r = RANK_8; r >= RANK_1; --r) {
+    for (int r = RANK_8; r >= RANK_1; r--) {
         int cnt = 0;
 
-        for (int f = FILE_A; f <= FILE_H; ++f) {
+        for (int f = FILE_A; f <= FILE_H; f++) {
             const int s = square(r, f);
 
             if (bb_test(pos_pieces(pos), s)) {
@@ -383,7 +383,7 @@ void pos_get(const Position *pos, char *fen)
     if (!pos->castleRooks)
         *fen++ = '-';
     else {
-        for (int c = WHITE; c <= BLACK; ++c) {
+        for (int c = WHITE; c <= BLACK; c++) {
             const bitboard_t sqs = pos->castleRooks & pos->byColor[c];
 
             if (!sqs)
@@ -429,7 +429,7 @@ bitboard_t pos_ep_square_bb(const Position *pos)
 bool pos_insufficient_material(const Position *pos)
 {
     return bb_count(pos_pieces(pos)) <= 3 && !pos->byPiece[PAWN] && !pos->byPiece[ROOK]
-           && !pos->byPiece[QUEEN];
+        && !pos->byPiece[QUEEN];
 }
 
 int pos_king_square(const Position *pos, int c)
@@ -448,23 +448,23 @@ bitboard_t pos_attackers_to(const Position *pos, int s, bitboard_t occ)
 {
     BOUNDS(s, NB_SQUARE);
     return (pos_pieces_cp(pos, WHITE, PAWN) & PAttacks[BLACK][s])
-           | (pos_pieces_cp(pos, BLACK, PAWN) & PAttacks[WHITE][s])
-           | (NAttacks[s] & pos->byPiece[KNIGHT])
-           | (KAttacks[s] & pos->byPiece[KING])
-           | (bb_rattacks(s, occ) & (pos->byPiece[ROOK] | pos->byPiece[QUEEN]))
-           | (bb_battacks(s, occ) & (pos->byPiece[BISHOP] | pos->byPiece[QUEEN]));
+        | (pos_pieces_cp(pos, BLACK, PAWN) & PAttacks[WHITE][s])
+        | (NAttacks[s] & pos->byPiece[KNIGHT])
+        | (KAttacks[s] & pos->byPiece[KING])
+        | (bb_rattacks(s, occ) & (pos->byPiece[ROOK] | pos->byPiece[QUEEN]))
+        | (bb_battacks(s, occ) & (pos->byPiece[BISHOP] | pos->byPiece[QUEEN]));
 }
 
 void pos_print(const Position *pos)
 {
-    for (int r = RANK_8; r >= RANK_1; --r) {
+    for (int r = RANK_8; r >= RANK_1; r--) {
         char line[] = ". . . . . . . .";
 
-        for (int f = FILE_A; f <= FILE_H; ++f) {
+        for (int f = FILE_A; f <= FILE_H; f++) {
             const int s = square(r, f);
             line[2 * f] = bb_test(pos_pieces(pos), s)
-                          ? PieceLabel[pos_color_on(pos, s)][(int)pos->pieceOn[s]]
-                          : s == pos->epSquare ? '*' : '.';
+                ? PieceLabel[pos_color_on(pos, s)][(int)pos->pieceOn[s]]
+                : s == pos->epSquare ? '*' : '.';
         }
 
         puts(line);

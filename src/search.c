@@ -294,8 +294,8 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
         pos_switch(&nextPos, pos);
         stack_push(&worker->stack, nextPos.key);
         score = nextDepth <= 0
-                ? -qsearch(worker, &nextPos, ply + 1, nextDepth, -beta, -(beta - 1), childPv)
-                : -search(worker, &nextPos, ply + 1, nextDepth, -beta, -(beta - 1), childPv, 0);
+            ? -qsearch(worker, &nextPos, ply + 1, nextDepth, -beta, -(beta - 1), childPv)
+            : -search(worker, &nextPos, ply + 1, nextDepth, -beta, -(beta - 1), childPv, 0);
         stack_pop(&worker->stack);
 
         if (score >= beta)
