@@ -231,7 +231,7 @@ bitboard_t bb_shift(bitboard_t b, int i)
 int bb_lsb(bitboard_t b)
 {
     assert(b);
-    return __builtin_ffsll(b) - 1;
+    return __builtin_ctzll(b);
 }
 
 int bb_msb(bitboard_t b)
