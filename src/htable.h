@@ -3,6 +3,8 @@
 
 enum {LBOUND, EXACT, UBOUND};
 
+extern unsigned hash_date;
+
 typedef struct {
     uint64_t keyXorData;
     union {
@@ -10,7 +12,7 @@ typedef struct {
         struct {
             int16_t score, eval, move;
             int8_t depth;
-            uint8_t bound: 2, singular: 1;
+            uint8_t bound: 2, singular: 1, date: 5;
         };
     };
 } HashEntry;
@@ -24,4 +26,3 @@ bool hash_read(uint64_t key, HashEntry *e);
 void hash_write(uint64_t key, const HashEntry *e);
 
 extern HashEntry *HashTable;
-extern uint64_t HashCount;

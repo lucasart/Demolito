@@ -193,6 +193,7 @@ static int qsearch(Worker *worker, const Position *pos, int ply, int depth, int 
     he.eval = pos->checkers ? -INF : staticEval;
     he.depth = depth;
     he.move = bestMove;
+    he.date = hash_date;
     he.keyXorData = pos->key ^ he.data;
     hash_write(pos->key, &he);
 
@@ -441,6 +442,7 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
     he.eval = pos->checkers ? -INF : staticEval;
     he.depth = depth;
     he.move = bestMove;
+    he.date = hash_date;
     he.keyXorData = key ^ he.data;
     hash_write(key, &he);
 
@@ -548,6 +550,7 @@ int64_t search_go()
     mtx_init(&mtxSchedule, mtx_plain);
     Signal = 0;
 
+    hash_date++;
     thrd_t threads[WorkersCount];
     smp_new_search();
 

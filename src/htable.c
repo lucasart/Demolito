@@ -15,8 +15,9 @@
 */
 #include "htable.h"
 
+unsigned hash_date;
 HashEntry *HashTable = NULL;
-uint64_t HashCount = 0;
+static uint64_t HashCount = 0;
 
 int score_to_hash(int score, int ply)
 {
@@ -53,8 +54,8 @@ bool hash_read(uint64_t key, HashEntry *e)
 
 void hash_write(uint64_t key, const HashEntry *e)
 {
-    HashEntry *replace = &HashTable[key & (HashCount - 1)];
+    HashEntry *slot = &HashTable[key & (HashCount - 1)];
 
-    if (key != (replace->keyXorData ^ replace->data) || e->depth >= replace->depth)
-        *replace = *e;
+    if (e->date != slot->date || e->depth >= slot->depth)
+        *slot = *e;
 }
