@@ -240,7 +240,8 @@ static eval_t passer(int us, int pawn, int ourKing, int theirKing)
     return result;
 }
 
-static eval_t do_pawns(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE + 1])
+static eval_t do_pawns(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE + 1],
+    bitboard_t *passed)
 {
     const eval_t Isolated[2] = {{19, 33}, {41, 34}};
     const eval_t Backward[2] = {{17, 18}, {29, 22}};
@@ -282,8 +283,10 @@ static eval_t do_pawns(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
         if (bb_test(ourPawns, stop))
             eval_sub(&result, Doubled);
 
-        if (exposed && !(PawnSpan[us][s] & theirPawns))
+        if (exposed && !(PawnSpan[us][s] & theirPawns)) {
+            bb_set(passed, s);
             eval_add(&result, passer(us, s, ourKing, theirKing));
+        }
     }
 
     return result;
@@ -292,16 +295,43 @@ static eval_t do_pawns(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
 static eval_t pawns(Worker *worker, const Position *pos, bitboard_t attacks[NB_COLOR][NB_PIECE + 1])
 // Pawn evaluation is directly a diff, from white's pov. This halves the size of the table.
 {
+    const int FreePasser[] = {10, 20, 40, 80};
+
     const uint64_t key = pos->pawnKey;
     PawnEntry *pe = &worker->pawnHash[key & (NB_PAWN_ENTRY - 1)];
+    eval_t e;
 
+    // First the king+pawn squeleton only, using PawhHash
     if (pe->key == key)
-        return pe->eval;
+        e = pe->eval;
+    else {
+        pe->key = key;
+        pe->passed = 0;
+        pe->eval = do_pawns(pos, WHITE, attacks, &pe->passed);
+        eval_sub(&pe->eval, do_pawns(pos, BLACK, attacks, &pe->passed));
+        e = pe->eval;
+    }
 
-    pe->key = key;
-    pe->eval = do_pawns(pos, WHITE, attacks);
-    eval_sub(&pe->eval, do_pawns(pos, BLACK, attacks));
-    return pe->eval;
+    // Second, interaction between pawns and pieces
+    const bitboard_t occ = pos_pieces(pos);
+    const bitboard_t major[] = {
+        pos_pieces_cpp(pos, WHITE, ROOK, QUEEN),
+        pos_pieces_cpp(pos, BLACK, ROOK, QUEEN)
+    };
+    bitboard_t b = pe->passed;
+
+    while (b) {
+        const int s = bb_pop_lsb(&b);
+        const bitboard_t f = File[file_of(s)];
+        const int us = pos_color_on(pos, s), them = opposite(us);
+        const int n = relative_rank_of(us, s) - RANK_4;
+
+        if (n >= 0 && !bb_test(occ, s + push_inc(us))
+                && (!(f & major[them]) || !(bb_rattacks(s, occ) & f & major[them])))
+            e.eg += FreePasser[n] * (us == WHITE ? 1 : -1);
+    }
+
+    return e;
 }
 
 static int blend(const Position *pos, eval_t e)

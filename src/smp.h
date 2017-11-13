@@ -22,6 +22,7 @@ bool stack_repetition(const Stack *st, int rule50);
 
 typedef struct {
     uint64_t key;
+    bitboard_t passed;
     eval_t eval;
 } PawnEntry;
 
