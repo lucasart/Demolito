@@ -314,20 +314,16 @@ static eval_t pawns(Worker *worker, const Position *pos, bitboard_t attacks[NB_C
 
     // Second, interaction between pawns and pieces
     const bitboard_t occ = pos_pieces(pos);
-    const bitboard_t major[] = {
-        pos_pieces_cpp(pos, WHITE, ROOK, QUEEN),
-        pos_pieces_cpp(pos, BLACK, ROOK, QUEEN)
-    };
     bitboard_t b = pe->passed;
 
     while (b) {
         const int s = bb_pop_lsb(&b);
-        const bitboard_t f = File[file_of(s)];
         const int us = pos_color_on(pos, s), them = opposite(us);
+        const bitboard_t potentialThreats = File[file_of(s)] & pos_pieces_cpp(pos, them, ROOK, QUEEN);
         const int n = relative_rank_of(us, s) - RANK_4;
 
         if (n >= 0 && !bb_test(occ, s + push_inc(us))
-                && (!(f & major[them]) || !(bb_rattacks(s, occ) & f & major[them])))
+                && (!potentialThreats || !(bb_rattacks(s, occ) & potentialThreats)))
             e.eg += FreePasser[n] * (us == WHITE ? 1 : -1);
     }
 
