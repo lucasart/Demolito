@@ -324,8 +324,9 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
         // Play move
         pos_move(&nextPos, pos, currentMove);
 
-        // Prune losing captures in the search, near the leaves
-        if (depth <= 4 && see < 0 && !pvNode && !pos->checkers && !nextPos.checkers
+        // Prune losing captures and lated moves, near the leaves
+        if (depth <= 4 && !pvNode && !pos->checkers && !nextPos.checkers
+                && (see < 0 || (depth == 1 && moveCount >= 4))
                 && !move_is_capture(pos, currentMove))
             continue;
 
