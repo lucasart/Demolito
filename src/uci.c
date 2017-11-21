@@ -184,9 +184,10 @@ void uci_loop()
             eval();
         else if (!strcmp(token, "perft"))
             perft(&linePos);
-        else if (!strcmp(token, "quit"))
+        else if (!strcmp(token, "quit")) {
+            Signal = STOP;
             break;
-        else
+        } else
             uci_printf("unknown command: %s\n", line);
     }
 
