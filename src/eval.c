@@ -128,14 +128,14 @@ static eval_t pattern(const Position *pos, int us)
     return result;
 }
 
-static int hanging(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE + 1])
+static eval_t hanging(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE + 1])
 {
-    const int Hanging[] = {118, 77, 123, 218};
+    const int Hanging[] = {118, 77, 123, 218, 0, 50};
 
     const int them = opposite(us);
-    int result = 0;
+    eval_t result = {0, 0};
 
-    // Penalize hanging pieces
+    // Penalize hanging pieces in the opening
     bitboard_t b = attacks[them][PAWN] & (pos->byColor[us] ^ pos_pieces_cp(pos, us, PAWN));
     b |= (attacks[them][KNIGHT] | attacks[them][BISHOP]) & pos_pieces_cpp(pos, us, ROOK, QUEEN);
     b |= attacks[them][ROOK] & pos_pieces_cp(pos, us, QUEEN);
@@ -143,8 +143,15 @@ static int hanging(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_
     while (b) {
         const int p = pos->pieceOn[bb_pop_lsb(&b)];
         assert(KNIGHT <= p && p <= QUEEN);
-        result -= Hanging[p];
+        result.op -= Hanging[p];
     }
+
+    // Penalize hanging pawns in the endgame
+    b = pos_pieces_cp(pos, us, PAWN) & attacks[them][KING]
+        & ~(attacks[us][PAWN] | attacks[us][KING]);
+
+    if (b)
+        result.eg -= Hanging[PAWN] * bb_count(b);
 
     return result;
 }
@@ -378,8 +385,8 @@ int evaluate(Worker *worker, const Position *pos)
         eval_add(&e[c], mobility(pos, c, attacks));
 
     for (int c = WHITE; c <= BLACK; c++) {
-        e[c].op += hanging(pos, c, attacks);
         e[c].op += safety(pos, c, attacks);
+        eval_add(&e[c], hanging(pos, c, attacks));
         eval_add(&e[c], pattern(pos, c));
     }
 
