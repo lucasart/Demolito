@@ -130,10 +130,10 @@ static eval_t pattern(const Position *pos, int us)
 
 static int hanging(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE + 1])
 {
-    const int Hanging[] = {98, 64, 102, 181};
+    const int Hanging[] = {118, 77, 123, 218};
 
     const int them = opposite(us);
-    int result = 0, cnt = 0;
+    int result = 0;
 
     // Penalize hanging pieces
     bitboard_t b = attacks[them][PAWN] & (pos->byColor[us] ^ pos_pieces_cp(pos, us, PAWN));
@@ -144,11 +144,7 @@ static int hanging(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_
         const int p = pos->pieceOn[bb_pop_lsb(&b)];
         assert(KNIGHT <= p && p <= QUEEN);
         result -= Hanging[p];
-        cnt++;
     }
-
-    if (cnt >= 2)  // Quadratic with number of hanging pieces
-        result *= cnt;
 
     return result;
 }
