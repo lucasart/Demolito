@@ -130,7 +130,7 @@ static eval_t pattern(const Position *pos, int us)
 
 static eval_t hanging(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE + 1])
 {
-    const int Hanging[] = {118, 77, 123, 218, 0, 50};
+    const int Hanging[] = {118, 77, 123, 218, 0, 40};
 
     const int them = opposite(us);
     eval_t result = {0, 0};
@@ -138,11 +138,13 @@ static eval_t hanging(const Position *pos, int us, bitboard_t attacks[NB_COLOR][
     // Penalize hanging pieces in the opening
     bitboard_t b = attacks[them][PAWN] & (pos->byColor[us] ^ pos_pieces_cp(pos, us, PAWN));
     b |= (attacks[them][KNIGHT] | attacks[them][BISHOP]) & pos_pieces_cpp(pos, us, ROOK, QUEEN);
-    b |= attacks[them][ROOK] & pos_pieces_cp(pos, us, QUEEN);
+    b |= pos_pieces_cp(pos, us, QUEEN) & attacks[them][ROOK];
+    b |= pos_pieces_cp(pos, us, PAWN) & attacks[them][NB_PIECE]
+        & ~(attacks[us][PAWN] | attacks[us][KING] | attacks[us][NB_PIECE]);
 
     while (b) {
         const int p = pos->pieceOn[bb_pop_lsb(&b)];
-        assert(KNIGHT <= p && p <= QUEEN);
+        assert(p == PAWN || (KNIGHT <= p && p <= QUEEN));
         result.op -= Hanging[p];
     }
 
