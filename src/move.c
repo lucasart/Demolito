@@ -121,8 +121,8 @@ bool move_is_legal(const Position *pos, move_t m)
             return !(pos->attacked & Segment[from][_tsq])
                 && !bb_test(pos->pins, to);
         } else
-            // Normal king move: do not land on an attacked square
-            return !bb_test(pos->attacked, to);
+            // Normal king move: do not land on an attacked square (already filtered at generation)
+            return true;
     } else {
         // Normal case: illegal if pinned, and moves out of pin-ray
         if (bb_test(pos->pins, from) && !bb_test(Ray[king][from], to))

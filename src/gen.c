@@ -92,7 +92,7 @@ move_t *gen_piece_moves(const Position *pos, move_t *mList, bitboard_t targets, 
     // King moves
     if (kingMoves) {
         from = pos_king_square(pos, us);
-        tss = KAttacks[from] & targets;
+        tss = KAttacks[from] & targets & ~pos->attacked;
         mList = serialize_moves(from, tss, mList);
     }
 
@@ -154,25 +154,23 @@ move_t *gen_check_escapes(const Position *pos, move_t *mList, bool subPromotions
     bitboard_t tss;
 
     // King moves
-    tss = KAttacks[king] & ~ours;
+    tss = KAttacks[king] & ~ours & ~pos->attacked;
     mList = serialize_moves(king, tss, mList);
 
     if (!bb_several(pos->checkers)) {
-        // Single checker
+        // Blocking moves (single checker)
         const int checkerSquare = bb_lsb(pos->checkers);
         const int checkerPiece = pos->pieceOn[checkerSquare];
 
-        // int moves must cover the checking segment for a sliding check, or capture the
-        // checker otherwise.
+        // sliding check: cover the checking segment, or capture the slider
         tss = BISHOP <= checkerPiece && checkerPiece <= QUEEN
               ? Segment[king][checkerSquare]
               : pos->checkers;
 
         mList = gen_piece_moves(pos, mList, tss & ~ours, false);
 
-        // if checked by a Pawn and epsq is available, then the check must result from a
-        // pawn double push, and we also need to consider capturing it en-passant to solve
-        // the check.
+        // pawn check: if epsq is available, then the check must result from a pawn double
+        // push, and we also need to consider capturing it en-passant to solve the check.
         if (checkerPiece == PAWN && pos->epSquare < NB_SQUARE)
             bb_set(&tss, pos->epSquare);
 

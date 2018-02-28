@@ -41,6 +41,7 @@ uint64_t test(bool perft, int depth, int threads)
     int64_t start = system_msec();
 
     for (int i = 0; fens[i]; i++) {
+        puts(fens[i]);
         pos_set(&rootPos, fens[i], true);
         stack_clear(&rootStack);
         stack_push(&rootStack, rootPos.key);
