@@ -461,7 +461,7 @@ static int aspirate(Worker *worker, int depth, move_t pv[], int score)
     int alpha = score - delta;
     int beta = score + delta;
 
-    for ( ; ; delta += delta * 0.876) {
+    for ( ; ; delta *= 1.876) {
         score = search(worker, &rootPos, 0, depth, alpha, beta, pv, 0);
 
         if (score <= alpha) {
