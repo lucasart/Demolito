@@ -160,11 +160,11 @@ static eval_t hanging(const Position *pos, int us, bitboard_t attacks[NB_COLOR][
 
 static int safety(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE + 1])
 {
-    const int RingAttack[] = {31, 39, 65, 60};
-    const int RingDefense[] = {18, 19, 32, 32};
-    const int CheckAttack[] = {61, 75, 76, 90};
-    const int CheckDefense[] = {24, 35, 30, 35};
-    const int BishopXRay = 58, RookXRay = 92;
+    const int RingAttack[] = {42, 53, 89, 82};
+    const int RingDefense[] = {24, 26, 44, 44};
+    const int CheckAttack[] = {84, 103, 104, 124};
+    const int CheckDefense[] = {33, 48, 41, 48};
+    const int BishopXRay = 80, RookXRay = 126;
 
     const int them = opposite(us);
     int result = 0, cnt = 0;
@@ -222,7 +222,7 @@ static int safety(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_P
             result -= RookXRay;
         }
 
-    return result * (2 + cnt) / 4;
+    return result * (1 + cnt) / 4;
 }
 
 static eval_t passer(int us, int pawn, int ourKing, int theirKing)
