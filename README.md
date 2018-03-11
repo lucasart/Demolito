@@ -12,9 +12,10 @@ The version number is simply the ISO date of the last commit (ie. YYYY-MM-DD). F
 possible one, you'll need to compile yourself (see below).
 
 ### Engine Strength
-Much stronger than you, even if you are a GM. But nowhere near the top engines like Stockfish, Houdini, and Komodo.
-- [CCRL 40/4](http://www.computerchess.org.uk/ccrl/404/rating_list_pure.html)
-- [CCRL 40/4 FRC](http://www.computerchess.org.uk/ccrl/404FRC/rating_list_pure.html)
+Stronger than you, even if you are a GM. But nowhere near the top engines like Stockfish, Houdini, and Komodo.
+- [FGRL](http://fastgm.de/)
+- [CEGT](http://www.cegt.net/)
+- [CCRL](http://www.computerchess.org.uk/ccrl/)
 
 ### Compilation
 Using GCC on Linux, type: `./make.sh ./demolito`. This will compile the program and run a verification test.

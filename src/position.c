@@ -25,23 +25,17 @@ static uint64_t ZobristEnPassant[NB_SQUARE + 1];
 static uint64_t ZobristTurn;
 
 // SplitMix64 PRNG, by Sebastiano Vigna: http://xoroshiro.di.unimi.it/splitmix64.c
-// 64-bit state is enough:
-//   * 2^64 period is long enough to generate a few zobrist keys.
-//   * Statistically strong: passes TestU01's BigCrunch.
-// 64-bit state is, in fact, a huge bonus:
-//   * Easy to seed: Any seed is fine, even zero!
-//   * Escapes immediately from zero land, unlike large seed generators
-// Fast enough: 1.31ns per drawing on i7 7700 CPU @ 3.6 GHz (Kaby Lake).
 static uint64_t prng(uint64_t *state)
 {
     uint64_t s = (*state += 0x9E3779B97F4A7C15ULL);
     s = (s ^ (s >> 30)) * 0xBF58476D1CE4E5B9ULL;
     s = (s ^ (s >> 27)) * 0x94D049BB133111EBULL;
     s ^= s >> 31;
-    assert(s);  // We cannot have a zero key. If it happens, change the seed.
+    assert(s);  // We cannot have a zero key for zobrist hashing. If it happens, change the seed.
     return s;
 }
 
+// Combined zobrist mask of all castlable rooks
 static uint64_t zobrist_castling(bitboard_t castlableRooks)
 {
     assert(bb_count(Rank[RANK_1] & castlableRooks) <= 2);
@@ -55,30 +49,14 @@ static uint64_t zobrist_castling(bitboard_t castlableRooks)
     return k;
 }
 
-void pos_init()
-{
-    uint64_t state = 0;
-
-    for (int c = WHITE; c <= BLACK; c++)
-        for (int p = KNIGHT; p < NB_PIECE; p++)
-            for (int s = A1; s <= H8; s++)
-                ZobristKey[c][p][s] = prng(&state);
-
-    for (int s = A1; s <= H8; s++) {
-        ZobristCastling[s] = prng(&state);
-        ZobristEnPassant[s] = prng(&state);
-    }
-
-    ZobristEnPassant[NB_SQUARE] = prng(&state);
-    ZobristTurn = prng(&state);
-}
-
+// Sets the position in its empty state (no pieces, white to play, rule50=0, etc.)
 static void clear(Position *pos)
 {
     memset(pos, 0, sizeof(*pos));
     memset(pos->pieceOn, NB_PIECE, sizeof(pos->pieceOn));
 }
 
+// Remove piece 'p' of color 'c' on square 's'. Such a piece must be there first.
 static void clear_square(Position *pos, int c, int p, int s)
 {
     BOUNDS(c, NB_COLOR);
@@ -97,6 +75,7 @@ static void clear_square(Position *pos, int c, int p, int s)
         pos->pawnKey ^= ZobristKey[c][p][s];
 }
 
+// Put piece 'p' of color 'c' on square 's'. Square must be empty first.
 static void set_square(Position *pos, int c, int p, int s)
 {
     BOUNDS(c, NB_COLOR);
@@ -115,6 +94,7 @@ static void set_square(Position *pos, int c, int p, int s)
         pos->pawnKey ^= ZobristKey[c][p][s];
 }
 
+// Squares attacked by pieces of color 'c'
 static bitboard_t attacked_by(const Position *pos, int c)
 {
     BOUNDS(c, NB_COLOR);
@@ -147,6 +127,7 @@ static bitboard_t attacked_by(const Position *pos, int c)
     return result;
 }
 
+// Pinned pieces for the side to move
 static bitboard_t calc_pins(const Position *pos)
 {
     const int us = pos->turn, them = opposite(us);
@@ -168,17 +149,38 @@ static bitboard_t calc_pins(const Position *pos)
     return result;
 }
 
+// Helper function used to facorize common tasks, after setting up a position
 static void finish(Position *pos)
 {
     const int us = pos->turn, them = opposite(us);
-    const int ksq = pos_king_square(pos, us);
+    const int king = pos_king_square(pos, us);
 
     pos->attacked = attacked_by(pos, them);
-    pos->checkers = bb_test(pos->attacked, ksq)
-        ? pos_attackers_to(pos, ksq, pos_pieces(pos)) & pos->byColor[them] : 0;
+    pos->checkers = bb_test(pos->attacked, king)
+        ? pos_attackers_to(pos, king, pos_pieces(pos)) & pos->byColor[them] : 0;
     pos->pins = calc_pins(pos);
 }
 
+// Initialize pre-calculated data used in this module
+void pos_init()
+{
+    uint64_t state = 0;
+
+    for (int c = WHITE; c <= BLACK; c++)
+        for (int p = KNIGHT; p < NB_PIECE; p++)
+            for (int s = A1; s <= H8; s++)
+                ZobristKey[c][p][s] = prng(&state);
+
+    for (int s = A1; s <= H8; s++) {
+        ZobristCastling[s] = prng(&state);
+        ZobristEnPassant[s] = prng(&state);
+    }
+
+    ZobristEnPassant[NB_SQUARE] = prng(&state);
+    ZobristTurn = prng(&state);
+}
+
+// Set position from FEN string
 void pos_set(Position *pos, const char *fen, bool chess960)
 {
     clear(pos);
@@ -247,109 +249,7 @@ void pos_set(Position *pos, const char *fen, bool chess960)
     finish(pos);
 }
 
-void pos_move(Position *pos, const Position *before, move_t m)
-{
-    assert(move_ok(m));
-    *pos = *before;
-    pos->rule50++;
-
-    const int us = pos->turn, them = opposite(us);
-    const int from = move_from(m), to = move_to(m), prom = move_prom(m);
-    const int p = pos->pieceOn[from];
-    const int capture = pos->pieceOn[to];
-
-    // Capture piece on to square (if any)
-    if (capture != NB_PIECE) {
-        pos->rule50 = 0;
-        // Use pos_color_on() instead of them, because we could be playing a KxR castling here
-        clear_square(pos, pos_color_on(pos, to), capture, to);
-
-        // Capturing a rook alters corresponding castling right
-        if (capture == ROOK)
-            pos->castleRooks &= ~(1ULL << to);
-    }
-
-    // Move our piece
-    clear_square(pos, us, p, from);
-    set_square(pos, us, p, to);
-
-    if (p == PAWN) {
-        // reset rule50, and set epSquare
-        const int push = push_inc(us);
-        pos->rule50 = 0;
-        pos->epSquare = to == from + 2 * push ? from + push : NB_SQUARE;
-
-        // handle ep-capture and promotion
-        if (to == before->epSquare)
-            clear_square(pos, them, p, to - push);
-        else if (rank_of(to) == RANK_8 || rank_of(to) == RANK_1) {
-            clear_square(pos, us, p, to);
-            set_square(pos, us, prom, to);
-        }
-    } else {
-        pos->epSquare = NB_SQUARE;
-
-        if (p == ROOK)
-            // remove corresponding castling right
-            pos->castleRooks &= ~(1ULL << from);
-        else if (p == KING) {
-            // Lose all castling rights
-            pos->castleRooks &= ~Rank[us * RANK_8];
-
-            // Castling
-            if (bb_test(before->byColor[us], to)) {
-                // Capturing our own piece can only be a castling move, encoded KxR
-                assert(before->pieceOn[to] == ROOK);
-                const int r = rank_of(from);
-
-                clear_square(pos, us, KING, to);
-                set_square(pos, us, KING, square(r, to > from ? FILE_G : FILE_C));
-                set_square(pos, us, ROOK, square(r, to > from ? FILE_F : FILE_D));
-            }
-        }
-    }
-
-    pos->turn = them;
-    pos->key ^= ZobristTurn;
-    pos->key ^= ZobristEnPassant[before->epSquare] ^ ZobristEnPassant[pos->epSquare];
-    pos->key ^= zobrist_castling(before->castleRooks ^ pos->castleRooks);
-
-    finish(pos);
-}
-
-void pos_switch(Position *pos, const Position *before)
-{
-    *pos = *before;
-    pos->epSquare = NB_SQUARE;
-
-    pos->turn = opposite(pos->turn);
-    pos->key ^= ZobristTurn;
-    pos->key ^= ZobristEnPassant[before->epSquare] ^ ZobristEnPassant[pos->epSquare];
-
-    finish(pos);
-}
-
-bitboard_t pos_pieces_cp(const Position *pos, int c, int p)
-{
-    BOUNDS(c, NB_COLOR);
-    BOUNDS(p, NB_PIECE);
-    return pos->byColor[c] & pos->byPiece[p];
-}
-
-bitboard_t pos_pieces(const Position *pos)
-{
-    assert(!(pos->byColor[WHITE] & pos->byColor[BLACK]));
-    return pos->byColor[WHITE] | pos->byColor[BLACK];
-}
-
-bitboard_t pos_pieces_cpp(const Position *pos, int c, int p1, int p2)
-{
-    BOUNDS(c, NB_COLOR);
-    BOUNDS(p1, NB_PIECE);
-    BOUNDS(p2, NB_PIECE);
-    return pos->byColor[c] & (pos->byPiece[p1] | pos->byPiece[p2]);
-}
-
+// Get FEN string of position
 void pos_get(const Position *pos, char *fen)
 {
     // int placement
@@ -421,29 +321,142 @@ void pos_get(const Position *pos, char *fen)
     sprintf(fen, " %s %d", str, pos->rule50);
 }
 
+// Play a move on a position copy (original 'before' is untouched): pos = before + play(m)
+void pos_move(Position *pos, const Position *before, move_t m)
+{
+    assert(move_ok(m));
+    *pos = *before;
+    pos->rule50++;
+
+    const int us = pos->turn, them = opposite(us);
+    const int from = move_from(m), to = move_to(m), prom = move_prom(m);
+    const int p = pos->pieceOn[from];
+    const int capture = pos->pieceOn[to];
+
+    // Capture piece on to square (if any)
+    if (capture != NB_PIECE) {
+        pos->rule50 = 0;
+        // Use pos_color_on() instead of them, because we could be playing a KxR castling here
+        clear_square(pos, pos_color_on(pos, to), capture, to);
+
+        // Capturing a rook alters corresponding castling right
+        if (capture == ROOK)
+            pos->castleRooks &= ~(1ULL << to);
+    }
+
+    // Move our piece
+    clear_square(pos, us, p, from);
+    set_square(pos, us, p, to);
+
+    if (p == PAWN) {
+        // reset rule50, and set epSquare
+        const int push = push_inc(us);
+        pos->rule50 = 0;
+        pos->epSquare = to == from + 2 * push ? from + push : NB_SQUARE;
+
+        // handle ep-capture and promotion
+        if (to == before->epSquare)
+            clear_square(pos, them, p, to - push);
+        else if (rank_of(to) == RANK_8 || rank_of(to) == RANK_1) {
+            clear_square(pos, us, p, to);
+            set_square(pos, us, prom, to);
+        }
+    } else {
+        pos->epSquare = NB_SQUARE;
+
+        if (p == ROOK)
+            // remove corresponding castling right
+            pos->castleRooks &= ~(1ULL << from);
+        else if (p == KING) {
+            // Lose all castling rights
+            pos->castleRooks &= ~Rank[us * RANK_8];
+
+            // Castling
+            if (bb_test(before->byColor[us], to)) {
+                // Capturing our own piece can only be a castling move, encoded KxR
+                assert(before->pieceOn[to] == ROOK);
+                const int r = rank_of(from);
+
+                clear_square(pos, us, KING, to);
+                set_square(pos, us, KING, square(r, to > from ? FILE_G : FILE_C));
+                set_square(pos, us, ROOK, square(r, to > from ? FILE_F : FILE_D));
+            }
+        }
+    }
+
+    pos->turn = them;
+    pos->key ^= ZobristTurn;
+    pos->key ^= ZobristEnPassant[before->epSquare] ^ ZobristEnPassant[pos->epSquare];
+    pos->key ^= zobrist_castling(before->castleRooks ^ pos->castleRooks);
+
+    finish(pos);
+}
+
+// Play a null move (ie. switch sides): pos = before + play(null)
+void pos_switch(Position *pos, const Position *before)
+{
+    *pos = *before;
+    pos->epSquare = NB_SQUARE;
+
+    pos->turn = opposite(pos->turn);
+    pos->key ^= ZobristTurn;
+    pos->key ^= ZobristEnPassant[before->epSquare] ^ ZobristEnPassant[pos->epSquare];
+
+    finish(pos);
+}
+
+// All pieces
+bitboard_t pos_pieces(const Position *pos)
+{
+    assert(!(pos->byColor[WHITE] & pos->byColor[BLACK]));
+    return pos->byColor[WHITE] | pos->byColor[BLACK];
+}
+
+// Pieces of color 'c' and type 'p'
+bitboard_t pos_pieces_cp(const Position *pos, int c, int p)
+{
+    BOUNDS(c, NB_COLOR);
+    BOUNDS(p, NB_PIECE);
+    return pos->byColor[c] & pos->byPiece[p];
+}
+
+// Pieces of color 'c' and type 'p1' or 'p2'
+bitboard_t pos_pieces_cpp(const Position *pos, int c, int p1, int p2)
+{
+    BOUNDS(c, NB_COLOR);
+    BOUNDS(p1, NB_PIECE);
+    BOUNDS(p2, NB_PIECE);
+    return pos->byColor[c] & (pos->byPiece[p1] | pos->byPiece[p2]);
+}
+
+// En passant square, in bitboard format
 bitboard_t pos_ep_square_bb(const Position *pos)
 {
     return pos->epSquare < NB_SQUARE ? 1ULL << pos->epSquare : 0;
 }
 
+// Detect insufficient material configuration (draw by chess rules only)
 bool pos_insufficient_material(const Position *pos)
 {
     return bb_count(pos_pieces(pos)) <= 3 && !pos->byPiece[PAWN] && !pos->byPiece[ROOK]
         && !pos->byPiece[QUEEN];
 }
 
+// Square occupied by the king of color 'c'
 int pos_king_square(const Position *pos, int c)
 {
     assert(bb_count(pos_pieces_cp(pos, c, KING)) == 1);
     return bb_lsb(pos_pieces_cp(pos, c, KING));
 }
 
+// Color of piece on square 's'. Square is assumed to be occupied.
 int pos_color_on(const Position *pos, int s)
 {
     assert(bb_test(pos_pieces(pos), s));
     return bb_test(pos->byColor[WHITE], s) ? WHITE : BLACK;
 }
 
+// Attackers (or any color) to square 's', using occupancy 'occ' for rook/bishop attacks
 bitboard_t pos_attackers_to(const Position *pos, int s, bitboard_t occ)
 {
     BOUNDS(s, NB_SQUARE);
@@ -455,6 +468,7 @@ bitboard_t pos_attackers_to(const Position *pos, int s, bitboard_t occ)
         | (bb_battacks(s, occ) & (pos->byPiece[BISHOP] | pos->byPiece[QUEEN]));
 }
 
+// Prints the position in ASCII 'art' (for debugging)
 void pos_print(const Position *pos)
 {
     for (int r = RANK_8; r >= RANK_1; r--) {

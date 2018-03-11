@@ -183,13 +183,13 @@ static int safety(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_P
     }
 
     // Check threats
-    const int ks = pos_king_square(pos, us);
+    const int king = pos_king_square(pos, us);
     const bitboard_t occ = pos_pieces(pos);
     const bitboard_t checks[] = {
-        NAttacks[ks] & attacks[them][KNIGHT],
-        bb_battacks(ks, occ) & attacks[them][BISHOP],
-        bb_rattacks(ks, occ) & attacks[them][ROOK],
-        (bb_battacks(ks, occ) | bb_rattacks(ks, occ)) & attacks[them][QUEEN]
+        NAttacks[king] & attacks[them][KNIGHT],
+        bb_battacks(king, occ) & attacks[them][BISHOP],
+        bb_rattacks(king, occ) & attacks[them][ROOK],
+        (bb_battacks(king, occ) | bb_rattacks(king, occ)) & attacks[them][QUEEN]
     };
 
     for (int p = KNIGHT; p <= QUEEN; p++)
@@ -205,19 +205,19 @@ static int safety(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_P
         }
 
     // Bishop X-Ray threats
-    bitboard_t bishops = BPseudoAttacks[ks] & pos_pieces_cpp(pos, them, BISHOP, QUEEN);
+    bitboard_t bishops = BPseudoAttacks[king] & pos_pieces_cpp(pos, them, BISHOP, QUEEN);
 
     while (bishops)
-        if (!(Segment[ks][bb_pop_lsb(&bishops)] & pos->byPiece[PAWN])) {
+        if (!(Segment[king][bb_pop_lsb(&bishops)] & pos->byPiece[PAWN])) {
             cnt++;
             result -= BishopXRay;
         }
 
     // Rook X-Ray threats
-    bitboard_t rooks = RPseudoAttacks[ks] & pos_pieces_cpp(pos, them, ROOK, QUEEN);
+    bitboard_t rooks = RPseudoAttacks[king] & pos_pieces_cpp(pos, them, ROOK, QUEEN);
 
     while (rooks)
-        if (!(Segment[ks][bb_pop_lsb(&rooks)] & pos->byPiece[PAWN])) {
+        if (!(Segment[king][bb_pop_lsb(&rooks)] & pos->byPiece[PAWN])) {
             cnt++;
             result -= RookXRay;
         }

@@ -228,13 +228,13 @@ bitboard_t bb_shift(bitboard_t b, int i)
 
 int bb_lsb(bitboard_t b)
 {
-    assert(b);
+    assert(b);  // lsb(0) is undefined
     return __builtin_ctzll(b);
 }
 
 int bb_msb(bitboard_t b)
 {
-    assert(b);
+    assert(b);  // msb(0) is undefined
     return 63 - __builtin_clzll(b);
 }
 
