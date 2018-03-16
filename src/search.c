@@ -428,8 +428,8 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
     // Update move sorting statistics
     if (alpha > oldAlpha && !singularMove && !move_is_capture(pos, bestMove)) {
         for (size_t i = 0; i < s.idx; i++) {
-            const int bonus = depth * depth;
-            history_update(worker, us, s.moves[i], s.moves[i] == bestMove ? bonus : -bonus);
+            const int bonus = s.moves[i] == bestMove ? depth * depth : -1 - depth * depth / 2;
+            history_update(worker, us, s.moves[i], bonus);
         }
 
         worker->refutation[stack_move_key(&worker->stack) & (NB_REFUTATION - 1)] = bestMove;
