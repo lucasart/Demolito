@@ -160,7 +160,7 @@ move_t *gen_check_escapes(const Position *pos, move_t *mList, bool subPromotions
     if (!bb_several(pos->checkers)) {
         // Blocking moves (single checker)
         const int checkerSquare = bb_lsb(pos->checkers);
-        const int checkerPiece = pos->pieceOn[checkerSquare];
+        const int checkerPiece = pos_piece_on(pos, checkerSquare);
 
         // sliding check: cover the checking segment, or capture the slider
         tss = BISHOP <= checkerPiece && checkerPiece <= QUEEN

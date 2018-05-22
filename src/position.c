@@ -260,7 +260,7 @@ void pos_get(const Position *pos, char *fen)
                 if (cnt)
                     *fen++ = cnt + '0';
 
-                *fen++ = PieceLabel[pos_color_on(pos, s)][(int)pos->pieceOn[s]];
+                *fen++ = PieceLabel[pos_color_on(pos, s)][pos_piece_on(pos, s)];
                 cnt = 0;
             } else
                 cnt++;
@@ -327,8 +327,8 @@ void pos_move(Position *pos, const Position *before, move_t m)
 
     const int us = pos->turn, them = opposite(us);
     const int from = move_from(m), to = move_to(m), prom = move_prom(m);
-    const int p = pos->pieceOn[from];
-    const int capture = pos->pieceOn[to];
+    const int p = pos_piece_on(pos, from);
+    const int capture = pos_piece_on(pos, to);
 
     // Capture piece on to square (if any)
     if (capture != NB_PIECE) {
@@ -373,7 +373,7 @@ void pos_move(Position *pos, const Position *before, move_t m)
             // Castling
             if (bb_test(before->byColor[us], to)) {
                 // Capturing our own piece can only be a castling move, encoded KxR
-                assert(before->pieceOn[to] == ROOK);
+                assert(pos_piece_on(before, to) == ROOK);
                 const int r = rank_of(from);
 
                 clear_square(pos, us, KING, to);
@@ -455,6 +455,13 @@ int pos_color_on(const Position *pos, int s)
     return bb_test(pos->byColor[WHITE], s) ? WHITE : BLACK;
 }
 
+// Piece on square 's'. NB_PIECE if empty.
+int pos_piece_on(const Position *pos, int s)
+{
+    BOUNDS(s, NB_SQUARE);
+    return pos->pieceOn[s];
+}
+
 // Attackers (or any color) to square 's', using occupancy 'occ' for rook/bishop attacks
 bitboard_t pos_attackers_to(const Position *pos, int s, bitboard_t occ)
 {
@@ -476,7 +483,7 @@ void pos_print(const Position *pos)
         for (int f = FILE_A; f <= FILE_H; f++) {
             const int s = square(r, f);
             line[2 * f] = bb_test(pos_pieces(pos), s)
-                ? PieceLabel[pos_color_on(pos, s)][(int)pos->pieceOn[s]]
+                ? PieceLabel[pos_color_on(pos, s)][pos_piece_on(pos, s)]
                 : s == pos->epSquare ? '*' : '.';
         }
 

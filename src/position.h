@@ -19,5 +19,6 @@ bitboard_t pos_ep_square_bb(const Position *pos);
 bool pos_insufficient_material(const Position *pos);
 int pos_king_square(const Position *pos, int c);
 int pos_color_on(const Position *pos, int s);
+int pos_piece_on(const Position *pos, int s);
 bitboard_t pos_attackers_to(const Position *pos, int s, bitboard_t occ);
 void pos_print(const Position *pos);

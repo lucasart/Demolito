@@ -58,7 +58,7 @@ bool move_is_capture(const Position *pos, move_t m)
     const int from = move_from(m), to = move_to(m);
     return bb_test(pos->byColor[them], to)
         || ((to == pos->epSquare || relative_rank_of(us, to) == RANK_8)
-            && pos->pieceOn[from] == PAWN);
+            && pos_piece_on(pos, from) == PAWN);
 }
 
 bool move_is_castling(const Position *pos, move_t m)
@@ -97,7 +97,7 @@ move_t string_to_move(const Position *pos, const char *str)
     const int from = square(str[1] - '1', str[0] - 'a');
     int to = square(str[3] - '1', str[2] - 'a');
 
-    if (!pos->chess960 && pos->pieceOn[from] == KING) {
+    if (!pos->chess960 && pos_piece_on(pos, from) == KING) {
         if (to == from + 2)  // e1g1 -> e1h1
             ++to;
         else if (to == from - 2)  // e1c1 -> e1a1
@@ -110,13 +110,13 @@ move_t string_to_move(const Position *pos, const char *str)
 bool move_is_legal(const Position *pos, move_t m)
 {
     const int from = move_from(m), to = move_to(m);
-    const int p = pos->pieceOn[from];
+    const int p = pos_piece_on(pos, from);
     const int king = pos_king_square(pos, pos->turn);
 
     if (p == KING) {
         if (bb_test(pos->byColor[pos->turn], to)) {
             // Castling: king can't move through attacked square, and rook can't be pinned
-            assert(pos->pieceOn[to] == ROOK);
+            assert(pos_piece_on(pos, to) == ROOK);
             const int _tsq = square(rank_of(from), from < to ? FILE_G : FILE_C);
             return !(pos->attacked & Segment[from][_tsq])
                 && !bb_test(pos->pins, to);
@@ -152,8 +152,8 @@ int move_see(const Position *pos, move_t m)
     bitboard_t occ = pos_pieces(pos);
 
     // General case
-    int gain[32] = {see_value[(int)pos->pieceOn[to]]};
-    int capture = pos->pieceOn[from];
+    int gain[32] = {see_value[pos_piece_on(pos, to)]};
+    int capture = pos_piece_on(pos, from);
     bb_clear(&occ, from);
 
     // Special cases

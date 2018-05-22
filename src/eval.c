@@ -75,7 +75,7 @@ static eval_t mobility(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
 
     while (fss) {
         tss = bb_rattacks(from = bb_pop_lsb(&fss), occ);
-        attacks[us][piece = pos->pieceOn[from]] |= tss;
+        attacks[us][piece = pos_piece_on(pos, from)] |= tss;
         eval_add(&result, score_mobility(ROOK, piece, tss & targets));
     }
 
@@ -85,7 +85,7 @@ static eval_t mobility(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
 
     while (fss) {
         tss = bb_battacks(from = bb_pop_lsb(&fss), occ);
-        attacks[us][piece = pos->pieceOn[from]] |= tss;
+        attacks[us][piece = pos_piece_on(pos, from)] |= tss;
         eval_add(&result, score_mobility(BISHOP, piece, tss & targets));
     }
 
@@ -143,7 +143,7 @@ static eval_t hanging(const Position *pos, int us, bitboard_t attacks[NB_COLOR][
         & ~(attacks[us][PAWN] | attacks[us][KING] | attacks[us][NB_PIECE]);
 
     while (b) {
-        const int p = pos->pieceOn[bb_pop_lsb(&b)];
+        const int p = pos_piece_on(pos, bb_pop_lsb(&b));
         assert(p == PAWN || (KNIGHT <= p && p <= QUEEN));
         result.op -= Hanging[p];
     }
