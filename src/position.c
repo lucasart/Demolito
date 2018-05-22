@@ -349,7 +349,9 @@ void pos_move(Position *pos, const Position *before, move_t m)
         // reset rule50, and set epSquare
         const int push = push_inc(us);
         pos->rule50 = 0;
-        pos->epSquare = to == from + 2 * push ? from + push : NB_SQUARE;
+        pos->epSquare = to == from + 2 * push
+                && (PAttacks[us][from + push] & pos_pieces_cp(pos, them, PAWN))
+            ? from + push : NB_SQUARE;
 
         // handle ep-capture and promotion
         if (to == before->epSquare)
