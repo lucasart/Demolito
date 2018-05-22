@@ -94,7 +94,7 @@ typedef struct {
     bitboard_t attacked, checkers, pins;
     uint64_t key, pawnKey;
     eval_t pst;
-    char pieceOn[NB_SQUARE];
+    uint8_t pieceOn[NB_SQUARE];
     eval_t pieceMaterial[NB_COLOR];
 } Position;
 

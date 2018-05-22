@@ -187,24 +187,21 @@ void pos_set(Position *pos, const char *fen, bool chess960)
     char *str = strdup(fen), *strPos = NULL;
     char *token = strtok_r(str, " ", &strPos);
 
-    // int placement
-    char c;
+    // Piece placement
+    char ch;
     int s = A8;
 
-    while ((c = *token++)) {
-        if (isdigit(c))
-            s += c - '0';
-        else if (c == '/')
+    while ((ch = *token++)) {
+        if (isdigit(ch))
+            s += ch - '0';
+        else if (ch == '/')
             s += 2 * DOWN;
         else {
-            for (int col = WHITE; col <= BLACK; ++col) {
-                const char *p = strchr(PieceLabel[col], c);
+            const bool c = islower(ch);
+            const char *p = strchr(PieceLabel[c], ch);
 
-                if (p) {
-                    set_square(pos, col, p - PieceLabel[col], s);
-                    ++s;
-                }
-            }
+            if (p)
+                set_square(pos, c, p - PieceLabel[c], s++);
         }
     }
 
@@ -221,16 +218,16 @@ void pos_set(Position *pos, const char *fen, bool chess960)
     // Castling rights
     token = strtok_r(NULL, " ", &strPos);
 
-    while ((c = *token++)) {
-        const int r = isupper(c) ? RANK_1 : RANK_8;
-        c = toupper(c);
+    while ((ch = *token++)) {
+        const int r = isupper(ch) ? RANK_1 : RANK_8;
+        ch = toupper(ch);
 
-        if (c == 'K')
+        if (ch == 'K')
             s = bb_msb(Rank[r] & pos->byPiece[ROOK]);
-        else if (c == 'Q')
+        else if (ch == 'Q')
             s = bb_lsb(Rank[r] & pos->byPiece[ROOK]);
-        else if ('A' <= c && c <= 'H')
-            s = square(r, c - 'A');
+        else if ('A' <= ch && ch <= 'H')
+            s = square(r, ch - 'A');
         else
             break;
 
@@ -252,7 +249,7 @@ void pos_set(Position *pos, const char *fen, bool chess960)
 // Get FEN string of position
 void pos_get(const Position *pos, char *fen)
 {
-    // int placement
+    // Piece placement
     for (int r = RANK_8; r >= RANK_1; r--) {
         int cnt = 0;
 
