@@ -4,8 +4,8 @@
 void bb_init();
 
 extern bitboard_t Rank[NB_RANK], File[NB_FILE];
-extern bitboard_t PAttacks[NB_COLOR][NB_SQUARE], NAttacks[NB_SQUARE], KAttacks[NB_SQUARE];
-extern bitboard_t BPseudoAttacks[NB_SQUARE], RPseudoAttacks[NB_SQUARE];
+extern bitboard_t PawnAttacks[NB_COLOR][NB_SQUARE], KnightAttacks[NB_SQUARE], KingAttacks[NB_SQUARE];
+extern bitboard_t BishopPseudoAttacks[NB_SQUARE], RookPseudoAttacks[NB_SQUARE];
 extern bitboard_t Segment[NB_SQUARE][NB_SQUARE];
 extern bitboard_t Ray[NB_SQUARE][NB_SQUARE];
 

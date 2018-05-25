@@ -100,11 +100,11 @@ static bitboard_t attacked_by(const Position *pos, int c)
     BOUNDS(c, NB_COLOR);
 
     // King and Knight attacks
-    bitboard_t result = KAttacks[pos_king_square(pos, c)];
+    bitboard_t result = KingAttacks[pos_king_square(pos, c)];
     bitboard_t fss = pos_pieces_cp(pos, c, KNIGHT);
 
     while (fss)
-        result |= NAttacks[bb_pop_lsb(&fss)];
+        result |= KnightAttacks[bb_pop_lsb(&fss)];
 
     // Pawn captures
     fss = pos_pieces_cp(pos, c, PAWN) & ~File[FILE_A];
@@ -132,8 +132,8 @@ static bitboard_t calc_pins(const Position *pos)
 {
     const int us = pos->turn, them = opposite(us);
     const int king = pos_king_square(pos, us);
-    bitboard_t pinners = (pos_pieces_cpp(pos, them, ROOK, QUEEN) & RPseudoAttacks[king])
-        | (pos_pieces_cpp(pos, them, BISHOP, QUEEN) & BPseudoAttacks[king]);
+    bitboard_t pinners = (pos_pieces_cpp(pos, them, ROOK, QUEEN) & RookPseudoAttacks[king])
+        | (pos_pieces_cpp(pos, them, BISHOP, QUEEN) & BishopPseudoAttacks[king]);
     bitboard_t result = 0;
 
     while (pinners) {
@@ -350,7 +350,7 @@ void pos_move(Position *pos, const Position *before, move_t m)
         const int push = push_inc(us);
         pos->rule50 = 0;
         pos->epSquare = to == from + 2 * push
-                && (PAttacks[us][from + push] & pos_pieces_cp(pos, them, PAWN))
+                && (PawnAttacks[us][from + push] & pos_pieces_cp(pos, them, PAWN))
             ? from + push : NB_SQUARE;
 
         // handle ep-capture and promotion
@@ -466,10 +466,10 @@ int pos_piece_on(const Position *pos, int s)
 bitboard_t pos_attackers_to(const Position *pos, int s, bitboard_t occ)
 {
     BOUNDS(s, NB_SQUARE);
-    return (pos_pieces_cp(pos, WHITE, PAWN) & PAttacks[BLACK][s])
-        | (pos_pieces_cp(pos, BLACK, PAWN) & PAttacks[WHITE][s])
-        | (NAttacks[s] & pos->byPiece[KNIGHT])
-        | (KAttacks[s] & pos->byPiece[KING])
+    return (pos_pieces_cp(pos, WHITE, PAWN) & PawnAttacks[BLACK][s])
+        | (pos_pieces_cp(pos, BLACK, PAWN) & PawnAttacks[WHITE][s])
+        | (KnightAttacks[s] & pos->byPiece[KNIGHT])
+        | (KingAttacks[s] & pos->byPiece[KING])
         | (bb_rattacks(s, occ) & (pos->byPiece[ROOK] | pos->byPiece[QUEEN]))
         | (bb_battacks(s, occ) & (pos->byPiece[BISHOP] | pos->byPiece[QUEEN]));
 }

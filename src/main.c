@@ -26,7 +26,7 @@
 
 uint64_t test(bool perft, int depth, int threads)
 {
-    const char *fens[] = {
+    static const char *fens[] = {
         #include "test.csv"
         NULL
     };

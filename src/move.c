@@ -20,8 +20,8 @@
 bool move_ok(move_t m)
 {
     const int from = move_from(m), to = move_to(m), prom = move_prom(m);
-    return bb_test(RPseudoAttacks[from] | BPseudoAttacks[from] | NAttacks[from], to) && from != to
-        && ((unsigned)prom <= QUEEN || prom == NB_PIECE);
+    return bb_test(RookPseudoAttacks[from] | BishopPseudoAttacks[from] | KnightAttacks[from], to)
+        && from != to && ((unsigned)prom <= QUEEN || prom == NB_PIECE);
 }
 
 int move_from(move_t m)
@@ -144,7 +144,7 @@ bool move_is_legal(const Position *pos, move_t m)
 
 int move_see(const Position *pos, move_t m)
 {
-    const int see_value[] = {N, B, R, Q, MATE, P, 0};
+    static const int seeValue[NB_PIECE + 1] = {N, B, R, Q, MATE, P, 0};
 
     assert(move_ok(m));
     const int from = move_from(m), to = move_to(m), prom = move_prom(m);
@@ -152,7 +152,7 @@ int move_see(const Position *pos, move_t m)
     bitboard_t occ = pos_pieces(pos);
 
     // General case
-    int gain[32] = {see_value[pos_piece_on(pos, to)]};
+    int gain[32] = {seeValue[pos_piece_on(pos, to)]};
     int capture = pos_piece_on(pos, from);
     bb_clear(&occ, from);
 
@@ -160,9 +160,9 @@ int move_see(const Position *pos, move_t m)
     if (capture == PAWN) {
         if (to == pos->epSquare) {
             bb_clear(&occ, to - push_inc(us));
-            gain[0] = see_value[capture];
+            gain[0] = seeValue[capture];
         } else if (relative_rank_of(us, to) == RANK_8)
-            gain[0] += see_value[capture = prom] - see_value[PAWN];
+            gain[0] += seeValue[capture = prom] - seeValue[PAWN];
     }
 
     // Easy case: to is not defended
@@ -194,10 +194,10 @@ int move_see(const Position *pos, move_t m)
         // Add the new entry to the gain[] array
         idx++;
         assert(idx < 32);
-        gain[idx] = see_value[capture] - gain[idx - 1];
+        gain[idx] = seeValue[capture] - gain[idx - 1];
 
         if (p == PAWN && relative_rank_of(us, to) == RANK_8) {
-            gain[idx] += see_value[QUEEN] - see_value[PAWN];
+            gain[idx] += seeValue[QUEEN] - seeValue[PAWN];
             capture = QUEEN;
         } else
             capture = p;

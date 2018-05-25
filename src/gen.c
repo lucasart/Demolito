@@ -41,7 +41,7 @@ move_t *gen_pawn_moves(const Position *pos, move_t *mList, bitboard_t targets, b
         from = bb_pop_lsb(&fss);
 
         // Calculate to squares: captures, single pushes and double pushes
-        tss = PAttacks[us][from] & capturable & targets;
+        tss = PawnAttacks[us][from] & capturable & targets;
 
         if (bb_test(~pos_pieces(pos), from + push)) {
             if (bb_test(targets, from + push))
@@ -63,7 +63,7 @@ move_t *gen_pawn_moves(const Position *pos, move_t *mList, bitboard_t targets, b
         from = bb_pop_lsb(&fss);
 
         // Calculate to squares: captures and single pushes
-        tss = PAttacks[us][from] & capturable & targets;
+        tss = PawnAttacks[us][from] & capturable & targets;
 
         if (bb_test(targets & ~pos_pieces(pos), from + push))
             bb_set(&tss, from + push);
@@ -92,7 +92,7 @@ move_t *gen_piece_moves(const Position *pos, move_t *mList, bitboard_t targets, 
     // King moves
     if (kingMoves) {
         from = pos_king_square(pos, us);
-        tss = KAttacks[from] & targets & ~pos->attacked;
+        tss = KingAttacks[from] & targets & ~pos->attacked;
         mList = serialize_moves(from, tss, mList);
     }
 
@@ -101,7 +101,7 @@ move_t *gen_piece_moves(const Position *pos, move_t *mList, bitboard_t targets, 
 
     while (fss) {
         from = bb_pop_lsb(&fss);
-        tss = NAttacks[from] & targets;
+        tss = KnightAttacks[from] & targets;
         mList = serialize_moves(from, tss, mList);
     }
 
@@ -154,7 +154,7 @@ move_t *gen_check_escapes(const Position *pos, move_t *mList, bool subPromotions
     bitboard_t tss;
 
     // King moves
-    tss = KAttacks[king] & ~ours & ~pos->attacked;
+    tss = KingAttacks[king] & ~ours & ~pos->attacked;
     mList = serialize_moves(king, tss, mList);
 
     if (!bb_several(pos->checkers)) {

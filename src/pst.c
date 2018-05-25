@@ -43,8 +43,8 @@ static eval_t queen(int r, int f)
 
 static eval_t king(int r, int f)
 {
-    const int FileWeight[NB_FILE] = {55, 70, 42, 0, 0, 42, 70, 55};
-    const int RankWeight[NB_RANK] = {26, 0, -26, -44, -58, -60, -60, -60};
+    static const int FileWeight[NB_FILE] = {55, 70, 42, 0, 0, 42, 70, 55};
+    static const int RankWeight[NB_RANK] = {26, 0, -26, -44, -58, -60, -60, -60};
 
     return (eval_t) {FileWeight[f] + RankWeight[r], 107 * (Center[r] + Center[f]) / 8};
 }
@@ -66,7 +66,7 @@ static eval_t pawn(int r, int f)
 void pst_init()
 {
     typedef eval_t (*pst_fn)(int, int);
-    const pst_fn PstFn[NB_PIECE] = {&knight, &bishop, &rook, &queen, &king, &pawn};
+    static const pst_fn PstFn[NB_PIECE] = {&knight, &bishop, &rook, &queen, &king, &pawn};
 
     // Calculate PST, based on specialized functions for each piece
     for (int c = WHITE; c <= BLACK; c++)

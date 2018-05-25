@@ -20,8 +20,8 @@
 #endif
 
 bitboard_t Rank[NB_RANK], File[NB_FILE];
-bitboard_t PAttacks[NB_COLOR][NB_SQUARE], NAttacks[NB_SQUARE], KAttacks[NB_SQUARE];
-bitboard_t BPseudoAttacks[NB_SQUARE], RPseudoAttacks[NB_SQUARE];
+bitboard_t PawnAttacks[NB_COLOR][NB_SQUARE], KnightAttacks[NB_SQUARE], KingAttacks[NB_SQUARE];
+bitboard_t BishopPseudoAttacks[NB_SQUARE], RookPseudoAttacks[NB_SQUARE];
 bitboard_t Segment[NB_SQUARE][NB_SQUARE], Ray[NB_SQUARE][NB_SQUARE];
 
 static void safe_set_bit(bitboard_t *b, int r, int f)
@@ -30,7 +30,7 @@ static void safe_set_bit(bitboard_t *b, int r, int f)
         bb_set(b, square(r, f));
 }
 
-static const bitboard_t RMagic[NB_SQUARE] = {
+static const bitboard_t RookMagic[NB_SQUARE] = {
     0x808000645080c000ULL, 0x208020001480c000ULL, 0x4180100160008048ULL, 0x8180100018001680ULL,
     0x4200082010040201ULL, 0x8300220400010008ULL, 0x3100120000890004ULL, 0x4080004500012180ULL,
     0x1548000a1804008ULL, 0x4881004005208900ULL, 0x480802000801008ULL, 0x2e8808010008800ULL,
@@ -49,7 +49,7 @@ static const bitboard_t RMagic[NB_SQUARE] = {
     0x2011048204402ULL, 0x12000168041002ULL, 0x80100008a000421ULL, 0x240022044031182ULL
 };
 
-static const bitboard_t BMagic[NB_SQUARE] = {
+static const bitboard_t BishopMagic[NB_SQUARE] = {
     0x88b030028800d040ULL, 0x18242044c008010ULL, 0x10008200440000ULL, 0x4311040888800a00ULL,
     0x1910400000410aULL, 0x2444240440000000ULL, 0xcd2080108090008ULL, 0x2048242410041004ULL,
     0x8884441064080180ULL, 0x42131420a0240ULL, 0x28882800408400ULL, 0x204384040b820200ULL,
@@ -68,12 +68,14 @@ static const bitboard_t BMagic[NB_SQUARE] = {
     0x228000908030400ULL, 0x10402082020200ULL, 0xa0402208010100ULL, 0x30c0214202044104ULL
 };
 
-static bitboard_t RAttacks[0x19000], BAttacks[0x1480];
-static bitboard_t *BAttacksPtr[NB_SQUARE], *RAttacksPtr[NB_SQUARE];
+static bitboard_t RookDB[0x19000], BishopDB[0x1480];
+static bitboard_t *BishopAttacks[NB_SQUARE], *RookAttacks[NB_SQUARE];
 
-static bitboard_t BMask[NB_SQUARE], RMask[NB_SQUARE];
-static unsigned BShift[NB_SQUARE], RShift[NB_SQUARE];
+static bitboard_t BishopMask[NB_SQUARE], RookMask[NB_SQUARE];
+static unsigned BishopShift[NB_SQUARE], RookShift[NB_SQUARE];
 
+// Compute (from scratch) the squares attacked by a sliding piece, moving in directions dir, given
+// board occupancy occ.
 static bitboard_t slider_attacks(int s, bitboard_t occ, const int dir[4][2])
 {
     bitboard_t result = 0;
@@ -83,7 +85,7 @@ static bitboard_t slider_attacks(int s, bitboard_t occ, const int dir[4][2])
         int r, f;
 
         for (r = rank_of(s) + dr, f = file_of(s) + df;
-                (unsigned)r < NB_RANK && (unsigned)f < NB_FILE;
+                0 <= r && r < NB_RANK && 0 <= f && f < NB_FILE;
                 r += dr, f += df) {
             const int sq = square(r, f);
             bb_set(&result, sq);
@@ -117,22 +119,21 @@ static void init_slider_attacks(int s, bitboard_t mask[NB_SQUARE], const bitboar
     if (s < H8)
         attacksPtr[s + 1] = attacksPtr[s] + (1 << bb_count(mask[s]));
 
-    // Use the Carry-Rippler trick to loop over the subsets of mask[s]
+    // Loop over the subsets of mask[s]
     bitboard_t occ = 0;
-
     do {
         attacksPtr[s][slider_index(occ, mask[s], magic[s], shift[s])] = slider_attacks(s, occ, dir);
-        occ = (occ - mask[s]) & mask[s];
+        occ = (occ - mask[s]) & mask[s];  // Carry-Rippler trick
     } while (occ);
 }
 
 void bb_init()
 {
-    const int PDir[2][2] = {{1,-1}, {1,1}};
-    const int NDir[8][2] = {{-2,-1}, {-2,1}, {-1,-2}, {-1,2}, {1,-2}, {1,2}, {2,-1}, {2,1}};
-    const int KDir[8][2] = {{-1,-1}, {-1,0}, {-1,1}, {0,-1}, {0,1}, {1,-1}, {1,0}, {1,1}};
-    const int Bdir[4][2] = {{-1,-1}, {-1,1}, {1,-1}, {1,1}};
-    const int Rdir[4][2] = {{-1,0}, {0,-1}, {0,1}, {1,0}};
+    static const int PawnDir[2][2] = {{1,-1}, {1,1}};
+    static const int KnightDir[8][2] = {{-2,-1}, {-2,1}, {-1,-2}, {-1,2}, {1,-2}, {1,2}, {2,-1}, {2,1}};
+    static const int KingDir[8][2] = {{-1,-1}, {-1,0}, {-1,1}, {0,-1}, {0,1}, {1,-1}, {1,0}, {1,1}};
+    static const int BishopDir[4][2] = {{-1,-1}, {-1,1}, {1,-1}, {1,1}};
+    static const int RookDir[4][2] = {{-1,0}, {0,-1}, {0,1}, {1,0}};
 
     // Initialise Rank[] and File[]
     for (int i = 0; i < 8; i++) {
@@ -150,7 +151,7 @@ void bb_init()
                 const int s2 = square(r2, f2);
                 bb_set(&mask, s2);
                 Segment[s][s2] = mask;
-                r2 += KDir[d][0], f2 += KDir[d][1];
+                r2 += KingDir[d][0], f2 += KingDir[d][1];
             }
 
             bitboard_t sqs = mask;
@@ -165,39 +166,39 @@ void bb_init()
         const int r = rank_of(s), f = file_of(s);
 
         for (int d = 0; d < 8; d++) {
-            safe_set_bit(&NAttacks[s], r + NDir[d][0], f + NDir[d][1]);
-            safe_set_bit(&KAttacks[s], r + KDir[d][0], f + KDir[d][1]);
+            safe_set_bit(&KnightAttacks[s], r + KnightDir[d][0], f + KnightDir[d][1]);
+            safe_set_bit(&KingAttacks[s], r + KingDir[d][0], f + KingDir[d][1]);
         }
 
         for (int d = 0; d < 2; d++) {
-            safe_set_bit(&PAttacks[WHITE][s], r + PDir[d][0], f + PDir[d][1]);
-            safe_set_bit(&PAttacks[BLACK][s], r - PDir[d][0], f - PDir[d][1]);
+            safe_set_bit(&PawnAttacks[WHITE][s], r + PawnDir[d][0], f + PawnDir[d][1]);
+            safe_set_bit(&PawnAttacks[BLACK][s], r - PawnDir[d][0], f - PawnDir[d][1]);
         }
     }
 
     // Initialise slider attacks (B, R)
-    BAttacksPtr[0] = BAttacks;
-    RAttacksPtr[0] = RAttacks;
+    BishopAttacks[0] = BishopDB;
+    RookAttacks[0] = RookDB;
 
     for (int s = A1; s <= H8; s++) {
-        init_slider_attacks(s, BMask, BMagic, BShift, BAttacksPtr, Bdir);
-        init_slider_attacks(s, RMask, RMagic, RShift, RAttacksPtr, Rdir);
+        init_slider_attacks(s, BishopMask, BishopMagic, BishopShift, BishopAttacks, BishopDir);
+        init_slider_attacks(s, RookMask, RookMagic, RookShift, RookAttacks, RookDir);
 
-        BPseudoAttacks[s] = BAttacksPtr[s][0];
-        RPseudoAttacks[s] = RAttacksPtr[s][0];
+        BishopPseudoAttacks[s] = BishopAttacks[s][0];
+        RookPseudoAttacks[s] = RookAttacks[s][0];
     }
 }
 
 bitboard_t bb_battacks(int s, bitboard_t occ)
 {
     BOUNDS(s, NB_SQUARE);
-    return BAttacksPtr[s][slider_index(occ, BMask[s], BMagic[s], BShift[s])];
+    return BishopAttacks[s][slider_index(occ, BishopMask[s], BishopMagic[s], BishopShift[s])];
 }
 
 bitboard_t bb_rattacks(int s, bitboard_t occ)
 {
     BOUNDS(s, NB_SQUARE);
-    return RAttacksPtr[s][slider_index(occ, RMask[s], RMagic[s], RShift[s])];
+    return RookAttacks[s][slider_index(occ, RookMask[s], RookMagic[s], RookShift[s])];
 }
 
 bool bb_test(bitboard_t b, int s)
@@ -222,7 +223,7 @@ void bb_set(bitboard_t *b, int s)
 
 bitboard_t bb_shift(bitboard_t b, int i)
 {
-    assert(-63 <= i && i <= 63);  // forbid oversized shift (undefined behaviour)
+    assert(-63 <= i && i <= 63);  // oversized shift is undefined
     return i > 0 ? b << i : b >> -i;
 }
 

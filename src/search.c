@@ -48,7 +48,7 @@ void search_init()
             Reduction[d][c] = 0.403 * log(d > 31 ? 31 : d) + 0.877 * log(c > 31 ? 31 : c);
 }
 
-const int Tempo = 17;
+static const int Tempo = 17;
 
 static int qsearch(Worker *worker, const Position *pos, int ply, int depth, int alpha, int beta,
     move_t pv[])
@@ -203,8 +203,8 @@ static int qsearch(Worker *worker, const Position *pos, int ply, int depth, int 
 static int search(Worker *worker, const Position *pos, int ply, int depth, int alpha, int beta,
     move_t pv[], move_t singularMove)
 {
-    const int EvalMargin[] = {0, 132, 266, 405, 524, 663};
-    const int RazorMargin[] = {0, 227, 455, 502, 853};
+    static const int EvalMargin[] = {0, 132, 266, 405, 524, 663};
+    static const int RazorMargin[] = {0, 227, 455, 502, 853};
 
     assert(depth > 0);
     assert(stack_back(&worker->stack) == pos->key);
@@ -432,7 +432,7 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
             history_update(worker, us, s.moves[i], bonus);
         }
 
-        worker->refutation[stack_move_key(&worker->stack) & (NB_REFUTATION - 1)] = bestMove;
+        worker->refutation[stack_move_key(&worker->stack) % NB_REFUTATION] = bestMove;
         worker->killers[ply] = bestMove;
     }
 
