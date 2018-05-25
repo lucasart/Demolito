@@ -558,7 +558,7 @@ int64_t search_go()
     int minTime = 0, maxTime = 0;  // Silence bogus gcc warning (maybe uninitialized)
 
     if (!lim.movetime && (lim.time || lim.inc)) {
-        const int movesToGo = lim.movestogo ? lim.movestogo : 26;
+        const int movesToGo = lim.movestogo ? 0.5 + pow(lim.movestogo, 0.9) : 26;
         const int remaining = (movesToGo - 1) * lim.inc + lim.time;
         minTime = 0.57 * remaining / movesToGo;
         maxTime = 2.21 * remaining / movesToGo;
