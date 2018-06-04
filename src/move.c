@@ -57,8 +57,7 @@ bool move_is_capture(const Position *pos, move_t m)
     const int us = pos->turn, them = opposite(us);
     const int from = move_from(m), to = move_to(m);
     return bb_test(pos->byColor[them], to)
-        || ((to == pos->epSquare || relative_rank_of(us, to) == RANK_8)
-            && pos_piece_on(pos, from) == PAWN);
+        || (pos_piece_on(pos, from) == PAWN && (to == pos->epSquare || move_prom(m) < NB_PIECE));
 }
 
 bool move_is_castling(const Position *pos, move_t m)
@@ -161,7 +160,7 @@ int move_see(const Position *pos, move_t m)
         if (to == pos->epSquare) {
             bb_clear(&occ, to - push_inc(us));
             gain[0] = seeValue[capture];
-        } else if (relative_rank_of(us, to) == RANK_8)
+        } else if (prom < NB_PIECE)
             gain[0] += seeValue[capture = prom] - seeValue[PAWN];
     }
 
