@@ -73,7 +73,7 @@ void history_update(Worker *worker, int c, move_t m, int bonus)
 {
     int *t = &worker->history[c][move_from_to(m)];
 
-    *t += bonus;
+    *t += 32 * bonus - *t * abs(bonus) / 512;
 
     if (*t > HISTORY_MAX)
         *t = HISTORY_MAX;
