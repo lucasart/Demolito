@@ -13,6 +13,8 @@
  * You should have received a copy of the GNU General Public License along with this program. If
  * not, see <http://www.gnu.org/licenses/>.
 */
+#include <assert.h>
+#include <stdio.h>
 #include "bitboard.h"
 #include "gen.h"
 #include "move.h"
@@ -110,7 +112,7 @@ move_t *gen_piece_moves(const Position *pos, move_t *mList, bitboard_t targets, 
 
     while (fss) {
         from = bb_pop_lsb(&fss);
-        tss = bb_rattacks(from, pos_pieces(pos)) & targets;
+        tss = bb_rook_attacks(from, pos_pieces(pos)) & targets;
         mList = serialize_moves(from, tss, mList);
     }
 
@@ -119,7 +121,7 @@ move_t *gen_piece_moves(const Position *pos, move_t *mList, bitboard_t targets, 
 
     while (fss) {
         from = bb_pop_lsb(&fss);
-        tss = bb_battacks(from, pos_pieces(pos)) & targets;
+        tss = bb_bishop_attacks(from, pos_pieces(pos)) & targets;
         mList = serialize_moves(from, tss, mList);
     }
 

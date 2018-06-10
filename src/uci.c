@@ -13,6 +13,9 @@
  * You should have received a copy of the GNU General Public License along with this program. If
  * not, see <http://www.gnu.org/licenses/>.
 */
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include "bitboard.h"
 #include "eval.h"
 #include "gen.h"
@@ -29,6 +32,7 @@ static thrd_t Timer = 0;
 
 static uint64_t Hash = 1;
 int64_t TimeBuffer = 60;
+bool uciChess960 = false;
 
 static void uci_format_score(int score, char *str)
 {
@@ -41,7 +45,7 @@ static void uci_format_score(int score, char *str)
 static void intro()
 {
     uci_puts("id name Demolito " VERSION "\nid author lucasart");
-    uci_printf("option name UCI_Chess960 type check default %s\n", rootPos.chess960 ? "true" : "false");
+    uci_printf("option name UCI_Chess960 type check default %s\n", uciChess960 ? "true" : "false");
     uci_printf("option name Hash type spin default %" PRIu64 " min 1 max 1048576\n", Hash);
     uci_printf("option name Threads type spin default %d min 1 max 63\n", WorkersCount);
     uci_printf("option name Contempt type spin default %d min -100 max 100\n", Contempt);
@@ -61,7 +65,7 @@ static void setoption(char **linePos)
         strcat(name, token);
 
     if (!strcmp(name, "UCI_Chess960"))
-        rootPos.chess960 = !strcmp(strtok_r(NULL, " \n", linePos), "true");
+        uciChess960 = !strcmp(strtok_r(NULL, " \n", linePos), "true");
     else if (!strcmp(name, "Hash")) {
         Hash = atoi(strtok_r(NULL, " \n", linePos));
         Hash = 1ULL << bb_msb(Hash);  // must be a power of two
@@ -91,7 +95,7 @@ static void position(char **linePos)
     } else
         return;
 
-    pos_set(&p[idx], fen, rootPos.chess960);
+    pos_set(&p[idx], fen);
     stack_clear(&rootStack);
     stack_push(&rootStack, p[idx].key);
 
@@ -159,7 +163,6 @@ Info ui;
 void uci_loop()
 {
     char line[8192], *linePos;
-    rootPos.chess960 = false;
 
     while (fgets(line, 8192, stdin)) {
         const char *token = strtok_r(line, " \n", &linePos);

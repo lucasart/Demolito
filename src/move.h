@@ -1,4 +1,5 @@
 #pragma once
+#include "position.h"
 #include "types.h"
 
 bool move_ok(move_t m);

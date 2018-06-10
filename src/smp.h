@@ -1,6 +1,6 @@
 #pragma once
 #include <setjmp.h>
-#include "types.h"
+#include "bitboard.h"
 
 enum {
     MAX_GAME_PLY = 2048,

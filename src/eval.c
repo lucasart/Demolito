@@ -13,6 +13,8 @@
  * You should have received a copy of the GNU General Public License along with this program. If
  * not, see <http://www.gnu.org/licenses/>.
 */
+#include <assert.h>
+#include <stdlib.h>
 #include "bitboard.h"
 #include "eval.h"
 #include "position.h"
@@ -74,7 +76,7 @@ static eval_t mobility(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
     occ = pos_pieces(pos) ^ fss;  // RQ see through each other
 
     while (fss) {
-        tss = bb_rattacks(from = bb_pop_lsb(&fss), occ);
+        tss = bb_rook_attacks(from = bb_pop_lsb(&fss), occ);
         attacks[us][piece = pos_piece_on(pos, from)] |= tss;
         eval_add(&result, score_mobility(ROOK, piece, tss & targets));
     }
@@ -84,7 +86,7 @@ static eval_t mobility(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
     occ = pos_pieces(pos) ^ fss;  // BQ see through each other
 
     while (fss) {
-        tss = bb_battacks(from = bb_pop_lsb(&fss), occ);
+        tss = bb_bishop_attacks(from = bb_pop_lsb(&fss), occ);
         attacks[us][piece = pos_piece_on(pos, from)] |= tss;
         eval_add(&result, score_mobility(BISHOP, piece, tss & targets));
     }
@@ -187,9 +189,9 @@ static int safety(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_P
     const bitboard_t occ = pos_pieces(pos);
     const bitboard_t checks[] = {
         KnightAttacks[king] & attacks[them][KNIGHT],
-        bb_battacks(king, occ) & attacks[them][BISHOP],
-        bb_rattacks(king, occ) & attacks[them][ROOK],
-        (bb_battacks(king, occ) | bb_rattacks(king, occ)) & attacks[them][QUEEN]
+        bb_bishop_attacks(king, occ) & attacks[them][BISHOP],
+        bb_rook_attacks(king, occ) & attacks[them][ROOK],
+        (bb_bishop_attacks(king, occ) | bb_rook_attacks(king, occ)) & attacks[them][QUEEN]
     };
 
     for (int p = KNIGHT; p <= QUEEN; p++)
@@ -328,7 +330,7 @@ static eval_t pawns(Worker *worker, const Position *pos, bitboard_t attacks[NB_C
         const int n = relative_rank_of(us, s) - RANK_4;
 
         if (n >= 0 && !bb_test(occ, s + push_inc(us))
-                && (!potentialThreats || !(bb_rattacks(s, occ) & potentialThreats)))
+                && (!potentialThreats || !(bb_rook_attacks(s, occ) & potentialThreats)))
             e.eg += FreePasser[n] * (us == WHITE ? 1 : -1);
     }
 

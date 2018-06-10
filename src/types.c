@@ -13,9 +13,13 @@
  * You should have received a copy of the GNU General Public License along with this program. If
  * not, see <http://www.gnu.org/licenses/>.
 */
+#include <assert.h>
+#include <stdlib.h>
 #include "types.h"
 
 int64_t dbgCnt[2] = {0, 0};
+
+// Color, Piece
 
 int opposite(int c)
 {
@@ -23,7 +27,9 @@ int opposite(int c)
     return c ^ BLACK;
 }
 
-/* Rank, File, Square */
+const char *PieceLabel[NB_COLOR] = {"NBRQKP.", "nbrqkp."};
+
+// Rank, File
 
 int rank_of(int s)
 {
@@ -49,6 +55,8 @@ int relative_rank_of(int c, int s)
     BOUNDS(s, NB_SQUARE);
     return relative_rank(c, rank_of(s));
 }
+
+// Square
 
 int square(int r, int f)
 {
@@ -78,17 +86,25 @@ int string_to_square(const char *str)
            : NB_SQUARE;
 }
 
-/* Directions */
-
 int push_inc(int c)
 {
     BOUNDS(c, NB_COLOR);
     return c == WHITE ? UP : DOWN;
 }
 
-/* Eval */
+// Eval
 
-const eval_t Material[NB_PIECE] = {{N, N}, {B, B}, {R, R}, {Q, Q}, {0, 0}, {OP, EP}};
+void eval_add(eval_t *e1, eval_t e2)
+{
+    e1->op += e2.op;
+    e1->eg += e2.eg;
+}
+
+void eval_sub(eval_t *e1, eval_t e2)
+{
+    e1->op -= e2.op;
+    e1->eg -= e2.eg;
+}
 
 bool is_mate_score(int score)
 {
@@ -105,5 +121,3 @@ int mate_in(int ply)
 {
     return MATE - ply;
 }
-
-const char *PieceLabel[NB_COLOR] = {"NBRQKP.", "nbrqkp."};

@@ -13,6 +13,9 @@
  * You should have received a copy of the GNU General Public License along with this program. If
  * not, see <http://www.gnu.org/licenses/>.
 */
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include "bitboard.h"
 #include "eval.h"
 #include "gen.h"
@@ -34,6 +37,7 @@ uint64_t test(bool perft, int depth, int threads)
     hash_resize(1);
     uint64_t result = 0, nodes;
     smp_resize(threads);
+    uciChess960 = true;
 
     memset(&lim, 0, sizeof(lim));
     lim.depth = depth;
@@ -42,7 +46,7 @@ uint64_t test(bool perft, int depth, int threads)
 
     for (int i = 0; fens[i]; i++) {
         puts(fens[i]);
-        pos_set(&rootPos, fens[i], true);
+        pos_set(&rootPos, fens[i]);
         stack_clear(&rootStack);
         stack_push(&rootStack, rootPos.key);
 

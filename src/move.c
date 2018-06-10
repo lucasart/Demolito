@@ -13,9 +13,12 @@
  * You should have received a copy of the GNU General Public License along with this program. If
  * not, see <http://www.gnu.org/licenses/>.
 */
+#include <assert.h>
+#include <string.h>
 #include "move.h"
 #include "bitboard.h"
 #include "position.h"
+#include "uci.h"
 
 bool move_ok(move_t m)
 {
@@ -75,19 +78,17 @@ void move_to_string(const Position *pos, move_t m, char *str)
         return;
     }
 
-    const int _to = !pos->chess960 && move_is_castling(pos, m)
+    const int _to = !uciChess960 && move_is_castling(pos, m)
         ? (to > from ? from + 2 : from - 2)  // e1h1 -> e1g1, e1a1 -> e1c1
         : to;
 
-    *str++ = file_of(from) + 'a';
-    *str++ = rank_of(from) + '1';
-    *str++ = file_of(_to) + 'a';
-    *str++ = rank_of(_to) + '1';
+    square_to_string(from, str);
+    square_to_string(_to, str + 2);
 
-    if (prom < NB_PIECE)
-        *str++ = PieceLabel[BLACK][prom];
-
-    *str = '\0';
+    if (prom < NB_PIECE) {
+        str[4] = PieceLabel[BLACK][prom];
+        str[5] = '\0';
+    }
 }
 
 move_t string_to_move(const Position *pos, const char *str)
@@ -96,7 +97,7 @@ move_t string_to_move(const Position *pos, const char *str)
     const int from = square(str[1] - '1', str[0] - 'a');
     int to = square(str[3] - '1', str[2] - 'a');
 
-    if (!pos->chess960 && pos_piece_on(pos, from) == KING) {
+    if (!uciChess960 && pos_piece_on(pos, from) == KING) {
         if (to == from + 2)  // e1g1 -> e1h1
             ++to;
         else if (to == from - 2)  // e1c1 -> e1a1
@@ -116,8 +117,8 @@ bool move_is_legal(const Position *pos, move_t m)
         if (bb_test(pos->byColor[pos->turn], to)) {
             // Castling: king can't move through attacked square, and rook can't be pinned
             assert(pos_piece_on(pos, to) == ROOK);
-            const int _tsq = square(rank_of(from), from < to ? FILE_G : FILE_C);
-            return !(pos->attacked & Segment[from][_tsq])
+            const int kto = square(rank_of(from), from < to ? FILE_G : FILE_C);
+            return !(pos->attacked & Segment[from][kto])
                 && !bb_test(pos->pins, to);
         } else
             // Normal king move: do not land on an attacked square (already filtered at generation)
@@ -134,8 +135,8 @@ bool move_is_legal(const Position *pos, move_t m)
             bb_clear(&occ, from);
             bb_set(&occ, to);
             bb_clear(&occ, to + push_inc(them));
-            return !(bb_rattacks(king, occ) & pos_pieces_cpp(pos, them, ROOK, QUEEN))
-                && !(bb_battacks(king, occ) & pos_pieces_cpp(pos, them, BISHOP, QUEEN));
+            return !(bb_rook_attacks(king, occ) & pos_pieces_cpp(pos, them, ROOK, QUEEN))
+                && !(bb_bishop_attacks(king, occ) & pos_pieces_cpp(pos, them, BISHOP, QUEEN));
         } else
             return true;
     }

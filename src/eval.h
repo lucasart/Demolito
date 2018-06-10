@@ -1,5 +1,5 @@
 #pragma once
-#include "types.h"
+#include "position.h"
 #include "smp.h"
 
 void eval_init();

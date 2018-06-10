@@ -1,6 +1,8 @@
 #pragma once
 #include "types.h"
 
+typedef uint64_t bitboard_t;
+
 void bb_init();
 
 extern bitboard_t Rank[NB_RANK], File[NB_FILE];
@@ -9,8 +11,8 @@ extern bitboard_t BishopPseudoAttacks[NB_SQUARE], RookPseudoAttacks[NB_SQUARE];
 extern bitboard_t Segment[NB_SQUARE][NB_SQUARE];
 extern bitboard_t Ray[NB_SQUARE][NB_SQUARE];
 
-bitboard_t bb_battacks(int s, bitboard_t occ);
-bitboard_t bb_rattacks(int s, bitboard_t occ);
+bitboard_t bb_bishop_attacks(int s, bitboard_t occ);
+bitboard_t bb_rook_attacks(int s, bitboard_t occ);
 
 bool bb_test(bitboard_t b, int s);
 void bb_clear(bitboard_t *b, int s);

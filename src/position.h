@@ -1,11 +1,25 @@
 #pragma once
-#include "types.h"
+#include "bitboard.h"
 
 enum {MAX_FEN = 64 + 8 + 2 + 5 + 3 + 4 + 4 + 1};
 
+typedef struct {
+    bitboard_t byColor[NB_COLOR];
+    bitboard_t byPiece[NB_PIECE];
+    bitboard_t castleRooks;
+    bitboard_t attacked, checkers, pins;
+    uint64_t key, pawnKey;
+    eval_t pst;
+    eval_t pieceMaterial[NB_COLOR];
+    uint8_t pieceOn[NB_SQUARE];
+    int turn;
+    int epSquare;
+    int rule50;
+} Position;
+
 void pos_init();
 
-void pos_set(Position *pos, const char *fen, bool chess960);
+void pos_set(Position *pos, const char *fen);
 void pos_get(const Position *pos, char *fen);
 
 void pos_move(Position *pos, const Position *before, move_t m);

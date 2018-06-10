@@ -13,7 +13,11 @@
  * You should have received a copy of the GNU General Public License along with this program. If
  * not, see <http://www.gnu.org/licenses/>.
 */
+#include <assert.h>
 #include <ctype.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include "bitboard.h"
 #include "move.h"
 #include "position.h"
@@ -117,12 +121,12 @@ static bitboard_t attacked_by(const Position *pos, int c)
     fss = pos_pieces_cpp(pos, c, ROOK, QUEEN);
 
     while (fss)
-        result |= bb_rattacks(bb_pop_lsb(&fss), _occ);
+        result |= bb_rook_attacks(bb_pop_lsb(&fss), _occ);
 
     fss = pos_pieces_cpp(pos, c, BISHOP, QUEEN);
 
     while (fss)
-        result |= bb_battacks(bb_pop_lsb(&fss), _occ);
+        result |= bb_bishop_attacks(bb_pop_lsb(&fss), _occ);
 
     return result;
 }
@@ -181,7 +185,7 @@ void pos_init()
 }
 
 // Set position from FEN string
-void pos_set(Position *pos, const char *fen, bool chess960)
+void pos_set(Position *pos, const char *fen)
 {
     clear(pos);
     char *str = strdup(fen), *strPos = NULL;
@@ -236,11 +240,10 @@ void pos_set(Position *pos, const char *fen, bool chess960)
 
     pos->key ^= zobrist_castling(pos->castleRooks);
 
-    // en-passant, 50 move, chess960
+    // en-passant, 50 move
     pos->epSquare = string_to_square(strtok_r(NULL, " ", &strPos));
     pos->key ^= ZobristEnPassant[pos->epSquare];
     pos->rule50 = atoi(strtok_r(NULL, " ", &strPos));
-    pos->chess960 = chess960;
 
     free(str);
     finish(pos);
@@ -295,25 +298,17 @@ void pos_get(const Position *pos, char *fen)
             assert(file_of(king) != FILE_A && file_of(king) != FILE_H);
 
             // Right side castling
-            if (sqs & Ray[king][king + RIGHT]) {
-                if (pos->chess960)
-                    *fen++ = file_of(bb_lsb(sqs & Ray[king][king + RIGHT])) + (c == WHITE ? 'A' : 'a');
-                else
-                    *fen++ = PieceLabel[c][KING];
-            }
+            if (sqs & Ray[king][king + RIGHT])
+                *fen++ = PieceLabel[c][KING];
 
             // Left side castling
-            if (sqs & Ray[king][king + LEFT]) {
-                if (pos->chess960)
-                    *fen++ = file_of(bb_msb(sqs & Ray[king][king + LEFT])) + (c == WHITE ? 'A' : 'a');
-                else
-                    *fen++ = PieceLabel[c][QUEEN];
-            }
+            if (sqs & Ray[king][king + LEFT])
+                *fen++ = PieceLabel[c][QUEEN];
         }
     }
 
     // En passant and 50 move
-    char str[5];
+    char str[3];
     square_to_string(pos->epSquare, str);
     sprintf(fen, " %s %d", str, pos->rule50);
 }
@@ -470,8 +465,8 @@ bitboard_t pos_attackers_to(const Position *pos, int s, bitboard_t occ)
         | (pos_pieces_cp(pos, BLACK, PAWN) & PawnAttacks[WHITE][s])
         | (KnightAttacks[s] & pos->byPiece[KNIGHT])
         | (KingAttacks[s] & pos->byPiece[KING])
-        | (bb_rattacks(s, occ) & (pos->byPiece[ROOK] | pos->byPiece[QUEEN]))
-        | (bb_battacks(s, occ) & (pos->byPiece[BISHOP] | pos->byPiece[QUEEN]));
+        | (bb_rook_attacks(s, occ) & (pos->byPiece[ROOK] | pos->byPiece[QUEEN]))
+        | (bb_bishop_attacks(s, occ) & (pos->byPiece[BISHOP] | pos->byPiece[QUEEN]));
 }
 
 // Prints the position in ASCII 'art' (for debugging)
@@ -498,7 +493,7 @@ void pos_print(const Position *pos)
 
     if (b) {
         puts("checkers:");
-        char str[5];
+        char str[3];
 
         while (b) {
             square_to_string(bb_pop_lsb(&b), str);

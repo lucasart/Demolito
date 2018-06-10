@@ -1,5 +1,6 @@
 #pragma once
 #include <stdatomic.h>
+#include "position.h"
 #include "smp.h"
 
 extern atomic_uint_fast64_t Signal;

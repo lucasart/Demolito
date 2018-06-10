@@ -15,6 +15,8 @@
 */
 #include "pst.h"
 
+const eval_t Material[NB_PIECE] = {{N, N}, {B, B}, {R, R}, {Q, Q}, {0, 0}, {OP, EP}};
+
 eval_t pst[NB_COLOR][NB_PIECE][NB_SQUARE];
 
 static const int Center[NB_FILE] = {-5,-2, 0, 2, 2, 0,-2,-5};

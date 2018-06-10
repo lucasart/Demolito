@@ -13,6 +13,8 @@
  * You should have received a copy of the GNU General Public License along with this program. If
  * not, see <http://www.gnu.org/licenses/>.
 */
+#include <assert.h>
+#include <stdio.h>
 #include "bitboard.h"
 
 #ifdef PEXT
@@ -189,13 +191,13 @@ void bb_init()
     }
 }
 
-bitboard_t bb_battacks(int s, bitboard_t occ)
+bitboard_t bb_bishop_attacks(int s, bitboard_t occ)
 {
     BOUNDS(s, NB_SQUARE);
     return BishopAttacks[s][slider_index(occ, BishopMask[s], BishopMagic[s], BishopShift[s])];
 }
 
-bitboard_t bb_rattacks(int s, bitboard_t occ)
+bitboard_t bb_rook_attacks(int s, bitboard_t occ)
 {
     BOUNDS(s, NB_SQUARE);
     return RookAttacks[s][slider_index(occ, RookMask[s], RookMagic[s], RookShift[s])];
