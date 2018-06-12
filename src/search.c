@@ -312,6 +312,8 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
     int moveCount = 0, lmrCount = 0;
     bool hashMoveWasSingular = false;
     move_t currentMove;
+    move_t quietSearched[MAX_MOVES];
+    int quietSearchedCnt = 0;
 
     // Move loop
     while ((s.idx != s.cnt) && alpha < beta) {
@@ -323,13 +325,17 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
 
         moveCount++;
 
+        const bool capture = move_is_capture(pos, currentMove);
+
+        if (!capture)
+            quietSearched[quietSearchedCnt++] = currentMove;
+
         // Play move
         pos_move(&nextPos, pos, currentMove);
 
         // Prune losing captures and lated moves, near the leaves
         if (depth <= 4 && !pvNode && !pos->checkers && !nextPos.checkers
-                && (see < 0 || (depth <= 2 && moveCount >= 1 + 4 * depth))
-                && !move_is_capture(pos, currentMove))
+                && !capture && (see < 0 || (depth <= 2 && moveCount >= 1 + 4 * depth)))
             continue;
 
         // Search extension
@@ -367,9 +373,9 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
             if (moveCount == 1)
                 score = -search(worker, &nextPos, ply + 1, nextDepth, -beta, -alpha, childPv, 0);
             else {
-                int reduction = see < 0 || !move_is_capture(pos, currentMove);
+                int reduction = see < 0 || !capture;
 
-                if (!move_is_capture(pos, currentMove)) {
+                if (!capture) {
                     lmrCount++;
                     assert(1 <= nextDepth && nextDepth <= MAX_DEPTH);
                     assert(1 <= lmrCount && lmrCount <= MAX_MOVES);
@@ -429,9 +435,9 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
 
     // Update move sorting statistics
     if (alpha > oldAlpha && !singularMove && !move_is_capture(pos, bestMove)) {
-        for (size_t i = 0; i < s.idx; i++) {
-            const int bonus = s.moves[i] == bestMove ? depth * depth : -1 - depth * depth / 2;
-            history_update(worker, us, s.moves[i], bonus);
+        for (int i = 0; i < quietSearchedCnt; i++) {
+            const int bonus = quietSearched[i] == bestMove ? depth * depth : -1 - depth * depth / 2;
+            history_update(worker, us, quietSearched[i], bonus);
         }
 
         worker->refutation[stack_move_key(&worker->stack) % NB_REFUTATION] = bestMove;
