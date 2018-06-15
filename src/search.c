@@ -250,9 +250,6 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
                 || (he.score >= beta && he.bound <= EXACT)))
             return he.score;
 
-        if (he.depth <= 0)
-            he.move = 0;
-
         refinedEval = staticEval = he.eval;
 
         if ((he.score > refinedEval && he.bound <= EXACT)
