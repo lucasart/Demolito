@@ -13,7 +13,6 @@
  * You should have received a copy of the GNU General Public License along with this program. If
  * not, see <http://www.gnu.org/licenses/>.
 */
-#include <assert.h>
 #include <math.h>
 #include <stdlib.h>
 #include "eval.h"
@@ -21,6 +20,7 @@
 #include "move.h"
 #include "position.h"
 #include "search.h"
+#include "smp.h"
 #include "sort.h"
 #include "uci.h"
 
@@ -548,6 +548,22 @@ static void iterate(Worker *worker)
     Signal = STOP;
 }
 
+int mated_in(int ply)
+{
+    return ply - MATE;
+}
+
+int mate_in(int ply)
+{
+    return MATE - ply;
+}
+
+bool is_mate_score(int score)
+{
+    assert(abs(score) < MATE);
+    return abs(score) >= MATE - MAX_PLY;
+}
+
 int64_t search_go()
 {
     int64_t start = system_msec();
@@ -565,11 +581,16 @@ int64_t search_go()
     if (!lim.movetime && (lim.time || lim.inc)) {
         const int movesToGo = lim.movestogo ? 0.5 + pow(lim.movestogo, 0.9) : 26;
         const int remaining = (movesToGo - 1) * lim.inc + lim.time;
+
         minTime = 0.57 * remaining / movesToGo;
         maxTime = 2.21 * remaining / movesToGo;
 
-        minTime = min(minTime, lim.time - TimeBuffer);
-        maxTime = min(maxTime, lim.time - TimeBuffer);
+        // Make sure we always respect the TimeBuffer
+        if (minTime > lim.time - TimeBuffer)
+            minTime = lim.time - TimeBuffer;
+
+        if (maxTime > lim.time - TimeBuffer)
+            maxTime = lim.time - TimeBuffer;
     }
 
     for (int i = 0; i < WorkersCount; i++)

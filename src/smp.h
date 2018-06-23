@@ -1,17 +1,12 @@
 #pragma once
 #include <setjmp.h>
 #include "bitboard.h"
+#include "search.h"
 
 enum {
-    MAX_GAME_PLY = 2048,
     NB_PAWN_ENTRY = 16384,
     NB_REFUTATION = 8192
 };
-
-typedef struct {
-    uint64_t keys[MAX_GAME_PLY];
-    int idx;
-} Stack;
 
 void stack_clear(Stack *st);
 void stack_push(Stack *st, uint64_t key);

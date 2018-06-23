@@ -13,7 +13,6 @@
  * You should have received a copy of the GNU General Public License along with this program. If
  * not, see <http://www.gnu.org/licenses/>.
 */
-#include <assert.h>
 #include <stdlib.h>
 #include "bitboard.h"
 #include "eval.h"
@@ -372,7 +371,7 @@ void eval_init()
         for (int s2 = A1; s2 <= H8; ++s2) {
             const int rankDist = abs(rank_of(s1) - rank_of(s2));
             const int fileDist = abs(file_of(s1) - file_of(s2));
-            KingDistance[s1][s2] = max(rankDist, fileDist);
+            KingDistance[s1][s2] = rankDist > fileDist ? rankDist : fileDist;
         }
 }
 

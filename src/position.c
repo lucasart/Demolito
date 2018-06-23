@@ -13,7 +13,6 @@
  * You should have received a copy of the GNU General Public License along with this program. If
  * not, see <http://www.gnu.org/licenses/>.
 */
-#include <assert.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -21,7 +20,6 @@
 #include "bitboard.h"
 #include "move.h"
 #include "position.h"
-#include "pst.h"
 
 static uint64_t ZobristKey[NB_COLOR][NB_PIECE][NB_SQUARE];
 static uint64_t ZobristCastling[NB_SQUARE];
@@ -163,6 +161,29 @@ static void finish(Position *pos)
     pos->checkers = bb_test(pos->attacked, king)
         ? pos_attackers_to(pos, king, pos_pieces(pos)) & pos->byColor[them] : 0;
     pos->pins = calc_pins(pos);
+}
+
+const char *PieceLabel[NB_COLOR] = {"NBRQKP.", "nbrqkp."};
+
+void square_to_string(int s, char *str)
+{
+    BOUNDS(s, NB_SQUARE + 1);
+
+    if (s == NB_SQUARE)
+        *str++ = '-';
+    else {
+        *str++ = file_of(s) + 'a';
+        *str++ = rank_of(s) + '1';
+    }
+
+    *str = '\0';
+}
+
+int string_to_square(const char *str)
+{
+    return *str != '-'
+           ? square(str[1] - '1', str[0] - 'a')
+           : NB_SQUARE;
 }
 
 // Initialize pre-calculated data used in this module

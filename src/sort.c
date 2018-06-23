@@ -13,7 +13,6 @@
  * You should have received a copy of the GNU General Public License along with this program. If
  * not, see <http://www.gnu.org/licenses/>.
 */
-#include <assert.h>
 #include <stdlib.h>
 #include "bitboard.h"
 #include "move.h"
@@ -101,10 +100,14 @@ move_t sort_next(Sort *s, const Position *pos, int *see)
             maxIdx = i;
         }
 
+    #define swap(x, y) do { typeof(x) tmp = x; x = y; y = tmp; } while (0);
+
     if (maxIdx != s->idx) {
         swap(s->moves[s->idx], s->moves[maxIdx]);
         swap(s->scores[s->idx], s->scores[maxIdx]);
     }
+
+    #undef swap
 
     const int score = s->scores[s->idx];
     const move_t m = s->moves[s->idx];

@@ -1,5 +1,6 @@
 #pragma once
-#include "types.h"
+#include <inttypes.h>
+#include <stdbool.h>
 
 enum {LBOUND, EXACT, UBOUND};
 

@@ -65,6 +65,18 @@ static eval_t pawn(int r, int f)
     return e;
 }
 
+void eval_add(eval_t *e1, eval_t e2)
+{
+    e1->op += e2.op;
+    e1->eg += e2.eg;
+}
+
+void eval_sub(eval_t *e1, eval_t e2)
+{
+    e1->op -= e2.op;
+    e1->eg -= e2.eg;
+}
+
 void pst_init()
 {
     typedef eval_t (*pst_fn)(int, int);

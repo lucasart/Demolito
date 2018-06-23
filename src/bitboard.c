@@ -13,7 +13,6 @@
  * You should have received a copy of the GNU General Public License along with this program. If
  * not, see <http://www.gnu.org/licenses/>.
 */
-#include <assert.h>
 #include <stdio.h>
 #include "bitboard.h"
 
@@ -127,6 +126,52 @@ static void init_slider_attacks(int s, bitboard_t mask[NB_SQUARE], const bitboar
         attacksPtr[s][slider_index(occ, mask[s], magic[s], shift[s])] = slider_attacks(s, occ, dir);
         occ = (occ - mask[s]) & mask[s];  // Carry-Rippler trick
     } while (occ);
+}
+
+int64_t dbgCnt[2] = {0, 0};
+
+int opposite(int c)
+{
+    BOUNDS(c, NB_COLOR);
+    return c ^ BLACK;
+}
+
+int push_inc(int c)
+{
+    BOUNDS(c, NB_COLOR);
+    return c == WHITE ? UP : DOWN;
+}
+
+int square(int r, int f)
+{
+    BOUNDS(r, NB_RANK);
+    BOUNDS(f, NB_FILE);
+    return NB_FILE * r + f;
+}
+
+int rank_of(int s)
+{
+    BOUNDS(s, NB_SQUARE);
+    return s / NB_FILE;
+}
+
+int file_of(int s)
+{
+    BOUNDS(s, NB_SQUARE);
+    return s % NB_FILE;
+}
+
+int relative_rank(int c, int r)
+{
+    BOUNDS(c, NB_COLOR);
+    BOUNDS(r, NB_RANK);
+    return r ^ (7 * c);
+}
+
+int relative_rank_of(int c, int s)
+{
+    BOUNDS(s, NB_SQUARE);
+    return relative_rank(c, rank_of(s));
 }
 
 void bb_init()

@@ -13,7 +13,6 @@
  * You should have received a copy of the GNU General Public License along with this program. If
  * not, see <http://www.gnu.org/licenses/>.
 */
-#include <assert.h>
 #include <string.h>
 #include "move.h"
 #include "bitboard.h"
@@ -144,7 +143,7 @@ bool move_is_legal(const Position *pos, move_t m)
 
 int move_see(const Position *pos, move_t m)
 {
-    static const int seeValue[NB_PIECE + 1] = {N, B, R, Q, MATE, P, 0};
+    static const int seeValue[NB_PIECE + 1] = {N, B, R, Q, 10*Q, P, 0};
 
     assert(move_ok(m));
     const int from = move_from(m), to = move_to(m), prom = move_prom(m);

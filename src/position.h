@@ -1,7 +1,10 @@
 #pragma once
 #include "bitboard.h"
+#include "pst.h"
 
 enum {MAX_FEN = 64 + 8 + 2 + 5 + 3 + 4 + 4 + 1};
+
+typedef uint16_t move_t;  // from:6, to:6, prom: 3 (NB_PIECE if none)
 
 typedef struct {
     bitboard_t byColor[NB_COLOR];
@@ -16,6 +19,11 @@ typedef struct {
     int epSquare;
     int rule50;
 } Position;
+
+extern const char *PieceLabel[NB_COLOR];
+
+void square_to_string(int s, char *str);
+int string_to_square(const char *str);
 
 void pos_init();
 

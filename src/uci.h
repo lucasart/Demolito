@@ -1,5 +1,4 @@
 #pragma once
-#include "types.h"
 #include "platform.h"
 
 void uci_loop();
