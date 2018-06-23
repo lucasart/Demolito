@@ -203,7 +203,7 @@ void uci_loop()
 void info_create(Info *info)
 {
     info->lastDepth = 0;
-    info->variability = 0;
+    info->variability = 0.5;
     info->best = info->ponder = 0;
     info->start = system_msec();
     mtx_init(&info->mtx, mtx_plain);
@@ -286,10 +286,10 @@ int info_last_depth(Info *info)
     return lastDepth;
 }
 
-int info_variability(Info *info)
+double info_variability(Info *info)
 {
     mtx_lock(&info->mtx);
-    const int variability = info->variability;
+    const double variability = info->variability;
     mtx_unlock(&info->mtx);
 
     return variability;
