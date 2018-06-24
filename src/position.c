@@ -355,8 +355,7 @@ void pos_move(Position *pos, const Position *before, move_t m)
         clear_square(pos, pos_color_on(pos, to), capture, to);
 
         // Capturing a rook alters corresponding castling right
-        if (capture == ROOK)
-            pos->castleRooks &= ~(1ULL << to);
+        pos->castleRooks &= ~(1ULL << to);
     }
 
     if (p <= QUEEN) {
