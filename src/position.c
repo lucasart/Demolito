@@ -339,7 +339,9 @@ void pos_move(Position *pos, const Position *before, move_t m)
 {
     assert(move_ok(m));
     *pos = *before;
+
     pos->rule50++;
+    pos->epSquare = NB_SQUARE;
 
     const int us = pos->turn, them = opposite(us);
     const int from = move_from(m), to = move_to(m), prom = move_prom(m);
@@ -357,32 +359,34 @@ void pos_move(Position *pos, const Position *before, move_t m)
             pos->castleRooks &= ~(1ULL << to);
     }
 
-    // Move our piece
-    clear_square(pos, us, p, from);
-    set_square(pos, us, p, to);
+    if (p <= QUEEN) {
+        // Move piece (branch-less)
+        clear_square(pos, us, p, from);
+        set_square(pos, us, p, to);
 
-    if (p == PAWN) {
-        // reset rule50, and set epSquare
-        const int push = push_inc(us);
-        pos->rule50 = 0;
-        pos->epSquare = to == from + 2 * push
-                && (PawnAttacks[us][from + push] & pos_pieces_cp(pos, them, PAWN))
-            ? from + push : NB_SQUARE;
-
-        // handle ep-capture and promotion
-        if (to == before->epSquare)
-            clear_square(pos, them, p, to - push);
-        else if (rank_of(to) == RANK_8 || rank_of(to) == RANK_1) {
-            clear_square(pos, us, p, to);
-            set_square(pos, us, prom, to);
-        }
+        // Lose specific castling right (if not already lost)
+        pos->castleRooks &= ~(1ULL << from);
     } else {
-        pos->epSquare = NB_SQUARE;
+        // Move piece
+        clear_square(pos, us, p, from);
+        set_square(pos, us, p, to);
 
-        if (p == ROOK)
-            // remove corresponding castling right
-            pos->castleRooks &= ~(1ULL << from);
-        else if (p == KING) {
+        if (p == PAWN) {
+            // reset rule50, and set epSquare
+            const int push = push_inc(us);
+            pos->rule50 = 0;
+            pos->epSquare = to == from + 2 * push
+                    && (PawnAttacks[us][from + push] & pos_pieces_cp(pos, them, PAWN))
+                ? from + push : NB_SQUARE;
+
+            // handle ep-capture and promotion
+            if (to == before->epSquare)
+                clear_square(pos, them, p, to - push);
+            else if (rank_of(to) == RANK_8 || rank_of(to) == RANK_1) {
+                clear_square(pos, us, p, to);
+                set_square(pos, us, prom, to);
+            }
+        } else if (p == KING) {
             // Lose all castling rights
             pos->castleRooks &= ~Rank[us * RANK_8];
 
