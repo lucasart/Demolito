@@ -24,6 +24,9 @@
 #include "sort.h"
 #include "uci.h"
 
+#define min(x, y) ((x) < (y) ? (x) : (y))
+#define max(x, y) ((x) > (y) ? (x) : (y))
+
 Position rootPos;
 Stack rootStack;
 Limits lim;
@@ -471,10 +474,10 @@ static int aspirate(Worker *worker, int depth, move_t pv[], int score)
 
         if (score <= alpha) {
             beta = (alpha + beta) / 2;
-            alpha -= delta;
+            alpha = max(alpha - delta, -MATE);
         } else if (score >= beta) {
             alpha = (alpha + beta) / 2;
-            beta += delta;
+            beta = min(beta + delta, MATE);
         } else
             return score;
     }
@@ -582,15 +585,8 @@ int64_t search_go()
         const int movesToGo = lim.movestogo ? 0.5 + pow(lim.movestogo, 0.9) : 26;
         const int remaining = (movesToGo - 1) * lim.inc + lim.time;
 
-        minTime = 0.57 * remaining / movesToGo;
-        maxTime = 2.21 * remaining / movesToGo;
-
-        // Make sure we always respect the TimeBuffer
-        if (minTime > lim.time - TimeBuffer)
-            minTime = lim.time - TimeBuffer;
-
-        if (maxTime > lim.time - TimeBuffer)
-            maxTime = lim.time - TimeBuffer;
+        minTime = min(0.57 * remaining / movesToGo, lim.time - TimeBuffer);
+        maxTime = min(2.21 * remaining / movesToGo, lim.time - TimeBuffer);
     }
 
     for (int i = 0; i < WorkersCount; i++)
