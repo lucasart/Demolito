@@ -335,7 +335,7 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
 
         // Prune losing captures and lated moves, near the leaves
         if (depth <= 4 && !pvNode && !pos->checkers && !nextPos.checkers
-                && !capture && (see < 0 || (depth <= 2 && moveCount >= 1 + 4 * depth)))
+                && !capture && (see < 0 || (depth <= 3 && moveCount >= 1 + 4 * depth)))
             continue;
 
         // Search extension
