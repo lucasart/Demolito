@@ -359,7 +359,7 @@ void pos_move(Position *pos, const Position *before, move_t m)
     }
 
     if (p <= QUEEN) {
-        // Move piece (branch-less)
+        // Move piece
         clear_square(pos, us, p, from);
         set_square(pos, us, p, to);
 

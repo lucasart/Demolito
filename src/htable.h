@@ -1,6 +1,7 @@
 #pragma once
 #include <inttypes.h>
 #include <stdbool.h>
+#include "position.h"
 
 enum {LBOUND, EXACT, UBOUND};
 
@@ -11,7 +12,8 @@ typedef struct {
     union {
         uint64_t data;
         struct {
-            int16_t score, eval, move;
+            int16_t score, eval;
+            move_t move;
             int8_t depth;
             uint8_t bound: 2, singular: 1, date: 5;
         };

@@ -181,9 +181,9 @@ static int qsearch(Worker *worker, const Position *pos, int ply, int depth, int 
         }
     }
 
-    // No legal move: mated or stalemated
+    // No legal check evasion: we're mated
     if (pos->checkers && !moveCount)
-        return pos->checkers ? mated_in(ply) : draw_score(ply);
+        return mated_in(ply);
 
     // Return alpha when all moves are pruned
     if (bestScore <= -MATE) {
