@@ -293,7 +293,7 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
     // Null search
     if (depth >= 2 && !pvNode
             && staticEval >= beta && pos->pieceMaterial[us].eg) {
-        const int nextDepth = depth - (2 + depth / 3) - (refinedEval >= beta + 178);
+        const int nextDepth = depth - (3 + depth / 4) - (refinedEval >= beta + 178);
         pos_switch(&nextPos, pos);
         stack_push(&worker->stack, nextPos.key);
         score = nextDepth <= 0
