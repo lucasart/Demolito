@@ -210,6 +210,10 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
 {
     static const int EvalMargin[] = {0, 132, 266, 405, 524, 663};
     static const int RazorMargin[] = {0, 227, 455, 502, 853};
+    static const int SEEMargin[2][5] = {
+        {0, 0, 0, 0, -P},  // quiet
+        {0, -0.25*P, -P, -2.25*P, -4*P}  // capture
+    };
 
     assert(depth > 0);
     assert(stack_back(&worker->stack) == pos->key);
@@ -333,10 +337,16 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
         // Play move
         pos_move(&nextPos, pos, currentMove);
 
-        // Prune losing captures and lated moves, near the leaves
-        if (depth <= 4 && !pvNode && !pos->checkers && !nextPos.checkers
-                && !capture && (see < 0 || (depth <= 3 && moveCount >= 1 + 4 * depth)))
-            continue;
+        // Prune bad or late moves near the leaves
+        if (depth <= 4 && !pvNode && !pos->checkers && !nextPos.checkers) {
+            // SEE pruning
+            if (see < SEEMargin[capture][depth])
+               continue;
+
+            // Late Move Pruning
+            if (!capture && depth <= 3 && moveCount >= 1 + 4 * depth)
+                continue;
+        }
 
         // Search extension
         int ext = 0;
