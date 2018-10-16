@@ -14,6 +14,7 @@
  * not, see <http://www.gnu.org/licenses/>.
 */
 #include <stdlib.h>
+#include <math.h>
 #include "bitboard.h"
 #include "eval.h"
 #include "position.h"
@@ -23,6 +24,7 @@ static bitboard_t PawnSpan[NB_COLOR][NB_SQUARE];
 static bitboard_t PawnPath[NB_COLOR][NB_SQUARE];
 static bitboard_t AdjacentFiles[NB_FILE];
 static int KingDistance[NB_SQUARE][NB_SQUARE];
+static int SafetyCurve[4096];
 
 static bitboard_t pawn_attacks(const Position *pos, int c)
 {
@@ -161,14 +163,14 @@ static eval_t hanging(const Position *pos, int us, bitboard_t attacks[NB_COLOR][
 
 static int safety(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE + 1])
 {
-    static const int RingAttack[] = {42, 53, 89, 82};
-    static const int RingDefense[] = {24, 26, 44, 44};
-    static const int CheckAttack[] = {84, 103, 104, 124};
-    static const int CheckDefense[] = {33, 48, 41, 48};
-    static const int BishopXRay = 80, RookXRay = 126;
+    static const int RingAttack[] = {36, 51, 75, 71};
+    static const int RingDefense[] = {24, 28, 48, 45};
+    static const int CheckAttack[] = {78, 103, 94, 97};
+    static const int CheckDefense[] = {34, 51, 43, 52};
+    static const int BishopXRay = 73, RookXRay = 121;
 
     const int them = opposite(us);
-    int result = 0, cnt = 0;
+    int weight = 0, cnt = 0;
 
     // Attacks around the King
     const bitboard_t dangerZone = attacks[us][KING] & ~attacks[us][PAWN];
@@ -178,8 +180,8 @@ static int safety(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_P
 
         if (attacked) {
             cnt++;
-            result -= bb_count(attacked) * RingAttack[p];
-            result += bb_count(attacked & attacks[us][NB_PIECE]) * RingDefense[p];
+            weight += bb_count(attacked) * RingAttack[p];
+            weight -= bb_count(attacked & attacks[us][NB_PIECE]) * RingDefense[p];
         }
     }
 
@@ -200,8 +202,8 @@ static int safety(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_P
 
             if (b) {
                 cnt++;
-                result -= bb_count(b) * CheckAttack[p];
-                result += bb_count(b & attacks[us][NB_PIECE]) * CheckDefense[p];
+                weight += bb_count(b) * CheckAttack[p];
+                weight -= bb_count(b & attacks[us][NB_PIECE]) * CheckDefense[p];
             }
         }
 
@@ -211,7 +213,7 @@ static int safety(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_P
     while (bishops)
         if (!(Segment[king][bb_pop_lsb(&bishops)] & pos->byPiece[PAWN])) {
             cnt++;
-            result -= BishopXRay;
+            weight += BishopXRay;
         }
 
     // Rook X-Ray threats
@@ -220,10 +222,13 @@ static int safety(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_P
     while (rooks)
         if (!(Segment[king][bb_pop_lsb(&rooks)] & pos->byPiece[PAWN])) {
             cnt++;
-            result -= RookXRay;
+            weight += RookXRay;
         }
 
-    return result * (1 + cnt) / 4;
+    const int idx = weight * (1 + cnt) / 4;
+    assert(idx < 4096);
+    return -SafetyCurve[idx & 4095];  /* idx shouldn't exceed 4095, but just in case, prevent overflow,
+        while not taxing performance (min(idx, 4096) is slow because it adds a branch).*/
 }
 
 static eval_t passer(int us, int pawn, int ourKing, int theirKing)
@@ -373,6 +378,11 @@ void eval_init()
             const int fileDist = abs(file_of(s1) - file_of(s2));
             KingDistance[s1][s2] = rankDist > fileDist ? rankDist : fileDist;
         }
+
+    for (int i = 0; i < 4096; i++) {
+        const int x = pow((double)i, 1.046) + 0.5;
+        SafetyCurve[i] = x > 800 ? SafetyCurve[i - 1] + 1 : x;
+    }
 }
 
 int evaluate(Worker *worker, const Position *pos)
