@@ -287,6 +287,9 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
         const int lbound = alpha - RazorMargin[depth];
 
         if (refinedEval <= lbound) {
+            if (depth == 1)
+                return qsearch(worker, pos, ply, 0, alpha, alpha + 1, childPv);
+
             score = qsearch(worker, pos, ply, 0, lbound, lbound + 1, childPv);
 
             if (score <= lbound)
