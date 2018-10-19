@@ -138,7 +138,7 @@ static int qsearch(Worker *worker, const Position *pos, int ply, int depth, int 
             continue;
 
         // SEE proxy tells us we're unlikely to beat alpha
-        if (!pos->checkers && staticEval + P / 2 <= alpha && see <= 0)
+        if (!pos->checkers && staticEval + 97 <= alpha && see <= 0)
             continue;
 
         // Play move
@@ -208,8 +208,8 @@ static int qsearch(Worker *worker, const Position *pos, int ply, int depth, int 
 static int search(Worker *worker, const Position *pos, int ply, int depth, int alpha, int beta,
     move_t pv[], move_t singularMove)
 {
-    static const int EvalMargin[] = {0, 132, 266, 405, 524, 663};
-    static const int RazorMargin[] = {0, 227, 455, 502, 853};
+    static const int EvalMargin[] = {0, 130, 264, 410, 510, 672};
+    static const int RazorMargin[] = {0, 229, 438, 495, 878};
     static const int SEEMargin[2][6] = {
         {0, 0, 0, 0, -P, -2*P},  // quiet
         {0, -33, -132, -297, -528, -825}  // capture
@@ -300,7 +300,7 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
     // Null search
     if (depth >= 2 && !pvNode
             && staticEval >= beta && pos->pieceMaterial[us].eg) {
-        const int nextDepth = depth - (3 + depth / 4) - (refinedEval >= beta + 178);
+        const int nextDepth = depth - (3 + depth / 4) - (refinedEval >= beta + 167);
         pos_switch(&nextPos, pos);
         stack_push(&worker->stack, nextPos.key);
         score = nextDepth <= 0
