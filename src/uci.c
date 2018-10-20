@@ -34,7 +34,7 @@ static uint64_t Hash = 1;
 int64_t TimeBuffer = 60;
 bool uciChess960 = false;
 
-static void uci_format_score(int score, char *str)
+static void uci_format_score(int score, char str[17])
 {
     if (is_mate_score(score))
         sprintf(str, "mate %d", score > 0 ? (MATE - score + 1) / 2 : -(score + MATE + 1) / 2);
@@ -146,7 +146,7 @@ static void go(char **linePos)
 static void eval()
 {
     pos_print(&rootPos);
-    char str[12];
+    char str[17];
     uci_format_score(evaluate(&Workers[0], &rootPos), str);
     printf("score %s\n", str);
 }
@@ -231,7 +231,7 @@ void info_update(Info *info, int depth, int score, int64_t nodes, move_t pv[], b
         info->variability += bestMoveChanged ? 0.1 * depth : -0.02 * depth;
         info->lastDepth = depth;
 
-        char str[12];
+        char str[17];
         uci_format_score(score, str);
         uci_printf("info depth %d score %s time %" PRId64 " nodes %" PRId64 " pv",
                    depth, str, system_msec() - info->start, nodes);
