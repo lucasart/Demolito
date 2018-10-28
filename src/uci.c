@@ -127,11 +127,11 @@ static void go(char **linePos)
             lim.movetime = atoll(strtok_r(NULL, " \n", linePos));
         else if (!strcmp(token, "movestogo"))
             lim.movestogo = atoi(strtok_r(NULL, " \n", linePos));
-        else if ((rootPos.turn == WHITE && !strcmp(token, "wtime")) || (rootPos.turn == BLACK
-                 && !strcmp(token, "btime")))
+        else if ((rootPos.turn == WHITE && !strcmp(token, "wtime"))
+                || (rootPos.turn == BLACK && !strcmp(token, "btime")))
             lim.time = atoll(strtok_r(NULL, " \n", linePos));
-        else if ((rootPos.turn == WHITE && !strcmp(token, "winc")) || (rootPos.turn == BLACK
-                 && !strcmp(token, "binc")))
+        else if ((rootPos.turn == WHITE && !strcmp(token, "winc"))
+                || (rootPos.turn == BLACK && !strcmp(token, "binc")))
             lim.inc = atoll(strtok_r(NULL, " \n", linePos));
     }
 

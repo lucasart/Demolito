@@ -43,7 +43,7 @@ static eval_t score_mobility(int p0, int p, bitboard_t tss)
         {-5, -3, -2, -1, 0, 1, 2, 3, 4, 5, 5, 6, 6, 7},
         {-6, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 6, 7, 7}
     };
-    static const eval_t Weight[] = {{6, 10}, {11, 12}, {6, 6}, {4, 6}};
+    static const eval_t Weight[] = {{9, 13}, {13, 12}, {9, 7}, {4, 7}};
 
     const int c = AdjustCount[p0][bb_count(tss)];
     return (eval_t) {Weight[p].op * c, Weight[p].eg * c};
@@ -100,9 +100,9 @@ static eval_t mobility(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
 
 static eval_t pattern(const Position *pos, int us)
 {
-    static const int RookOpen[] = {20, 31};  // 0: semi-open, 1: fully-open
-    static const eval_t BishopPair[] = {{0, 0}, {81, 113}};  // 0: false, 1: true
-    static const int Ahead = 16;
+    static const int RookOpen[] = {20, 33};  // 0: semi-open, 1: fully-open
+    static const eval_t BishopPair[] = {{0, 0}, {77, 122}};  // 0: false, 1: true
+    static const int Ahead = 20;
 
     const bitboard_t WhiteSquares = 0x55AA55AA55AA55AAULL;
     const bitboard_t ourPawns = pos_pieces_cp(pos, us, PAWN);
@@ -133,7 +133,7 @@ static eval_t pattern(const Position *pos, int us)
 
 static eval_t hanging(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE + 1])
 {
-    static const int Hanging[] = {121, 78, 122, 220, 0, 41};
+    static const int Hanging[] = {119, 71, 118, 233, 0, 42};
 
     const int them = opposite(us);
     eval_t result = {0, 0};
@@ -163,11 +163,11 @@ static eval_t hanging(const Position *pos, int us, bitboard_t attacks[NB_COLOR][
 
 static int safety(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE + 1])
 {
-    static const int RingAttack[] = {36, 51, 75, 71};
-    static const int RingDefense[] = {24, 28, 48, 45};
-    static const int CheckAttack[] = {78, 103, 94, 97};
-    static const int CheckDefense[] = {34, 51, 43, 52};
-    static const int BishopXRay = 73, RookXRay = 121;
+    static const int RingAttack[] = {37, 51, 72, 68};
+    static const int RingDefense[] = {24, 29,49, 48};
+    static const int CheckAttack[] = {77, 101, 98, 95};
+    static const int CheckDefense[] = {34, 52, 41, 48};
+    static const int BishopXRay = 73, RookXRay = 111;
 
     const int them = opposite(us);
     int weight = 0, cnt = 0;
@@ -233,8 +233,8 @@ static int safety(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_P
 
 static eval_t passer(int us, int pawn, int ourKing, int theirKing)
 {
-    static const eval_t bonus[] = {{0, 6}, {0, 14}, {23, 28}, {54, 66}, {150, 157}, {265, 261}};
-    static const int adjust[] = {0, 0, 10, 44, 78, 109};
+    static const eval_t bonus[] = {{0, 6}, {0, 14}, {21, 29}, {53, 63}, {146, 160}, {276, 261}};
+    static const int adjust[] = {0, 0, 10, 43, 81, 106};
 
     const int n = relative_rank_of(us, pawn) - RANK_2;
 
@@ -254,10 +254,10 @@ static eval_t passer(int us, int pawn, int ourKing, int theirKing)
 static eval_t do_pawns(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE + 1],
     bitboard_t *passed)
 {
-    static const eval_t Isolated[2] = {{20, 32}, {42, 34}};
-    static const eval_t Backward[2] = {{18, 18}, {30, 21}};
-    static const eval_t Doubled = {15, 30};
-    static const int Shield[NB_RANK] = {0, 24, 17, 12, 10, 8, 8};
+    static const eval_t Isolated[2] = {{18, 33}, {41, 30}};
+    static const eval_t Backward[2] = {{17, 14}, {28, 19}};
+    static const eval_t Doubled = {15, 32};
+    static const int Shield[NB_RANK] = {0, 25, 18, 12, 11, 9, 8};
 
     const int them = opposite(us);
     const bitboard_t ourPawns = pos_pieces_cp(pos, us, PAWN);
@@ -284,7 +284,7 @@ static eval_t do_pawns(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
         const bool exposed = !(PawnPath[us][s] & pos->byPiece[PAWN]);
 
         if (besides & (Rank[r] | Rank[us == WHITE ? r - 1 : r + 1])) {
-            const eval_t Connected[] = {{8, 0}, {9, 3}, {14, 11}, {22, 27}, {33, 48}, {46, 76}};
+            static const eval_t Connected[] = {{5, 1}, {10, 3}, {15, 11}, {25, 28}, {32, 50}, {46, 71}};
             eval_add(&result, Connected[relative_rank(us, r) - RANK_2]);
         } else if (!(PawnSpan[them][stop] & ourPawns) && bb_test(attacks[them][PAWN], stop))
             eval_sub(&result, Backward[exposed]);
@@ -306,7 +306,7 @@ static eval_t do_pawns(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
 static eval_t pawns(Worker *worker, const Position *pos, bitboard_t attacks[NB_COLOR][NB_PIECE + 1])
 // Pawn evaluation is directly a diff, from white's pov. This halves the size of the table.
 {
-    static const int FreePasser[] = {10, 20, 39, 76};
+    static const int FreePasser[] = {12, 17, 39, 81};
 
     const uint64_t key = pos->pawnKey;
     PawnEntry *pe = &worker->pawnHash[key % NB_PAWN_ENTRY];
@@ -372,15 +372,15 @@ void eval_init()
     for (int f = FILE_A; f <= FILE_H; f++)
         AdjacentFiles[f] = (f > FILE_A ? File[f - 1] : 0) | (f < FILE_H ? File[f + 1] : 0);
 
-    for (int s1 = A1; s1 <= H8; ++s1)
-        for (int s2 = A1; s2 <= H8; ++s2) {
+    for (int s1 = A1; s1 <= H8; s1++)
+        for (int s2 = A1; s2 <= H8; s2++) {
             const int rankDist = abs(rank_of(s1) - rank_of(s2));
             const int fileDist = abs(file_of(s1) - file_of(s2));
             KingDistance[s1][s2] = rankDist > fileDist ? rankDist : fileDist;
         }
 
     for (int i = 0; i < 4096; i++) {
-        const int x = pow((double)i, 1.046) + 0.5;
+        const int x = pow((double)i, 1.062) + 0.5;
         SafetyCurve[i] = x > 800 ? SafetyCurve[i - 1] + 1 : x;
     }
 }

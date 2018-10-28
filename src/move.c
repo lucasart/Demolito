@@ -98,7 +98,7 @@ move_t string_to_move(const Position *pos, const char *str)
 
     if (!uciChess960 && pos_piece_on(pos, from) == KING) {
         if (to == from + 2)  // e1g1 -> e1h1
-            ++to;
+            to++;
         else if (to == from - 2)  // e1c1 -> e1a1
             to -= 2;
     }
