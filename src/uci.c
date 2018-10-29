@@ -228,7 +228,7 @@ void info_update(Info *info, int depth, int score, int64_t nodes, move_t pv[], b
             return;
         }
 
-        info->variability += bestMoveChanged ? 0.1 * depth : -0.02 * depth;
+        info->variability += bestMoveChanged ? 1.2 : -0.24;
         info->lastDepth = depth;
 
         char str[17];
