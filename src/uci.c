@@ -148,14 +148,14 @@ static void eval()
     pos_print(&rootPos);
     char str[17];
     uci_format_score(evaluate(&Workers[0], &rootPos), str);
-    printf("score %s\n", str);
+    uci_printf("score %s\n", str);
 }
 
 static void perft(char **linePos)
 {
     const int depth = atoi(strtok_r(NULL, " \n", linePos));
     pos_print(&rootPos);
-    printf("perft = %" PRIu64 "\n", gen_perft(&rootPos, depth, 0));
+    uci_printf("perft = %" PRIu64 "\n", gen_perft(&rootPos, depth, 0));
 }
 
 Info ui;
@@ -204,7 +204,7 @@ void info_create(Info *info)
 {
     info->lastDepth = 0;
     info->variability = 0.5;
-    info->best = info->ponder = 0;
+    info->best = 0;
     info->start = system_msec();
     mtx_init(&info->mtx, mtx_plain);
 }
@@ -221,7 +221,6 @@ void info_update(Info *info, int depth, int score, int64_t nodes, move_t pv[], b
     if (depth > info->lastDepth) {
         const bool bestMoveChanged = info->best != pv[0];
         info->best = pv[0];
-        info->ponder = pv[1];
 
         if (partial) {
             mtx_unlock(&info->mtx);
@@ -258,14 +257,13 @@ void info_update(Info *info, int depth, int score, int64_t nodes, move_t pv[], b
 
 void info_print_bestmove(Info *info)
 {
-    char best[6], ponder[6];
+    char best[6];
 
     mtx_lock(&info->mtx);
     move_to_string(&rootPos, info->best, best);
-    move_to_string(&rootPos, info->ponder, ponder);
     mtx_unlock(&info->mtx);
 
-    uci_printf("bestmove %s ponder %s\n", best, ponder);
+    uci_printf("bestmove %s\n", best);
 }
 
 move_t info_best(Info *info)
