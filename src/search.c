@@ -44,13 +44,18 @@ int draw_score(int ply)
     return (ply & 1 ? Contempt : -Contempt) * EP / 100;
 }
 
-int Reduction[MAX_DEPTH + 1][MAX_MOVES];
+int Reduction[MAX_DEPTH + 1][MAX_MOVES][2];
 
 void search_init()
 {
     for (int d = 1; d <= MAX_DEPTH; d++)
-        for (int c = 1; c < MAX_MOVES; c++)
-            Reduction[d][c] = 0.403 * log(d > 31 ? 31 : d) + 0.877 * log(c > 31 ? 31 : c);
+        for (int c = 1; c < MAX_MOVES; c++) {
+            const double r0 = 0.397 * log(d > 31 ? 31 : d) + 1.007 * log(c > 31 ? 31 : c) + 0.007;
+            const double r1 = 0.400 * log(d > 31 ? 31 : d) + 0.850 * log(c > 31 ? 31 : c) + 0.002;
+
+            Reduction[d][c][0] = max(0, r0);
+            Reduction[d][c][1] = max(0, r1);
+        }
 }
 
 static const int Tempo = 17;
@@ -392,7 +397,7 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
                     lmrCount++;
                     assert(1 <= nextDepth && nextDepth <= MAX_DEPTH);
                     assert(1 <= lmrCount && lmrCount <= MAX_MOVES);
-                    reduction = Reduction[nextDepth][lmrCount];
+                    reduction = Reduction[nextDepth][lmrCount][!!nextPos.checkers];
                 }
 
                 // Reduced depth, zero window

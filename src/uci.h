@@ -1,5 +1,6 @@
 #pragma once
 #include "platform.h"
+#include "position.h"
 
 void uci_loop();
 
