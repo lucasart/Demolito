@@ -8,7 +8,7 @@ instead through an UCI capable GUI, such as [CuteChess](http://github.com/cutech
 ### Versions
 
 The version number is simply the ISO date of the last commit (ie. YYYY-MM-DD). From time to time, I publish some binaries.
-[Here](http://open-chess.org/viewtopic.php?f=7&t=3069&start=10#p23534) are the latest ones. If you really want the newest
+[Here](https://open-chess.org/viewtopic.php?f=7&t=3069&start=20) are the latest ones. If you really want the newest
 possible one, you'll need to compile yourself (see below).
 
 ### Engine Strength
