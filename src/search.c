@@ -201,7 +201,7 @@ static int qsearch(Worker *worker, const Position *pos, int ply, int depth, int 
     he.singular = 0;
     he.score = score_to_hash(bestScore, ply);
     he.eval = pos->checkers ? -INF : staticEval;
-    he.depth = depth;
+    he.depth = 0;
     he.move = bestMove;
     he.date = hash_date;
     he.keyXorData = pos->key ^ he.data;
