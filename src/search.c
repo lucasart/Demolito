@@ -346,9 +346,9 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
         pos_move(&nextPos, pos, currentMove);
 
         // Prune bad or late moves near the leaves
-        if (depth <= 5 && !pvNode && !pos->checkers) {
+        if (depth <= 5 && !pvNode && !pos->checkers && !nextPos.checkers) {
             // SEE pruning
-            if (see < SEEMargin[capture][depth] && !nextPos.checkers)
+            if (see < SEEMargin[capture][depth])
                continue;
 
             // Late Move Pruning
