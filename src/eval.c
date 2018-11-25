@@ -409,6 +409,7 @@ int evaluate(Worker *worker, const Position *pos)
     eval_sub(&stm, e[them]);
 
     // Scaling rule for endgame
+    assert(!pos_insufficient_material(pos));
     const int winner = stm.eg > 0 ? us : them, loser = opposite(winner);
     const bitboard_t winnerPawns = pos_pieces_cp(pos, winner, PAWN);
 
