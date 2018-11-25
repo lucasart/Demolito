@@ -74,10 +74,9 @@ static int qsearch(Worker *worker, const Position *pos, int ply, int depth, int 
     int score;
     Position nextPos;
 
+    // Allocate PV for the child node, and terminate current PV
     move_t childPv[MAX_PLY - ply];
-
-    if (pvNode)
-        pv[0] = 0;
+    pv[0] = 0;
 
     if (ply > 0 && (stack_repetition(&worker->stack, pos->rule50)
             || pos_insufficient_material(pos)))
@@ -241,10 +240,9 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
             longjmp(worker->jbuf, ABORT_ONE);
     }
 
+    // Allocate PV for the child node, and terminate current PV
     move_t childPv[MAX_PLY - ply];
-
-    if (pvNode)
-        pv[0] = 0;
+    pv[0] = 0;
 
     if (ply > 0 && (stack_repetition(&worker->stack, pos->rule50)
             || pos_insufficient_material(pos)))
