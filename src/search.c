@@ -61,13 +61,13 @@ void search_init()
 static const int Tempo = 17;
 
 static int qsearch(Worker *worker, const Position *pos, int ply, int depth, int alpha, int beta,
-    move_t pv[])
+    bool pvNode, move_t pv[])
 {
     assert(depth <= 0);
     assert(stack_back(&worker->stack) == pos->key);
     assert(alpha < beta);
+    assert(pvNode || (alpha+1 == beta));
 
-    const bool pvNode = beta > alpha + 1;
     const int oldAlpha = alpha;
     int bestScore = -INF;
     move_t bestMove = 0;
@@ -76,7 +76,8 @@ static int qsearch(Worker *worker, const Position *pos, int ply, int depth, int 
 
     // Allocate PV for the child node, and terminate current PV
     move_t childPv[MAX_PLY - ply];
-    pv[0] = 0;
+    if (pvNode)
+        pv[0] = 0;
 
     if (ply > 0 && (stack_repetition(&worker->stack, pos->rule50)
             || pos_insufficient_material(pos)))
@@ -160,7 +161,7 @@ static int qsearch(Worker *worker, const Position *pos, int ply, int depth, int 
             if (pvNode)
                 childPv[0] = 0;
         } else
-            score = -qsearch(worker, &nextPos, ply + 1, nextDepth, -beta, -alpha, childPv);
+            score = -qsearch(worker, &nextPos, ply + 1, nextDepth, -beta, -alpha, pvNode, childPv);
 
         // Undo move
         stack_pop(&worker->stack);
@@ -291,9 +292,9 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
 
         if (refinedEval <= lbound) {
             if (depth <= 2)
-                return qsearch(worker, pos, ply, 0, alpha, alpha + 1, childPv);
+                return qsearch(worker, pos, ply, 0, alpha, alpha + 1, false, childPv);
 
-            score = qsearch(worker, pos, ply, 0, lbound, lbound + 1, childPv);
+            score = qsearch(worker, pos, ply, 0, lbound, lbound + 1, false, childPv);
 
             if (score <= lbound)
                 return score;
@@ -307,7 +308,7 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
         pos_switch(&nextPos, pos);
         stack_push(&worker->stack, nextPos.key);
         score = nextDepth <= 0
-            ? -qsearch(worker, &nextPos, ply + 1, nextDepth, -beta, -(beta - 1), childPv)
+            ? -qsearch(worker, &nextPos, ply + 1, nextDepth, -beta, -(beta - 1), false, childPv)
             : -search(worker, &nextPos, ply + 1, nextDepth, -beta, -(beta - 1), childPv, 0);
         stack_pop(&worker->stack);
 
@@ -383,7 +384,7 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
 
         // Recursion
         if (nextDepth <= 0)
-            score = -qsearch(worker, &nextPos, ply + 1, nextDepth, -beta, -alpha, childPv);
+            score = -qsearch(worker, &nextPos, ply + 1, nextDepth, -beta, -alpha, pvNode, childPv);
         else {
             // Search recursion (PVS + Reduction)
             if (moveCount == 1)
@@ -400,7 +401,7 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
 
                 // Reduced depth, zero window
                 score = nextDepth - reduction <= 0
-                        ? -qsearch(worker, &nextPos, ply + 1, nextDepth - reduction, -(alpha + 1), -alpha, childPv)
+                        ? -qsearch(worker, &nextPos, ply + 1, nextDepth - reduction, -(alpha + 1), -alpha, false, childPv)
                         : -search(worker, &nextPos, ply + 1, nextDepth - reduction, -(alpha + 1), -alpha, childPv, 0);
 
                 // Fail high: re-search zero window at full depth
