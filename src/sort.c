@@ -13,6 +13,7 @@
  * You should have received a copy of the GNU General Public License along with this program. If
  * not, see <http://www.gnu.org/licenses/>.
 */
+#include <limits.h>
 #include <stdlib.h>
 #include "bitboard.h"
 #include "move.h"
@@ -53,7 +54,7 @@ void sort_score(Worker *worker, Sort *s, const Position *pos, move_t ttMove, int
 
     for (size_t i = 0; i < s->cnt; i++) {
         if (s->moves[i] == ttMove)
-            s->scores[i] = +INF;
+            s->scores[i] = INT_MAX;
         else {
             if (move_is_capture(pos, s->moves[i])) {
                 const int see = move_see(pos, s->moves[i]);
@@ -91,7 +92,7 @@ void sort_init(Worker *worker, Sort *s, const Position *pos, int depth, move_t t
 
 move_t sort_next(Sort *s, const Position *pos, int *see)
 {
-    int maxScore = -INF;
+    int maxScore = INT_MIN;
     size_t maxIdx = s->idx;
 
     for (size_t i = s->idx; i < s->cnt; i++)
@@ -113,12 +114,17 @@ move_t sort_next(Sort *s, const Position *pos, int *see)
     const move_t m = s->moves[s->idx];
 
     if (move_is_capture(pos, m)) {
+        // Deduce SEE from the sort score
         if (score >= SEPARATION)
-            *see = score - SEPARATION;
+            *see = score == INT_MAX
+                ? move_see(pos, m)  // special case: HT move is scored as INT_MAX
+                : score - SEPARATION;  // Good captures are scored as SEE + SEPARATION
         else {
             assert(score < -SEPARATION);
-            *see = score + SEPARATION;
+            *see = score + SEPARATION;  // Bad captures are scored as SEE - SEPARATION
         }
+
+        assert(*see == move_see(pos, m));
     } else
         *see = move_see(pos, m);
 

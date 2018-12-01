@@ -65,17 +65,19 @@ static int qsearch(Worker *worker, const Position *pos, int ply, int depth, int 
 {
     assert(depth <= 0);
     assert(stack_back(&worker->stack) == pos->key);
-    assert(alpha < beta);
+    assert(-MATE <= alpha && alpha < beta && beta <= MATE);
     assert(pvNode || (alpha+1 == beta));
 
     const int oldAlpha = alpha;
-    int bestScore = -INF;
+    int bestScore = -MATE;
     move_t bestMove = 0;
     int score;
     Position nextPos;
 
-    // Allocate PV for the child node, and terminate current PV
+    // Allocate PV for the child node
     move_t childPv[MAX_PLY - ply];
+
+    // Terminate current PV
     if (pvNode)
         pv[0] = 0;
 
@@ -101,7 +103,7 @@ static int qsearch(Worker *worker, const Position *pos, int ply, int depth, int 
             refinedEval = he.score;
     } else {
         he.move = 0;
-        refinedEval = staticEval = pos->checkers ? -INF : evaluate(worker, pos) + Tempo;
+        refinedEval = staticEval = pos->checkers ? -MATE : evaluate(worker, pos) + Tempo;
     }
 
     worker->nodes++;
@@ -192,7 +194,7 @@ static int qsearch(Worker *worker, const Position *pos, int ply, int depth, int 
 
     // Return alpha when all moves are pruned
     if (bestScore <= -MATE) {
-        assert(bestScore == -INF);
+        assert(bestScore == -MATE);
         return alpha;
     }
 
@@ -200,7 +202,7 @@ static int qsearch(Worker *worker, const Position *pos, int ply, int depth, int 
     he.bound = bestScore <= oldAlpha ? UBOUND : bestScore >= beta ? LBOUND : EXACT;
     he.singular = 0;
     he.score = score_to_hash(bestScore, ply);
-    he.eval = pos->checkers ? -INF : staticEval;
+    he.eval = pos->checkers ? -MATE : staticEval;
     he.depth = 0;
     he.move = bestMove;
     he.date = hash_date;
@@ -222,12 +224,12 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
 
     assert(depth > 0);
     assert(stack_back(&worker->stack) == pos->key);
-    assert(alpha < beta);
+    assert(-MATE <= alpha && alpha < beta && beta <= MATE);
 
     const bool pvNode = beta > alpha + 1;
     const int oldAlpha = alpha;
     const int us = pos->turn;
-    int bestScore = -INF;
+    int bestScore = -MATE;
     move_t bestMove = 0;
     int score;
     Position nextPos;
@@ -268,7 +270,7 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
             refinedEval = he.score;
     } else {
         he.move = 0;
-        refinedEval = staticEval = pos->checkers ? -INF : evaluate(worker, pos) + Tempo;
+        refinedEval = staticEval = pos->checkers ? -MATE : evaluate(worker, pos) + Tempo;
     }
 
     // At Root, ensure that the last best move is searched first. This is not guaranteed,
@@ -446,7 +448,7 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
 
     // Return alpha when all moves are pruned
     if (bestScore <= -MATE) {
-        assert(bestScore == -INF);
+        assert(bestScore == -MATE);
         return alpha;
     }
 
@@ -465,7 +467,7 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
     he.bound = bestScore <= oldAlpha ? UBOUND : bestScore >= beta ? LBOUND : EXACT;
     he.singular = hashMoveWasSingular;
     he.score = score_to_hash(bestScore, ply);
-    he.eval = pos->checkers ? -INF : staticEval;
+    he.eval = pos->checkers ? -MATE : staticEval;
     he.depth = depth;
     he.move = bestMove;
     he.date = hash_date;
@@ -480,7 +482,7 @@ static int aspirate(Worker *worker, int depth, move_t pv[], int score)
     assert(depth > 0);
 
     if (depth == 1)
-        return search(worker, &rootPos, 0, depth, -INF, +INF, pv, 0);
+        return search(worker, &rootPos, 0, depth, -MATE, MATE, pv, 0);
 
     int delta = 15;
     int alpha = score - delta;

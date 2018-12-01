@@ -3,7 +3,7 @@
 #include "position.h"
 
 enum {
-    INF = 32767, MATE = 32000,
+    MATE = 32000,
     MAX_DEPTH = 127, MIN_DEPTH = -8,
     MAX_PLY = MAX_DEPTH - MIN_DEPTH + 2,
     MAX_GAME_PLY = 2048
