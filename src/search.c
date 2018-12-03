@@ -92,9 +92,11 @@ static int qsearch(Worker *worker, const Position *pos, int ply, int depth, int 
     if (hash_read(pos->key, &he)) {
         he.score = score_from_hash(he.score, ply);
 
-        if (he.depth >= depth && !pvNode && ((he.score <= alpha && he.bound >= EXACT)
-                || (he.score >= beta && he.bound <= EXACT)))
+        if (!pvNode && ((he.score <= alpha && he.bound >= EXACT)
+                || (he.score >= beta && he.bound <= EXACT))) {
+            assert(he.depth >= depth);
             return he.score;
+        }
 
         refinedEval = staticEval = he.eval;
 
@@ -306,12 +308,16 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
     // Null search
     if (depth >= 2 && !pvNode
             && staticEval >= beta && pos->pieceMaterial[us].eg) {
+        assert(!pos->checkers);
         const int nextDepth = depth - (3 + depth / 4) - (refinedEval >= beta + 167);
+
         pos_switch(&nextPos, pos);
         stack_push(&worker->stack, nextPos.key);
+
         score = nextDepth <= 0
             ? -qsearch(worker, &nextPos, ply + 1, nextDepth, -beta, -(beta - 1), false, childPv)
             : -search(worker, &nextPos, ply + 1, nextDepth, -beta, -(beta - 1), childPv, 0);
+
         stack_pop(&worker->stack);
 
         if (score >= beta)
