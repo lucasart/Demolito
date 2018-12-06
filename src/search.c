@@ -194,10 +194,10 @@ static int qsearch(Worker *worker, const Position *pos, int ply, int depth, int 
     if (pos->checkers && !moveCount)
         return mated_in(ply);
 
-    // Return alpha when all moves are pruned
+    // Return worst possible score when all moves are pruned
     if (bestScore <= -MATE) {
         assert(bestScore == -MATE);
-        return alpha;
+        return max(alpha, mated_in(ply));
     }
 
     // TT write
@@ -452,10 +452,10 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
     if (!moveCount)
         return singularMove ? alpha : pos->checkers ? mated_in(ply) : draw_score(ply);
 
-    // Return alpha when all moves are pruned
+    // Return worst possible score when all moves are pruned
     if (bestScore <= -MATE) {
         assert(bestScore == -MATE);
-        return alpha;
+        return max(alpha, mated_in(ply));
     }
 
     // Update move sorting statistics
