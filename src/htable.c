@@ -23,18 +23,26 @@ static uint64_t HashCount = 0;
 
 int score_to_hash(int score, int ply)
 {
+    if (score >= mate_in(MAX_PLY))
+        score += ply;
+    else if (score <= mated_in(MAX_PLY))
+        score -= ply;
+
     assert(abs(score) < MATE);
-    return score >= mate_in(MAX_PLY) ? score + ply
-        : score <= mated_in(MAX_PLY) ? score - ply
-        : score;
+
+    return score;
 }
 
 int score_from_hash(int hashScore, int ply)
 {
-    assert(abs(hashScore) < MATE);
-    return hashScore >= mate_in(MAX_PLY) ? hashScore - ply
-        : hashScore <= mated_in(MAX_PLY) ? hashScore + ply
-        : hashScore;
+    if (hashScore >= mate_in(MAX_PLY))
+        hashScore -= ply;
+    else if (hashScore <= mated_in(MAX_PLY))
+        hashScore += ply;
+
+    assert(abs(hashScore) < MATE - ply);
+
+    return hashScore;
 }
 
 void hash_resize(uint64_t hashMB)

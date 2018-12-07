@@ -197,7 +197,7 @@ static int qsearch(Worker *worker, const Position *pos, int ply, int depth, int 
     // Return worst possible score when all moves are pruned
     if (bestScore <= -MATE) {
         assert(bestScore == -MATE);
-        return max(alpha, mated_in(ply));
+        return max(alpha, mated_in(ply + 1));
     }
 
     // TT write
@@ -455,7 +455,7 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
     // Return worst possible score when all moves are pruned
     if (bestScore <= -MATE) {
         assert(bestScore == -MATE);
-        return max(alpha, mated_in(ply));
+        return max(alpha, mated_in(ply + 1));
     }
 
     // Update move sorting statistics
