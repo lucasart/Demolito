@@ -441,7 +441,9 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
                         if (!(pv[i + 1] = childPv[i]))
                             break;
 
-                    if (ply == 0 && info_last_depth(&ui) > 0)
+                    // Best move has changed since last completed iteration. Update the best move and
+                    // PV immediately, because we may not have time to finish this iteration.
+                    if (ply == 0 && moveCount > 1 && depth > 1)
                         info_update(&ui, depth, score, smp_nodes(), pv, true);
                 }
             }

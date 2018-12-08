@@ -219,25 +219,15 @@ void info_update(Info *info, int depth, int score, int64_t nodes, move_t pv[], b
     mtx_lock(&info->mtx);
 
     if (depth > info->lastDepth) {
-        const bool bestMoveChanged = info->best != pv[0];
-        info->best = pv[0];
-
-        if (partial) {
-            mtx_unlock(&info->mtx);
-            return;
-        }
-
-        info->variability += bestMoveChanged ? 1.2 : -0.24;
-        info->lastDepth = depth;
-
+        // Print info line all the way to the "pv" token
         char str[17];
         uci_format_score(score, str);
         uci_printf("info depth %d score %s time %" PRId64 " nodes %" PRId64 " pv",
                    depth, str, system_msec() - info->start, nodes);
 
-        // Because of e1g1 notation when Chess960 = false, we need to play the PV, just to be able
-        // to print it. This is a defect of the UCI protocol (which should have encoded castling as
-        // e1h1 regardless of Chess960 allowing coherent treatement).
+        // Pring the moves. Because of e1g1 notation when Chess960 = false, we need to play the PV
+        // to print it correctly. This is a design flaw of the UCI protocol, which should have
+        // encoded castling as e1h1 regardless of Chess960 allowing coherent treatement.
         Position p[2];
         int idx = 0;
         p[idx] = rootPos;
@@ -245,11 +235,18 @@ void info_update(Info *info, int depth, int score, int64_t nodes, move_t pv[], b
         for (int i = 0; pv[i]; i++) {
             move_to_string(&p[idx], pv[i], str);
             uci_printf(" %s", str);
-            pos_move(&p[idx^1], &p[idx], pv[i]);
+            pos_move(&p[idx ^ 1], &p[idx], pv[i]);
             idx ^= 1;
         }
 
         uci_puts("");
+
+        if (!partial) {
+            info->variability += info->best != pv[0] ? 1.2 : -0.24;
+            info->lastDepth = depth;
+        }
+
+        info->best = pv[0];
     }
 
     mtx_unlock(&info->mtx);
