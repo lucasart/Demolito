@@ -27,16 +27,14 @@
 #include "smp.h"
 #include "uci.h"
 
-uint64_t test(bool perft, int depth, int threads, int hash)
+uint64_t test(bool perft, int depth)
 {
     static const char *fens[] = {
         #include "test.csv"
         NULL
     };
 
-    hash_resize(hash);
     uint64_t result = 0, nodes;
-    smp_resize(threads);
     uciChess960 = true;
 
     memset(&lim, 0, sizeof(lim));
@@ -75,18 +73,19 @@ int main(int argc, char **argv)
     pst_init();
     eval_init();
     search_init();
-    smp_resize(1);
 
     if (argc >= 2) {
         if ((!strcmp(argv[1], "perft") || !strcmp(argv[1], "search")) && argc >= 3) {
-            const int depth = atoi(argv[2]);
-            const int threads = argc > 3 ? atoi(argv[3]) : 1;
-            const int hash = argc > 4 ? atoi(argv[4]) : 2;
-            const uint64_t nodes = test(!strcmp(argv[1], "perft"), depth, threads, hash);
+            smp_prepare(WorkersCount = argc > 3 ? atoi(argv[3]) : 1);
+            hash_prepare(uciHash = argc > 4 ? atoi(argv[4]) : 2);
+            const uint64_t nodes = test(!strcmp(argv[1], "perft"), atoi(argv[2]));
             fprintf(stderr, "total = %" PRIu64 "\n", nodes);
         }
-    } else
+    } else {
+        smp_prepare(WorkersCount);
+        hash_prepare(uciHash);
         uci_loop();
+    }
 
     free(HashTable);
     smp_destroy();

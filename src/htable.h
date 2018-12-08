@@ -5,7 +5,7 @@
 
 enum {LBOUND, EXACT, UBOUND};
 
-extern unsigned hash_date;
+extern unsigned hashDate;
 
 typedef struct {
     uint64_t keyXorData;
@@ -24,7 +24,7 @@ typedef struct {
 int score_to_hash(int score, int ply);
 int score_from_hash(int hashScore, int ply);
 
-void hash_resize(uint64_t hashMB);
+void hash_prepare(uint64_t hashMB);  // realloc + clear
 bool hash_read(uint64_t key, HashEntry *e);
 void hash_write(uint64_t key, const HashEntry *e);
 

@@ -19,7 +19,7 @@
 #include "search.h"
 
 Worker *Workers = NULL;
-int WorkersCount;
+int WorkersCount = 1;
 
 void stack_clear(Stack *st)
 {
@@ -64,13 +64,13 @@ bool stack_repetition(const Stack *st, int rule50)
     return false;
 }
 
-void smp_resize(int count)
+void smp_prepare(int count)
 {
     Workers = realloc(Workers, count * sizeof(Worker));
     WorkersCount = count;
 
     for (int i = 0; i < WorkersCount; i++)
-        memset(Workers[i].pawnHash, 0, sizeof(Workers[i].pawnHash));
+        memset(&Workers[i], 0, sizeof(Workers[i]));
 }
 
 void smp_destroy()

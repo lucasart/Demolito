@@ -207,7 +207,7 @@ static int qsearch(Worker *worker, const Position *pos, int ply, int depth, int 
     he.eval = pos->checkers ? -MATE : staticEval;
     he.depth = 0;
     he.move = bestMove;
-    he.date = hash_date;
+    he.date = hashDate;
     he.keyXorData = pos->key ^ he.data;
     hash_write(pos->key, &he);
 
@@ -478,7 +478,7 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
     he.eval = pos->checkers ? -MATE : staticEval;
     he.depth = depth;
     he.move = bestMove;
-    he.date = hash_date;
+    he.date = hashDate;
     he.keyXorData = key ^ he.data;
     hash_write(key, &he);
 
@@ -602,7 +602,7 @@ int64_t search_go()
     mtx_init(&mtxSchedule, mtx_plain);
     Signal = 0;
 
-    hash_date++;
+    hashDate++;
     thrd_t threads[WorkersCount];
     smp_new_search();
 
@@ -612,8 +612,8 @@ int64_t search_go()
         const int movesToGo = lim.movestogo ? 0.5 + pow(lim.movestogo, 0.9) : 26;
         const int remaining = (movesToGo - 1) * lim.inc + lim.time;
 
-        minTime = min(0.57 * remaining / movesToGo, lim.time - TimeBuffer);
-        maxTime = min(2.21 * remaining / movesToGo, lim.time - TimeBuffer);
+        minTime = min(0.57 * remaining / movesToGo, lim.time - uciTimeBuffer);
+        maxTime = min(2.21 * remaining / movesToGo, lim.time - uciTimeBuffer);
     }
 
     for (int i = 0; i < WorkersCount; i++)
@@ -626,7 +626,7 @@ int64_t search_go()
         // Check for search termination conditions, but only after depth 1 has been
         // completed, to make sure we do not return an illegal move.
         if (info_last_depth(&ui) > 0) {
-            if ((lim.movetime && system_msec() - start >= lim.movetime - TimeBuffer)
+            if ((lim.movetime && system_msec() - start >= lim.movetime - uciTimeBuffer)
                     || (lim.nodes && smp_nodes() >= lim.nodes))
                 Signal = STOP;
             else if (lim.time || lim.inc) {

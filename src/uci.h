@@ -13,8 +13,9 @@ typedef struct {
 } Info;
 
 extern Info ui;
-extern int64_t TimeBuffer;
+extern int64_t uciTimeBuffer;
 extern bool uciChess960;
+extern uint64_t uciHash;
 
 void info_create(Info *info);
 void info_destroy(Info *info);

@@ -30,8 +30,8 @@
 
 static thrd_t Timer = 0;
 
-static uint64_t Hash = 1;
-int64_t TimeBuffer = 60;
+uint64_t uciHash = 1;
+int64_t uciTimeBuffer = 60;
 bool uciChess960 = false;
 
 static void uci_format_score(int score, char str[17])
@@ -46,10 +46,10 @@ static void intro()
 {
     uci_puts("id name Demolito " VERSION "\nid author lucasart");
     uci_printf("option name UCI_Chess960 type check default %s\n", uciChess960 ? "true" : "false");
-    uci_printf("option name Hash type spin default %" PRIu64 " min 1 max 1048576\n", Hash);
+    uci_printf("option name Hash type spin default %" PRIu64 " min 1 max 1048576\n", uciHash);
     uci_printf("option name Threads type spin default %d min 1 max 63\n", WorkersCount);
     uci_printf("option name Contempt type spin default %d min -100 max 100\n", Contempt);
-    uci_printf("option name Time Buffer type spin default %" PRId64 " min 0 max 1000\n", TimeBuffer);
+    uci_printf("option name Time Buffer type spin default %" PRId64 " min 0 max 1000\n", uciTimeBuffer);
     uci_puts("uciok");
 }
 
@@ -67,15 +67,15 @@ static void setoption(char **linePos)
     if (!strcmp(name, "UCI_Chess960"))
         uciChess960 = !strcmp(strtok_r(NULL, " \n", linePos), "true");
     else if (!strcmp(name, "Hash")) {
-        Hash = atoi(strtok_r(NULL, " \n", linePos));
-        Hash = 1ULL << bb_msb(Hash);  // must be a power of two
-        hash_resize(Hash);
+        uciHash = atoi(strtok_r(NULL, " \n", linePos));
+        uciHash = 1ULL << bb_msb(uciHash);  // must be a power of two
+        hash_prepare(uciHash);
     } else if (!strcmp(name, "Threads"))
-        smp_resize(atoi(strtok_r(NULL, " \n", linePos)));
+        smp_prepare(atoi(strtok_r(NULL, " \n", linePos)));
     else if (!strcmp(name, "Contempt"))
         Contempt = atoi(strtok_r(NULL, " \n", linePos));
     else if (!strcmp(name, "TimeBuffer"))
-        TimeBuffer = atoi(strtok_r(NULL, " \n", linePos));
+        uciTimeBuffer = atoi(strtok_r(NULL, " \n", linePos));
 }
 
 static void position(char **linePos)
@@ -174,9 +174,8 @@ void uci_loop()
         else if (!strcmp(token, "isready"))
             uci_puts("readyok");
         else if (!strcmp(token, "ucinewgame")) {
-            hash_resize(Hash);
-            memset(HashTable, 0, Hash << 20);
-            hash_date = 0;
+            memset(HashTable, 0, uciHash << 20);
+            hashDate = 0;
         } else if (!strcmp(token, "position"))
             position(&linePos);
         else if (!strcmp(token, "go"))

@@ -36,7 +36,7 @@ typedef struct {
 extern Worker *Workers;
 extern int WorkersCount;
 
-void smp_resize(int count);
+void smp_prepare(int count);  // realloc + clear
 void smp_destroy();
 
 void smp_new_search();

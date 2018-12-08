@@ -14,10 +14,11 @@
  * not, see <http://www.gnu.org/licenses/>.
 */
 #include <stdlib.h>
+#include <string.h>
 #include "htable.h"
 #include "search.h"
 
-unsigned hash_date;
+unsigned hashDate;
 HashEntry *HashTable = NULL;
 static uint64_t HashCount = 0;
 
@@ -45,7 +46,7 @@ int score_from_hash(int hashScore, int ply)
     return hashScore;
 }
 
-void hash_resize(uint64_t hashMB)
+void hash_prepare(uint64_t hashMB)
 {
     free(HashTable);
 #ifdef _WIN64  // C11 support lacking, use instead Microsoft's _aligned_malloc()
@@ -54,6 +55,8 @@ void hash_resize(uint64_t hashMB)
     HashTable = aligned_alloc(sizeof(HashEntry), hashMB << 20);
 #endif
     HashCount = (hashMB << 20) / sizeof(HashEntry);
+
+    memset(HashTable, 0, hashMB << 20);
 }
 
 bool hash_read(uint64_t key, HashEntry *e)
