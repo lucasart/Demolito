@@ -240,10 +240,10 @@ void info_update(Info *info, int depth, int score, int64_t nodes, move_t pv[], b
 
         uci_puts("");
 
-        if (!partial) {
-            info->variability += info->best != pv[0] ? 1.2 : -0.24;
+        info->variability += info->best != pv[0] ? (partial ? 0.6 / WorkersCount : 0.6) : -0.24;
+
+        if (!partial)
             info->lastDepth = depth;
-        }
 
         info->best = pv[0];
     }
