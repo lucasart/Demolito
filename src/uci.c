@@ -13,6 +13,7 @@
  * You should have received a copy of the GNU General Public License along with this program. If
  * not, see <http://www.gnu.org/licenses/>.
 */
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -240,7 +241,12 @@ void info_update(Info *info, int depth, int score, int64_t nodes, move_t pv[], b
 
         uci_puts("");
 
-        info->variability += info->best != pv[0] ? (partial ? 0.6 / WorkersCount : 0.6) : -0.24;
+        // Compensate for relative frequency of partial updates
+        const double smpRescaling[] = {1.0, pow(WorkersCount, -0.75)};
+
+        info->variability += info->best != pv[0]
+            ? 0.6 * smpRescaling[partial]  // best move changed: increase variability
+            : -0.24 * smpRescaling[partial];  // best move confirmed: lower variability
 
         if (!partial)
             info->lastDepth = depth;
