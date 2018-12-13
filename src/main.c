@@ -58,8 +58,8 @@ uint64_t test(bool perft, int depth)
         result += nodes;
     }
 
-    if (dbgCnt[1])
-        printf("dbgCnt[0] = %" PRId64 ", dbgCnt[1] = %" PRId64 "\n", dbgCnt[0], dbgCnt[1]);
+    if (dbgCnt[0] || dbgCnt[1])
+        fprintf(stderr, "dbgCnt[0] = %" PRId64 ", dbgCnt[1] = %" PRId64 "\n", dbgCnt[0], dbgCnt[1]);
 
     fprintf(stderr, "kn/s: %" PRIu64 "\n", result / (system_msec() - start));
 
