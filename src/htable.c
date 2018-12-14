@@ -62,7 +62,12 @@ void hash_prepare(uint64_t hashMB)
 bool hash_read(uint64_t key, HashEntry *e)
 {
     *e = HashTable[key & (HashCount - 1)];
-    return (e->keyXorData ^ e->data) == key;
+
+    if ((e->keyXorData ^ e->data) == key)
+        return true;
+
+    e->data = 0;
+    return false;
 }
 
 void hash_write(uint64_t key, const HashEntry *e)

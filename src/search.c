@@ -85,7 +85,7 @@ static int qsearch(Worker *worker, const Position *pos, int ply, int depth, int 
             || pos_insufficient_material(pos)))
         return draw_score(ply);
 
-    // TT probe
+    // HT probe
     HashEntry he;
     int staticEval, refinedEval;
 
@@ -103,10 +103,8 @@ static int qsearch(Worker *worker, const Position *pos, int ply, int depth, int 
         if ((he.score > refinedEval && he.bound <= EXACT)
                 || (he.score < refinedEval && he.bound >= EXACT))
             refinedEval = he.score;
-    } else {
-        he.move = 0;
+    } else
         refinedEval = staticEval = pos->checkers ? -MATE : evaluate(worker, pos) + Tempo;
-    }
 
     worker->nodes++;
 
@@ -200,7 +198,7 @@ static int qsearch(Worker *worker, const Position *pos, int ply, int depth, int 
         return max(alpha, mated_in(ply + 1));
     }
 
-    // TT write
+    // HT write
     he.bound = bestScore <= oldAlpha ? UBOUND : bestScore >= beta ? LBOUND : EXACT;
     he.singular = 0;
     he.score = score_to_hash(bestScore, ply);
@@ -253,7 +251,7 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
             || pos_insufficient_material(pos)))
         return draw_score(ply);
 
-    // TT probe
+    // HT probe
     HashEntry he;
     int staticEval, refinedEval;
     const uint64_t key = pos->key ^ singularMove;
@@ -270,13 +268,11 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
         if ((he.score > refinedEval && he.bound <= EXACT)
                 || (he.score < refinedEval && he.bound >= EXACT))
             refinedEval = he.score;
-    } else {
-        he.move = 0;
+    } else
         refinedEval = staticEval = pos->checkers ? -MATE : evaluate(worker, pos) + Tempo;
-    }
 
     // At Root, ensure that the last best move is searched first. This is not guaranteed,
-    // as the TT entry could have got overriden by other search threads.
+    // as the HT entry could have got overriden by other search threads.
     if (ply == 0 && info_last_depth(&ui) > 0)
         he.move = info_best(&ui);
 
@@ -471,7 +467,7 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
         worker->killers[ply] = bestMove;
     }
 
-    // TT write
+    // HT write
     he.bound = bestScore <= oldAlpha ? UBOUND : bestScore >= beta ? LBOUND : EXACT;
     he.singular = hashMoveWasSingular;
     he.score = score_to_hash(bestScore, ply);
