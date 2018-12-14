@@ -242,7 +242,7 @@ void info_update(Info *info, int depth, int score, int64_t nodes, move_t pv[], b
         uci_puts("");
 
         // Compensate for relative frequency of partial updates
-        const double smpRescaling[] = {1.0, pow(WorkersCount, -0.5)};
+        const double smpRescaling[] = {1.0, pow(WorkersCount, -0.4)};
 
         info->variability += info->best != pv[0]
             ? 0.6 * smpRescaling[partial]  // best move changed: increase variability
