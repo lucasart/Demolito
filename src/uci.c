@@ -222,8 +222,8 @@ void info_update(Info *info, int depth, int score, int64_t nodes, move_t pv[], b
         // Print info line all the way to the "pv" token
         char str[17];
         uci_format_score(score, str);
-        uci_printf("info depth %d score %s time %" PRId64 " nodes %" PRId64 " pv",
-                   depth, str, system_msec() - info->start, nodes);
+        uci_printf("info depth %d score %s time %" PRId64 " nodes %" PRId64 " hashfull %d pv",
+            depth, str, system_msec() - info->start, nodes, hash_permille());
 
         // Pring the moves. Because of e1g1 notation when Chess960 = false, we need to play the PV
         // to print it correctly. This is a design flaw of the UCI protocol, which should have

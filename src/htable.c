@@ -84,3 +84,13 @@ void hash_write(uint64_t key, HashEntry *e, int ply)
         *slot = *e;
     }
 }
+
+int hash_permille()
+{
+    int result = 0;
+
+    for (int i = 0; i < 1000; i++)
+        result += HashTable[i].keyXorData && HashTable[i].date == hashDate;
+
+    return result;
+}
