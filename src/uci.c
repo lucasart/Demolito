@@ -31,7 +31,7 @@
 
 static thrd_t Timer = 0;
 
-uint64_t uciHash = 1;
+uint64_t uciHash = 2;
 int64_t uciTimeBuffer = 60;
 bool uciChess960 = false;
 

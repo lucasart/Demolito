@@ -76,8 +76,11 @@ int main(int argc, char **argv)
 
     if (argc >= 2) {
         if ((!strcmp(argv[1], "perft") || !strcmp(argv[1], "search")) && argc >= 3) {
-            smp_prepare(WorkersCount = argc > 3 ? atoi(argv[3]) : 1);
-            hash_prepare(uciHash = argc > 4 ? atoi(argv[4]) : 2);
+            if (argc > 3) WorkersCount = atoi(argv[3]);
+            if (argc > 4) uciHash = atoi(argv[4]);
+
+            smp_prepare(WorkersCount);
+            hash_prepare(uciHash);
             const uint64_t nodes = test(!strcmp(argv[1], "perft"), atoi(argv[2]));
             fprintf(stderr, "total = %" PRIu64 "\n", nodes);
         }
