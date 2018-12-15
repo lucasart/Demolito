@@ -20,12 +20,8 @@ typedef struct {
     };
 } HashEntry;
 
-// Adjust mate scores to plies from current position, instead of plies from root
-int score_to_hash(int score, int ply);
-int score_from_hash(int hashScore, int ply);
-
 void hash_prepare(uint64_t hashMB);  // realloc + clear
-bool hash_read(uint64_t key, HashEntry *e);
-void hash_write(uint64_t key, const HashEntry *e);
+bool hash_read(uint64_t key, HashEntry *e, int ply);
+void hash_write(uint64_t key, HashEntry *e, int ply);
 
 extern HashEntry *HashTable;

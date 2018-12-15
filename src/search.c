@@ -89,9 +89,7 @@ static int qsearch(Worker *worker, const Position *pos, int ply, int depth, int 
     HashEntry he;
     int staticEval, refinedEval;
 
-    if (hash_read(pos->key, &he)) {
-        he.score = score_from_hash(he.score, ply);
-
+    if (hash_read(pos->key, &he, ply)) {
         if (!pvNode && ((he.score <= alpha && he.bound >= EXACT)
                 || (he.score >= beta && he.bound <= EXACT))) {
             assert(he.depth >= depth);
@@ -201,13 +199,11 @@ static int qsearch(Worker *worker, const Position *pos, int ply, int depth, int 
     // HT write
     he.bound = bestScore <= oldAlpha ? UBOUND : bestScore >= beta ? LBOUND : EXACT;
     he.singular = 0;
-    he.score = score_to_hash(bestScore, ply);
+    he.score = bestScore;
     he.eval = pos->checkers ? -MATE : staticEval;
     he.depth = 0;
     he.move = bestMove;
-    he.date = hashDate;
-    he.keyXorData = pos->key ^ he.data;
-    hash_write(pos->key, &he);
+    hash_write(pos->key, &he, ply);
 
     return bestScore;
 }
@@ -256,9 +252,7 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
     int staticEval, refinedEval;
     const uint64_t key = pos->key ^ singularMove;
 
-    if (hash_read(key, &he)) {
-        he.score = score_from_hash(he.score, ply);
-
+    if (hash_read(key, &he, ply)) {
         if (he.depth >= depth && !pvNode && ((he.score <= alpha && he.bound >= EXACT)
                 || (he.score >= beta && he.bound <= EXACT)))
             return he.score;
@@ -470,13 +464,11 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
     // HT write
     he.bound = bestScore <= oldAlpha ? UBOUND : bestScore >= beta ? LBOUND : EXACT;
     he.singular = hashMoveWasSingular;
-    he.score = score_to_hash(bestScore, ply);
+    he.score = bestScore;
     he.eval = pos->checkers ? -MATE : staticEval;
     he.depth = depth;
     he.move = bestMove;
-    he.date = hashDate;
-    he.keyXorData = key ^ he.data;
-    hash_write(key, &he);
+    hash_write(key, &he, ply);
 
     return bestScore;
 }

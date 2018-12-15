@@ -18,11 +18,11 @@
 #include "htable.h"
 #include "search.h"
 
-unsigned hashDate;
+unsigned hashDate = 0;
 HashEntry *HashTable = NULL;
 static uint64_t HashCount = 0;
 
-int score_to_hash(int score, int ply)
+static int score_to_hash(int score, int ply)
 {
     if (score >= mate_in(MAX_PLY))
         score += ply;
@@ -34,7 +34,7 @@ int score_to_hash(int score, int ply)
     return score;
 }
 
-int score_from_hash(int hashScore, int ply)
+static int score_from_hash(int hashScore, int ply)
 {
     if (hashScore >= mate_in(MAX_PLY))
         hashScore -= ply;
@@ -59,21 +59,28 @@ void hash_prepare(uint64_t hashMB)
     memset(HashTable, 0, hashMB << 20);
 }
 
-bool hash_read(uint64_t key, HashEntry *e)
+bool hash_read(uint64_t key, HashEntry *e, int ply)
 {
     *e = HashTable[key & (HashCount - 1)];
 
-    if ((e->keyXorData ^ e->data) == key)
+    if ((e->keyXorData ^ e->data) == key) {
+        e->score = score_from_hash(e->score, ply);
         return true;
+    }
 
     e->data = 0;
     return false;
 }
 
-void hash_write(uint64_t key, const HashEntry *e)
+void hash_write(uint64_t key, HashEntry *e, int ply)
 {
     HashEntry *slot = &HashTable[key & (HashCount - 1)];
 
-    if (e->date != slot->date || e->depth >= slot->depth)
+    e->date = hashDate;
+
+    if (e->date != slot->date || e->depth >= slot->depth) {
+        e->score = score_to_hash(e->score, ply);
+        e->keyXorData = key ^ e->data;
         *slot = *e;
+    }
 }
