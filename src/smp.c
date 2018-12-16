@@ -64,13 +64,17 @@ bool stack_repetition(const Stack *st, int rule50)
     return false;
 }
 
+void smp_clear()
+{
+    for (int i = 0; i < WorkersCount; i++)
+        memset(&Workers[i], 0, sizeof(Workers[i]));
+}
+
 void smp_prepare(int count)
 {
     Workers = realloc(Workers, count * sizeof(Worker));
     WorkersCount = count;
-
-    for (int i = 0; i < WorkersCount; i++)
-        memset(&Workers[i], 0, sizeof(Workers[i]));
+    smp_clear();
 }
 
 void smp_destroy()
@@ -81,7 +85,6 @@ void smp_destroy()
 void smp_new_search()
 {
     for (int i = 0; i < WorkersCount; i++) {
-        memset(Workers[i].history, 0, sizeof(Workers[i].history));
         memset(Workers[i].refutation, 0, sizeof(Workers[i].refutation));
         memset(Workers[i].killers, 0, sizeof(Workers[i].killers));
         Workers[i].stack = rootStack;

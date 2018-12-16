@@ -176,6 +176,7 @@ void uci_loop()
             uci_puts("readyok");
         else if (!strcmp(token, "ucinewgame")) {
             memset(HashTable, 0, uciHash << 20);
+            smp_clear();
             hashDate = 0;
         } else if (!strcmp(token, "position"))
             position(&linePos);
