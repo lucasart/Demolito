@@ -1,7 +1,7 @@
 #pragma once
 #include "gen.h"
 
-void history_update(Worker *worker, int c, move_t m, int bonus);
+void history_update(int *t, int bonus);
 
 typedef struct {
     move_t moves[MAX_MOVES];

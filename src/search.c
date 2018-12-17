@@ -452,12 +452,18 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
 
     // Update move sorting statistics
     if (alpha > oldAlpha && !singularMove && !move_is_capture(pos, bestMove)) {
+        const size_t refIdx = stack_move_key(&worker->stack) % NB_REFUTATION;
+
         for (int i = 0; i < quietSearchedCnt; i++) {
             const int bonus = quietSearched[i] == bestMove ? depth * depth : -1 - depth * depth / 2;
-            history_update(worker, us, quietSearched[i], bonus);
+            const move_t m = quietSearched[i];
+
+            history_update(&worker->history[us][move_from_to(m)], bonus);
+            history_update(&worker->refutationHistory[refIdx][pos->pieceOn[move_from(m)]][move_to(m)],
+                bonus);
         }
 
-        worker->refutation[stack_move_key(&worker->stack) % NB_REFUTATION] = bestMove;
+        worker->refutation[refIdx] = bestMove;
         worker->killers[ply] = bestMove;
     }
 
