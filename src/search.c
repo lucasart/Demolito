@@ -455,7 +455,7 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
         const size_t refIdx = stack_move_key(&worker->stack) % NB_REFUTATION;
 
         for (int i = 0; i < quietSearchedCnt; i++) {
-            const int bonus = quietSearched[i] == bestMove ? depth * depth : -1 - depth * depth / 2;
+            const int16_t bonus = quietSearched[i] == bestMove ? depth * depth : -1 - depth * depth / 2;
             const move_t m = quietSearched[i];
 
             history_update(&worker->history[us][move_from_to(m)], bonus);

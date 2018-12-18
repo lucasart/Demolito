@@ -72,7 +72,7 @@ void sort_score(Worker *worker, Sort *s, const Position *pos, move_t ttMove, int
     }
 }
 
-void history_update(int *t, int bonus)
+void history_update(int16_t *t, int16_t bonus)
 {
     *t += 32 * bonus - *t * abs(bonus) / 512;
 
