@@ -85,8 +85,6 @@ void smp_destroy()
 void smp_new_search()
 {
     for (int i = 0; i < WorkersCount; i++) {
-        memset(Workers[i].refutation, 0, sizeof(Workers[i].refutation));
-
         // Keep killers from previous search, but shift them 2 plies down
         memmove(Workers[i].killers, Workers[i].killers + 2,
             sizeof(Workers[i].killers) - 2 * sizeof(move_t));

@@ -463,7 +463,6 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
                 bonus);
         }
 
-        worker->refutation[refIdx] = bestMove;
         worker->killers[ply] = bestMove;
     }
 

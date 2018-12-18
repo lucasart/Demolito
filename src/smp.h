@@ -25,7 +25,6 @@ typedef struct {
     PawnEntry pawnHash[NB_PAWN_ENTRY];
     int history[NB_COLOR][NB_SQUARE * NB_SQUARE];
     int refutationHistory[NB_REFUTATION][NB_PIECE][NB_SQUARE];
-    move_t refutation[NB_REFUTATION];
     move_t killers[MAX_DEPTH * 3 / 2];  // Conservative upper-bound (for qsearch and extensions)
     Stack stack;
     jmp_buf jbuf;
