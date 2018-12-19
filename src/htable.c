@@ -77,6 +77,7 @@ void hash_write(uint64_t key, HashEntry *e, int ply)
     HashEntry *slot = &HashTable[key & (HashCount - 1)];
 
     e->date = hashDate;
+    assert(e->date == hashDate % 32);
 
     if (e->date != slot->date || e->depth >= slot->depth) {
         e->score = score_to_hash(e->score, ply);
@@ -90,7 +91,7 @@ int hash_permille()
     int result = 0;
 
     for (int i = 0; i < 1000; i++)
-        result += HashTable[i].keyXorData && HashTable[i].date == hashDate;
+        result += HashTable[i].keyXorData && HashTable[i].date == hashDate % 32;
 
     return result;
 }
