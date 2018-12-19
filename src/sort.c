@@ -23,7 +23,7 @@
 
 enum {
     HISTORY_MAX = MAX_DEPTH * MAX_DEPTH,
-    SEPARATION = 2 * HISTORY_MAX + 3
+    SEPARATION = 3 * HISTORY_MAX + 3
 };
 
 void sort_generate(Sort *s, const Position *pos, int depth)
@@ -50,7 +50,8 @@ void sort_generate(Sort *s, const Position *pos, int depth)
 
 void sort_score(Worker *worker, Sort *s, const Position *pos, move_t ttMove, int ply)
 {
-    const size_t refIdx = stack_move_key(&worker->stack) % NB_REFUTATION;
+    const size_t rhIdx = stack_move_key(&worker->stack, 0) % NB_REFUTATION;
+    const size_t fuhIdx = stack_move_key(&worker->stack, 1) % NB_FOLLOW_UP;
 
     for (size_t i = 0; i < s->cnt; i++) {
         const move_t m = s->moves[i];
@@ -66,7 +67,8 @@ void sort_score(Worker *worker, Sort *s, const Position *pos, move_t ttMove, int
                     s->scores[i] = HISTORY_MAX + 2;
                 else
                     s->scores[i] = worker->history[pos->turn][move_from_to(m)]
-                        + worker->refutationHistory[refIdx][pos->pieceOn[move_from(m)]][move_to(m)];
+                        + worker->refutationHistory[rhIdx][pos->pieceOn[move_from(m)]][move_to(m)]
+                        + worker->followUpHistory[fuhIdx][pos->pieceOn[move_from(m)]][move_to(m)];
             }
         }
     }

@@ -44,10 +44,12 @@ uint64_t stack_back(const Stack *st)
     return st->keys[st->idx - 1];
 }
 
-uint64_t stack_move_key(const Stack *st)
+uint64_t stack_move_key(const Stack *st, int back)
 {
     assert(0 < st->idx && st->idx <= MAX_GAME_PLY);
-    return st->idx > 1 ? st->keys[st->idx - 1] ^ st->keys[st->idx - 2] : 0;
+    return st->idx - 1 - back > 0
+        ? st->keys[st->idx - 1 - back] ^ st->keys[st->idx - 2 - back]
+        : 0;
 }
 
 bool stack_repetition(const Stack *st, int rule50)
