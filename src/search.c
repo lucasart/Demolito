@@ -570,8 +570,10 @@ static void iterate(Worker *worker)
         info_update(&ui, depth, score, smp_nodes(), pv, false);
     }
 
-    // Max depth completed by current thread. All threads should stop.
-    Signal = STOP;
+    // Max depth completed by current thread. All threads should stop. Unless we are in infinite
+    // mode, in which case workers wait here, and the timer loop continues until stopped.
+    if (!lim.infinite)
+        Signal = STOP;
 }
 
 int mated_in(int ply)

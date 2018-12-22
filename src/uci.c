@@ -115,7 +115,6 @@ static void go(char **linePos)
 {
     memset(&lim, 0, sizeof(lim));
     lim.depth = MAX_DEPTH;
-    lim.movestogo = 0;
 
     const char *token;
 
@@ -134,6 +133,8 @@ static void go(char **linePos)
         else if ((rootPos.turn == WHITE && !strcmp(token, "winc"))
                 || (rootPos.turn == BLACK && !strcmp(token, "binc")))
             lim.inc = atoll(strtok_r(NULL, " \n", linePos));
+        else if (!strcmp(token, "infinite"))
+            lim.infinite = true;
     }
 
     if (Timer) {

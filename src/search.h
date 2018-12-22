@@ -15,8 +15,9 @@ typedef struct {
 } Stack;
 
 typedef struct {
-    int depth, movestogo;
     int64_t movetime, time, inc, nodes;
+    int depth, movestogo;
+    bool infinite;
 } Limits;
 
 int mated_in(int ply);
