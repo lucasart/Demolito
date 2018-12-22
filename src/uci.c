@@ -46,11 +46,12 @@ static void uci_format_score(int score, char str[17])
 static void intro()
 {
     uci_puts("id name Demolito " VERSION "\nid author lucasart");
-    uci_printf("option name UCI_Chess960 type check default %s\n", uciChess960 ? "true" : "false");
-    uci_printf("option name Hash type spin default %" PRIu64 " min 1 max 1048576\n", uciHash);
-    uci_printf("option name Threads type spin default %d min 1 max 63\n", WorkersCount);
     uci_printf("option name Contempt type spin default %d min -100 max 100\n", Contempt);
+    uci_printf("option name Hash type spin default %" PRIu64 " min 1 max 1048576\n", uciHash);
+    uci_puts("option name Ponder type check default false");
+    uci_printf("option name Threads type spin default %d min 1 max 63\n", WorkersCount);
     uci_printf("option name Time Buffer type spin default %" PRId64 " min 0 max 1000\n", uciTimeBuffer);
+    uci_printf("option name UCI_Chess960 type check default %s\n", uciChess960 ? "true" : "false");
     uci_puts("uciok");
 }
 
@@ -133,7 +134,7 @@ static void go(char **linePos)
         else if ((rootPos.turn == WHITE && !strcmp(token, "winc"))
                 || (rootPos.turn == BLACK && !strcmp(token, "binc")))
             lim.inc = atoll(strtok_r(NULL, " \n", linePos));
-        else if (!strcmp(token, "infinite"))
+        else if (!strcmp(token, "infinite") || !strcmp(token, "ponder"))
             lim.infinite = true;
     }
 
@@ -183,8 +184,11 @@ void uci_loop()
             position(&linePos);
         else if (!strcmp(token, "go"))
             go(&linePos);
-        else if (!strcmp(token, "stop"))
+        else if (!strcmp(token, "stop")) {
+            lim.infinite = false;
             Signal = STOP;
+        } else if (!strcmp(token, "ponderhit"))
+            lim.infinite = false;  // switch from pondering to normal search
         else if (!strcmp(token, "eval"))
             eval();
         else if (!strcmp(token, "perft"))
@@ -206,7 +210,7 @@ void info_create(Info *info)
 {
     info->lastDepth = 0;
     info->variability = 0.5;
-    info->best = 0;
+    info->best = info->ponder = 0;
     info->start = system_msec();
     mtx_init(&info->mtx, mtx_plain);
 }
@@ -254,6 +258,7 @@ void info_update(Info *info, int depth, int score, int64_t nodes, move_t pv[], b
             info->lastDepth = depth;
 
         info->best = pv[0];
+        info->ponder = pv[1];  // May be zero (not a bug, inevitable consequence of partial updates)
     }
 
     mtx_unlock(&info->mtx);
@@ -261,13 +266,21 @@ void info_update(Info *info, int depth, int score, int64_t nodes, move_t pv[], b
 
 void info_print_bestmove(Info *info)
 {
-    char best[6];
-
     mtx_lock(&info->mtx);
-    move_to_string(&rootPos, info->best, best);
-    mtx_unlock(&info->mtx);
 
-    uci_printf("bestmove %s\n", best);
+    char best[6];
+    move_to_string(&rootPos, info->best, best);
+
+    if (info->ponder) {
+        char ponder[6];
+        Position nextPos;
+        pos_move(&nextPos, &rootPos, info->best);
+        move_to_string(&nextPos, info->ponder, ponder);
+        uci_printf("bestmove %s ponder %s\n", best, ponder);
+    } else
+        uci_printf("bestmove %s\n", best);
+
+    mtx_unlock(&info->mtx);
 }
 
 move_t info_best(Info *info)

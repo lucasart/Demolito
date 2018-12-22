@@ -8,7 +8,7 @@ typedef struct {
     int64_t start;
     int lastDepth;
     double variability;
-    move_t best;
+    move_t best, ponder;
     mtx_t mtx;
 } Info;
 

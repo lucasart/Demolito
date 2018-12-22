@@ -17,7 +17,7 @@ typedef struct {
 typedef struct {
     int64_t movetime, time, inc, nodes;
     int depth, movestogo;
-    bool infinite;
+    atomic_bool infinite;  // IO thread can change this while Timer thread is checking it
 } Limits;
 
 int mated_in(int ply);

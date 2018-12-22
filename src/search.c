@@ -571,7 +571,7 @@ static void iterate(Worker *worker)
     }
 
     // Max depth completed by current thread. All threads should stop. Unless we are in infinite
-    // mode, in which case workers wait here, and the timer loop continues until stopped.
+    // or pondering, in which case workers wait here, and the timer loop continues until stopped.
     if (!lim.infinite)
         Signal = STOP;
 }
@@ -623,7 +623,7 @@ int64_t search_go()
 
         // Check for search termination conditions, but only after depth 1 has been
         // completed, to make sure we do not return an illegal move.
-        if (info_last_depth(&ui) > 0) {
+        if (!lim.infinite && info_last_depth(&ui) > 0) {
             if ((lim.movetime && system_msec() - start >= lim.movetime - uciTimeBuffer)
                     || (lim.nodes && smp_nodes() >= lim.nodes))
                 Signal = STOP;
