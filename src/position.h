@@ -2,6 +2,9 @@
 #include "bitboard.h"
 #include "pst.h"
 
+#define min(x, y) ((x) < (y) ? (x) : (y))
+#define max(x, y) ((x) > (y) ? (x) : (y))
+
 enum {MAX_FEN = 64 + 8 + 2 + 5 + 3 + 4 + 4 + 1};
 
 typedef uint16_t move_t;  // from:6, to:6, prom: 3 (NB_PIECE if none)

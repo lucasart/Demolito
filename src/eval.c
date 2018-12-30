@@ -226,9 +226,7 @@ static int safety(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_P
         }
 
     const int idx = weight * (1 + cnt) / 4;
-    assert(idx < 4096);
-    return -SafetyCurve[idx & 4095];  /* idx shouldn't exceed 4095, but just in case, prevent overflow,
-        while not taxing performance (min(idx, 4096) is slow because it adds a branch).*/
+    return -SafetyCurve[min(idx, 4096)];
 }
 
 static eval_t passer(int us, int pawn, int ourKing, int theirKing)

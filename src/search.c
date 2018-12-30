@@ -24,9 +24,6 @@
 #include "sort.h"
 #include "uci.h"
 
-#define min(x, y) ((x) < (y) ? (x) : (y))
-#define max(x, y) ((x) > (y) ? (x) : (y))
-
 Position rootPos;
 Stack rootStack;
 Limits lim;
