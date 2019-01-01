@@ -120,7 +120,7 @@ static int qsearch(Worker *worker, const Position *pos, int ply, int depth, int 
 
     // Generate and score moves
     Sort s;
-    sort_init(worker, &s, pos, depth, he.move, ply);
+    sort_init(worker, &s, pos, depth, he.move);
 
     int moveCount = 0;
     move_t currentMove;
@@ -313,7 +313,7 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
 
     // Generate and score moves
     Sort s;
-    sort_init(worker, &s, pos, depth, he.move, ply);
+    sort_init(worker, &s, pos, depth, he.move);
 
     int moveCount = 0, lmrCount = 0;
     bool hashMoveWasSingular = false;
@@ -462,8 +462,6 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
             history_update(&worker->followUpHistory[fuhIdx][pos->pieceOn[move_from(m)]]
                 [move_to(m)], bonus);
         }
-
-        worker->killers[ply] = bestMove;
     }
 
     // HT write

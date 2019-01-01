@@ -23,7 +23,7 @@
 
 enum {
     HISTORY_MAX = MAX_DEPTH * MAX_DEPTH,
-    SEPARATION = 3 * HISTORY_MAX + 3
+    SEPARATION = 3 * HISTORY_MAX + 1
 };
 
 void sort_generate(Sort *s, const Position *pos, int depth)
@@ -48,7 +48,7 @@ void sort_generate(Sort *s, const Position *pos, int depth)
     s->cnt = it - s->moves;
 }
 
-void sort_score(Worker *worker, Sort *s, const Position *pos, move_t ttMove, int ply)
+void sort_score(Worker *worker, Sort *s, const Position *pos, move_t ttMove)
 {
     const size_t rhIdx = stack_move_key(&worker->stack, 0) % NB_REFUTATION;
     const size_t fuhIdx = stack_move_key(&worker->stack, 1) % NB_FOLLOW_UP;
@@ -62,14 +62,10 @@ void sort_score(Worker *worker, Sort *s, const Position *pos, move_t ttMove, int
             if (move_is_capture(pos, m)) {
                 const int see = move_see(pos, m);
                 s->scores[i] = see >= 0 ? see + SEPARATION : see - SEPARATION;
-            } else {
-                if (m == worker->killers[ply])
-                    s->scores[i] = HISTORY_MAX + 2;
-                else
-                    s->scores[i] = worker->history[pos->turn][move_from_to(m)]
-                        + worker->refutationHistory[rhIdx][pos->pieceOn[move_from(m)]][move_to(m)]
-                        + worker->followUpHistory[fuhIdx][pos->pieceOn[move_from(m)]][move_to(m)];
-            }
+            } else
+                s->scores[i] = worker->history[pos->turn][move_from_to(m)]
+                    + worker->refutationHistory[rhIdx][pos->pieceOn[move_from(m)]][move_to(m)]
+                    + worker->followUpHistory[fuhIdx][pos->pieceOn[move_from(m)]][move_to(m)];
         }
     }
 }
@@ -84,10 +80,10 @@ void history_update(int16_t *t, int16_t bonus)
         *t = -HISTORY_MAX;
 }
 
-void sort_init(Worker *worker, Sort *s, const Position *pos, int depth, move_t ttMove, int ply)
+void sort_init(Worker *worker, Sort *s, const Position *pos, int depth, move_t ttMove)
 {
     sort_generate(s, pos, depth);
-    sort_score(worker, s, pos, ttMove, ply);
+    sort_score(worker, s, pos, ttMove);
     s->idx = 0;
 }
 

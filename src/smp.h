@@ -27,7 +27,6 @@ typedef struct {
     int16_t history[NB_COLOR][NB_SQUARE * NB_SQUARE];
     int16_t refutationHistory[NB_REFUTATION][NB_PIECE][NB_SQUARE];
     int16_t followUpHistory[NB_REFUTATION][NB_PIECE][NB_SQUARE];
-    move_t killers[MAX_DEPTH * 3 / 2];  // Conservative upper-bound (for qsearch and extensions)
     Stack stack;
     jmp_buf jbuf;
     int64_t nodes;
