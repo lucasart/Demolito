@@ -62,10 +62,12 @@ void sort_score(Worker *worker, Sort *s, const Position *pos, move_t ttMove)
             if (move_is_capture(pos, m)) {
                 const int see = move_see(pos, m);
                 s->scores[i] = see >= 0 ? see + SEPARATION : see - SEPARATION;
-            } else
-                s->scores[i] = worker->history[pos->turn][move_from_to(m)]
-                    + worker->refutationHistory[rhIdx][pos->pieceOn[move_from(m)]][move_to(m)]
-                    + worker->followUpHistory[fuhIdx][pos->pieceOn[move_from(m)]][move_to(m)];
+            } else {
+                const int from = move_from(m), to = move_to(m);
+                s->scores[i] = worker->history[pos->turn][from][to]
+                    + worker->refutationHistory[rhIdx][pos->pieceOn[from]][to]
+                    + worker->followUpHistory[fuhIdx][pos->pieceOn[from]][to];
+            }
         }
     }
 }

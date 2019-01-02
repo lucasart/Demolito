@@ -126,7 +126,7 @@ static int qsearch(Worker *worker, const Position *pos, int ply, int depth, int 
     move_t currentMove;
 
     // Move loop
-    while ((s.idx != s.cnt) && alpha < beta) {
+    while (s.idx != s.cnt && alpha < beta) {
         int see;
         currentMove = sort_next(&s, pos, &see);
 
@@ -322,7 +322,7 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
     int quietSearchedCnt = 0;
 
     // Move loop
-    while ((s.idx != s.cnt) && alpha < beta) {
+    while (s.idx != s.cnt && alpha < beta) {
         int see;
         currentMove = sort_next(&s, pos, &see);
 
@@ -455,12 +455,11 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
         for (int i = 0; i < quietSearchedCnt; i++) {
             const int16_t bonus = quietSearched[i] == bestMove ? depth * depth : -1 - depth * depth / 2;
             const move_t m = quietSearched[i];
+            const int from = move_from(m), to = move_to(m);
 
-            history_update(&worker->history[us][move_from_to(m)], bonus);
-            history_update(&worker->refutationHistory[rhIdx][pos->pieceOn[move_from(m)]]
-                [move_to(m)], bonus);
-            history_update(&worker->followUpHistory[fuhIdx][pos->pieceOn[move_from(m)]]
-                [move_to(m)], bonus);
+            history_update(&worker->history[us][from][to], bonus);
+            history_update(&worker->refutationHistory[rhIdx][pos->pieceOn[from]][to], bonus);
+            history_update(&worker->followUpHistory[fuhIdx][pos->pieceOn[from]][to], bonus);
         }
     }
 
