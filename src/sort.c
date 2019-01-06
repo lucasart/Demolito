@@ -34,12 +34,12 @@ void sort_generate(Sort *s, const Position *pos, int depth)
         it = gen_check_escapes(pos, it, depth > 0);
     else {
         const int us = pos->turn;
-        const bitboard_t pieceTargets = depth > 0 ? ~pos->byColor[us] : pos->byColor[opposite(us)];
-        const bitboard_t pawnTargets = pieceTargets | pos_ep_square_bb(pos) | Rank[relative_rank(us,
+        const bitboard_t pieceFilter = depth > 0 ? ~pos->byColor[us] : pos->byColor[opposite(us)];
+        const bitboard_t pawnFilter = pieceFilter | pos_ep_square_bb(pos) | Rank[relative_rank(us,
             RANK_8)];
 
-        it = gen_piece_moves(pos, it, pieceTargets, true);
-        it = gen_pawn_moves(pos, it, pawnTargets, depth > 0);
+        it = gen_piece_moves(pos, it, pieceFilter, true);
+        it = gen_pawn_moves(pos, it, pawnFilter, depth > 0);
 
         if (depth > 0)
             it = gen_castling_moves(pos, it);

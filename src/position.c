@@ -103,28 +103,27 @@ static bitboard_t attacked_by(const Position *pos, int c)
 
     // King and Knight attacks
     bitboard_t result = KingAttacks[pos_king_square(pos, c)];
-    bitboard_t fss = pos_pieces_cp(pos, c, KNIGHT);
+    bitboard_t knights = pos_pieces_cp(pos, c, KNIGHT);
 
-    while (fss)
-        result |= KnightAttacks[bb_pop_lsb(&fss)];
+    while (knights)
+        result |= KnightAttacks[bb_pop_lsb(&knights)];
 
     // Pawn captures
-    fss = pos_pieces_cp(pos, c, PAWN) & ~File[FILE_A];
-    result |= bb_shift(fss, push_inc(c) + LEFT);
-    fss = pos_pieces_cp(pos, c, PAWN) & ~File[FILE_H];
-    result |= bb_shift(fss, push_inc(c) + RIGHT);
+    bitboard_t pawns = pos_pieces_cp(pos, c, PAWN);
+    result |= bb_shift(pawns & ~File[FILE_A], push_inc(c) + LEFT);
+    result |= bb_shift(pawns & ~File[FILE_H], push_inc(c) + RIGHT);
 
     // Sliders
     bitboard_t _occ = pos_pieces(pos) ^ pos_pieces_cp(pos, opposite(c), KING);
-    fss = pos_pieces_cpp(pos, c, ROOK, QUEEN);
+    bitboard_t rookMovers = pos_pieces_cpp(pos, c, ROOK, QUEEN);
 
-    while (fss)
-        result |= bb_rook_attacks(bb_pop_lsb(&fss), _occ);
+    while (rookMovers)
+        result |= bb_rook_attacks(bb_pop_lsb(&rookMovers), _occ);
 
-    fss = pos_pieces_cpp(pos, c, BISHOP, QUEEN);
+    bitboard_t bishopMovers = pos_pieces_cpp(pos, c, BISHOP, QUEEN);
 
-    while (fss)
-        result |= bb_bishop_attacks(bb_pop_lsb(&fss), _occ);
+    while (bishopMovers)
+        result |= bb_bishop_attacks(bb_pop_lsb(&bishopMovers), _occ);
 
     return result;
 }

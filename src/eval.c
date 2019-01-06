@@ -33,7 +33,7 @@ static bitboard_t pawn_attacks(const Position *pos, int c)
         | bb_shift(pawns & ~File[FILE_H], push_inc(c) + RIGHT);
 }
 
-static eval_t score_mobility(int p0, int p, bitboard_t tss)
+static eval_t score_mobility(int p0, int p, bitboard_t targets)
 {
     assert(KNIGHT <= p0 && p0 <= ROOK);
     assert(KNIGHT <= p && p <= QUEEN);
@@ -45,7 +45,7 @@ static eval_t score_mobility(int p0, int p, bitboard_t tss)
     };
     static const eval_t Weight[] = {{9, 13}, {13, 12}, {9, 7}, {4, 7}};
 
-    const int c = AdjustCount[p0][bb_count(tss)];
+    const int c = AdjustCount[p0][bb_count(targets)];
     return (eval_t) {Weight[p].op * c, Weight[p].eg * c};
 }
 
@@ -53,7 +53,7 @@ static eval_t mobility(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
 {
     const int them = opposite(us);
     eval_t result = {0, 0};
-    bitboard_t fss, tss, occ;
+    bitboard_t occ;
     int from, piece;
 
     attacks[us][KING] = KingAttacks[pos_king_square(pos, us)];
@@ -61,35 +61,35 @@ static eval_t mobility(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
 
     for (piece = KNIGHT; piece <= QUEEN; attacks[us][piece++] = 0);
 
-    const bitboard_t targets = ~(pos_pieces_cpp(pos, us, KING, PAWN) | attacks[them][PAWN]);
+    const bitboard_t available = ~(pos_pieces_cpp(pos, us, KING, PAWN) | attacks[them][PAWN]);
 
     // Knight mobility
-    fss = pos_pieces_cp(pos, us, KNIGHT);
+    bitboard_t knights = pos_pieces_cp(pos, us, KNIGHT);
 
-    while (fss) {
-        tss = KnightAttacks[bb_pop_lsb(&fss)];
-        attacks[us][KNIGHT] |= tss;
-        eval_add(&result, score_mobility(KNIGHT, KNIGHT, tss & targets));
+    while (knights) {
+        bitboard_t targets = KnightAttacks[bb_pop_lsb(&knights)];
+        attacks[us][KNIGHT] |= targets;
+        eval_add(&result, score_mobility(KNIGHT, KNIGHT, targets & available));
     }
 
     // Lateral mobility
-    fss = pos_pieces_cpp(pos, us, ROOK, QUEEN);
-    occ = pos_pieces(pos) ^ fss;  // RQ see through each other
+    bitboard_t rookMovers = pos_pieces_cpp(pos, us, ROOK, QUEEN);
+    occ = pos_pieces(pos) ^ rookMovers;  // RQ see through each other
 
-    while (fss) {
-        tss = bb_rook_attacks(from = bb_pop_lsb(&fss), occ);
-        attacks[us][piece = pos_piece_on(pos, from)] |= tss;
-        eval_add(&result, score_mobility(ROOK, piece, tss & targets));
+    while (rookMovers) {
+        bitboard_t targets = bb_rook_attacks(from = bb_pop_lsb(&rookMovers), occ);
+        attacks[us][piece = pos_piece_on(pos, from)] |= targets;
+        eval_add(&result, score_mobility(ROOK, piece, targets & available));
     }
 
     // Diagonal mobility
-    fss = pos_pieces_cpp(pos, us, BISHOP, QUEEN);
-    occ = pos_pieces(pos) ^ fss;  // BQ see through each other
+    bitboard_t bishopMovers = pos_pieces_cpp(pos, us, BISHOP, QUEEN);
+    occ = pos_pieces(pos) ^ bishopMovers;  // BQ see through each other
 
-    while (fss) {
-        tss = bb_bishop_attacks(from = bb_pop_lsb(&fss), occ);
-        attacks[us][piece = pos_piece_on(pos, from)] |= tss;
-        eval_add(&result, score_mobility(BISHOP, piece, tss & targets));
+    while (bishopMovers) {
+        bitboard_t targets = bb_bishop_attacks(from = bb_pop_lsb(&bishopMovers), occ);
+        attacks[us][piece = pos_piece_on(pos, from)] |= targets;
+        eval_add(&result, score_mobility(BISHOP, piece, targets & available));
     }
 
     attacks[us][NB_PIECE] = attacks[us][KNIGHT] | attacks[us][BISHOP] | attacks[us][ROOK]
