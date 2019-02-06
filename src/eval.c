@@ -255,7 +255,12 @@ static eval_t do_pawns(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
     static const eval_t Isolated[2] = {{18, 33}, {41, 30}};
     static const eval_t Backward[2] = {{17, 14}, {28, 19}};
     static const eval_t Doubled = {15, 32};
-    static const int Shield[NB_RANK] = {0, 25, 18, 12, 11, 9, 8};
+    static const int Shield[4][NB_RANK] = {
+      {0, 22, 19, 13, 11, 10, 7, 0},
+      {0, 27, 19, 10, 11, 8, 7, 0},
+      {0, 23, 15, 11, 11, 8, 10, 0},
+      {0, 26, 20, 14, 11, 8, 7, 0}
+    };
 
     const int them = opposite(us);
     const bitboard_t ourPawns = pos_pieces_cp(pos, us, PAWN);
@@ -266,10 +271,11 @@ static eval_t do_pawns(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
     eval_t result = {0, 0};
 
     // Pawn shield
+    const int kf = file_of(ourKing), dte = kf > FILE_D ? FILE_H - kf : kf;
     bitboard_t b = ourPawns & (PawnPath[us][ourKing] | PawnSpan[us][ourKing]);
 
     while (b)
-        result.op += Shield[relative_rank_of(us, bb_pop_lsb(&b))];
+        result.op += Shield[dte][relative_rank_of(us, bb_pop_lsb(&b))];
 
     // Pawn structure
     b = ourPawns;
@@ -374,7 +380,7 @@ void eval_init()
         for (int s2 = A1; s2 <= H8; s2++) {
             const int rankDist = abs(rank_of(s1) - rank_of(s2));
             const int fileDist = abs(file_of(s1) - file_of(s2));
-            KingDistance[s1][s2] = rankDist > fileDist ? rankDist : fileDist;
+            KingDistance[s1][s2] = max(rankDist, fileDist);
         }
 
     for (int i = 0; i < 4096; i++) {
