@@ -27,43 +27,51 @@ static move_t *serialize_moves(int from, bitboard_t targets, move_t *mList)
     return mList;
 }
 
+static move_t *serialize_pawn_moves(bitboard_t pawns, int shift, move_t *mList)
+{
+    while (pawns) {
+        const int from = bb_pop_lsb(&pawns);
+        *mList++ = move_build(from, from + shift, NB_PIECE);
+    }
+
+    return mList;
+}
+
 move_t *gen_pawn_moves(const Position *pos, move_t *mList, bitboard_t filter, bool subPromotions)
 {
     const int us = pos->turn, them = opposite(us);
     const int push = push_inc(us);
-    const bitboard_t capturable = pos->byColor[them] | pos_ep_square_bb(pos);
-    int from;
+    const bitboard_t capturable = (pos->byColor[them] | pos_ep_square_bb(pos)) & filter;
 
-    // Non promotions
-    bitboard_t nonPromotingPawns = pos_pieces_cp(pos, us, PAWN) & ~Rank[relative_rank(us, RANK_7)];
+    // ** Non promotions **
+    const bitboard_t nonPromotingPawns = pos_pieces_cp(pos, us, PAWN)
+        & ~Rank[relative_rank(us, RANK_7)];
 
-    while (nonPromotingPawns) {
-        from = bb_pop_lsb(&nonPromotingPawns);
+    // Left captures
+    bitboard_t b = nonPromotingPawns & ~File[FILE_A] & bb_shift(capturable, -(push + LEFT));
+    mList = serialize_pawn_moves(b, push + LEFT, mList);
 
-        // Calculate to squares: captures, single pushes and double pushes
-        bitboard_t targets = PawnAttacks[us][from] & capturable & filter;
+    // Right captures
+    b = nonPromotingPawns & ~File[FILE_H] & bb_shift(capturable, -(push + RIGHT));
+    mList = serialize_pawn_moves(b, push + RIGHT, mList);
 
-        if (bb_test(~pos_pieces(pos), from + push)) {
-            if (bb_test(filter, from + push))
-                bb_set(&targets, from + push);
+    // Single pushes
+    b = nonPromotingPawns & bb_shift(~pos_pieces(pos) & filter, -push);
+    mList = serialize_pawn_moves(b, push, mList);
 
-            if (relative_rank_of(us, from) == RANK_2
-                    && bb_test(filter & ~pos_pieces(pos), from + 2 * push))
-                bb_set(&targets, from + 2 * push);
-        }
+    // Double pushes
+    b = nonPromotingPawns & Rank[relative_rank(us, RANK_2)] & bb_shift(~pos_pieces(pos), -push)
+        & bb_shift(~pos_pieces(pos) & filter, -2 * push);
+    mList = serialize_pawn_moves(b, 2 * push, mList);
 
-        // Generate moves
-        mList = serialize_moves(from, targets, mList);
-    }
-
-    // Promotions
+    // ** Promotions **
     bitboard_t promotingPawns = pos_pieces_cp(pos, us, PAWN) & Rank[relative_rank(us, RANK_7)];
 
     while (promotingPawns) {
-        from = bb_pop_lsb(&promotingPawns);
+        const int from = bb_pop_lsb(&promotingPawns);
 
         // Calculate to squares: captures and single pushes
-        bitboard_t targets = PawnAttacks[us][from] & capturable & filter;
+        bitboard_t targets = PawnAttacks[us][from] & capturable;
 
         if (bb_test(filter & ~pos_pieces(pos), from + push))
             bb_set(&targets, from + push);
