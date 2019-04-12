@@ -2,19 +2,13 @@
 #include <setjmp.h>
 #include "bitboard.h"
 #include "search.h"
+#include "stack.h"
 
 enum {
     NB_PAWN_ENTRY = 16384,
     NB_REFUTATION = 1024,
     NB_FOLLOW_UP = 1024
 };
-
-void stack_clear(Stack *st);
-void stack_push(Stack *st, uint64_t key);
-void stack_pop(Stack *st);
-uint64_t stack_back(const Stack *st);
-uint64_t stack_move_key(const Stack *st, int back);
-bool stack_repetition(const Stack *st, int rule50);
 
 typedef struct {
     uint64_t key;

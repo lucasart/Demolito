@@ -1,18 +1,13 @@
 #pragma once
 #include <stdatomic.h>
 #include "position.h"
+#include "stack.h"
 
 enum {
     MATE = 32000,
     MAX_DEPTH = 127, MIN_DEPTH = -8,
     MAX_PLY = MAX_DEPTH - MIN_DEPTH + 2,
-    MAX_GAME_PLY = 2048
 };
-
-typedef struct {
-    uint64_t keys[MAX_GAME_PLY];
-    int idx;
-} Stack;
 
 typedef struct {
     int64_t movetime, time, inc, nodes;

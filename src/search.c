@@ -78,8 +78,7 @@ static int qsearch(Worker *worker, const Position *pos, int ply, int depth, int 
     if (pvNode)
         pv[0] = 0;
 
-    if (ply > 0 && (stack_repetition(&worker->stack, pos->rule50)
-            || pos_insufficient_material(pos)))
+    if (ply > 0 && (stack_repetition(&worker->stack, pos) || pos_insufficient_material(pos)))
         return draw_score(ply);
 
     // HT probe
@@ -240,8 +239,7 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
     move_t childPv[MAX_PLY - ply];
     pv[0] = 0;
 
-    if (ply > 0 && (stack_repetition(&worker->stack, pos->rule50)
-            || pos_insufficient_material(pos)))
+    if (ply > 0 && (stack_repetition(&worker->stack, pos) || pos_insufficient_material(pos)))
         return draw_score(ply);
 
     // HT probe
