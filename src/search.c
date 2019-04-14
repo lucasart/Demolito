@@ -121,15 +121,15 @@ static int qsearch(Worker *worker, const Position *pos, int ply, int depth, int 
     Sort s;
     sort_init(worker, &s, pos, depth, he.move);
 
+    const bitboard_t pins = calc_pins(pos);
     int moveCount = 0;
-    move_t currentMove;
 
     // Move loop
     while (s.idx != s.cnt && alpha < beta) {
         int see;
-        currentMove = sort_next(&s, pos, &see);
+        const move_t currentMove = sort_next(&s, pos, &see);
 
-        if (!move_is_legal(pos, currentMove))
+        if (!move_is_legal(pos, pins, currentMove))
             continue;
 
         moveCount++;
@@ -313,18 +313,18 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
     Sort s;
     sort_init(worker, &s, pos, depth, he.move);
 
+    const bitboard_t pins = calc_pins(pos);
     int moveCount = 0, lmrCount = 0;
     bool hashMoveWasSingular = false;
-    move_t currentMove;
     move_t quietSearched[MAX_MOVES];
     int quietSearchedCnt = 0;
 
     // Move loop
     while (s.idx != s.cnt && alpha < beta) {
         int see;
-        currentMove = sort_next(&s, pos, &see);
+        const move_t currentMove = sort_next(&s, pos, &see);
 
-        if (!move_is_legal(pos, currentMove) || currentMove == singularMove)
+        if (!move_is_legal(pos, pins, currentMove) || currentMove == singularMove)
             continue;
 
         moveCount++;

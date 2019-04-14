@@ -128,28 +128,6 @@ static bitboard_t attacked_by(const Position *pos, int c)
     return result;
 }
 
-// Pinned pieces for the side to move
-static bitboard_t calc_pins(const Position *pos)
-{
-    const int us = pos->turn, them = opposite(us);
-    const int king = pos_king_square(pos, us);
-    bitboard_t pinners = (pos_pieces_cpp(pos, them, ROOK, QUEEN) & RookPseudoAttacks[king])
-        | (pos_pieces_cpp(pos, them, BISHOP, QUEEN) & BishopPseudoAttacks[king]);
-    bitboard_t result = 0;
-
-    while (pinners) {
-        const int s = bb_pop_lsb(&pinners);
-        bitboard_t skewered = Segment[king][s] & pos_pieces(pos);
-        bb_clear(&skewered, king);
-        bb_clear(&skewered, s);
-
-        if (!bb_several(skewered) && (skewered & pos->byColor[us]))
-            result |= skewered;
-    }
-
-    return result;
-}
-
 // Helper function used to facorize common tasks, after setting up a position
 static void finish(Position *pos)
 {
@@ -159,7 +137,6 @@ static void finish(Position *pos)
     pos->attacked = attacked_by(pos, them);
     pos->checkers = bb_test(pos->attacked, king)
         ? pos_attackers_to(pos, king, pos_pieces(pos)) & pos->byColor[them] : 0;
-    pos->pins = calc_pins(pos);
 }
 
 const char *PieceLabel[NB_COLOR] = {"NBRQKP.", "nbrqkp."};
@@ -490,6 +467,28 @@ bitboard_t pos_attackers_to(const Position *pos, int s, bitboard_t occ)
         | (KingAttacks[s] & pos->byPiece[KING])
         | (bb_rook_attacks(s, occ) & (pos->byPiece[ROOK] | pos->byPiece[QUEEN]))
         | (bb_bishop_attacks(s, occ) & (pos->byPiece[BISHOP] | pos->byPiece[QUEEN]));
+}
+
+// Pinned pieces for the side to move
+bitboard_t calc_pins(const Position *pos)
+{
+    const int us = pos->turn, them = opposite(us);
+    const int king = pos_king_square(pos, us);
+    bitboard_t pinners = (pos_pieces_cpp(pos, them, ROOK, QUEEN) & RookPseudoAttacks[king])
+        | (pos_pieces_cpp(pos, them, BISHOP, QUEEN) & BishopPseudoAttacks[king]);
+    bitboard_t result = 0;
+
+    while (pinners) {
+        const int s = bb_pop_lsb(&pinners);
+        bitboard_t skewered = Segment[king][s] & pos_pieces(pos);
+        bb_clear(&skewered, king);
+        bb_clear(&skewered, s);
+
+        if (!bb_several(skewered) && (skewered & pos->byColor[us]))
+            result |= skewered;
+    }
+
+    return result;
 }
 
 // Prints the position in ASCII 'art' (for debugging)

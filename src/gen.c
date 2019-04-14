@@ -200,15 +200,15 @@ uint64_t gen_perft(const Position *pos, int depth, int ply)
     if (depth <= 0)
         return 1;
 
+    const bitboard_t pins = calc_pins(pos);
     uint64_t result = 0;
-    Position after;
-    move_t mList[MAX_MOVES];
-    move_t *end = gen_all_moves(pos, mList);
+    move_t mList[MAX_MOVES], *end = gen_all_moves(pos, mList);
 
     for (move_t *m = mList; m != end; m++) {
-        if (!move_is_legal(pos, *m))
+        if (!move_is_legal(pos, pins, *m))
             continue;
 
+        Position after;
         pos_move(&after, pos, *m);
         const uint64_t subTree = gen_perft(&after, depth - 1, ply + 1);
         result += subTree;

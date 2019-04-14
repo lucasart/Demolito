@@ -13,7 +13,7 @@ typedef struct {
     bitboard_t byColor[NB_COLOR];
     bitboard_t byPiece[NB_PIECE];
     bitboard_t castleRooks;
-    bitboard_t attacked, checkers, pins;
+    bitboard_t attacked, checkers;
     uint64_t key, pawnKey;
     eval_t pst;
     eval_t pieceMaterial[NB_COLOR];
@@ -46,4 +46,5 @@ int pos_king_square(const Position *pos, int c);
 int pos_color_on(const Position *pos, int s);
 int pos_piece_on(const Position *pos, int s);
 bitboard_t pos_attackers_to(const Position *pos, int s, bitboard_t occ);
+bitboard_t calc_pins(const Position *pos);
 void pos_print(const Position *pos);

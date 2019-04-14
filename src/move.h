@@ -14,5 +14,5 @@ move_t string_to_move(const Position *pos, const char *str);
 bool move_is_capture(const Position *pos, move_t m);
 bool move_is_castling(const Position *pos, move_t m);
 
-bool move_is_legal(const Position *pos, move_t m);
+bool move_is_legal(const Position *pos, bitboard_t pins, move_t m);
 int move_see(const Position *pos, move_t m);

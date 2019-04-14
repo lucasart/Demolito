@@ -101,7 +101,7 @@ move_t string_to_move(const Position *pos, const char *str)
     return move_build(from, to, prom);
 }
 
-bool move_is_legal(const Position *pos, move_t m)
+bool move_is_legal(const Position *pos, bitboard_t pins, move_t m)
 {
     const int from = move_from(m), to = move_to(m);
     const int p = pos_piece_on(pos, from);
@@ -113,13 +113,13 @@ bool move_is_legal(const Position *pos, move_t m)
             assert(pos_piece_on(pos, to) == ROOK);
             const int kto = square(rank_of(from), from < to ? FILE_G : FILE_C);
             return !(pos->attacked & Segment[from][kto])
-                && !bb_test(pos->pins, to);
+                && !bb_test(pins, to);
         } else
             // Normal king move: do not land on an attacked square (already filtered at generation)
             return true;
     } else {
         // Normal case: illegal if pinned, and moves out of pin-ray
-        if (bb_test(pos->pins, from) && !bb_test(Ray[king][from], to))
+        if (bb_test(pins, from) && !bb_test(Ray[king][from], to))
             return false;
 
         // En-passant special case: also illegal if self-check through the en-passant captured pawn
