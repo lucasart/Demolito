@@ -147,20 +147,22 @@ int move_see(const Position *pos, move_t m)
 
     // General case
     int gain[32];
-    int capture = pos_piece_on(pos, from);
+    int moved = pos_piece_on(pos, from);
     gain[0] = seeValue[pos_piece_on(pos, to)];
     bb_clear(&occ, from);
 
     // Special cases
-    if (capture == PAWN) {
+    if (moved == PAWN) {
         if (to == pos->epSquare) {
             bb_clear(&occ, to - push_inc(us));
-            gain[0] = seeValue[capture];
-        } else if (prom < NB_PIECE)
-            gain[0] += seeValue[capture = prom] - seeValue[PAWN];
+            gain[0] = seeValue[moved];
+        } else if (prom < NB_PIECE) {
+            moved = prom;
+            gain[0] += seeValue[moved] - seeValue[PAWN];
+        }
     }
 
-    // Easy case: to is not defended
+    // Easy case: to is not defended (~41% of the time)
     if (!bb_test(pos->attacked, to))
         return gain[0];
 
@@ -169,33 +171,32 @@ int move_see(const Position *pos, move_t m)
 
     int idx = 0;
 
+    // Loop side by side and play (any) LVA recapture (~1.6 iterations on average)
     while (us = opposite(us), ourAttackers = attackers & pos->byColor[us]) {
         // Find least valuable attacker (LVA)
-        int p = PAWN;
+        int lva = PAWN;
 
-        if (!(ourAttackers & pos_pieces_cp(pos, us, PAWN))) {
-            for (p = KNIGHT; p <= KING; p++) {
-                if (ourAttackers & pos_pieces_cp(pos, us, p))
+        if (!(ourAttackers & pos_pieces_cp(pos, us, PAWN)))
+            for (lva = KNIGHT; lva <= KING; lva++)
+                if (ourAttackers & pos_pieces_cp(pos, us, lva))
                     break;
-            }
-        }
 
         // Remove the LVA
-        bb_clear(&occ, bb_lsb(ourAttackers & pos_pieces_cp(pos, us, p)));
+        bb_clear(&occ, bb_lsb(ourAttackers & pos_pieces_cp(pos, us, lva)));
 
-        // Remove attackers we've already done
+        // Remove attackers we've already done. Purposely omit look through attacks (no elo gain).
         attackers &= occ;
 
         // Add the new entry to the gain[] array
         idx++;
         assert(idx < 32);
-        gain[idx] = seeValue[capture] - gain[idx - 1];
+        gain[idx] = seeValue[moved] - gain[idx - 1];
 
-        if (p == PAWN && relative_rank_of(us, to) == RANK_8) {
+        if (lva == PAWN && relative_rank_of(us, to) == RANK_8) {
             gain[idx] += seeValue[QUEEN] - seeValue[PAWN];
-            capture = QUEEN;
+            moved = QUEEN;
         } else
-            capture = p;
+            moved = lva;
     }
 
     do {
