@@ -12,16 +12,22 @@ The version number is simply the ISO date of the last commit (ie. YYYY-MM-DD). F
 possible one, you'll need to compile yourself (see below).
 
 ### Engine Strength
-Stronger than you, even if you are a GM. But nowhere near the top engines like Stockfish, Houdini, and Komodo.
+Stronger than you, even if you are a GM. But nowhere near the top engines like Stockfish, Houdini, or Komodo.
 - [FGRL](http://fastgm.de/)
 - [CEGT](http://www.cegt.net/)
 - [CCRL](http://www.computerchess.org.uk/ccrl/)
 
 ### Compilation
-Using GCC on Linux, type: `./make.sh ./demolito`. This will compile the program and run a verification test.
-You should also be able to compile it on any platform (POSIX or Windows), using a C11 compiler (eg. GCC or Clang).
-But you'll have to figure out the exact commands for yourself, depending on your compiler, your libc, and your system.
-No spoon feeding here.
+Using GCC on Linux, type: `make`. Otherwise, just have a look at the makefile, nothing fancy there.
+You should also be able to compile it on any platform (POSIX or Windows), using a C11 capable
+compiler (eg. GCC or Clang but not MSVC). But you'll have to figure out the exact commands for
+yourself, depending on your compiler, your libc, and your system. No spoon feeding here.
+
+To validate that you compiled it correctly, you should run the following benchmark:
+```
+./demolito search 12
+```
+and check that the nodecount corresponds to the one indicated in commit title for the last functional change.
 
 ### UCI Options
 - **Contempt**: This is used to score draws by chess rules (such as repetition) in the search. A positive value will
