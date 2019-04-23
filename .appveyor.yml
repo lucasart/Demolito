@@ -1,0 +1,24 @@
+image: Visual Studio 2015
+
+clone_folder: c:\demolito
+
+before_build:
+
+  - set PATH=%PATH%;C:\mingw-w64\x86_64-8.1.0-posix-seh-rt_v6-rev0\mingw64\bin
+  - set PATH=%PATH%;C:\MinGW\msys\1.0\bin
+  - cd %APPVEYOR_BUILD_FOLDER%\
+
+build_script:
+  - make no_popcnt CC="clang --target=x86_64-w64-mingw32 -fuse-ld=lld" OUT=demolito_no_popcnt.exe
+  - make popcnt CC="clang --target=x86_64-w64-mingw32 -fuse-ld=lld" OUT=demolito_popcnt.exe
+  - make pext CC="clang --target=x86_64-w64-mingw32 -fuse-ld=lld" OUT=demolito_pext.exe
+
+  - 7z a demolito_no_popcnt demolito_no_popcnt.exe src\ makefile license Readme.md
+  - 7z a demolito_popcnt demolito_popcnt.exe src\ makefile license Readme.md
+  - 7z a demolito_pext demolito_pext.exe src\ makefile license Readme.md
+
+test: off
+deploy: off
+
+artifacts:
+  - path: '*.7z'

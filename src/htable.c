@@ -49,8 +49,8 @@ static int score_from_hash(int hashScore, int ply)
 void hash_prepare(uint64_t hashMB)
 {
     free(HashTable);
-#ifdef _WIN64  // C11 support lacking, use instead Microsoft's _aligned_malloc()
-    HashTable = _aligned_malloc(hashMB << 20, sizeof(HashEntry));
+#ifdef _WIN64
+    HashTable = malloc(hashMB << 20);  // FIXME: we need 16-byte alignment for performance
 #else
     HashTable = aligned_alloc(sizeof(HashEntry), hashMB << 20);
 #endif
