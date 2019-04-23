@@ -51,7 +51,7 @@ void hash_prepare(uint64_t hashMB)
     free(HashTable);
 #ifdef _WIN64  // C11 support lacking, use instead Microsoft's _aligned_malloc()
     HashTable = _aligned_malloc(hashMB << 20, sizeof(HashEntry));
-#ifdef __APPLE__  // C11 support lacking, use instead Microsoft's _aligned_malloc()
+#elif defined(__APPLE__)
     HashTable = calloc(hashMB << 20, sizeof(HashEntry));
 #else
     HashTable = aligned_alloc(sizeof(HashEntry), hashMB << 20);
