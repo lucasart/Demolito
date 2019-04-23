@@ -302,6 +302,9 @@ static eval_t do_pawns(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
             bb_set(passed, s);
             eval_add(&result, passer(us, s, ourKing, theirKing));
         }
+
+        // In the endgame, keep the enemy king away from our pawns, and ours closer
+        result.eg += KingDistance[s][theirKing] - KingDistance[s][ourKing];
     }
 
     return result;
