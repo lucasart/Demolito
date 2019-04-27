@@ -1,5 +1,6 @@
 // Platform specific code
 #pragma once
+#include <inttypes.h>
 
 #ifdef _WIN64
     // Windows
@@ -53,3 +54,6 @@
         return t.tv_sec * 1000LL + t.tv_nsec / 1000000;
     }
 #endif
+
+void *my_aligned_alloc(size_t align, size_t size);
+void my_aligned_free(void *p);

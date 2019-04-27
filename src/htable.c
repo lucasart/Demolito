@@ -13,9 +13,9 @@
  * You should have received a copy of the GNU General Public License along with this program. If
  * not, see <http://www.gnu.org/licenses/>.
 */
-#include <stdlib.h>
 #include <string.h>
 #include "htable.h"
+#include "platform.h"
 #include "search.h"
 
 unsigned hashDate = 0;
@@ -46,33 +46,10 @@ static int score_from_hash(int hashScore, int ply)
     return hashScore;
 }
 
-void *my_aligned_alloc(size_t align, size_t size)
-{
-    // align must be a power of two, at least the pointer size, to avoid misaligned memory access
-    assert(align >= sizeof(uintptr_t) && !(align & (align - 1)) && size);
-
-    // allocate extra head room to store and pointer and padding bytes to align
-    const uintptr_t base = (uintptr_t)malloc(size + sizeof(uintptr_t) + align - 1);
-
-    // start adress of the aligned memory chunk (ie. return value)
-    const uintptr_t start = (base + sizeof(uintptr_t) + align - 1) & ~(align - 1);
-
-    // Remember the original base pointer returned by malloc(), so that we can free() it.
-    *((uintptr_t *)start - 1) = base;
-
-    return (void *)start;
-}
-
-void my_aligned_free(void *p)
-// WARNING: Only use if p was created by my_aligned_alloc()
-{
-    if (p)
-        // Original base pointer is stored sizeof(uintptr_t) bytes behind p
-        free((void *)*((uintptr_t *)p - 1));
-}
-
 void hash_prepare(uint64_t hashMB)
 {
+    assert(bb_count(hashMB) == 1);  // must be a power of 2
+
     my_aligned_free(HashTable);
     HashTable = my_aligned_alloc(sizeof(HashEntry), hashMB << 20);
     HashCount = (hashMB << 20) / sizeof(HashEntry);

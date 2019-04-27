@@ -76,8 +76,11 @@ int main(int argc, char **argv)
 
     if (argc >= 2) {
         if ((!strcmp(argv[1], "perft") || !strcmp(argv[1], "search")) && argc >= 3) {
-            if (argc > 3) WorkersCount = atoi(argv[3]);
-            if (argc > 4) uciHash = atoi(argv[4]);
+            if (argc > 3)
+                WorkersCount = atoi(argv[3]);
+
+            if (argc > 4)
+                uciHash = 1ULL << bb_msb(atoll(argv[4]));  // must be a power of 2
 
             smp_prepare(WorkersCount);
             hash_prepare(uciHash);
