@@ -13,6 +13,7 @@
  * You should have received a copy of the GNU General Public License along with this program. If
  * not, see <http://www.gnu.org/licenses/>.
 */
+#include <stdlib.h>
 #include <string.h>
 #include "htable.h"
 #include "platform.h"
@@ -50,8 +51,14 @@ void hash_prepare(uint64_t hashMB)
 {
     assert(bb_count(hashMB) == 1);  // must be a power of 2
 
-    my_aligned_free(HashTable);
-    HashTable = my_aligned_alloc(sizeof(HashEntry), hashMB << 20);
+    free(HashTable);
+    HashTable = malloc(hashMB << 20);
+
+    // All 64-bit malloc() implementations should return 16-byte aligned memory.
+    // We want this for performance, to ensure that no HashEntry sits across two
+    // cache lines.
+    assert((uintptr_t)HashTable % sizeof(HashEntry) == 0);
+
     HashCount = (hashMB << 20) / sizeof(HashEntry);
     memset(HashTable, 0, hashMB << 20);
 }
