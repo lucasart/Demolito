@@ -20,6 +20,9 @@ typedef struct {
     };
 } HashEntry;
 
+void *my_aligned_alloc(size_t align, size_t size);
+void my_aligned_free(void *p);
+
 void hash_prepare(uint64_t hashMB);  // realloc + clear
 bool hash_read(uint64_t key, HashEntry *e, int ply);
 void hash_write(uint64_t key, HashEntry *e, int ply);

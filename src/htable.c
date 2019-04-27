@@ -46,16 +46,36 @@ static int score_from_hash(int hashScore, int ply)
     return hashScore;
 }
 
+void *my_aligned_alloc(size_t align, size_t size)
+{
+    // align must be a power of two, at least the pointer size, to avoid misaligned memory access
+    assert(align >= sizeof(uintptr_t) && !(align & (align - 1)) && size);
+
+    // allocate extra head room to store and pointer and padding bytes to align
+    const uintptr_t base = (uintptr_t)malloc(size + sizeof(uintptr_t) + align - 1);
+
+    // start adress of the aligned memory chunk (ie. return value)
+    const uintptr_t start = (base + sizeof(uintptr_t) + align - 1) & ~(align - 1);
+
+    // Remember the original base pointer returned by malloc(), so that we can free() it.
+    *((uintptr_t *)start - 1) = base;
+
+    return (void *)start;
+}
+
+void my_aligned_free(void *p)
+// WARNING: Only use if p was created by my_aligned_alloc()
+{
+    if (p)
+        // Original base pointer is stored sizeof(uintptr_t) bytes behind p
+        free((void *)*((uintptr_t *)p - 1));
+}
+
 void hash_prepare(uint64_t hashMB)
 {
-    free(HashTable);
-#ifdef _WIN64
-    HashTable = malloc(hashMB << 20);  // FIXME: we need 16-byte alignment for performance
-#else
-    HashTable = aligned_alloc(sizeof(HashEntry), hashMB << 20);
-#endif
+    my_aligned_free(HashTable);
+    HashTable = my_aligned_alloc(sizeof(HashEntry), hashMB << 20);
     HashCount = (hashMB << 20) / sizeof(HashEntry);
-
     memset(HashTable, 0, hashMB << 20);
 }
 

@@ -90,6 +90,6 @@ int main(int argc, char **argv)
         uci_loop();
     }
 
-    free(HashTable);
+    my_aligned_free(HashTable);
     smp_destroy();
 }
