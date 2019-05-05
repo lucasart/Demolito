@@ -32,12 +32,12 @@ extern int64_t dbgCnt[2];
 int opposite(int color);
 int push_inc(int color);
 
-int square(int r, int f);
-int rank_of(int s);
-int file_of(int s);
+int square_from(int r, int f);
+int rank_of(int square);
+int file_of(int square);
 
 int relative_rank(int color, int r);
-int relative_rank_of(int color, int s);
+int relative_rank_of(int color, int square);
 
 void bb_init();
 
@@ -47,12 +47,12 @@ extern bitboard_t BishopPseudoAttacks[NB_SQUARE], RookPseudoAttacks[NB_SQUARE];
 extern bitboard_t Segment[NB_SQUARE][NB_SQUARE];
 extern bitboard_t Ray[NB_SQUARE][NB_SQUARE];
 
-bitboard_t bb_bishop_attacks(int s, bitboard_t occ);
-bitboard_t bb_rook_attacks(int s, bitboard_t occ);
+bitboard_t bb_bishop_attacks(int square, bitboard_t occ);
+bitboard_t bb_rook_attacks(int square, bitboard_t occ);
 
-bool bb_test(bitboard_t b, int s);
-void bb_clear(bitboard_t *b, int s);
-void bb_set(bitboard_t *b, int s);
+bool bb_test(bitboard_t b, int square);
+void bb_clear(bitboard_t *b, int square);
+void bb_set(bitboard_t *b, int square);
 bitboard_t bb_shift(bitboard_t b, int i);
 
 int bb_lsb(bitboard_t b);

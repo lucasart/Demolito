@@ -27,7 +27,7 @@
 #include "uci.h"
 
 #define uci_printf(...) printf(__VA_ARGS__), fflush(stdout)
-#define uci_puts(s) puts(s), fflush(stdout)
+#define uci_puts(str) puts(str), fflush(stdout)
 
 static thrd_t Timer = 0;
 

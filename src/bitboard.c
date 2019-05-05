@@ -28,7 +28,7 @@ bitboard_t Segment[NB_SQUARE][NB_SQUARE], Ray[NB_SQUARE][NB_SQUARE];
 static void safe_set_bit(bitboard_t *b, int r, int f)
 {
     if (0 <= r && r < NB_RANK && 0 <= f && f < NB_FILE)
-        bb_set(b, square(r, f));
+        bb_set(b, square_from(r, f));
 }
 
 static const bitboard_t RookMagic[NB_SQUARE] = {
@@ -77,7 +77,7 @@ static unsigned BishopShift[NB_SQUARE], RookShift[NB_SQUARE];
 
 // Compute (from scratch) the squares attacked by a sliding piece, moving in directions dir, given
 // board occupancy occ.
-static bitboard_t slider_attacks(int s, bitboard_t occ, const int dir[4][2])
+static bitboard_t slider_attacks(int square, bitboard_t occ, const int dir[4][2])
 {
     bitboard_t result = 0;
 
@@ -85,10 +85,10 @@ static bitboard_t slider_attacks(int s, bitboard_t occ, const int dir[4][2])
         int dr = dir[i][0], df = dir[i][1];
         int r, f;
 
-        for (r = rank_of(s) + dr, f = file_of(s) + df;
+        for (r = rank_of(square) + dr, f = file_of(square) + df;
                 0 <= r && r < NB_RANK && 0 <= f && f < NB_FILE;
                 r += dr, f += df) {
-            const int sq = square(r, f);
+            const int sq = square_from(r, f);
             bb_set(&result, sq);
 
             if (bb_test(occ, sq))
@@ -109,22 +109,24 @@ static int slider_index(bitboard_t occ, bitboard_t mask, bitboard_t magic, unsig
 #endif
 }
 
-static void init_slider_attacks(int s, bitboard_t mask[NB_SQUARE], const bitboard_t magic[NB_SQUARE],
-    unsigned shift[NB_SQUARE], bitboard_t *attacksPtr[NB_SQUARE], const int dir[4][2])
+static void init_slider_attacks(int square, bitboard_t mask[NB_SQUARE],
+    const bitboard_t magic[NB_SQUARE], unsigned shift[NB_SQUARE], bitboard_t *attacksPtr[NB_SQUARE],
+    const int dir[4][2])
 {
-    bitboard_t edges = ((Rank[RANK_1] | Rank[RANK_8]) & ~Rank[rank_of(s)]) |
-        ((File[RANK_1] | File[RANK_8]) & ~File[file_of(s)]);
-    mask[s] = slider_attacks(s, 0, dir) & ~edges;
-    shift[s] = 64 - bb_count(mask[s]);
+    bitboard_t edges = ((Rank[RANK_1] | Rank[RANK_8]) & ~Rank[rank_of(square)]) |
+        ((File[RANK_1] | File[RANK_8]) & ~File[file_of(square)]);
+    mask[square] = slider_attacks(square, 0, dir) & ~edges;
+    shift[square] = 64 - bb_count(mask[square]);
 
-    if (s < H8)
-        attacksPtr[s + 1] = attacksPtr[s] + (1 << bb_count(mask[s]));
+    if (square < H8)
+        attacksPtr[square + 1] = attacksPtr[square] + (1 << bb_count(mask[square]));
 
-    // Loop over the subsets of mask[s]
+    // Loop over the subsets of mask[square]
     bitboard_t occ = 0;
     do {
-        attacksPtr[s][slider_index(occ, mask[s], magic[s], shift[s])] = slider_attacks(s, occ, dir);
-        occ = (occ - mask[s]) & mask[s];  // Carry-Rippler trick
+        attacksPtr[square][slider_index(occ, mask[square], magic[square], shift[square])]
+            = slider_attacks(square, occ, dir);
+        occ = (occ - mask[square]) & mask[square];  // Carry-Rippler trick
     } while (occ);
 }
 
@@ -142,23 +144,23 @@ int push_inc(int color)
     return color == WHITE ? UP : DOWN;
 }
 
-int square(int r, int f)
+int square_from(int r, int f)
 {
     BOUNDS(r, NB_RANK);
     BOUNDS(f, NB_FILE);
     return NB_FILE * r + f;
 }
 
-int rank_of(int s)
+int rank_of(int square)
 {
-    BOUNDS(s, NB_SQUARE);
-    return s / NB_FILE;
+    BOUNDS(square, NB_SQUARE);
+    return square / NB_FILE;
 }
 
-int file_of(int s)
+int file_of(int square)
 {
-    BOUNDS(s, NB_SQUARE);
-    return s % NB_FILE;
+    BOUNDS(square, NB_SQUARE);
+    return square % NB_FILE;
 }
 
 int relative_rank(int color, int r)
@@ -168,10 +170,10 @@ int relative_rank(int color, int r)
     return r ^ (7 * color);
 }
 
-int relative_rank_of(int color, int s)
+int relative_rank_of(int color, int square)
 {
-    BOUNDS(s, NB_SQUARE);
-    return relative_rank(color, rank_of(s));
+    BOUNDS(square, NB_SQUARE);
+    return relative_rank(color, rank_of(square));
 }
 
 void bb_init()
@@ -189,37 +191,37 @@ void bb_init()
     }
 
     // Initialise Ray[][] and Segment[][]
-    for (int s = A1; s <= H8; s++) {
+    for (int square = A1; square <= H8; square++) {
         for (int d = 0; d < 8; d++) {
             bitboard_t mask = 0;
-            int r2 = rank_of(s), f2 = file_of(s);
+            int r2 = rank_of(square), f2 = file_of(square);
 
             while (0 <= r2 && r2 < NB_RANK && 0 <= f2 && f2 < NB_FILE) {
-                const int s2 = square(r2, f2);
+                const int s2 = square_from(r2, f2);
                 bb_set(&mask, s2);
-                Segment[s][s2] = mask;
+                Segment[square][s2] = mask;
                 r2 += KingDir[d][0], f2 += KingDir[d][1];
             }
 
             bitboard_t sqs = mask;
 
             while (sqs)
-                Ray[s][bb_pop_lsb(&sqs)] = mask;
+                Ray[square][bb_pop_lsb(&sqs)] = mask;
         }
     }
 
     // Initialise leaper attacks (N, K, P)
-    for (int s = A1; s <= H8; s++) {
-        const int r = rank_of(s), f = file_of(s);
+    for (int square = A1; square <= H8; square++) {
+        const int r = rank_of(square), f = file_of(square);
 
         for (int d = 0; d < 8; d++) {
-            safe_set_bit(&KnightAttacks[s], r + KnightDir[d][0], f + KnightDir[d][1]);
-            safe_set_bit(&KingAttacks[s], r + KingDir[d][0], f + KingDir[d][1]);
+            safe_set_bit(&KnightAttacks[square], r + KnightDir[d][0], f + KnightDir[d][1]);
+            safe_set_bit(&KingAttacks[square], r + KingDir[d][0], f + KingDir[d][1]);
         }
 
         for (int d = 0; d < 2; d++) {
-            safe_set_bit(&PawnAttacks[WHITE][s], r + PawnDir[d][0], f + PawnDir[d][1]);
-            safe_set_bit(&PawnAttacks[BLACK][s], r - PawnDir[d][0], f - PawnDir[d][1]);
+            safe_set_bit(&PawnAttacks[WHITE][square], r + PawnDir[d][0], f + PawnDir[d][1]);
+            safe_set_bit(&PawnAttacks[BLACK][square], r - PawnDir[d][0], f - PawnDir[d][1]);
         }
     }
 
@@ -227,45 +229,47 @@ void bb_init()
     BishopAttacks[0] = BishopDB;
     RookAttacks[0] = RookDB;
 
-    for (int s = A1; s <= H8; s++) {
-        init_slider_attacks(s, BishopMask, BishopMagic, BishopShift, BishopAttacks, BishopDir);
-        init_slider_attacks(s, RookMask, RookMagic, RookShift, RookAttacks, RookDir);
+    for (int square = A1; square <= H8; square++) {
+        init_slider_attacks(square, BishopMask, BishopMagic, BishopShift, BishopAttacks, BishopDir);
+        init_slider_attacks(square, RookMask, RookMagic, RookShift, RookAttacks, RookDir);
 
-        BishopPseudoAttacks[s] = BishopAttacks[s][0];
-        RookPseudoAttacks[s] = RookAttacks[s][0];
+        BishopPseudoAttacks[square] = BishopAttacks[square][0];
+        RookPseudoAttacks[square] = RookAttacks[square][0];
     }
 }
 
-bitboard_t bb_bishop_attacks(int s, bitboard_t occ)
+bitboard_t bb_bishop_attacks(int square, bitboard_t occ)
 {
-    BOUNDS(s, NB_SQUARE);
-    return BishopAttacks[s][slider_index(occ, BishopMask[s], BishopMagic[s], BishopShift[s])];
+    BOUNDS(square, NB_SQUARE);
+    return BishopAttacks[square][slider_index(occ, BishopMask[square], BishopMagic[square],
+        BishopShift[square])];
 }
 
-bitboard_t bb_rook_attacks(int s, bitboard_t occ)
+bitboard_t bb_rook_attacks(int square, bitboard_t occ)
 {
-    BOUNDS(s, NB_SQUARE);
-    return RookAttacks[s][slider_index(occ, RookMask[s], RookMagic[s], RookShift[s])];
+    BOUNDS(square, NB_SQUARE);
+    return RookAttacks[square][slider_index(occ, RookMask[square], RookMagic[square],
+        RookShift[square])];
 }
 
-bool bb_test(bitboard_t b, int s)
+bool bb_test(bitboard_t b, int square)
 {
-    BOUNDS(s, NB_SQUARE);
-    return b & (1ULL << s);
+    BOUNDS(square, NB_SQUARE);
+    return b & (1ULL << square);
 }
 
-void bb_clear(bitboard_t *b, int s)
+void bb_clear(bitboard_t *b, int square)
 {
-    BOUNDS(s, NB_SQUARE);
-    assert(bb_test(*b, s));
-    *b ^= 1ULL << s;
+    BOUNDS(square, NB_SQUARE);
+    assert(bb_test(*b, square));
+    *b ^= 1ULL << square;
 }
 
-void bb_set(bitboard_t *b, int s)
+void bb_set(bitboard_t *b, int square)
 {
-    BOUNDS(s, NB_SQUARE);
-    assert(!bb_test(*b, s));
-    *b ^= 1ULL << s;
+    BOUNDS(square, NB_SQUARE);
+    assert(!bb_test(*b, square));
+    *b ^= 1ULL << square;
 }
 
 bitboard_t bb_shift(bitboard_t b, int i)
@@ -288,9 +292,9 @@ int bb_msb(bitboard_t b)
 
 int bb_pop_lsb(bitboard_t *b)
 {
-    int s = bb_lsb(*b);
+    int square = bb_lsb(*b);
     *b &= *b - 1;
-    return s;
+    return square;
 }
 
 bool bb_several(bitboard_t b)
@@ -309,7 +313,7 @@ void bb_print(bitboard_t b)
         char line[] = ". . . . . . . .";
 
         for (int f = FILE_A; f <= FILE_H; f++) {
-            if (bb_test(b, square(r, f)))
+            if (bb_test(b, square_from(r, f)))
                 line[2 * f] = 'X';
         }
 

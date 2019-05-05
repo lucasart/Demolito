@@ -282,11 +282,11 @@ static eval_t do_pawns(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
     b = ourPawns;
 
     while (b) {
-        const int s = bb_pop_lsb(&b);
-        const int stop = s + push_inc(us);
-        const int r = rank_of(s), f = file_of(s);
+        const int square = bb_pop_lsb(&b);
+        const int stop = square + push_inc(us);
+        const int r = rank_of(square), f = file_of(square);
         const bitboard_t besides = ourPawns & AdjacentFiles[f];
-        const bool exposed = !(PawnPath[us][s] & pos->byPiece[PAWN]);
+        const bool exposed = !(PawnPath[us][square] & pos->byPiece[PAWN]);
 
         if (besides & (Rank[r] | Rank[us == WHITE ? r - 1 : r + 1]))
             eval_add(&result, Connected[relative_rank(us, r) - RANK_2]);
@@ -298,13 +298,13 @@ static eval_t do_pawns(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
         if (bb_test(ourPawns, stop))
             eval_sub(&result, Doubled);
 
-        if (exposed && !(PawnSpan[us][s] & theirPawns)) {
-            bb_set(passed, s);
-            eval_add(&result, passer(us, s, ourKing, theirKing));
+        if (exposed && !(PawnSpan[us][square] & theirPawns)) {
+            bb_set(passed, square);
+            eval_add(&result, passer(us, square, ourKing, theirKing));
         }
 
         // In the endgame, keep the enemy king away from our pawns, and ours closer
-        result.eg += KingDistance[s][theirKing] - KingDistance[s][ourKing];
+        result.eg += KingDistance[square][theirKing] - KingDistance[square][ourKing];
     }
 
     return result;
@@ -335,13 +335,14 @@ static eval_t pawns(Worker *worker, const Position *pos, bitboard_t attacks[NB_C
     bitboard_t b = pe->passed;
 
     while (b) {
-        const int s = bb_pop_lsb(&b);
-        const int us = pos_color_on(pos, s), them = opposite(us);
-        const bitboard_t potentialThreats = File[file_of(s)] & pos_pieces_cpp(pos, them, ROOK, QUEEN);
-        const int n = relative_rank_of(us, s) - RANK_4;
+        const int square = bb_pop_lsb(&b);
+        const int us = pos_color_on(pos, square), them = opposite(us);
+        const bitboard_t potentialThreats = File[file_of(square)]
+            & pos_pieces_cpp(pos, them, ROOK, QUEEN);
+        const int n = relative_rank_of(us, square) - RANK_4;
 
-        if (n >= 0 && !bb_test(occ, s + push_inc(us))
-                && (!potentialThreats || !(bb_rook_attacks(s, occ) & potentialThreats)))
+        if (n >= 0 && !bb_test(occ, square + push_inc(us))
+                && (!potentialThreats || !(bb_rook_attacks(square, occ) & potentialThreats)))
             e.eg += FreePasser[n] * (us == WHITE ? 1 : -1);
     }
 
@@ -358,21 +359,21 @@ static int blend(const Position *pos, eval_t e)
 
 void eval_init()
 {
-    for (int s = H8; s >= A1; s--) {
-        if (rank_of(s) == RANK_8)
-            PawnSpan[WHITE][s] = PawnPath[WHITE][s] = 0;
+    for (int square = H8; square >= A1; square--) {
+        if (rank_of(square) == RANK_8)
+            PawnSpan[WHITE][square] = PawnPath[WHITE][square] = 0;
         else {
-            PawnSpan[WHITE][s] = PawnAttacks[WHITE][s] | PawnSpan[WHITE][s + UP];
-            PawnPath[WHITE][s] = (1ULL << (s + UP)) | PawnPath[WHITE][s + UP];
+            PawnSpan[WHITE][square] = PawnAttacks[WHITE][square] | PawnSpan[WHITE][square + UP];
+            PawnPath[WHITE][square] = (1ULL << (square + UP)) | PawnPath[WHITE][square + UP];
         }
     }
 
-    for (int s = A1; s <= H8; s++) {
-        if (rank_of(s) == RANK_1)
-            PawnSpan[BLACK][s] = PawnPath[BLACK][s] = 0;
+    for (int square = A1; square <= H8; square++) {
+        if (rank_of(square) == RANK_1)
+            PawnSpan[BLACK][square] = PawnPath[BLACK][square] = 0;
         else {
-            PawnSpan[BLACK][s] = PawnAttacks[BLACK][s] | PawnSpan[BLACK][s + DOWN];
-            PawnPath[BLACK][s] = (1ULL << (s + DOWN)) | PawnPath[BLACK][s + DOWN];
+            PawnSpan[BLACK][square] = PawnAttacks[BLACK][square] | PawnSpan[BLACK][square + DOWN];
+            PawnPath[BLACK][square] = (1ULL << (square + DOWN)) | PawnPath[BLACK][square + DOWN];
         }
     }
 

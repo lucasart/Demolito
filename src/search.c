@@ -118,16 +118,16 @@ static int qsearch(Worker *worker, const Position *pos, int ply, int depth, int 
     }
 
     // Generate and score moves
-    Sort s;
-    sort_init(worker, &s, pos, depth, he.move);
+    Sort sort;
+    sort_init(worker, &sort, pos, depth, he.move);
 
     const bitboard_t pins = calc_pins(pos);
     int moveCount = 0;
 
     // Move loop
-    while (s.idx != s.cnt && alpha < beta) {
+    while (sort.idx != sort.cnt && alpha < beta) {
         int see;
-        const move_t currentMove = sort_next(&s, pos, &see);
+        const move_t currentMove = sort_next(&sort, pos, &see);
 
         if (!move_is_legal(pos, pins, currentMove))
             continue;
@@ -310,8 +310,8 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
     }
 
     // Generate and score moves
-    Sort s;
-    sort_init(worker, &s, pos, depth, he.move);
+    Sort sort;
+    sort_init(worker, &sort, pos, depth, he.move);
 
     const bitboard_t pins = calc_pins(pos);
     int moveCount = 0, lmrCount = 0;
@@ -320,9 +320,9 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
     int quietSearchedCnt = 0;
 
     // Move loop
-    while (s.idx != s.cnt && alpha < beta) {
+    while (sort.idx != sort.cnt && alpha < beta) {
         int see;
-        const move_t currentMove = sort_next(&s, pos, &see);
+        const move_t currentMove = sort_next(&sort, pos, &see);
 
         if (!move_is_legal(pos, pins, currentMove) || currentMove == singularMove)
             continue;
@@ -394,8 +394,8 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
 
                 // Reduced depth, zero window
                 score = nextDepth - reduction <= 0
-                        ? -qsearch(worker, &nextPos, ply + 1, nextDepth - reduction, -(alpha + 1), -alpha, false, childPv)
-                        : -search(worker, &nextPos, ply + 1, nextDepth - reduction, -(alpha + 1), -alpha, childPv, 0);
+                    ? -qsearch(worker, &nextPos, ply + 1, nextDepth - reduction, -(alpha + 1), -alpha, false, childPv)
+                    : -search(worker, &nextPos, ply + 1, nextDepth - reduction, -(alpha + 1), -alpha, childPv, 0);
 
                 // Fail high: re-search zero window at full depth
                 if (reduction && score > alpha)
@@ -540,13 +540,13 @@ static void iterate(Worker *worker)
             // obsolete iterations, and raise the appropriate Signal, to make them move
             // on to the next depth.
             mtx_lock(&mtxSchedule);
-            uint64_t s = 0;
+            uint64_t abortMask = 0;
 
             for (int i = 0; i < WorkersCount; i++)
                 if (worker != &Workers[i] && Workers[i].depth <= depth)
-                    s |= 1ULL << i;
+                    abortMask |= 1ULL << i;
 
-            Signal |= s;
+            Signal |= abortMask;
             mtx_unlock(&mtxSchedule);
         } else {
             worker->stack.idx = rootStack.idx;  // Restore stack position

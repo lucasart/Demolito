@@ -25,7 +25,7 @@ typedef struct {
 
 extern const char *PieceLabel[NB_COLOR];
 
-void square_to_string(int s, char *str);
+void square_to_string(int square, char *str);
 int string_to_square(const char *str);
 
 void pos_init();
@@ -43,8 +43,8 @@ bitboard_t pos_pieces_cpp(const Position *pos, int color, int p1, int p2);
 bitboard_t pos_ep_square_bb(const Position *pos);
 bool pos_insufficient_material(const Position *pos);
 int pos_king_square(const Position *pos, int color);
-int pos_color_on(const Position *pos, int s);
-int pos_piece_on(const Position *pos, int s);
-bitboard_t pos_attackers_to(const Position *pos, int s, bitboard_t occ);
+int pos_color_on(const Position *pos, int square);
+int pos_piece_on(const Position *pos, int square);
+bitboard_t pos_attackers_to(const Position *pos, int square, bitboard_t occ);
 bitboard_t calc_pins(const Position *pos);
 void pos_print(const Position *pos);

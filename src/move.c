@@ -88,8 +88,8 @@ void move_to_string(const Position *pos, move_t m, char *str)
 move_t string_to_move(const Position *pos, const char *str)
 {
     const int prom = str[4] ? (int)(strchr(PieceLabel[BLACK], str[4]) - PieceLabel[BLACK]) : NB_PIECE;
-    const int from = square(str[1] - '1', str[0] - 'a');
-    int to = square(str[3] - '1', str[2] - 'a');
+    const int from = square_from(str[1] - '1', str[0] - 'a');
+    int to = square_from(str[3] - '1', str[2] - 'a');
 
     if (!uciChess960 && pos_piece_on(pos, from) == KING) {
         if (to == from + 2)  // e1g1 -> e1h1
@@ -111,7 +111,7 @@ bool move_is_legal(const Position *pos, bitboard_t pins, move_t m)
         if (bb_test(pos->byColor[pos->turn], to)) {
             // Castling: king can't move through attacked square, and rook can't be pinned
             assert(pos_piece_on(pos, to) == ROOK);
-            const int kto = square(rank_of(from), from < to ? FILE_G : FILE_C);
+            const int kto = square_from(rank_of(from), from < to ? FILE_G : FILE_C);
             return !(pos->attacked & Segment[from][kto])
                 && !bb_test(pins, to);
         } else

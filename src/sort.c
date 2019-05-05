@@ -26,9 +26,9 @@ enum {
     SEPARATION = 3 * HISTORY_MAX + 1
 };
 
-void sort_generate(Sort *s, const Position *pos, int depth)
+void sort_generate(Sort *sort, const Position *pos, int depth)
 {
-    move_t *it = s->moves;
+    move_t *it = sort->moves;
 
     if (pos->checkers)
         it = gen_check_escapes(pos, it, depth > 0);
@@ -45,26 +45,26 @@ void sort_generate(Sort *s, const Position *pos, int depth)
             it = gen_castling_moves(pos, it);
     }
 
-    s->cnt = it - s->moves;
+    sort->cnt = it - sort->moves;
 }
 
-void sort_score(Worker *worker, Sort *s, const Position *pos, move_t ttMove)
+void sort_score(Worker *worker, Sort *sort, const Position *pos, move_t ttMove)
 {
     const size_t rhIdx = stack_move_key(&worker->stack, 0) % NB_REFUTATION;
     const size_t fuhIdx = stack_move_key(&worker->stack, 1) % NB_FOLLOW_UP;
 
-    for (size_t i = 0; i < s->cnt; i++) {
-        const move_t m = s->moves[i];
+    for (size_t i = 0; i < sort->cnt; i++) {
+        const move_t m = sort->moves[i];
 
         if (m == ttMove)
-            s->scores[i] = INT_MAX;
+            sort->scores[i] = INT_MAX;
         else {
             if (move_is_capture(pos, m)) {
                 const int see = move_see(pos, m);
-                s->scores[i] = see >= 0 ? see + SEPARATION : see - SEPARATION;
+                sort->scores[i] = see >= 0 ? see + SEPARATION : see - SEPARATION;
             } else {
                 const int from = move_from(m), to = move_to(m);
-                s->scores[i] = worker->history[pos->turn][from][to]
+                sort->scores[i] = worker->history[pos->turn][from][to]
                     + worker->refutationHistory[rhIdx][pos->pieceOn[from]][to]
                     + worker->followUpHistory[fuhIdx][pos->pieceOn[from]][to];
             }
@@ -82,35 +82,35 @@ void history_update(int16_t *t, int16_t bonus)
         *t = -HISTORY_MAX;
 }
 
-void sort_init(Worker *worker, Sort *s, const Position *pos, int depth, move_t ttMove)
+void sort_init(Worker *worker, Sort *sort, const Position *pos, int depth, move_t ttMove)
 {
-    sort_generate(s, pos, depth);
-    sort_score(worker, s, pos, ttMove);
-    s->idx = 0;
+    sort_generate(sort, pos, depth);
+    sort_score(worker, sort, pos, ttMove);
+    sort->idx = 0;
 }
 
-move_t sort_next(Sort *s, const Position *pos, int *see)
+move_t sort_next(Sort *sort, const Position *pos, int *see)
 {
     int maxScore = INT_MIN;
-    size_t maxIdx = s->idx;
+    size_t maxIdx = sort->idx;
 
-    for (size_t i = s->idx; i < s->cnt; i++)
-        if (s->scores[i] > maxScore) {
-            maxScore = s->scores[i];
+    for (size_t i = sort->idx; i < sort->cnt; i++)
+        if (sort->scores[i] > maxScore) {
+            maxScore = sort->scores[i];
             maxIdx = i;
         }
 
     #define swap(x, y) do { typeof(x) tmp = x; x = y; y = tmp; } while (0);
 
-    if (maxIdx != s->idx) {
-        swap(s->moves[s->idx], s->moves[maxIdx]);
-        swap(s->scores[s->idx], s->scores[maxIdx]);
+    if (maxIdx != sort->idx) {
+        swap(sort->moves[sort->idx], sort->moves[maxIdx]);
+        swap(sort->scores[sort->idx], sort->scores[maxIdx]);
     }
 
     #undef swap
 
-    const int score = s->scores[s->idx];
-    const move_t m = s->moves[s->idx];
+    const int score = sort->scores[sort->idx];
+    const move_t m = sort->moves[sort->idx];
 
     if (move_is_capture(pos, m)) {
         // Deduce SEE from the sort score
@@ -127,5 +127,5 @@ move_t sort_next(Sort *s, const Position *pos, int *see)
     } else
         *see = move_see(pos, m);
 
-    return s->moves[s->idx++];
+    return sort->moves[sort->idx++];
 }

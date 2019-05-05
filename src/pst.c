@@ -85,13 +85,13 @@ void pst_init()
     // Calculate PST, based on specialized functions for each piece
     for (int color = WHITE; color <= BLACK; color++)
         for (int piece = KNIGHT; piece < NB_PIECE; piece++)
-            for (int s = A1; s <= H8; s++) {
-                pst[color][piece][s] = Material[piece];
-                eval_add(&pst[color][piece][s], (*PstFn[piece])(relative_rank_of(color, s), file_of(s)));
+            for (int square = A1; square <= H8; square++) {
+                pst[color][piece][square] = Material[piece];
+                eval_add(&pst[color][piece][square], (*PstFn[piece])(relative_rank_of(color, square), file_of(square)));
 
                 if (color == BLACK) {
-                    pst[color][piece][s].op *= -1;
-                    pst[color][piece][s].eg *= -1;
+                    pst[color][piece][square].op *= -1;
+                    pst[color][piece][square].eg *= -1;
                 }
             }
 }

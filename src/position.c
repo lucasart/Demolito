@@ -29,12 +29,12 @@ static uint64_t ZobristTurn;
 // SplitMix64 PRNG, by Sebastiano Vigna: http://xoroshiro.di.unimi.it/splitmix64.c
 static uint64_t prng(uint64_t *state)
 {
-    uint64_t s = (*state += 0x9E3779B97F4A7C15ULL);
-    s = (s ^ (s >> 30)) * 0xBF58476D1CE4E5B9ULL;
-    s = (s ^ (s >> 27)) * 0x94D049BB133111EBULL;
-    s ^= s >> 31;
-    assert(s);  // We cannot have a zero key for zobrist hashing. If it happens, change the seed.
-    return s;
+    uint64_t rnd = (*state += 0x9E3779B97F4A7C15ULL);
+    rnd = (rnd ^ (rnd >> 30)) * 0xBF58476D1CE4E5B9ULL;
+    rnd = (rnd ^ (rnd >> 27)) * 0x94D049BB133111EBULL;
+    rnd ^= rnd >> 31;
+    assert(rnd);  // We cannot have a zero key for zobrist hashing. If it happens, change the seed.
+    return rnd;
 }
 
 // Combined zobrist mask of all castlable rooks
@@ -58,42 +58,42 @@ static void clear(Position *pos)
     memset(pos->pieceOn, NB_PIECE, sizeof(pos->pieceOn));
 }
 
-// Remove 'piece' of 'color' on square 's'. Such a piece must be there first.
-static void clear_square(Position *pos, int color, int piece, int s)
+// Remove 'piece' of 'color' on 'square'. Such a piece must be there first.
+static void clear_square(Position *pos, int color, int piece, int square)
 {
     BOUNDS(color, NB_COLOR);
     BOUNDS(piece, NB_PIECE);
-    BOUNDS(s, NB_SQUARE);
+    BOUNDS(square, NB_SQUARE);
 
-    bb_clear(&pos->byColor[color], s);
-    bb_clear(&pos->byPiece[piece], s);
-    pos->pieceOn[s] = NB_PIECE;
-    eval_sub(&pos->pst, pst[color][piece][s]);
-    pos->key ^= ZobristKey[color][piece][s];
+    bb_clear(&pos->byColor[color], square);
+    bb_clear(&pos->byPiece[piece], square);
+    pos->pieceOn[square] = NB_PIECE;
+    eval_sub(&pos->pst, pst[color][piece][square]);
+    pos->key ^= ZobristKey[color][piece][square];
 
     if (piece <= QUEEN)
         eval_sub(&pos->pieceMaterial[color], Material[piece]);
     else
-        pos->pawnKey ^= ZobristKey[color][piece][s];
+        pos->pawnKey ^= ZobristKey[color][piece][square];
 }
 
-// Put 'piece' of 'color' on square 's'. Square must be empty first.
-static void set_square(Position *pos, int color, int piece, int s)
+// Put 'piece' of 'color' on 'square'. Square must be empty first.
+static void set_square(Position *pos, int color, int piece, int square)
 {
     BOUNDS(color, NB_COLOR);
     BOUNDS(piece, NB_PIECE);
-    BOUNDS(s, NB_SQUARE);
+    BOUNDS(square, NB_SQUARE);
 
-    bb_set(&pos->byColor[color], s);
-    bb_set(&pos->byPiece[piece], s);
-    pos->pieceOn[s] = piece;
-    eval_add(&pos->pst, pst[color][piece][s]);
-    pos->key ^= ZobristKey[color][piece][s];
+    bb_set(&pos->byColor[color], square);
+    bb_set(&pos->byPiece[piece], square);
+    pos->pieceOn[square] = piece;
+    eval_add(&pos->pst, pst[color][piece][square]);
+    pos->key ^= ZobristKey[color][piece][square];
 
     if (piece <= QUEEN)
         eval_add(&pos->pieceMaterial[color], Material[piece]);
     else
-        pos->pawnKey ^= ZobristKey[color][piece][s];
+        pos->pawnKey ^= ZobristKey[color][piece][square];
 }
 
 // Squares attacked by pieces of 'color'
@@ -141,15 +141,15 @@ static void finish(Position *pos)
 
 const char *PieceLabel[NB_COLOR] = {"NBRQKP.", "nbrqkp."};
 
-void square_to_string(int s, char *str)
+void square_to_string(int square, char *str)
 {
-    BOUNDS(s, NB_SQUARE + 1);
+    BOUNDS(square, NB_SQUARE + 1);
 
-    if (s == NB_SQUARE)
+    if (square == NB_SQUARE)
         *str++ = '-';
     else {
-        *str++ = file_of(s) + 'a';
-        *str++ = rank_of(s) + '1';
+        *str++ = file_of(square) + 'a';
+        *str++ = rank_of(square) + '1';
     }
 
     *str = '\0';
@@ -158,8 +158,8 @@ void square_to_string(int s, char *str)
 int string_to_square(const char *str)
 {
     return *str != '-'
-           ? square(str[1] - '1', str[0] - 'a')
-           : NB_SQUARE;
+        ? square_from(str[1] - '1', str[0] - 'a')
+        : NB_SQUARE;
 }
 
 // Initialize pre-calculated data used in this module
@@ -169,12 +169,12 @@ void pos_init()
 
     for (int color = WHITE; color <= BLACK; color++)
         for (int piece = KNIGHT; piece < NB_PIECE; piece++)
-            for (int s = A1; s <= H8; s++)
-                ZobristKey[color][piece][s] = prng(&state);
+            for (int square = A1; square <= H8; square++)
+                ZobristKey[color][piece][square] = prng(&state);
 
-    for (int s = A1; s <= H8; s++) {
-        ZobristCastling[s] = prng(&state);
-        ZobristEnPassant[s] = prng(&state);
+    for (int square = A1; square <= H8; square++) {
+        ZobristCastling[square] = prng(&state);
+        ZobristEnPassant[square] = prng(&state);
     }
 
     ZobristEnPassant[NB_SQUARE] = prng(&state);
@@ -190,19 +190,19 @@ void pos_set(Position *pos, const char *fen)
 
     // Piece placement
     char ch;
-    int s = A8;
+    int square = A8;
 
     while ((ch = *token++)) {
         if (isdigit(ch))
-            s += ch - '0';
+            square += ch - '0';
         else if (ch == '/')
-            s += 2 * DOWN;
+            square += 2 * DOWN;
         else {
             const bool color = islower(ch);
             const char *label = strchr(PieceLabel[color], ch);
 
             if (label)
-                set_square(pos, color, label - PieceLabel[color], s++);
+                set_square(pos, color, label - PieceLabel[color], square++);
         }
     }
 
@@ -224,15 +224,15 @@ void pos_set(Position *pos, const char *fen)
         ch = toupper(ch);
 
         if (ch == 'K')
-            s = bb_msb(Rank[r] & pos->byPiece[ROOK]);
+            square = bb_msb(Rank[r] & pos->byPiece[ROOK]);
         else if (ch == 'Q')
-            s = bb_lsb(Rank[r] & pos->byPiece[ROOK]);
+            square = bb_lsb(Rank[r] & pos->byPiece[ROOK]);
         else if ('A' <= ch && ch <= 'H')
-            s = square(r, ch - 'A');
+            square = square_from(r, ch - 'A');
         else
             break;
 
-        bb_set(&pos->castleRooks, s);
+        bb_set(&pos->castleRooks, square);
     }
 
     pos->key ^= zobrist_castling(pos->castleRooks);
@@ -254,13 +254,13 @@ void pos_get(const Position *pos, char *fen)
         int cnt = 0;
 
         for (int f = FILE_A; f <= FILE_H; f++) {
-            const int s = square(r, f);
+            const int square = square_from(r, f);
 
-            if (bb_test(pos_pieces(pos), s)) {
+            if (bb_test(pos_pieces(pos), square)) {
                 if (cnt)
                     *fen++ = cnt + '0';
 
-                *fen++ = PieceLabel[pos_color_on(pos, s)][pos_piece_on(pos, s)];
+                *fen++ = PieceLabel[pos_color_on(pos, square)][pos_piece_on(pos, square)];
                 cnt = 0;
             } else
                 cnt++;
@@ -307,7 +307,7 @@ void pos_get(const Position *pos, char *fen)
     // En passant and 50 move
     char str[3];
     square_to_string(pos->epSquare, str);
-    sprintf(fen, " %s %d", str, pos->rule50);
+    sprintf(fen, " %square %d", str, pos->rule50);
 }
 
 // Play a move on a position copy (original 'before' is untouched): pos = before + play(m)
@@ -372,8 +372,8 @@ void pos_move(Position *pos, const Position *before, move_t m)
                 const int r = rank_of(from);
 
                 clear_square(pos, us, KING, to);
-                set_square(pos, us, KING, square(r, to > from ? FILE_G : FILE_C));
-                set_square(pos, us, ROOK, square(r, to > from ? FILE_F : FILE_D));
+                set_square(pos, us, KING, square_from(r, to > from ? FILE_G : FILE_C));
+                set_square(pos, us, ROOK, square_from(r, to > from ? FILE_F : FILE_D));
             }
         }
     }
@@ -443,30 +443,30 @@ int pos_king_square(const Position *pos, int color)
     return bb_lsb(pos_pieces_cp(pos, color, KING));
 }
 
-// Color of piece on square 's'. Square is assumed to be occupied.
-int pos_color_on(const Position *pos, int s)
+// Color of piece on square 'square'. Square is assumed to be occupied.
+int pos_color_on(const Position *pos, int square)
 {
-    assert(bb_test(pos_pieces(pos), s));
-    return bb_test(pos->byColor[WHITE], s) ? WHITE : BLACK;
+    assert(bb_test(pos_pieces(pos), square));
+    return bb_test(pos->byColor[WHITE], square) ? WHITE : BLACK;
 }
 
-// Piece on square 's'. NB_PIECE if empty.
-int pos_piece_on(const Position *pos, int s)
+// Piece on square 'square'. NB_PIECE if empty.
+int pos_piece_on(const Position *pos, int square)
 {
-    BOUNDS(s, NB_SQUARE);
-    return pos->pieceOn[s];
+    BOUNDS(square, NB_SQUARE);
+    return pos->pieceOn[square];
 }
 
-// Attackers (or any color) to square 's', using occupancy 'occ' for rook/bishop attacks
-bitboard_t pos_attackers_to(const Position *pos, int s, bitboard_t occ)
+// Attackers (or any color) to square 'square', using occupancy 'occ' for rook/bishop attacks
+bitboard_t pos_attackers_to(const Position *pos, int square, bitboard_t occ)
 {
-    BOUNDS(s, NB_SQUARE);
-    return (pos_pieces_cp(pos, WHITE, PAWN) & PawnAttacks[BLACK][s])
-        | (pos_pieces_cp(pos, BLACK, PAWN) & PawnAttacks[WHITE][s])
-        | (KnightAttacks[s] & pos->byPiece[KNIGHT])
-        | (KingAttacks[s] & pos->byPiece[KING])
-        | (bb_rook_attacks(s, occ) & (pos->byPiece[ROOK] | pos->byPiece[QUEEN]))
-        | (bb_bishop_attacks(s, occ) & (pos->byPiece[BISHOP] | pos->byPiece[QUEEN]));
+    BOUNDS(square, NB_SQUARE);
+    return (pos_pieces_cp(pos, WHITE, PAWN) & PawnAttacks[BLACK][square])
+        | (pos_pieces_cp(pos, BLACK, PAWN) & PawnAttacks[WHITE][square])
+        | (KnightAttacks[square] & pos->byPiece[KNIGHT])
+        | (KingAttacks[square] & pos->byPiece[KING])
+        | (bb_rook_attacks(square, occ) & (pos->byPiece[ROOK] | pos->byPiece[QUEEN]))
+        | (bb_bishop_attacks(square, occ) & (pos->byPiece[BISHOP] | pos->byPiece[QUEEN]));
 }
 
 // Pinned pieces for the side to move
@@ -479,10 +479,10 @@ bitboard_t calc_pins(const Position *pos)
     bitboard_t result = 0;
 
     while (pinners) {
-        const int s = bb_pop_lsb(&pinners);
-        bitboard_t skewered = Segment[king][s] & pos_pieces(pos);
+        const int square = bb_pop_lsb(&pinners);
+        bitboard_t skewered = Segment[king][square] & pos_pieces(pos);
         bb_clear(&skewered, king);
-        bb_clear(&skewered, s);
+        bb_clear(&skewered, square);
 
         if (!bb_several(skewered) && (skewered & pos->byColor[us]))
             result |= skewered;
@@ -498,10 +498,10 @@ void pos_print(const Position *pos)
         char line[] = ". . . . . . . .";
 
         for (int f = FILE_A; f <= FILE_H; f++) {
-            const int s = square(r, f);
-            line[2 * f] = bb_test(pos_pieces(pos), s)
-                ? PieceLabel[pos_color_on(pos, s)][pos_piece_on(pos, s)]
-                : s == pos->epSquare ? '*' : '.';
+            const int square = square_from(r, f);
+            line[2 * f] = bb_test(pos_pieces(pos), square)
+                ? PieceLabel[pos_color_on(pos, square)][pos_piece_on(pos, square)]
+                : square == pos->epSquare ? '*' : '.';
         }
 
         puts(line);
@@ -519,7 +519,7 @@ void pos_print(const Position *pos)
 
         while (b) {
             square_to_string(bb_pop_lsb(&b), str);
-            printf(" %s", str);
+            printf(" %square", str);
         }
 
         puts("");
