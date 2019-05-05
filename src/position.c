@@ -58,69 +58,69 @@ static void clear(Position *pos)
     memset(pos->pieceOn, NB_PIECE, sizeof(pos->pieceOn));
 }
 
-// Remove piece 'p' of color 'c' on square 's'. Such a piece must be there first.
-static void clear_square(Position *pos, int c, int p, int s)
+// Remove 'piece' of 'color' on square 's'. Such a piece must be there first.
+static void clear_square(Position *pos, int color, int piece, int s)
 {
-    BOUNDS(c, NB_COLOR);
-    BOUNDS(p, NB_PIECE);
+    BOUNDS(color, NB_COLOR);
+    BOUNDS(piece, NB_PIECE);
     BOUNDS(s, NB_SQUARE);
 
-    bb_clear(&pos->byColor[c], s);
-    bb_clear(&pos->byPiece[p], s);
+    bb_clear(&pos->byColor[color], s);
+    bb_clear(&pos->byPiece[piece], s);
     pos->pieceOn[s] = NB_PIECE;
-    eval_sub(&pos->pst, pst[c][p][s]);
-    pos->key ^= ZobristKey[c][p][s];
+    eval_sub(&pos->pst, pst[color][piece][s]);
+    pos->key ^= ZobristKey[color][piece][s];
 
-    if (p <= QUEEN)
-        eval_sub(&pos->pieceMaterial[c], Material[p]);
+    if (piece <= QUEEN)
+        eval_sub(&pos->pieceMaterial[color], Material[piece]);
     else
-        pos->pawnKey ^= ZobristKey[c][p][s];
+        pos->pawnKey ^= ZobristKey[color][piece][s];
 }
 
-// Put piece 'p' of color 'c' on square 's'. Square must be empty first.
-static void set_square(Position *pos, int c, int p, int s)
+// Put 'piece' of 'color' on square 's'. Square must be empty first.
+static void set_square(Position *pos, int color, int piece, int s)
 {
-    BOUNDS(c, NB_COLOR);
-    BOUNDS(p, NB_PIECE);
+    BOUNDS(color, NB_COLOR);
+    BOUNDS(piece, NB_PIECE);
     BOUNDS(s, NB_SQUARE);
 
-    bb_set(&pos->byColor[c], s);
-    bb_set(&pos->byPiece[p], s);
-    pos->pieceOn[s] = p;
-    eval_add(&pos->pst, pst[c][p][s]);
-    pos->key ^= ZobristKey[c][p][s];
+    bb_set(&pos->byColor[color], s);
+    bb_set(&pos->byPiece[piece], s);
+    pos->pieceOn[s] = piece;
+    eval_add(&pos->pst, pst[color][piece][s]);
+    pos->key ^= ZobristKey[color][piece][s];
 
-    if (p <= QUEEN)
-        eval_add(&pos->pieceMaterial[c], Material[p]);
+    if (piece <= QUEEN)
+        eval_add(&pos->pieceMaterial[color], Material[piece]);
     else
-        pos->pawnKey ^= ZobristKey[c][p][s];
+        pos->pawnKey ^= ZobristKey[color][piece][s];
 }
 
-// Squares attacked by pieces of color 'c'
-static bitboard_t attacked_by(const Position *pos, int c)
+// Squares attacked by pieces of 'color'
+static bitboard_t attacked_by(const Position *pos, int color)
 {
-    BOUNDS(c, NB_COLOR);
+    BOUNDS(color, NB_COLOR);
 
     // King and Knight attacks
-    bitboard_t result = KingAttacks[pos_king_square(pos, c)];
-    bitboard_t knights = pos_pieces_cp(pos, c, KNIGHT);
+    bitboard_t result = KingAttacks[pos_king_square(pos, color)];
+    bitboard_t knights = pos_pieces_cp(pos, color, KNIGHT);
 
     while (knights)
         result |= KnightAttacks[bb_pop_lsb(&knights)];
 
     // Pawn captures
-    bitboard_t pawns = pos_pieces_cp(pos, c, PAWN);
-    result |= bb_shift(pawns & ~File[FILE_A], push_inc(c) + LEFT);
-    result |= bb_shift(pawns & ~File[FILE_H], push_inc(c) + RIGHT);
+    bitboard_t pawns = pos_pieces_cp(pos, color, PAWN);
+    result |= bb_shift(pawns & ~File[FILE_A], push_inc(color) + LEFT);
+    result |= bb_shift(pawns & ~File[FILE_H], push_inc(color) + RIGHT);
 
     // Sliders
-    bitboard_t _occ = pos_pieces(pos) ^ pos_pieces_cp(pos, opposite(c), KING);
-    bitboard_t rookMovers = pos_pieces_cpp(pos, c, ROOK, QUEEN);
+    bitboard_t _occ = pos_pieces(pos) ^ pos_pieces_cp(pos, opposite(color), KING);
+    bitboard_t rookMovers = pos_pieces_cpp(pos, color, ROOK, QUEEN);
 
     while (rookMovers)
         result |= bb_rook_attacks(bb_pop_lsb(&rookMovers), _occ);
 
-    bitboard_t bishopMovers = pos_pieces_cpp(pos, c, BISHOP, QUEEN);
+    bitboard_t bishopMovers = pos_pieces_cpp(pos, color, BISHOP, QUEEN);
 
     while (bishopMovers)
         result |= bb_bishop_attacks(bb_pop_lsb(&bishopMovers), _occ);
@@ -167,10 +167,10 @@ void pos_init()
 {
     uint64_t state = 0;
 
-    for (int c = WHITE; c <= BLACK; c++)
-        for (int p = KNIGHT; p < NB_PIECE; p++)
+    for (int color = WHITE; color <= BLACK; color++)
+        for (int piece = KNIGHT; piece < NB_PIECE; piece++)
             for (int s = A1; s <= H8; s++)
-                ZobristKey[c][p][s] = prng(&state);
+                ZobristKey[color][piece][s] = prng(&state);
 
     for (int s = A1; s <= H8; s++) {
         ZobristCastling[s] = prng(&state);
@@ -198,11 +198,11 @@ void pos_set(Position *pos, const char *fen)
         else if (ch == '/')
             s += 2 * DOWN;
         else {
-            const bool c = islower(ch);
-            const char *p = strchr(PieceLabel[c], ch);
+            const bool color = islower(ch);
+            const char *label = strchr(PieceLabel[color], ch);
 
-            if (p)
-                set_square(pos, c, p - PieceLabel[c], s++);
+            if (label)
+                set_square(pos, color, label - PieceLabel[color], s++);
         }
     }
 
@@ -280,27 +280,27 @@ void pos_get(const Position *pos, char *fen)
     if (!pos->castleRooks)
         *fen++ = '-';
     else {
-        for (int c = WHITE; c <= BLACK; c++) {
-            const bitboard_t sqs = pos->castleRooks & pos->byColor[c];
+        for (int color = WHITE; color <= BLACK; color++) {
+            const bitboard_t sqs = pos->castleRooks & pos->byColor[color];
 
             if (!sqs)
                 continue;
 
-            const int king = pos_king_square(pos, c);
+            const int king = pos_king_square(pos, color);
 
             // Because we have castlable rooks, the king has to be on the first rank and
             // cannot be in a corner, which allows using Ray[king][king +/- 1] to search
             // for the castle rook in Chess960.
-            assert(rank_of(king) == relative_rank(c, RANK_1));
+            assert(rank_of(king) == relative_rank(color, RANK_1));
             assert(file_of(king) != FILE_A && file_of(king) != FILE_H);
 
             // Right side castling
             if (sqs & Ray[king][king + RIGHT])
-                *fen++ = PieceLabel[c][KING];
+                *fen++ = PieceLabel[color][KING];
 
             // Left side castling
             if (sqs & Ray[king][king + LEFT])
-                *fen++ = PieceLabel[c][QUEEN];
+                *fen++ = PieceLabel[color][QUEEN];
         }
     }
 
@@ -321,7 +321,7 @@ void pos_move(Position *pos, const Position *before, move_t m)
 
     const int us = pos->turn, them = opposite(us);
     const int from = move_from(m), to = move_to(m), prom = move_prom(m);
-    const int p = pos_piece_on(pos, from);
+    const int piece = pos_piece_on(pos, from);
     const int capture = pos_piece_on(pos, to);
 
     // Capture piece on to square (if any)
@@ -334,19 +334,19 @@ void pos_move(Position *pos, const Position *before, move_t m)
         pos->castleRooks &= ~(1ULL << to);
     }
 
-    if (p <= QUEEN) {
+    if (piece <= QUEEN) {
         // Move piece
-        clear_square(pos, us, p, from);
-        set_square(pos, us, p, to);
+        clear_square(pos, us, piece, from);
+        set_square(pos, us, piece, to);
 
         // Lose specific castling right (if not already lost)
         pos->castleRooks &= ~(1ULL << from);
     } else {
         // Move piece
-        clear_square(pos, us, p, from);
-        set_square(pos, us, p, to);
+        clear_square(pos, us, piece, from);
+        set_square(pos, us, piece, to);
 
-        if (p == PAWN) {
+        if (piece == PAWN) {
             // reset rule50, and set epSquare
             const int push = push_inc(us);
             pos->rule50 = 0;
@@ -356,12 +356,12 @@ void pos_move(Position *pos, const Position *before, move_t m)
 
             // handle ep-capture and promotion
             if (to == before->epSquare)
-                clear_square(pos, them, p, to - push);
+                clear_square(pos, them, piece, to - push);
             else if (rank_of(to) == RANK_8 || rank_of(to) == RANK_1) {
-                clear_square(pos, us, p, to);
+                clear_square(pos, us, piece, to);
                 set_square(pos, us, prom, to);
             }
-        } else if (p == KING) {
+        } else if (piece == KING) {
             // Lose all castling rights
             pos->castleRooks &= ~Rank[us * RANK_8];
 
@@ -406,21 +406,21 @@ bitboard_t pos_pieces(const Position *pos)
     return pos->byColor[WHITE] | pos->byColor[BLACK];
 }
 
-// Pieces of color 'c' and type 'p'
-bitboard_t pos_pieces_cp(const Position *pos, int c, int p)
+// Pieces of color 'color' and type 'piece'
+bitboard_t pos_pieces_cp(const Position *pos, int color, int piece)
 {
-    BOUNDS(c, NB_COLOR);
-    BOUNDS(p, NB_PIECE);
-    return pos->byColor[c] & pos->byPiece[p];
+    BOUNDS(color, NB_COLOR);
+    BOUNDS(piece, NB_PIECE);
+    return pos->byColor[color] & pos->byPiece[piece];
 }
 
-// Pieces of color 'c' and type 'p1' or 'p2'
-bitboard_t pos_pieces_cpp(const Position *pos, int c, int p1, int p2)
+// Pieces of color 'color' and type 'p1' or 'p2'
+bitboard_t pos_pieces_cpp(const Position *pos, int color, int p1, int p2)
 {
-    BOUNDS(c, NB_COLOR);
+    BOUNDS(color, NB_COLOR);
     BOUNDS(p1, NB_PIECE);
     BOUNDS(p2, NB_PIECE);
-    return pos->byColor[c] & (pos->byPiece[p1] | pos->byPiece[p2]);
+    return pos->byColor[color] & (pos->byPiece[p1] | pos->byPiece[p2]);
 }
 
 // En passant square, in bitboard format
@@ -436,11 +436,11 @@ bool pos_insufficient_material(const Position *pos)
         && !pos->byPiece[QUEEN];
 }
 
-// Square occupied by the king of color 'c'
-int pos_king_square(const Position *pos, int c)
+// Square occupied by the king of color 'color'
+int pos_king_square(const Position *pos, int color)
 {
-    assert(bb_count(pos_pieces_cp(pos, c, KING)) == 1);
-    return bb_lsb(pos_pieces_cp(pos, c, KING));
+    assert(bb_count(pos_pieces_cp(pos, color, KING)) == 1);
+    return bb_lsb(pos_pieces_cp(pos, color, KING));
 }
 
 // Color of piece on square 's'. Square is assumed to be occupied.

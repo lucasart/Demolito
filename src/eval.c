@@ -26,17 +26,17 @@ static bitboard_t AdjacentFiles[NB_FILE];
 static int KingDistance[NB_SQUARE][NB_SQUARE];
 static int SafetyCurve[4096];
 
-static bitboard_t pawn_attacks(const Position *pos, int c)
+static bitboard_t pawn_attacks(const Position *pos, int color)
 {
-    const bitboard_t pawns = pos_pieces_cp(pos, c, PAWN);
-    return bb_shift(pawns & ~File[FILE_A], push_inc(c) + LEFT)
-        | bb_shift(pawns & ~File[FILE_H], push_inc(c) + RIGHT);
+    const bitboard_t pawns = pos_pieces_cp(pos, color, PAWN);
+    return bb_shift(pawns & ~File[FILE_A], push_inc(color) + LEFT)
+        | bb_shift(pawns & ~File[FILE_H], push_inc(color) + RIGHT);
 }
 
-static eval_t score_mobility(int p0, int p, bitboard_t targets)
+static eval_t score_mobility(int p0, int piece, bitboard_t targets)
 {
     assert(KNIGHT <= p0 && p0 <= ROOK);
-    assert(KNIGHT <= p && p <= QUEEN);
+    assert(KNIGHT <= piece && piece <= QUEEN);
 
     static const int AdjustCount[][15] = {
         {-4, -2, -1, 0, 1, 2, 3, 4, 4},
@@ -45,8 +45,8 @@ static eval_t score_mobility(int p0, int p, bitboard_t targets)
     };
     static const eval_t Weight[] = {{9, 13}, {13, 12}, {9, 7}, {4, 7}};
 
-    const int c = AdjustCount[p0][bb_count(targets)];
-    return (eval_t) {Weight[p].op * c, Weight[p].eg * c};
+    const int color = AdjustCount[p0][bb_count(targets)];
+    return (eval_t) {Weight[piece].op * color, Weight[piece].eg * color};
 }
 
 static eval_t mobility(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE + 1])
@@ -146,9 +146,9 @@ static eval_t hanging(const Position *pos, int us, bitboard_t attacks[NB_COLOR][
         & ~(attacks[us][PAWN] | attacks[us][KING] | attacks[us][NB_PIECE]);
 
     while (b) {
-        const int p = pos_piece_on(pos, bb_pop_lsb(&b));
-        assert(p == PAWN || (KNIGHT <= p && p <= QUEEN));
-        result.op -= Hanging[p];
+        const int piece = pos_piece_on(pos, bb_pop_lsb(&b));
+        assert(piece == PAWN || (KNIGHT <= piece && piece <= QUEEN));
+        result.op -= Hanging[piece];
     }
 
     // Penalize hanging pawns in the endgame
@@ -175,13 +175,13 @@ static int safety(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_P
     // Attacks around the King
     const bitboard_t dangerZone = attacks[us][KING] & ~attacks[us][PAWN];
 
-    for (int p = KNIGHT; p <= QUEEN; p++) {
-        const bitboard_t attacked = attacks[them][p] & dangerZone;
+    for (int piece = KNIGHT; piece <= QUEEN; piece++) {
+        const bitboard_t attacked = attacks[them][piece] & dangerZone;
 
         if (attacked) {
             cnt++;
-            weight += bb_count(attacked) * RingAttack[p];
-            weight -= bb_count(attacked & attacks[us][NB_PIECE]) * RingDefense[p];
+            weight += bb_count(attacked) * RingAttack[piece];
+            weight -= bb_count(attacked & attacks[us][NB_PIECE]) * RingDefense[piece];
         }
     }
 
@@ -195,15 +195,15 @@ static int safety(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_P
         (bb_bishop_attacks(king, occ) | bb_rook_attacks(king, occ)) & attacks[them][QUEEN]
     };
 
-    for (int p = KNIGHT; p <= QUEEN; p++)
-        if (checks[p]) {
-            const bitboard_t b = checks[p] & ~(pos->byColor[them] | attacks[us][PAWN]
+    for (int piece = KNIGHT; piece <= QUEEN; piece++)
+        if (checks[piece]) {
+            const bitboard_t b = checks[piece] & ~(pos->byColor[them] | attacks[us][PAWN]
                 | attacks[us][KING]);
 
             if (b) {
                 cnt++;
-                weight += bb_count(b) * CheckAttack[p];
-                weight -= bb_count(b & attacks[us][NB_PIECE]) * CheckDefense[p];
+                weight += bb_count(b) * CheckAttack[piece];
+                weight -= bb_count(b & attacks[us][NB_PIECE]) * CheckDefense[piece];
             }
         }
 
@@ -401,13 +401,13 @@ int evaluate(Worker *worker, const Position *pos)
     bitboard_t attacks[NB_COLOR][NB_PIECE + 1];
 
     // Mobility first, because it fills in the attacks array
-    for (int c = WHITE; c <= BLACK; c++)
-        eval_add(&e[c], mobility(pos, c, attacks));
+    for (int color = WHITE; color <= BLACK; color++)
+        eval_add(&e[color], mobility(pos, color, attacks));
 
-    for (int c = WHITE; c <= BLACK; c++) {
-        e[c].op += safety(pos, c, attacks);
-        eval_add(&e[c], hanging(pos, c, attacks));
-        eval_add(&e[c], pattern(pos, c));
+    for (int color = WHITE; color <= BLACK; color++) {
+        e[color].op += safety(pos, color, attacks);
+        eval_add(&e[color], hanging(pos, color, attacks));
+        eval_add(&e[color], pattern(pos, color));
     }
 
     eval_add(&e[WHITE], pawns(worker, pos, attacks));

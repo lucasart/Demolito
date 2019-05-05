@@ -130,16 +130,16 @@ static void init_slider_attacks(int s, bitboard_t mask[NB_SQUARE], const bitboar
 
 int64_t dbgCnt[2] = {0, 0};
 
-int opposite(int c)
+int opposite(int color)
 {
-    BOUNDS(c, NB_COLOR);
-    return c ^ BLACK;
+    BOUNDS(color, NB_COLOR);
+    return color ^ BLACK;
 }
 
-int push_inc(int c)
+int push_inc(int color)
 {
-    BOUNDS(c, NB_COLOR);
-    return c == WHITE ? UP : DOWN;
+    BOUNDS(color, NB_COLOR);
+    return color == WHITE ? UP : DOWN;
 }
 
 int square(int r, int f)
@@ -161,17 +161,17 @@ int file_of(int s)
     return s % NB_FILE;
 }
 
-int relative_rank(int c, int r)
+int relative_rank(int color, int r)
 {
-    BOUNDS(c, NB_COLOR);
+    BOUNDS(color, NB_COLOR);
     BOUNDS(r, NB_RANK);
-    return r ^ (7 * c);
+    return r ^ (7 * color);
 }
 
-int relative_rank_of(int c, int s)
+int relative_rank_of(int color, int s)
 {
     BOUNDS(s, NB_SQUARE);
-    return relative_rank(c, rank_of(s));
+    return relative_rank(color, rank_of(s));
 }
 
 void bb_init()

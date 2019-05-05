@@ -29,15 +29,15 @@ enum {KNIGHT, BISHOP, ROOK, QUEEN, KING, PAWN, NB_PIECE};
 
 extern int64_t dbgCnt[2];
 
-int opposite(int c);
-int push_inc(int c);
+int opposite(int color);
+int push_inc(int color);
 
 int square(int r, int f);
 int rank_of(int s);
 int file_of(int s);
 
-int relative_rank(int c, int r);
-int relative_rank_of(int c, int s);
+int relative_rank(int color, int r);
+int relative_rank_of(int color, int s);
 
 void bb_init();
 

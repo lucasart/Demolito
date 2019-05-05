@@ -37,12 +37,12 @@ void pos_move(Position *pos, const Position *before, move_t m);
 void pos_switch(Position *pos, const Position *before);
 
 bitboard_t pos_pieces(const Position* pos);
-bitboard_t pos_pieces_cp(const Position *pos, int c, int p);
-bitboard_t pos_pieces_cpp(const Position *pos, int c, int p1, int p2);
+bitboard_t pos_pieces_cp(const Position *pos, int color, int piece);
+bitboard_t pos_pieces_cpp(const Position *pos, int color, int p1, int p2);
 
 bitboard_t pos_ep_square_bb(const Position *pos);
 bool pos_insufficient_material(const Position *pos);
-int pos_king_square(const Position *pos, int c);
+int pos_king_square(const Position *pos, int color);
 int pos_color_on(const Position *pos, int s);
 int pos_piece_on(const Position *pos, int s);
 bitboard_t pos_attackers_to(const Position *pos, int s, bitboard_t occ);

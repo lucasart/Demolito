@@ -104,10 +104,10 @@ move_t string_to_move(const Position *pos, const char *str)
 bool move_is_legal(const Position *pos, bitboard_t pins, move_t m)
 {
     const int from = move_from(m), to = move_to(m);
-    const int p = pos_piece_on(pos, from);
+    const int piece = pos_piece_on(pos, from);
     const int king = pos_king_square(pos, pos->turn);
 
-    if (p == KING) {
+    if (piece == KING) {
         if (bb_test(pos->byColor[pos->turn], to)) {
             // Castling: king can't move through attacked square, and rook can't be pinned
             assert(pos_piece_on(pos, to) == ROOK);
@@ -123,7 +123,7 @@ bool move_is_legal(const Position *pos, bitboard_t pins, move_t m)
             return false;
 
         // En-passant special case: also illegal if self-check through the en-passant captured pawn
-        if (to == pos->epSquare && p == PAWN) {
+        if (to == pos->epSquare && piece == PAWN) {
             const int us = pos->turn, them = opposite(us);
             bitboard_t occ = pos_pieces(pos);
             bb_clear(&occ, from);

@@ -23,14 +23,14 @@ static const int Center[NB_FILE] = {-5,-2, 0, 2, 2, 0,-2,-5};
 
 static eval_t knight(int r, int f)
 {
-    const int c = Center[r] + Center[f];
-    return (eval_t) {10 * c, 51 * c / 16};
+    const int ctr = Center[r] + Center[f];
+    return (eval_t) {10 * ctr, 51 * ctr / 16};
 }
 
 static eval_t bishop(int r, int f)
 {
-    const int c = Center[r] + Center[f];
-    return (eval_t) {2 * c + 7 * (r + f == 7 || r - f == 0) - 18 * (r == RANK_1), 23 * c / 8};
+    const int ctr = Center[r] + Center[f];
+    return (eval_t) {2 * ctr + 7 * (r + f == 7 || r - f == 0) - 18 * (r == RANK_1), 23 * ctr / 8};
 }
 
 static eval_t rook(int r, int f)
@@ -83,13 +83,15 @@ void pst_init()
     static const pst_fn PstFn[NB_PIECE] = {&knight, &bishop, &rook, &queen, &king, &pawn};
 
     // Calculate PST, based on specialized functions for each piece
-    for (int c = WHITE; c <= BLACK; c++)
-        for (int p = KNIGHT; p < NB_PIECE; p++)
+    for (int color = WHITE; color <= BLACK; color++)
+        for (int piece = KNIGHT; piece < NB_PIECE; piece++)
             for (int s = A1; s <= H8; s++) {
-                pst[c][p][s] = Material[p];
-                eval_add(&pst[c][p][s], (*PstFn[p])(relative_rank_of(c, s), file_of(s)));
+                pst[color][piece][s] = Material[piece];
+                eval_add(&pst[color][piece][s], (*PstFn[piece])(relative_rank_of(color, s), file_of(s)));
 
-                if (c == BLACK)
-                    pst[c][p][s].op *= -1, pst[c][p][s].eg *= -1;
+                if (color == BLACK) {
+                    pst[color][piece][s].op *= -1;
+                    pst[color][piece][s].eg *= -1;
+                }
             }
 }

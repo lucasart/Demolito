@@ -82,7 +82,7 @@ static void setoption(char **linePos)
 
 static void position(char **linePos)
 {
-    Position p[NB_COLOR];
+    Position pos[NB_COLOR];
     int idx = 0;
 
     const char *token = strtok_r(NULL, " \n", linePos);
@@ -97,19 +97,19 @@ static void position(char **linePos)
     } else
         return;
 
-    pos_set(&p[idx], fen);
+    pos_set(&pos[idx], fen);
     stack_clear(&rootStack);
-    stack_push(&rootStack, p[idx].key);
+    stack_push(&rootStack, pos[idx].key);
 
     // Parse moves (if any)
     while ((token = strtok_r(NULL, " \n", linePos))) {
-        move_t m = string_to_move(&p[idx], token);
-        pos_move(&p[idx^1], &p[idx], m);
+        move_t m = string_to_move(&pos[idx], token);
+        pos_move(&pos[idx^1], &pos[idx], m);
         idx ^= 1;
-        stack_push(&rootStack, p[idx].key);
+        stack_push(&rootStack, pos[idx].key);
     }
 
-    rootPos = p[idx];
+    rootPos = pos[idx];
 }
 
 static void go(char **linePos)
@@ -234,14 +234,14 @@ void info_update(Info *info, int depth, int score, int64_t nodes, move_t pv[], b
         // Pring the moves. Because of e1g1 notation when Chess960 = false, we need to play the PV
         // to print it correctly. This is a design flaw of the UCI protocol, which should have
         // encoded castling as e1h1 regardless of Chess960 allowing coherent treatement.
-        Position p[2];
+        Position pos[NB_COLOR];
         int idx = 0;
-        p[idx] = rootPos;
+        pos[idx] = rootPos;
 
         for (int i = 0; pv[i]; i++) {
-            move_to_string(&p[idx], pv[i], str);
+            move_to_string(&pos[idx], pv[i], str);
             uci_printf(" %s", str);
-            pos_move(&p[idx ^ 1], &p[idx], pv[i]);
+            pos_move(&pos[idx ^ 1], &pos[idx], pv[i]);
             idx ^= 1;
         }
 

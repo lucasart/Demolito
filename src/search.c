@@ -46,12 +46,12 @@ int Reduction[MAX_DEPTH + 1][MAX_MOVES][2];
 void search_init()
 {
     for (int d = 1; d <= MAX_DEPTH; d++)
-        for (int c = 1; c < MAX_MOVES; c++) {
-            const double r0 = 0.397 * log(d > 31 ? 31 : d) + 1.007 * log(c > 31 ? 31 : c) + 0.007;
-            const double r1 = 0.400 * log(d > 31 ? 31 : d) + 0.850 * log(c > 31 ? 31 : c) + 0.002;
+        for (int cnt = 1; cnt < MAX_MOVES; cnt++) {
+            const double r0 = 0.397 * log(d > 31 ? 31 : d) + 1.007 * log(min(cnt, 31)) + 0.007;
+            const double r1 = 0.400 * log(d > 31 ? 31 : d) + 0.850 * log(min(cnt, 31)) + 0.002;
 
-            Reduction[d][c][0] = max(0, r0);
-            Reduction[d][c][1] = max(0, r1);
+            Reduction[d][cnt][0] = max(0, r0);
+            Reduction[d][cnt][1] = max(0, r1);
         }
 }
 
