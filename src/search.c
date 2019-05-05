@@ -147,8 +147,7 @@ static int qsearch(Worker *worker, const Position *pos, int ply, int depth, int 
 
         stack_push(&worker->stack, nextPos.key);
 
-        const int ext = see >= 0 && nextPos.checkers;
-        const int nextDepth = depth - 1 + ext;
+        const int nextDepth = depth - 1;
 
         // Recursion (plain alpha/beta)
         if (depth <= MIN_DEPTH && !pos->checkers) {
@@ -456,8 +455,8 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
             const int from = move_from(m), to = move_to(m);
 
             history_update(&worker->history[us][from][to], bonus);
-            history_update(&worker->refutationHistory[rhIdx][pos->pieceOn[from]][to], bonus);
-            history_update(&worker->followUpHistory[fuhIdx][pos->pieceOn[from]][to], bonus);
+            history_update(&worker->refutationHistory[rhIdx][pos_piece_on(pos, from)][to], bonus);
+            history_update(&worker->followUpHistory[fuhIdx][pos_piece_on(pos, from)][to], bonus);
         }
     }
 
