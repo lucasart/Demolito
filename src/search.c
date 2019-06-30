@@ -328,6 +328,10 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
 
         moveCount++;
 
+        // Limit the number of moves search to prove singularity
+        if (singularMove && moveCount >= 6)
+            break;
+
         const bool capture = move_is_capture(pos, currentMove);
 
         if (!capture)
