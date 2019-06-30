@@ -284,12 +284,12 @@ static eval_t do_pawns(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
     while (b) {
         const int square = bb_pop_lsb(&b);
         const int stop = square + push_inc(us);
-        const int r = rank_of(square), f = file_of(square);
-        const bitboard_t besides = ourPawns & AdjacentFiles[f];
+        const int rank = rank_of(square), file = file_of(square);
+        const bitboard_t besides = ourPawns & AdjacentFiles[file];
         const bool exposed = !(PawnPath[us][square] & pos->byPiece[PAWN]);
 
-        if (besides & (Rank[r] | Rank[us == WHITE ? r - 1 : r + 1]))
-            eval_add(&result, Connected[relative_rank(us, r) - RANK_2]);
+        if (besides & (Rank[rank] | Rank[us == WHITE ? rank - 1 : rank + 1]))
+            eval_add(&result, Connected[relative_rank(us, rank) - RANK_2]);
         else if (!(PawnSpan[them][stop] & ourPawns) && bb_test(attacks[them][PAWN], stop))
             eval_sub(&result, Backward[exposed]);
         else if (!besides)
@@ -377,8 +377,8 @@ void eval_init()
         }
     }
 
-    for (int f = FILE_A; f <= FILE_H; f++)
-        AdjacentFiles[f] = (f > FILE_A ? File[f - 1] : 0) | (f < FILE_H ? File[f + 1] : 0);
+    for (int file = FILE_A; file <= FILE_H; file++)
+        AdjacentFiles[file] = (file > FILE_A ? File[file - 1] : 0) | (file < FILE_H ? File[file + 1] : 0);
 
     for (int s1 = A1; s1 <= H8; s1++)
         for (int s2 = A1; s2 <= H8; s2++) {

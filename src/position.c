@@ -220,15 +220,15 @@ void pos_set(Position *pos, const char *fen)
     token = strtok_r(NULL, " ", &strPos);
 
     while ((ch = *token++)) {
-        const int r = isupper(ch) ? RANK_1 : RANK_8;
+        const int rank = isupper(ch) ? RANK_1 : RANK_8;
         ch = toupper(ch);
 
         if (ch == 'K')
-            square = bb_msb(Rank[r] & pos->byPiece[ROOK]);
+            square = bb_msb(Rank[rank] & pos->byPiece[ROOK]);
         else if (ch == 'Q')
-            square = bb_lsb(Rank[r] & pos->byPiece[ROOK]);
+            square = bb_lsb(Rank[rank] & pos->byPiece[ROOK]);
         else if ('A' <= ch && ch <= 'H')
-            square = square_from(r, ch - 'A');
+            square = square_from(rank, ch - 'A');
         else
             break;
 
@@ -250,11 +250,11 @@ void pos_set(Position *pos, const char *fen)
 void pos_get(const Position *pos, char *fen)
 {
     // Piece placement
-    for (int r = RANK_8; r >= RANK_1; r--) {
+    for (int rank = RANK_8; rank >= RANK_1; rank--) {
         int cnt = 0;
 
-        for (int f = FILE_A; f <= FILE_H; f++) {
-            const int square = square_from(r, f);
+        for (int file = FILE_A; file <= FILE_H; file++) {
+            const int square = square_from(rank, file);
 
             if (bb_test(pos_pieces(pos), square)) {
                 if (cnt)
@@ -269,7 +269,7 @@ void pos_get(const Position *pos, char *fen)
         if (cnt)
             *fen++ = cnt + '0';
 
-        *fen++ = r == RANK_1 ? ' ' : '/';
+        *fen++ = rank == RANK_1 ? ' ' : '/';
     }
 
     // Turn of play
@@ -369,11 +369,11 @@ void pos_move(Position *pos, const Position *before, move_t m)
             if (bb_test(before->byColor[us], to)) {
                 // Capturing our own piece can only be a castling move, encoded KxR
                 assert(pos_piece_on(before, to) == ROOK);
-                const int r = rank_of(from);
+                const int rank = rank_of(from);
 
                 clear_square(pos, us, KING, to);
-                set_square(pos, us, KING, square_from(r, to > from ? FILE_G : FILE_C));
-                set_square(pos, us, ROOK, square_from(r, to > from ? FILE_F : FILE_D));
+                set_square(pos, us, KING, square_from(rank, to > from ? FILE_G : FILE_C));
+                set_square(pos, us, ROOK, square_from(rank, to > from ? FILE_F : FILE_D));
             }
         }
     }
@@ -494,12 +494,12 @@ bitboard_t calc_pins(const Position *pos)
 // Prints the position in ASCII 'art' (for debugging)
 void pos_print(const Position *pos)
 {
-    for (int r = RANK_8; r >= RANK_1; r--) {
+    for (int rank = RANK_8; rank >= RANK_1; rank--) {
         char line[] = ". . . . . . . .";
 
-        for (int f = FILE_A; f <= FILE_H; f++) {
-            const int square = square_from(r, f);
-            line[2 * f] = bb_test(pos_pieces(pos), square)
+        for (int file = FILE_A; file <= FILE_H; file++) {
+            const int square = square_from(rank, file);
+            line[2 * file] = bb_test(pos_pieces(pos), square)
                 ? PieceLabel[pos_color_on(pos, square)][pos_piece_on(pos, square)]
                 : square == pos->epSquare ? '*' : '.';
         }

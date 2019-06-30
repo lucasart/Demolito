@@ -32,11 +32,11 @@ extern int64_t dbgCnt[2];
 int opposite(int color);
 int push_inc(int color);
 
-int square_from(int r, int f);
+int square_from(int rank, int file);
 int rank_of(int square);
 int file_of(int square);
 
-int relative_rank(int color, int r);
+int relative_rank(int color, int rank);
 int relative_rank_of(int color, int square);
 
 void bb_init();

@@ -25,10 +25,10 @@ bitboard_t PawnAttacks[NB_COLOR][NB_SQUARE], KnightAttacks[NB_SQUARE], KingAttac
 bitboard_t BishopPseudoAttacks[NB_SQUARE], RookPseudoAttacks[NB_SQUARE];
 bitboard_t Segment[NB_SQUARE][NB_SQUARE], Ray[NB_SQUARE][NB_SQUARE];
 
-static void safe_set_bit(bitboard_t *b, int r, int f)
+static void safe_set_bit(bitboard_t *b, int rank, int file)
 {
-    if (0 <= r && r < NB_RANK && 0 <= f && f < NB_FILE)
-        bb_set(b, square_from(r, f));
+    if (0 <= rank && rank < NB_RANK && 0 <= file && file < NB_FILE)
+        bb_set(b, square_from(rank, file));
 }
 
 static const bitboard_t RookMagic[NB_SQUARE] = {
@@ -83,12 +83,12 @@ static bitboard_t slider_attacks(int square, bitboard_t occ, const int dir[4][2]
 
     for (int i = 0; i < 4; i++) {
         int dr = dir[i][0], df = dir[i][1];
-        int r, f;
+        int rank, file;
 
-        for (r = rank_of(square) + dr, f = file_of(square) + df;
-                0 <= r && r < NB_RANK && 0 <= f && f < NB_FILE;
-                r += dr, f += df) {
-            const int sq = square_from(r, f);
+        for (rank = rank_of(square) + dr, file = file_of(square) + df;
+                0 <= rank && rank < NB_RANK && 0 <= file && file < NB_FILE;
+                rank += dr, file += df) {
+            const int sq = square_from(rank, file);
             bb_set(&result, sq);
 
             if (bb_test(occ, sq))
@@ -144,11 +144,11 @@ int push_inc(int color)
     return color == WHITE ? UP : DOWN;
 }
 
-int square_from(int r, int f)
+int square_from(int rank, int file)
 {
-    BOUNDS(r, NB_RANK);
-    BOUNDS(f, NB_FILE);
-    return NB_FILE * r + f;
+    BOUNDS(rank, NB_RANK);
+    BOUNDS(file, NB_FILE);
+    return NB_FILE * rank + file;
 }
 
 int rank_of(int square)
@@ -163,11 +163,11 @@ int file_of(int square)
     return square % NB_FILE;
 }
 
-int relative_rank(int color, int r)
+int relative_rank(int color, int rank)
 {
     BOUNDS(color, NB_COLOR);
-    BOUNDS(r, NB_RANK);
-    return r ^ (7 * color);
+    BOUNDS(rank, NB_RANK);
+    return rank ^ (7 * color);
 }
 
 int relative_rank_of(int color, int square)
@@ -212,16 +212,16 @@ void bb_init()
 
     // Initialise leaper attacks (N, K, P)
     for (int square = A1; square <= H8; square++) {
-        const int r = rank_of(square), f = file_of(square);
+        const int rank = rank_of(square), file = file_of(square);
 
         for (int d = 0; d < 8; d++) {
-            safe_set_bit(&KnightAttacks[square], r + KnightDir[d][0], f + KnightDir[d][1]);
-            safe_set_bit(&KingAttacks[square], r + KingDir[d][0], f + KingDir[d][1]);
+            safe_set_bit(&KnightAttacks[square], rank + KnightDir[d][0], file + KnightDir[d][1]);
+            safe_set_bit(&KingAttacks[square], rank + KingDir[d][0], file + KingDir[d][1]);
         }
 
         for (int d = 0; d < 2; d++) {
-            safe_set_bit(&PawnAttacks[WHITE][square], r + PawnDir[d][0], f + PawnDir[d][1]);
-            safe_set_bit(&PawnAttacks[BLACK][square], r - PawnDir[d][0], f - PawnDir[d][1]);
+            safe_set_bit(&PawnAttacks[WHITE][square], rank + PawnDir[d][0], file + PawnDir[d][1]);
+            safe_set_bit(&PawnAttacks[BLACK][square], rank - PawnDir[d][0], file - PawnDir[d][1]);
         }
     }
 
@@ -309,12 +309,12 @@ int bb_count(bitboard_t b)
 
 void bb_print(bitboard_t b)
 {
-    for (int r = RANK_8; r >= RANK_1; r--) {
+    for (int rank = RANK_8; rank >= RANK_1; rank--) {
         char line[] = ". . . . . . . .";
 
-        for (int f = FILE_A; f <= FILE_H; f++) {
-            if (bb_test(b, square_from(r, f)))
-                line[2 * f] = 'X';
+        for (int file = FILE_A; file <= FILE_H; file++) {
+            if (bb_test(b, square_from(rank, file)))
+                line[2 * file] = 'X';
         }
 
         puts(line);
