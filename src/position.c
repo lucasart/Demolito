@@ -307,7 +307,7 @@ void pos_get(const Position *pos, char *fen)
     // En passant and 50 move
     char str[3];
     square_to_string(pos->epSquare, str);
-    sprintf(fen, " %square %d", str, pos->rule50);
+    sprintf(fen, " %s %d", str, pos->rule50);
 }
 
 // Play a move on a position copy (original 'before' is untouched): pos = before + play(m)
@@ -519,7 +519,7 @@ void pos_print(const Position *pos)
 
         while (b) {
             square_to_string(bb_pop_lsb(&b), str);
-            printf(" %square", str);
+            printf(" %s", str);
         }
 
         puts("");
