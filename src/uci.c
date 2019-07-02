@@ -148,7 +148,6 @@ static void go(char **linePos)
 
 static void eval()
 {
-    pos_print(&rootPos);
     char str[17];
     uci_format_score(evaluate(&Workers[0], &rootPos), str);
     uci_printf("score %s\n", str);
@@ -157,8 +156,8 @@ static void eval()
 static void perft(char **linePos)
 {
     const int depth = atoi(strtok_r(NULL, " \n", linePos));
-    pos_print(&rootPos);
-    uci_printf("perft = %" PRIu64 "\n", gen_perft(&rootPos, depth, 0));
+    const char *last = strtok_r(NULL, " \n", linePos);
+    uci_printf("%" PRIu64 "\n", gen_perft(&rootPos, depth, !last || strcmp(last, "div")));
 }
 
 Info ui;
@@ -189,6 +188,8 @@ void uci_loop()
             Signal = STOP;
         } else if (!strcmp(token, "ponderhit"))
             lim.infinite = false;  // switch from pondering to normal search
+        else if (!strcmp(token, "d"))
+            pos_print(&rootPos);
         else if (!strcmp(token, "eval"))
             eval();
         else if (!strcmp(token, "perft"))
