@@ -164,10 +164,10 @@ static eval_t hanging(const Position *pos, int us, bitboard_t attacks[NB_COLOR][
 static int safety(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE + 1])
 {
     static const int RingAttack[] = {37, 51, 72, 68};
-    static const int RingDefense[] = {24, 29,49, 48};
+    static const int RingDefense[] = {24, 29, 49, 48};
     static const int CheckAttack[] = {77, 101, 98, 95};
     static const int CheckDefense[] = {34, 52, 41, 48};
-    static const int BishopXRay = 73, RookXRay = 111;
+    static const int XRay[] = {0, 79, 111, 93};
 
     const int them = opposite(us);
     int weight = 0, cnt = 0;
@@ -207,23 +207,18 @@ static int safety(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_P
             }
         }
 
-    // Bishop X-Ray threats
-    bitboard_t bishops = BishopPseudoAttacks[king] & pos_pieces_cpp(pos, them, BISHOP, QUEEN);
+    // X-Ray threats: sliding pieces with potential for pins or discovered checks
+    bitboard_t xrays = (BishopPseudoAttacks[king] & pos_pieces_cpp(pos, them, BISHOP, QUEEN))
+        | (RookPseudoAttacks[king] & pos_pieces_cpp(pos, them, ROOK, QUEEN));
 
-    while (bishops)
-        if (!(Segment[king][bb_pop_lsb(&bishops)] & pos->byPiece[PAWN])) {
+    while (xrays) {
+        const int xray = bb_pop_lsb(&xrays);
+
+        if (!(Segment[king][xray] & pos->byPiece[PAWN])) {
             cnt++;
-            weight += BishopXRay;
+            weight += XRay[pos->pieceOn[xray]];
         }
-
-    // Rook X-Ray threats
-    bitboard_t rooks = RookPseudoAttacks[king] & pos_pieces_cpp(pos, them, ROOK, QUEEN);
-
-    while (rooks)
-        if (!(Segment[king][bb_pop_lsb(&rooks)] & pos->byPiece[PAWN])) {
-            cnt++;
-            weight += RookXRay;
-        }
+    }
 
     const int idx = weight * (1 + cnt) / 4;
     return -SafetyCurve[min(idx, 4096)];
