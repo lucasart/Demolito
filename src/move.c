@@ -111,9 +111,7 @@ bool move_is_legal(const Position *pos, bitboard_t pins, move_t m)
         if (bb_test(pos->byColor[pos->turn], to)) {
             // Castling: king can't move through attacked square, and rook can't be pinned
             assert(pos_piece_on(pos, to) == ROOK);
-            const int kto = square_from(rank_of(from), from < to ? FILE_G : FILE_C);
-            return !(pos->attacked & Segment[from][kto])
-                && !bb_test(pins, to);
+            return !bb_test(pins, to);
         } else
             // Normal king move: do not land on an attacked square (already filtered at generation)
             return true;

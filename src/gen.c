@@ -141,7 +141,8 @@ move_t *gen_castling_moves(const Position *pos, move_t *mList)
         const int kto = square_from(rank_of(rook), rook > king ? FILE_G : FILE_C);
         const int rto = square_from(rank_of(rook), rook > king ? FILE_F : FILE_D);
 
-        if (bb_count((Segment[king][kto] | Segment[rook][rto]) & pos_pieces(pos)) == 2)
+        if (bb_count((Segment[king][kto] | Segment[rook][rto]) & pos_pieces(pos)) == 2
+                && !(pos->attacked & Segment[king][kto]))
             *mList++ = move_build(king, rook, NB_PIECE);
     }
 
