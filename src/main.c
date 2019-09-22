@@ -65,7 +65,7 @@ uint64_t test(bool perft, int depth)
     const int64_t elapsed = system_msec() - start;
 
     if (elapsed > 0)
-        fprintf(stderr, "kn/s: %" PRIu64 "\n", elapsed);
+        fprintf(stderr, "kn/s: %" PRIu64 "\n", result / elapsed);
 
     return result;
 }
