@@ -596,7 +596,7 @@ int64_t search_go()
     Signal = 0;
 
     hashDate++;
-    thrd_t threads[WorkersCount];
+    pthread_t threads[WorkersCount];
     smp_new_search();
 
     int minTime = 0, maxTime = 0;  // Silence bogus gcc warning (maybe uninitialized)
@@ -611,10 +611,10 @@ int64_t search_go()
 
     for (int i = 0; i < WorkersCount; i++)
         // Start searching thread
-        thrd_create(&threads[i], iterate, &Workers[i]);
+        pthread_create(&threads[i], NULL, (void*(*)(void*))iterate, &Workers[i]);
 
     do {
-        thrd_sleep(5);
+        sleep_msec(5);
 
         // Check for search termination conditions, but only after depth 1 has been
         // completed, to make sure we do not return an illegal move.
@@ -633,7 +633,7 @@ int64_t search_go()
     } while (Signal != STOP);
 
     for (int i = 0; i < WorkersCount; i++)
-        thrd_join(threads[i], NULL);
+        pthread_join(threads[i], NULL);
 
     info_print_bestmove(&ui);
     info_destroy(&ui);

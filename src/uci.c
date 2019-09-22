@@ -29,7 +29,7 @@
 #define uci_printf(...) printf(__VA_ARGS__), fflush(stdout)
 #define uci_puts(str) puts(str), fflush(stdout)
 
-static thrd_t Timer = 0;
+static pthread_t Timer = 0;
 
 uint64_t uciHash = 2;
 int64_t uciTimeBuffer = 60;
@@ -139,11 +139,11 @@ static void go(char **linePos)
     }
 
     if (Timer) {
-        thrd_join(Timer, NULL);
+        pthread_join(Timer, NULL);
         Timer = 0;
     }
 
-    thrd_create(&Timer, search_go, NULL);
+    pthread_create(&Timer, NULL, (void*(*)(void*))search_go, NULL);
 }
 
 static void eval()
@@ -202,7 +202,7 @@ void uci_loop()
     }
 
     if (Timer) {
-        thrd_join(Timer, NULL);
+        pthread_join(Timer, NULL);
         Timer = 0;
     }
 }
