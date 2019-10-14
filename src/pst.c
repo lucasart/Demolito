@@ -45,10 +45,18 @@ static eval_t queen(int rank, int file)
 
 static eval_t king(int rank, int file)
 {
-    static const int FileWeight[NB_FILE] = {55, 70, 42, 0, 0, 42, 70, 55};
-    static const int RankWeight[NB_RANK] = {26, 0, -26, -44, -58, -60, -60, -60};
+    static const eval_t kpst[NB_RANK][NB_FILE/2] = {
+        {{66,-143}, {86,-103}, { 57,-58}, { 27,-41}},
+        {{53, -88}, {68, -48}, { 37,-21}, {  0,  0}},
+        {{26, -71}, {42, -24}, { 11,  3}, {-35, 28}},
+        {{15, -29}, {29,  -3}, { -3, 30}, {-38, 41}},
+        {{ 1, -39}, {12,   1}, {-19, 25}, {-54, 57}},
+        {{-6, -65}, {12, -29}, {-19,  0}, {-62, 24}},
+        {{-7, -80}, {10, -47}, {-14,-32}, {-59, -1}},
+        {{-5,-131}, { 6,-102}, {-18,-64}, {-53,-33}}
+    };
 
-    return (eval_t) {FileWeight[file] + RankWeight[rank], 107 * (Center[rank] + Center[file]) / 8};
+    return kpst[rank][file > FILE_D ? FILE_H - file : file];
 }
 
 static eval_t pawn(int rank, int file)
