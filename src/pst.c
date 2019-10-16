@@ -61,16 +61,19 @@ static eval_t king(int rank, int file)
 
 static eval_t pawn(int rank, int file)
 {
-    eval_t e = {0, 0};
+    static const eval_t ppst[NB_RANK][NB_FILE/2] = {
+        {{ 0, 0}, { 0, 0}, { 0, 0}, { 0, 0}},
+        {{-2,-1}, { 5, 3}, { 0, 4}, {-3, 3}},
+        {{-3,-2}, { 1, 1}, {-2, 1}, {15, 1}},
+        {{-3, 1}, { 2,-2}, { 1, 2}, {34,-2}},
+        {{ 2, 3}, {-1, 3}, { 0, 4}, {17,-2}},
+        {{-3, 4}, { 4,-2}, {-3, 1}, {-2, 0}},
+        {{-2,-1}, { 0,-1}, {-1, 0}, {-1, 1}},
+        {{ 0, 0}, { 0, 0}, { 0, 0}, { 0, 0}}
 
-    if (file == FILE_D || file == FILE_E) {
-        if (rank == RANK_3 || rank == RANK_5)
-            e.op = 17;
-        else if (rank == RANK_4)
-            e.op = 38;
-    }
+    };
 
-    return e;
+    return ppst[rank][file > FILE_D ? FILE_H - file : file];
 }
 
 void eval_add(eval_t *e1, eval_t e2)
