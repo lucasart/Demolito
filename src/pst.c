@@ -29,8 +29,18 @@ static eval_t knight(int rank, int file)
 
 static eval_t bishop(int rank, int file)
 {
-    const int ctr = Center[rank] + Center[file];
-    return (eval_t) {2 * ctr + 7 * (rank + file == 7 || rank - file == 0) - 18 * (rank == RANK_1), 23 * ctr / 8};
+    static const eval_t bpst[NB_RANK][NB_FILE/2] = {
+        {{-7,-5}, {-5, 0}, {-7, 2}, {-1,-1}},
+        {{-4,-1}, { 5,-1}, { 2, 2}, {-6, 3}},
+        {{ 0,-2}, { 0, 1}, { 1,-4}, { 5, 2}},
+        {{ 6,-2}, { 2, 3}, { 2,-4}, {-1, 5}},
+        {{ 0,-1}, { 1, 0}, { 1,-1}, { 0, 3}},
+        {{-2,-3}, { 0, 1}, { 0, 1}, {-4, 2}},
+        {{-2,-3}, { 0,-1}, { 2,-2}, { 1, 0}},
+        {{-3, 4}, {-3, 2}, { 1, 5}, { 2,-3}}
+    };
+
+    return bpst[rank][file > FILE_D ? FILE_H - file : file];
 }
 
 static eval_t rook(int rank, int file)
