@@ -18,7 +18,7 @@
 #include "bitboard.h"
 #include "move.h"
 #include "position.h"
-#include "smp.h"
+#include "search.h"
 #include "sort.h"
 
 enum {

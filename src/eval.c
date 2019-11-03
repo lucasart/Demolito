@@ -45,8 +45,8 @@ static eval_t score_mobility(int p0, int piece, bitboard_t targets)
     };
     static const eval_t Weight[] = {{9, 13}, {13, 12}, {9, 7}, {4, 7}};
 
-    const int color = AdjustCount[p0][bb_count(targets)];
-    return (eval_t) {Weight[piece].op * color, Weight[piece].eg * color};
+    const int count = AdjustCount[p0][bb_count(targets)];
+    return (eval_t) {Weight[piece].op * count, Weight[piece].eg * count};
 }
 
 static eval_t mobility(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE + 1])
@@ -170,7 +170,7 @@ static int safety(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_P
     static const int XRay[] = {0, 79, 111, 93};
 
     const int them = opposite(us);
-    int weight = 0, cnt = 0;
+    int weight = 0, count = 0;
 
     // Attacks around the King
     const bitboard_t dangerZone = attacks[us][KING] & ~attacks[us][PAWN];
@@ -179,7 +179,7 @@ static int safety(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_P
         const bitboard_t attacked = attacks[them][piece] & dangerZone;
 
         if (attacked) {
-            cnt++;
+            count++;
             weight += bb_count(attacked) * RingAttack[piece];
             weight -= bb_count(attacked & attacks[us][NB_PIECE]) * RingDefense[piece];
         }
@@ -201,7 +201,7 @@ static int safety(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_P
                 | attacks[us][KING]);
 
             if (b) {
-                cnt++;
+                count++;
                 weight += bb_count(b) * CheckAttack[piece];
                 weight -= bb_count(b & attacks[us][NB_PIECE]) * CheckDefense[piece];
             }
@@ -215,12 +215,12 @@ static int safety(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_P
         const int xray = bb_pop_lsb(&xrays);
 
         if (!(Segment[king][xray] & pos->byPiece[PAWN])) {
-            cnt++;
+            count++;
             weight += XRay[pos->pieceOn[xray]];
         }
     }
 
-    const int idx = weight * (1 + cnt) / 4;
+    const int idx = weight * (1 + count) / 4;
     return -SafetyCurve[min(idx, 4096)];
 }
 
@@ -311,7 +311,7 @@ static eval_t pawns(Worker *worker, const Position *pos, bitboard_t attacks[NB_C
     static const int FreePasser[] = {12, 18, 34, 92};
 
     const uint64_t key = pos->pawnKey;
-    PawnEntry *pe = &worker->pawnHash[key % NB_PAWN_ENTRY];
+    PawnEntry *pe = &worker->pawnHash[key % NB_PAWN_HASH];
     eval_t e;
 
     // First the king+pawn squeleton only, using PawhHash

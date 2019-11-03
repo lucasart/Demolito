@@ -73,7 +73,7 @@ static void setoption(char **linePos)
         uciHash = 1ULL << bb_msb(uciHash);  // must be a power of two
         hash_prepare(uciHash);
     } else if (!strcmp(name, "Threads"))
-        smp_prepare(atoi(strtok_r(NULL, " \n", linePos)));
+        workers_prepare(atoi(strtok_r(NULL, " \n", linePos)));
     else if (!strcmp(name, "Contempt"))
         Contempt = atoi(strtok_r(NULL, " \n", linePos));
     else if (!strcmp(name, "TimeBuffer"))
@@ -177,7 +177,7 @@ void uci_loop()
             uci_puts("readyok");
         else if (!strcmp(token, "ucinewgame")) {
             memset(HashTable, 0, uciHash << 20);
-            smp_clear();
+            workers_clear();
             hashDate = 0;
         } else if (!strcmp(token, "position"))
             position(&linePos);

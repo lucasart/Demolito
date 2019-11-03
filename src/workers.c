@@ -15,31 +15,31 @@
 */
 #include <stdlib.h>
 #include <string.h>
-#include "smp.h"
+#include "workers.h"
 #include "search.h"
 
 Worker *Workers = NULL;
 int WorkersCount = 1;
 
-void smp_clear()
+void workers_clear()
 {
     for (int i = 0; i < WorkersCount; i++)
         memset(&Workers[i], 0, sizeof(Workers[i]));
 }
 
-void smp_prepare(int count)
+void workers_prepare(int count)
 {
     Workers = realloc(Workers, count * sizeof(Worker));
     WorkersCount = count;
-    smp_clear();
+    workers_clear();
 }
 
-void smp_destroy()
+void workers_destroy()
 {
     free(Workers);
 }
 
-void smp_new_search()
+void workers_new_search()
 {
     for (int i = 0; i < WorkersCount; i++) {
         Workers[i].stack = rootStack;
@@ -49,7 +49,7 @@ void smp_new_search()
     }
 }
 
-int64_t smp_nodes()
+int64_t workers_nodes()
 {
     int64_t total = 0;
 

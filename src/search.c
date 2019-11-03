@@ -20,9 +20,9 @@
 #include "move.h"
 #include "position.h"
 #include "search.h"
-#include "smp.h"
 #include "sort.h"
 #include "uci.h"
+#include "workers.h"
 
 Position rootPos;
 Stack rootStack;
@@ -435,7 +435,7 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
                     // Best move has changed since last completed iteration. Update the best move and
                     // PV immediately, because we may not have time to finish this iteration.
                     if (ply == 0 && moveCount > 1 && depth > 1)
-                        info_update(&ui, depth, score, smp_nodes(), pv, true);
+                        info_update(&ui, depth, score, workers_nodes(), pv, true);
                 }
             }
         }
@@ -565,7 +565,7 @@ static void iterate(Worker *worker)
             }
         }
 
-        info_update(&ui, depth, score, smp_nodes(), pv, false);
+        info_update(&ui, depth, score, workers_nodes(), pv, false);
     }
 
     // Max depth completed by current thread. All threads should stop. Unless we are in infinite
@@ -600,7 +600,7 @@ int64_t search_go()
 
     hashDate++;
     pthread_t threads[WorkersCount];
-    smp_new_search();
+    workers_new_search();
 
     int minTime = 0, maxTime = 0;  // Silence bogus gcc warning (maybe uninitialized)
 
@@ -623,7 +623,7 @@ int64_t search_go()
         // completed, to make sure we do not return an illegal move.
         if (!lim.infinite && info_last_depth(&ui) > 0) {
             if ((lim.movetime && system_msec() - start >= lim.movetime - uciTimeBuffer)
-                    || (lim.nodes && smp_nodes() >= lim.nodes))
+                    || (lim.nodes && workers_nodes() >= lim.nodes))
                 Signal = STOP;
             else if (lim.time || lim.inc) {
                 const double x = 1 / (1 + exp(-info_variability(&ui)));
@@ -642,5 +642,5 @@ int64_t search_go()
     info_destroy(&ui);
     mtx_destroy(&mtxSchedule);
 
-    return smp_nodes();
+    return workers_nodes();
 }

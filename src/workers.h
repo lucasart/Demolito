@@ -1,11 +1,10 @@
 #pragma once
 #include <setjmp.h>
 #include "bitboard.h"
-#include "search.h"
 #include "stack.h"
 
 enum {
-    NB_PAWN_ENTRY = 16384,
+    NB_PAWN_HASH = 16384,
     NB_REFUTATION = 1024,
     NB_FOLLOW_UP = 1024
 };
@@ -17,7 +16,7 @@ typedef struct {
 } PawnEntry;
 
 typedef struct {
-    PawnEntry pawnHash[NB_PAWN_ENTRY];
+    PawnEntry pawnHash[NB_PAWN_HASH];
     int16_t history[NB_COLOR][NB_SQUARE][NB_SQUARE];
     int16_t refutationHistory[NB_REFUTATION][NB_PIECE][NB_SQUARE];
     int16_t followUpHistory[NB_REFUTATION][NB_PIECE][NB_SQUARE];
@@ -31,9 +30,9 @@ typedef struct {
 extern Worker *Workers;
 extern int WorkersCount;
 
-void smp_clear();
-void smp_prepare(int count);  // realloc + clear
-void smp_destroy();
+void workers_clear();
+void workers_prepare(int count);  // realloc + clear
+void workers_destroy();
 
-void smp_new_search();
-int64_t smp_nodes();
+void workers_new_search();
+int64_t workers_nodes();

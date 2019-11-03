@@ -1,5 +1,6 @@
 #pragma once
 #include "gen.h"
+#include "workers.h"
 
 void history_update(int16_t *t, int16_t bonus);
 

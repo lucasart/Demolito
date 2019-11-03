@@ -24,8 +24,8 @@
 #include "position.h"
 #include "pst.h"
 #include "search.h"
-#include "smp.h"
 #include "uci.h"
+#include "workers.h"
 
 uint64_t test(bool perft, int depth)
 {
@@ -86,17 +86,17 @@ int main(int argc, char **argv)
             if (argc > 4)
                 uciHash = 1ULL << bb_msb(atoll(argv[4]));  // must be a power of 2
 
-            smp_prepare(WorkersCount);
+            workers_prepare(WorkersCount);
             hash_prepare(uciHash);
             const uint64_t nodes = test(!strcmp(argv[1], "perft"), atoi(argv[2]));
             fprintf(stderr, "total = %" PRIu64 "\n", nodes);
         }
     } else {
-        smp_prepare(WorkersCount);
+        workers_prepare(WorkersCount);
         hash_prepare(uciHash);
         uci_loop();
     }
 
     free(HashTable);
-    smp_destroy();
+    workers_destroy();
 }
