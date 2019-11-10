@@ -33,24 +33,26 @@ static bitboard_t pawn_attacks(const Position *pos, int color)
         | bb_shift(pawns & ~File[FILE_H], push_inc(color) + RIGHT);
 }
 
-static eval_t score_mobility(int p0, int piece, bitboard_t targets)
-{
-    assert(KNIGHT <= p0 && p0 <= ROOK);
-    assert(KNIGHT <= piece && piece <= QUEEN);
-
-    static const int AdjustCount[][15] = {
-        {-4, -2, -1, 0, 1, 2, 3, 4, 4},
-        {-5, -3, -2, -1, 0, 1, 2, 3, 4, 5, 5, 6, 6, 7},
-        {-6, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 6, 7, 7}
-    };
-    static const eval_t Weight[] = {{9, 13}, {13, 12}, {9, 7}, {4, 7}};
-
-    const int count = AdjustCount[p0][bb_count(targets)];
-    return (eval_t) {Weight[piece].op * count, Weight[piece].eg * count};
-}
-
 static eval_t mobility(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE + 1])
 {
+    static const eval_t Mobility[5][15] = {
+        // Knight
+        {{-36, -61}, {-18, -24}, {-11, -16}, {0, 4}, {9, 18}, {22, 28}, {32, 42}, {33, 46},
+            {43, 50}},
+        // Bishop
+        {{-72, -65}, {-42, -35}, {-22, -26}, {-14, -16}, {5, -4}, {17, 14}, {28, 26}, {32, 44},
+            {40, 46}, {56, 67}, {69, 47}, {81, 71}, {85, 52}, {106, 91}},
+        // Rook
+        {{-53, -43}, {-34, -38}, {-25, -27}, {-11, -20}, {-9, -4}, {-2, 1}, {6, 5}, {15, 8},
+            {29, 27}, {39, 35}, {51, 36}, {44, 44}, {49, 47}, {61, 48}, {70, 46}},
+        // Queen diagonal
+        {{-25, -39}, {-14, -28}, {-5, -6}, {-7, -8}, {-2, -1}, {8, 11}, {10, 16}, {10, 23},
+            {20, 20}, {24, 35}, {23, 37}, {38, 33}, {18, 44}, {31, 59}},
+        // Queen orthogonal
+        {{-27, -56}, {-17, -28}, {-18, -17}, {-11, -7}, {-2, -7}, {2, -3}, {4, 8}, {10, 12},
+            {9, 26}, {17, 28}, {21, 34}, {27, 39}, {23, 44}, {20, 38}, {30, 62}}
+    };
+
     const int them = opposite(us);
     eval_t result = {0, 0};
     bitboard_t occ;
@@ -69,7 +71,7 @@ static eval_t mobility(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
     while (knights) {
         bitboard_t targets = KnightAttacks[bb_pop_lsb(&knights)];
         attacks[us][KNIGHT] |= targets;
-        eval_add(&result, score_mobility(KNIGHT, KNIGHT, targets & available));
+        eval_add(&result, Mobility[KNIGHT][bb_count(targets & available)]);
     }
 
     // Lateral mobility
@@ -79,7 +81,7 @@ static eval_t mobility(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
     while (rookMovers) {
         bitboard_t targets = bb_rook_attacks(from = bb_pop_lsb(&rookMovers), occ);
         attacks[us][piece = pos_piece_on(pos, from)] |= targets;
-        eval_add(&result, score_mobility(ROOK, piece, targets & available));
+        eval_add(&result, Mobility[2 * piece - ROOK][bb_count(targets & available)]);
     }
 
     // Diagonal mobility
@@ -89,7 +91,7 @@ static eval_t mobility(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
     while (bishopMovers) {
         bitboard_t targets = bb_bishop_attacks(from = bb_pop_lsb(&bishopMovers), occ);
         attacks[us][piece = pos_piece_on(pos, from)] |= targets;
-        eval_add(&result, score_mobility(BISHOP, piece, targets & available));
+        eval_add(&result, Mobility[piece][bb_count(targets & available)]);
     }
 
     attacks[us][NB_PIECE] = attacks[us][KNIGHT] | attacks[us][BISHOP] | attacks[us][ROOK]
