@@ -101,39 +101,6 @@ move_t string_to_move(const Position *pos, const char *str)
     return move_build(from, to, prom);
 }
 
-bool move_is_legal(const Position *pos, bitboard_t pins, move_t m)
-{
-    const int from = move_from(m), to = move_to(m);
-    const int piece = pos_piece_on(pos, from);
-    const int king = pos_king_square(pos, pos->turn);
-
-    if (piece == KING) {
-        if (bb_test(pos->byColor[pos->turn], to)) {
-            // Castling: king can't move through attacked square, and rook can't be pinned
-            assert(pos_piece_on(pos, to) == ROOK);
-            return !bb_test(pins, to);
-        } else
-            // Normal king move: do not land on an attacked square (already filtered at generation)
-            return true;
-    } else {
-        // Normal case: illegal if pinned, and moves out of pin-ray
-        if (bb_test(pins, from) && !bb_test(Ray[king][from], to))
-            return false;
-
-        // En-passant special case: also illegal if self-check through the en-passant captured pawn
-        if (to == pos->epSquare && piece == PAWN) {
-            const int us = pos->turn, them = opposite(us);
-            bitboard_t occ = pos_pieces(pos);
-            bb_clear(&occ, from);
-            bb_set(&occ, to);
-            bb_clear(&occ, to + push_inc(them));
-            return !(bb_rook_attacks(king, occ) & pos_pieces_cpp(pos, them, ROOK, QUEEN))
-                && !(bb_bishop_attacks(king, occ) & pos_pieces_cpp(pos, them, BISHOP, QUEEN));
-        } else
-            return true;
-    }
-}
-
 int move_see(const Position *pos, move_t m)
 {
     static const int seeValue[NB_PIECE + 1] = {N, B, R, Q, 10*Q, P, 0};

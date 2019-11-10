@@ -129,7 +129,7 @@ static int qsearch(Worker *worker, const Position *pos, int ply, int depth, int 
         int see;
         const move_t currentMove = sort_next(&sort, pos, &see);
 
-        if (!move_is_legal(pos, pins, currentMove))
+        if (!gen_is_legal(pos, pins, currentMove))
             continue;
 
         moveCount++;
@@ -323,7 +323,7 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
         int see;
         const move_t currentMove = sort_next(&sort, pos, &see);
 
-        if (!move_is_legal(pos, pins, currentMove) || currentMove == singularMove)
+        if (!gen_is_legal(pos, pins, currentMove) || currentMove == singularMove)
             continue;
 
         moveCount++;

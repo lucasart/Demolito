@@ -194,6 +194,39 @@ move_t *gen_all_moves(const Position *pos, move_t *mList)
     }
 }
 
+bool gen_is_legal(const Position *pos, bitboard_t pins, move_t m)
+{
+    const int from = move_from(m), to = move_to(m);
+    const int piece = pos_piece_on(pos, from);
+    const int king = pos_king_square(pos, pos->turn);
+
+    if (piece == KING) {
+        if (bb_test(pos->byColor[pos->turn], to)) {
+            // Castling: king can't move through attacked square, and rook can't be pinned
+            assert(pos_piece_on(pos, to) == ROOK);
+            return !bb_test(pins, to);
+        } else
+            // Normal king move: do not land on an attacked square (already filtered at generation)
+            return true;
+    } else {
+        // Normal case: illegal if pinned, and moves out of pin-ray
+        if (bb_test(pins, from) && !bb_test(Ray[king][from], to))
+            return false;
+
+        // En-passant special case: also illegal if self-check through the en-passant captured pawn
+        if (to == pos->epSquare && piece == PAWN) {
+            const int us = pos->turn, them = opposite(us);
+            bitboard_t occ = pos_pieces(pos);
+            bb_clear(&occ, from);
+            bb_set(&occ, to);
+            bb_clear(&occ, to + push_inc(them));
+            return !(bb_rook_attacks(king, occ) & pos_pieces_cpp(pos, them, ROOK, QUEEN))
+                && !(bb_bishop_attacks(king, occ) & pos_pieces_cpp(pos, them, BISHOP, QUEEN));
+        } else
+            return true;
+    }
+}
+
 uint64_t gen_perft(const Position *pos, int depth, int ply)
 {
     if (depth <= 0)
@@ -204,7 +237,7 @@ uint64_t gen_perft(const Position *pos, int depth, int ply)
     move_t mList[MAX_MOVES], *end = gen_all_moves(pos, mList);
 
     for (move_t *m = mList; m != end; m++) {
-        if (!move_is_legal(pos, pins, *m))
+        if (!gen_is_legal(pos, pins, *m))
             continue;
 
         Position after;
