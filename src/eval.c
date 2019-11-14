@@ -249,16 +249,16 @@ static eval_t passer(int us, int pawn, int ourKing, int theirKing)
 static eval_t do_pawns(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE + 1],
     bitboard_t *passed)
 {
-    static const eval_t Isolated[2] = {{15, 34}, {42, 30}};
-    static const eval_t Backward[2] = {{17, 17}, {29, 21}};
-    static const eval_t Doubled = {17, 33};
+    static const eval_t Isolated[2] = {{15, 25}, {41, 25}};
+    static const eval_t Backward[2] = {{12, 18}, {37, 15}};
+    static const eval_t Doubled = {28, 36};
     static const int Shield[4][NB_RANK] = {
-      {0, 24, 20, 10, 10, 13, 9, 0},
-      {0, 31, 19, 8, 10, 5, 7, 0},
-      {0, 27, 15, 9, 10, 9, 12, 0},
-      {0, 25, 19, 17, 11, 8, 6, 0}
+      {0, 21, 19, 8, 12, 17, 11, 0},
+      {0, 31, 23, 5, 7, 5, 3, 0},
+      {0, 25, 17, 12, 14, 17, 13, 0},
+      {0, 25, 18, 16, 10, 7, 6, 0}
     };
-    static const eval_t Connected[] = {{5, -1}, {12, 2}, {14, 11}, {31, 26}, {34, 52}, {47, 68}};
+    static const eval_t Connected[] = {{6, -5}, {13, 5}, {18, 6}, {38, 22}, {32, 61}, {51, 63}};
 
     const int them = opposite(us);
     const bitboard_t ourPawns = pos_pieces_cp(pos, us, PAWN);
@@ -310,7 +310,7 @@ static eval_t do_pawns(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
 static eval_t pawns(Worker *worker, const Position *pos, bitboard_t attacks[NB_COLOR][NB_PIECE + 1])
 // Pawn evaluation is directly a diff, from white's pov. This halves the size of the table.
 {
-    static const int FreePasser[] = {12, 18, 34, 92};
+    static const int FreePasser[] = {16, 16, 43, 98};
 
     const uint64_t key = pos->pawnKey;
     PawnEntry *pe = &worker->pawnHash[key % NB_PAWN_HASH];
