@@ -223,7 +223,7 @@ static int safety(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_P
     }
 
     const int idx = weight * (1 + count) / 4;
-    return -SafetyCurve[min(idx, 4096)];
+    return -SafetyCurve[min(idx, 4095)];
 }
 
 static eval_t passer(int us, int pawn, int ourKing, int theirKing)
