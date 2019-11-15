@@ -55,13 +55,6 @@ static eval_t mobility(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
 
     const int them = opposite(us);
     eval_t result = {0, 0};
-    bitboard_t occ;
-    int from, piece;
-
-    attacks[us][KING] = KingAttacks[pos_king_square(pos, us)];
-    attacks[them][PAWN] = pawn_attacks(pos, them);
-
-    for (piece = KNIGHT; piece <= QUEEN; attacks[us][piece++] = 0);
 
     const bitboard_t available = ~(pos_pieces_cpp(pos, us, KING, PAWN) | attacks[them][PAWN]);
 
@@ -76,11 +69,12 @@ static eval_t mobility(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
 
     // Lateral mobility
     bitboard_t rookMovers = pos_pieces_cpp(pos, us, ROOK, QUEEN);
-    occ = pos_pieces(pos) ^ rookMovers;  // RQ see through each other
+    bitboard_t occ = pos_pieces(pos) ^ rookMovers;  // RQ see through each other
 
     while (rookMovers) {
-        bitboard_t targets = bb_rook_attacks(from = bb_pop_lsb(&rookMovers), occ);
-        attacks[us][piece = pos_piece_on(pos, from)] |= targets;
+        const int from = bb_pop_lsb(&rookMovers), piece = pos_piece_on(pos, from);
+        const bitboard_t targets = bb_rook_attacks(from, occ);
+        attacks[us][piece] |= targets;
         eval_add(&result, Mobility[2 * piece - ROOK][bb_count(targets & available)]);
     }
 
@@ -89,13 +83,11 @@ static eval_t mobility(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
     occ = pos_pieces(pos) ^ bishopMovers;  // BQ see through each other
 
     while (bishopMovers) {
-        bitboard_t targets = bb_bishop_attacks(from = bb_pop_lsb(&bishopMovers), occ);
-        attacks[us][piece = pos_piece_on(pos, from)] |= targets;
+        const int from = bb_pop_lsb(&bishopMovers), piece = pos_piece_on(pos, from);
+        const bitboard_t targets = bb_bishop_attacks(from, occ);
+        attacks[us][piece] |= targets;
         eval_add(&result, Mobility[piece][bb_count(targets & available)]);
     }
-
-    attacks[us][NB_PIECE] = attacks[us][KNIGHT] | attacks[us][BISHOP] | attacks[us][ROOK]
-        | attacks[us][QUEEN];
 
     return result;
 }
@@ -253,10 +245,10 @@ static eval_t do_pawns(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
     static const eval_t Backward[2] = {{12, 18}, {37, 15}};
     static const eval_t Doubled = {28, 36};
     static const int Shield[4][NB_RANK] = {
-      {0, 21, 19, 8, 12, 17, 11, 0},
-      {0, 31, 23, 5, 7, 5, 3, 0},
-      {0, 25, 17, 12, 14, 17, 13, 0},
-      {0, 25, 18, 16, 10, 7, 6, 0}
+        {0, 21, 19, 8, 12, 17, 11, 0},
+        {0, 31, 23, 5, 7, 5, 3, 0},
+        {0, 25, 17, 12, 14, 17, 13, 0},
+        {0, 25, 18, 16, 10, 7, 6, 0}
     };
     static const eval_t Connected[] = {{6, -5}, {13, 5}, {18, 6}, {38, 22}, {32, 61}, {51, 63}};
 
@@ -396,11 +388,22 @@ int evaluate(Worker *worker, const Position *pos)
     const int us = pos->turn, them = opposite(us);
     eval_t e[NB_COLOR] = {pos->pst, {0, 0}};
 
-    bitboard_t attacks[NB_COLOR][NB_PIECE + 1];
+    bitboard_t attacks[NB_COLOR][NB_PIECE + 1] = {{0}, {0}};
 
-    // Mobility first, because it fills in the attacks array
-    for (int color = WHITE; color <= BLACK; color++)
+    // Calculate attacks[] for king and pawn
+    for (int color = WHITE; color <= BLACK; color++) {
+        attacks[color][KING] = KingAttacks[pos_king_square(pos, color)];
+        attacks[color][PAWN] = pawn_attacks(pos, color);
+    }
+
+    // Calculate mobility of pieces (ie. NBRQ), and with it the remaining attacks[]
+    for (int color = WHITE; color <= BLACK; color++) {
         eval_add(&e[color], mobility(pos, color, attacks));
+
+        // Aggregate attacks pieces only (NBRQ)
+        attacks[color][NB_PIECE] = attacks[color][KNIGHT] | attacks[color][BISHOP]
+            | attacks[color][ROOK] | attacks[color][QUEEN];
+    }
 
     for (int color = WHITE; color <= BLACK; color++) {
         e[color].op += safety(pos, color, attacks);
