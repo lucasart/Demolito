@@ -27,14 +27,14 @@
 #include "uci.h"
 #include "workers.h"
 
-uint64_t test(bool perft, int depth)
+void test(bool perft, int depth)
 {
     static const char *fens[] = {
         #include "test.csv"
         NULL
     };
 
-    uint64_t result = 0, nodes;
+    uint64_t totalNodes = 0, nodes;
     uciChess960 = true;
 
     memset(&lim, 0, sizeof(lim));
@@ -56,7 +56,7 @@ uint64_t test(bool perft, int depth)
             puts("");
         }
 
-        result += nodes;
+        totalNodes += nodes;
     }
 
     if (dbgCnt[0] || dbgCnt[1])
@@ -64,10 +64,9 @@ uint64_t test(bool perft, int depth)
 
     const int64_t elapsed = system_msec() - start;
 
-    if (elapsed > 0)
-        fprintf(stderr, "kn/s: %" PRIu64 "\n", result / elapsed);
-
-    return result;
+    printf("Time  : %"PRIu64"ms\n", elapsed);
+    printf("Nodes : %"PRIu64"\n", totalNodes);
+    printf("NPS   : %.0f\n", totalNodes * 1000.0 / max(elapsed, 1));  // avoid div/0
 }
 
 int main(int argc, char **argv)
@@ -79,7 +78,9 @@ int main(int argc, char **argv)
     search_init();
 
     if (argc >= 2) {
-        if ((!strcmp(argv[1], "perft") || !strcmp(argv[1], "search")) && argc >= 3) {
+        if ((!strcmp(argv[1], "perft") || !strcmp(argv[1], "bench")) && argc >= 2) {
+            const int depth = argc > 2 ? atoi(argv[2]) : 12;
+
             if (argc > 3)
                 WorkersCount = atoi(argv[3]);
 
@@ -88,8 +89,7 @@ int main(int argc, char **argv)
 
             workers_prepare(WorkersCount);
             hash_prepare(uciHash);
-            const uint64_t nodes = test(!strcmp(argv[1], "perft"), atoi(argv[2]));
-            fprintf(stderr, "total = %" PRIu64 "\n", nodes);
+            test(!strcmp(argv[1], "perft"), depth);
         }
     } else {
         workers_prepare(WorkersCount);
