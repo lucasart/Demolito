@@ -421,14 +421,10 @@ int evaluate(Worker *worker, const Position *pos)
     const int winner = stm.eg > 0 ? us : them, loser = opposite(winner);
     const bitboard_t winnerPawns = pos_pieces_cp(pos, winner, PAWN);
 
-    if (!bb_several(winnerPawns)
-            && pos->pieceMaterial[winner].eg - pos->pieceMaterial[loser].eg < R) {
-        if (!winnerPawns)
-            stm.eg /= 2;
-        else {
-            assert(bb_count(winnerPawns) == 1);
-            stm.eg -= stm.eg / 4;
-        }
+    if (pos->pieceMaterial[winner].eg - pos->pieceMaterial[loser].eg < R) {
+        // Scale down when the winning side has <= 2 pawns
+        static const int discount[9] = {4, 2, 1};
+        stm.eg -= stm.eg * discount[bb_count(winnerPawns)] / 8;
     }
 
     return blend(pos, stm);
