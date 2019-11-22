@@ -394,6 +394,10 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
                     assert(1 <= lmrCount && lmrCount <= MAX_MOVES);
                     reduction = Reduction[nextDepth][lmrCount][!!nextPos.checkers];
 
+                    // Reduce more King evasions
+                    if (pos->checkers && pos_piece_on(pos, move_from(currentMove)) == KING)
+                        reduction++;
+
                     if (sort.scores[sort.idx - 1] >= 1024)
                         reduction = max(0, reduction - 1);
                 }
