@@ -25,7 +25,7 @@ popcnt:
 	$(CC) -mpopcnt $(CF) -DVERSION=\"$(VERSION)\" ./src/*.c -o $(EXE) -static $(LF)
 
 pext:
-	$(CC) -mpopcnt -mbmi2 -DPEXT $(CF) -DVERSION=\"$(VERSION)\" ./src/*.c -o $(EXE) -static $(LF)
+	$(CC) -mpopcnt -mbmi2 $(CF) -DVERSION=\"$(VERSION)\" ./src/*.c -o $(EXE) -static $(LF)
 
 clean:
 	rm $(EXE)
