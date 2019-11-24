@@ -157,11 +157,11 @@ static eval_t hanging(const Position *pos, int us, bitboard_t attacks[NB_COLOR][
 
 static int safety(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE + 1])
 {
-    static const int RingAttack[] = {37, 51, 72, 68};
-    static const int RingDefense[] = {24, 29, 49, 48};
-    static const int CheckAttack[] = {77, 101, 98, 95};
-    static const int CheckDefense[] = {34, 52, 41, 48};
-    static const int XRay[] = {0, 79, 111, 93};
+    static const int RingAttack[] = {38, 51, 77, 75};
+    static const int RingDefense[] = {21, 29, 52, 45};
+    static const int CheckAttack[] = {84, 102, 108, 106};
+    static const int CheckDefense[] = {31, 55, 40, 48};
+    static const int XRay[] = {0, 83, 116, 85};
 
     const int them = opposite(us);
     int weight = 0, count = 0;
