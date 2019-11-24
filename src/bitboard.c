@@ -16,7 +16,7 @@
 #include <stdio.h>
 #include "bitboard.h"
 
-#ifdef __BMI2__
+#ifdef PEXT
     #include <immintrin.h> // Header for _pext_u64() intrinsic
 #endif
 
@@ -101,7 +101,7 @@ static bitboard_t slider_attacks(int square, bitboard_t occ, const int dir[4][2]
 
 static int slider_index(bitboard_t occ, bitboard_t mask, bitboard_t magic, unsigned shift)
 {
-#ifdef __BMI2__
+#ifdef PEXT
     (void)magic, (void)shift;  // Silence compiler warnings (unused variables)
     return _pext_u64(occ, mask);
 #else

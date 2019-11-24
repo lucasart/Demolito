@@ -1,8 +1,7 @@
 # makefile for dev and OpenBench
 
-# TODO:
-# * auto-detect compiler: clang if available (8% faster), otherwise gcc. For now assume gcc only
-#   for openbench.
+# Compiler: gcc by default (for OpenBench), but clang produces faster code
+CC = gcc
 
 # Compilation flags
 CF = -std=gnu11 -DNDEBUG -O3 -flto -Wfatal-errors -Wall -Wextra -Wshadow
@@ -13,14 +12,13 @@ LF = -s -lm -lpthread
 # EXE is the hook used by OpenBench to specify the output file name
 EXE = demolito
 
-# POPCNT: auto-detection (for both targets), thanks to march=native and compiler intrinsic.
-# PEXT: off for openbench target (we can't assume that all OpenBench workers have it).
+# pext is only for Intel CPU with BMI2 support (haswell+). Do not use it for AMD.
 
-openbench:
-	gcc -march=native $(CF) -DVERSION=\"dev\" ./*.c -o $(EXE) $(LF)
+default:
+	$(CC) -march=native $(CF) -DVERSION=\"dev\" ./*.c -o $(EXE) $(LF)
 
-dev:
-	clang -march=native $(CF) -DVERSION=\"dev\" ./*.c -o $(EXE) $(LF)
+pext:
+	$(CC) -march=native -DPEXT $(CF) -DVERSION=\"dev\" ./*.c -o $(EXE) $(LF)
 
 clean:
 	rm $(EXE)
