@@ -207,7 +207,7 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
     move_t pv[], move_t singularMove)
 {
     static const int EvalMargin[] = {0, 130, 264, 410, 510, 672};
-    static const int RazorMargin[] = {0, 229, 438, 495, 878};
+    static const int RazorMargin[] = {0, 229, 438, 495, 878, 1094};
     static const int SEEMargin[2][6] = {
         {0, 0, 0, 0, -P, -2*P},  // quiet
         {0, -33, -132, -297, -528, -825}  // capture
@@ -275,7 +275,7 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
         return refinedEval;
 
     // Razoring
-    if (depth <= 4 && !pos->checkers && !pvNode) {
+    if (depth <= 5 && !pos->checkers && !pvNode) {
         const int lbound = alpha - RazorMargin[depth];
 
         if (refinedEval <= lbound) {
