@@ -347,7 +347,7 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
                continue;
 
             // Late Move Pruning
-            if (!capture && depth <= 3 && moveCount >= 4 * depth)
+            if (!capture && depth <= 4 && moveCount >= 4 * depth)
                 break;
         }
 
