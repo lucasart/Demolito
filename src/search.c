@@ -46,10 +46,8 @@ int Reduction[MAX_DEPTH + 1][MAX_MOVES];
 void search_init()
 {
     for (int d = 1; d <= MAX_DEPTH; d++)
-        for (int cnt = 1; cnt < MAX_MOVES; cnt++) {
-            const double r = 0.400 * log(d > 31 ? 31 : d) + 1.007 * log(min(cnt, 31)) + 0.047;
-            Reduction[d][cnt] = max(0, r);
-        }
+        for (int cnt = 1; cnt < MAX_MOVES; cnt++)
+            Reduction[d][cnt] = 0.4 * log(d > 31 ? 31 : d) + 1.057 * log(min(cnt, 31)) + 0.047;
 }
 
 static const int Tempo = 17;
