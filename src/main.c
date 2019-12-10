@@ -60,7 +60,7 @@ void test(bool perft, int depth)
     }
 
     if (dbgCnt[0] || dbgCnt[1])
-        fprintf(stderr, "dbgCnt[0] = %" PRId64 ", dbgCnt[1] = %" PRId64 "\n", dbgCnt[0], dbgCnt[1]);
+        printf("dbgCnt[0] = %" PRId64 ", dbgCnt[1] = %" PRId64 "\n", dbgCnt[0], dbgCnt[1]);
 
     const int64_t elapsed = system_msec() - start;
 
