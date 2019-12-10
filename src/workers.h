@@ -19,7 +19,7 @@ typedef struct {
     PawnEntry pawnHash[NB_PAWN_HASH];
     int16_t history[NB_COLOR][NB_SQUARE][NB_SQUARE];
     int16_t refutationHistory[NB_REFUTATION][NB_PIECE][NB_SQUARE];
-    int16_t followUpHistory[NB_REFUTATION][NB_PIECE][NB_SQUARE];
+    int16_t followUpHistory[NB_FOLLOW_UP][NB_PIECE][NB_SQUARE];
     Stack stack;
     jmp_buf jbuf;
     int64_t nodes;
