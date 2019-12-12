@@ -74,7 +74,7 @@ void sort_score(Worker *worker, Sort *sort, const Position *pos, move_t ttMove)
 
 void history_update(int16_t *t, int16_t bonus)
 {
-    *t += 32 * bonus - *t * abs(bonus) / 512;
+    *t += 32 * bonus - *t * abs(bonus) / 256;
 
     if (*t > HISTORY_MAX)
         *t = HISTORY_MAX;
