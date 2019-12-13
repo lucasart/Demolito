@@ -72,14 +72,17 @@ void sort_score(Worker *worker, Sort *sort, const Position *pos, move_t ttMove)
     }
 }
 
-void history_update(int16_t *t, int16_t bonus)
+void history_update(int16_t *t, int bonus)
 {
-    *t += 32 * bonus - *t * abs(bonus) / 256;
+    // Do all calculations on 32-bit, and only convert back to 16-bits once we are certain that
+    // there can be no overflow (signed int overflow is undefined in C).
+    int v = *t;
 
-    if (*t > HISTORY_MAX)
-        *t = HISTORY_MAX;
-    else if (*t < -HISTORY_MAX)
-        *t = -HISTORY_MAX;
+    v += 32 * bonus - v * abs(bonus) / 256;
+    v = min(v, HISTORY_MAX);  // cap
+    v = max(v, -HISTORY_MAX);  // floor
+
+    *t = v;
 }
 
 void sort_init(Worker *worker, Sort *sort, const Position *pos, int depth, move_t ttMove)

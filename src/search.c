@@ -452,7 +452,7 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
         const size_t fuhIdx = stack_move_key(&worker->stack, 1) % NB_FOLLOW_UP;
 
         for (int i = 0; i < quietSearchedCnt; i++) {
-            const int16_t bonus = quietSearched[i] == bestMove ? depth * depth : -1 - depth * depth / 2;
+            const int bonus = quietSearched[i] == bestMove ? depth * depth : -1 - depth * depth / 2;
             const move_t m = quietSearched[i];
             const int from = move_from(m), to = move_to(m);
 

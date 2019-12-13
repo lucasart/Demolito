@@ -2,7 +2,7 @@
 #include "gen.h"
 #include "workers.h"
 
-void history_update(int16_t *t, int16_t bonus);
+void history_update(int16_t *t, int bonus);
 
 typedef struct {
     move_t moves[MAX_MOVES];
