@@ -188,7 +188,6 @@ static int qsearch(Worker *worker, const Position *pos, int ply, int depth, int 
 
     // HT write
     he.bound = bestScore <= oldAlpha ? UBOUND : bestScore >= beta ? LBOUND : EXACT;
-    he.singular = 0;
     he.score = bestScore;
     he.eval = pos->checkers ? -MATE : staticEval;
     he.depth = 0;
@@ -309,7 +308,6 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
 
     const bitboard_t pins = calc_pins(pos);
     int moveCount = 0, lmrCount = 0;
-    bool hashMoveWasSingular = false;
     move_t quietSearched[MAX_MOVES];
     int quietSearchedCnt = 0;
 
@@ -350,21 +348,13 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
         int ext = 0;
 
         if (currentMove == he.move && ply > 0 && depth >= 6 && he.bound <= EXACT && he.depth >= depth - 4) {
-            // See if the Hash Move is Singular, and should be extended
-            // Try to retrieve from HT first
-            ext = he.depth >= depth && he.singular;
+            // Singular Extension Search
+            const int lbound = he.score - 2 * depth;
 
-            if (!ext) {
-                // Otherwise do a Singular Extension Search
-                const int lbound = he.score - 2 * depth;
-
-                if (abs(lbound) < MATE) {
-                    score = search(worker, pos, ply, depth - 4, lbound, lbound + 1, childPv, currentMove);
-                    ext = score <= lbound;
-                }
+            if (abs(lbound) < MATE) {
+                score = search(worker, pos, ply, depth - 4, lbound, lbound + 1, childPv, currentMove);
+                ext = score <= lbound;
             }
-
-            hashMoveWasSingular = ext;
         } else
             // Check extension
             ext = see >= 0 && nextPos.checkers;
@@ -464,7 +454,6 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
 
     // HT write
     he.bound = bestScore <= oldAlpha ? UBOUND : bestScore >= beta ? LBOUND : EXACT;
-    he.singular = hashMoveWasSingular;
     he.score = bestScore;
     he.eval = pos->checkers ? -MATE : staticEval;
     he.depth = depth;
