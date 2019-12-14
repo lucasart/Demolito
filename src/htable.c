@@ -72,7 +72,6 @@ bool hash_read(uint64_t key, HashEntry *e, int ply)
         return true;
     }
 
-    e->data = 0;
     return false;
 }
 

@@ -92,8 +92,10 @@ static int qsearch(Worker *worker, const Position *pos, int ply, int depth, int 
         if ((he.score > refinedEval && he.bound <= EXACT)
                 || (he.score < refinedEval && he.bound >= EXACT))
             refinedEval = he.score;
-    } else
+    } else {
+        he.data = 0;  // invalidate hash entry
         refinedEval = staticEval = pos->checkers ? -MATE : evaluate(worker, pos) + Tempo;
+    }
 
     worker->nodes++;
 
@@ -250,8 +252,10 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
         if ((he.score > refinedEval && he.bound <= EXACT)
                 || (he.score < refinedEval && he.bound >= EXACT))
             refinedEval = he.score;
-    } else
+    } else {
+        he.data = 0;
         refinedEval = staticEval = pos->checkers ? -MATE : evaluate(worker, pos) + Tempo;
+    }
 
     // At Root, ensure that the last best move is searched first. This is not guaranteed,
     // as the HT entry could have got overriden by other search threads.
