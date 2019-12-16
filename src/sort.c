@@ -78,7 +78,7 @@ void history_update(int16_t *t, int bonus)
     // there can be no overflow (signed int overflow is undefined in C).
     int v = *t;
 
-    v += 32 * bonus - v * abs(bonus) / 256;
+    v += 32 * bonus - v * abs(bonus) / 128;
     v = min(v, HISTORY_MAX);  // cap
     v = max(v, -HISTORY_MAX);  // floor
 
