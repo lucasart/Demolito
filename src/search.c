@@ -273,7 +273,7 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
         return refinedEval;
 
     // Razoring
-    if (depth <= 5 && !pos->checkers && !pvNode) {
+    if (depth <= 5 && !pos->checkers && !singularMove && !pvNode) {
         const int lbound = alpha - RazorMargin[depth];
 
         if (refinedEval <= lbound) {
