@@ -19,8 +19,7 @@ int mated_in(int ply);
 int mate_in(int ply);
 bool is_mate_score(int score);
 
-extern atomic_uint_fast64_t Signal;
-enum {STOP = (uint_fast64_t)(-1)};
+extern atomic_bool Stop;  // set this to true to stop the search
 
 extern Position rootPos;
 extern Stack rootStack;

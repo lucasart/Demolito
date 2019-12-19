@@ -31,8 +31,7 @@ Limits lim;
 // Protect thread scheduling decisions
 static mtx_t mtxSchedule;
 
-atomic_uint_fast64_t Signal;  // bit #i is set if thread #i should abort
-enum {ABORT_ONE = 1, ABORT_ALL};  // exceptions: abort current or all threads
+atomic_bool Stop;  // Stop signal raised by timer or master thread, and observed by workers
 
 int Contempt = 10;
 
@@ -221,14 +220,8 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
     int score;
     Position nextPos;
 
-    const uint64_t tmp = atomic_load_explicit(&Signal, memory_order_relaxed);
-
-    if (tmp) {
-        if (tmp == STOP)
-            longjmp(worker->jbuf, ABORT_ALL);
-        else if (tmp & (1ULL << worker->id))
-            longjmp(worker->jbuf, ABORT_ONE);
-    }
+    if (atomic_load_explicit(&Stop, memory_order_relaxed))
+        longjmp(worker->jbuf, 1);
 
     // Allocate PV for the child node, and terminate current PV
     move_t childPv[MAX_PLY - ply];
@@ -500,11 +493,10 @@ static void iterate(Worker *worker)
     for (volatile int depth = 1; depth <= lim.depth; depth++) {
         mtx_lock(&mtxSchedule);
 
-        if (Signal == STOP) {
+        if (Stop) {
             mtx_unlock(&mtxSchedule);
             return;
-        } else
-            Signal &= ~(1ULL << worker->id);
+        }
 
         // If half of the threads are searching >= depth, then move to the next depth.
         // Special cases where this does not apply:
@@ -525,32 +517,11 @@ static void iterate(Worker *worker)
         worker->depth = depth;
         mtx_unlock(&mtxSchedule);
 
-        const int exception = setjmp(worker->jbuf);
-
-        if (exception == 0) {
+        if (!setjmp(worker->jbuf))
             score = aspirate(worker, depth, pv, score);
-
-            // Iteration was completed normally. Now we need to see who is working on
-            // obsolete iterations, and raise the appropriate Signal, to make them move
-            // on to the next depth.
-            mtx_lock(&mtxSchedule);
-            uint64_t abortMask = 0;
-
-            for (int i = 0; i < WorkersCount; i++)
-                if (worker != &Workers[i] && Workers[i].depth <= depth)
-                    abortMask |= 1ULL << i;
-
-            Signal |= abortMask;
-            mtx_unlock(&mtxSchedule);
-        } else {
+        else {
             worker->stack.idx = rootStack.idx;  // Restore stack position
-
-            if (exception == ABORT_ONE)
-                continue;
-            else {
-                assert(exception == ABORT_ALL);
-                break;
-            }
+            break;
         }
 
         info_update(&ui, depth, score, workers_nodes(), pv, false);
@@ -559,7 +530,7 @@ static void iterate(Worker *worker)
     // Max depth completed by current thread. All threads should stop. Unless we are in infinite
     // or pondering, in which case workers wait here, and the timer loop continues until stopped.
     if (!lim.infinite)
-        Signal = STOP;
+        Stop = true;
 }
 
 int mated_in(int ply)
@@ -584,7 +555,7 @@ int64_t search_go()
 
     info_create(&ui);
     mtx_init(&mtxSchedule, mtx_plain);
-    Signal = 0;
+    Stop = false;
 
     hashDate++;
     pthread_t threads[WorkersCount];
@@ -612,16 +583,16 @@ int64_t search_go()
         if (!lim.infinite && info_last_depth(&ui) > 0) {
             if ((lim.movetime && system_msec() - start >= lim.movetime - uciTimeBuffer)
                     || (lim.nodes && workers_nodes() >= lim.nodes))
-                Signal = STOP;
+                Stop = true;
             else if (lim.time || lim.inc) {
                 const double x = 1 / (1 + exp(-info_variability(&ui)));
                 const int64_t t = x * maxTime + (1 - x) * minTime;
 
                 if (system_msec() - start >= t)
-                    Signal = STOP;
+                    Stop = true;
             }
         }
-    } while (Signal != STOP);
+    } while (!Stop);
 
     for (int i = 0; i < WorkersCount; i++)
         pthread_join(threads[i], NULL);

@@ -185,7 +185,7 @@ void uci_loop()
             go(&linePos);
         else if (!strcmp(token, "stop")) {
             lim.infinite = false;
-            Signal = STOP;
+            Stop = true;
         } else if (!strcmp(token, "ponderhit"))
             lim.infinite = false;  // switch from pondering to normal search
         else if (!strcmp(token, "d"))
@@ -195,7 +195,7 @@ void uci_loop()
         else if (!strcmp(token, "perft"))
             perft(&linePos);
         else if (!strcmp(token, "quit")) {
-            Signal = STOP;
+            Stop = true;
             break;
         } else
             uci_printf("unknown command: %s\n", line);
