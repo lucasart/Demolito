@@ -351,7 +351,7 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
         // Search extension
         int ext = 0;
 
-        if (currentMove == he.move && ply > 0 && depth >= 6 && he.bound <= EXACT && he.depth >= depth - 4) {
+        if (currentMove == he.move && ply > 0 && depth >= 5 && he.bound <= EXACT && he.depth >= depth - 4) {
             // Singular Extension Search
             const int lbound = he.score - 2 * depth;
 
