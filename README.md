@@ -17,15 +17,15 @@ Windows binaries are automatically generated, courtesy of AppVeyor, and can be f
 branches are (mostly) elo-regressive experimental garbage.
 - go to Artifacts, where you can download the (compressed) binaries.
 
-The archine contains 3 `.exe` files, and here is how you know which one to use:
-- AMD: `popcnt` if it works, otherwise `no_popcnt` (very old machine).
-- Intel: `pext` if it works, otherwise `popcnt` (old machine), and if that still fails then `no_popcnt`
-(very old machine).
+The archive contains 3 `.exe` files, and this is how you choose:
+- AMD: use `popcnt` if it works, otherwise `no_popcnt` (very old machine).
+- Intel: use `pext` if it works, otherwise `popcnt` (old machine), and if that still fails then
+`no_popcnt` (very old machine).
 
 ### Playing level
 
-Easily stronger than best humans, yet still significantly below the top engines like Stockfish,
-Houdini or Komodo. Here are some independant rating lists:
+Demolito is easily stronger than best humans, yet still significantly below the top engines like
+Stockfish, Houdini or Komodo. Here are some independant rating lists:
 - [FGRL](http://fastgm.de/)
 - [CEGT](http://www.cegt.net/)
 - [CCRL](http://www.computerchess.org.uk/ccrl/)
@@ -35,7 +35,8 @@ Houdini or Komodo. Here are some independant rating lists:
 - **Contempt**: This is used to score draws by chess rules in the search. These rules are: 3-move
 repetition, 50 move rule, stalemate, and insufficient material. A positive value will avoid draws
 (best against weaker opponents), whereas a negative value will seek draws (best against a stronger opponent).
-- **Hash**: Size of the main hash table, in MB.
+- **Hash**: Size of the main hash table, in MB. Should be a power of two (if not Demolito will
+silently round it down to the nearest power of two).
 - **Time Buffer**: In milliseconds. Provides for extra time to compensate the lag between the UI and
 the Engine. The default value is just enough for high performance tools like cutechess-cli, but may
 not suffice for some slow and bloated GUIs that introduce artificial lag (and even more so if
@@ -50,8 +51,7 @@ are not reproducible.
 
 ### What do you need ?
 
-You need:
-- clang, and/or gcc.
+- clang
 - make
 - git
 
@@ -64,20 +64,15 @@ cd Demolito/src
 make CC=clang pext  # for Intel Haswell+ only
 make CC=clang       # for AMD or older Intel
 ```
-You can use gcc instead of clang, but the program will be significantly slower (hence weaker).
+You can use gcc instead of clang, but Demolito will be significantly slower (hence weaker).
 
-### How to verify functional correctness ?
+### How to verify ?
 
 Run the following benchmark:
 ```
-./demolito bench
-```
-and check that the nodecount corresponds to the one indicated in commit title for the last functional change.
-
-### How to measure speed ?
-
-For speed measurement (in nodes/second), it is best to use:
-```
 ./demolito bench|tail -3
 ```
-because console output is very slow, and therefore pollutes the measure quite a lot.
+The `nodes` are a functional signature of the program. It must match exactly the one indicated in
+commit title for the last functional change, otherwise the compile is broken.
+
+The 'NPS' is a speed measure, in nodes per seconds.

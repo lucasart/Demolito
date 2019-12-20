@@ -313,7 +313,6 @@ void pos_get(const Position *pos, char *fen)
 // Play a move on a position copy (original 'before' is untouched): pos = before + play(m)
 void pos_move(Position *pos, const Position *before, move_t m)
 {
-    assert(move_ok(m));
     *pos = *before;
 
     pos->rule50++;

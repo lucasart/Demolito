@@ -19,13 +19,6 @@
 #include "position.h"
 #include "uci.h"
 
-bool move_ok(move_t m)
-{
-    const int from = move_from(m), to = move_to(m), prom = move_prom(m);
-    return bb_test(RookPseudoAttacks[from] | BishopPseudoAttacks[from] | KnightAttacks[from], to)
-        && from != to && ((unsigned)prom <= QUEEN || prom == NB_PIECE);
-}
-
 int move_from(move_t m)
 {
     return m & 077;
@@ -38,22 +31,23 @@ int move_to(move_t m)
 
 int move_prom(move_t m)
 {
-    return m >> 12;
+    const unsigned prom = m >> 12;
+    assert(prom <= QUEEN || prom == NB_PIECE);
+    return prom;
 }
 
 move_t move_build(int from, int to, int prom)
 {
-    move_t m = from | (to << 6) | (prom << 12);
-    assert(move_ok(m));
-    return m;
+    BOUNDS(from, NB_SQUARE);
+    BOUNDS(to, NB_SQUARE);
+    assert((unsigned)prom <= QUEEN || prom == NB_PIECE);
+    return from | (to << 6) | (prom << 12);
 }
 
 bool move_is_capture(const Position *pos, move_t m)
 {
-    assert(move_ok(m));
-    const int us = pos->turn, them = opposite(us);
     const int from = move_from(m), to = move_to(m);
-    return bb_test(pos->byColor[them], to)
+    return bb_test(pos->byColor[opposite(pos->turn)], to)
         || (pos_piece_on(pos, from) == PAWN && (to == pos->epSquare || move_prom(m) < NB_PIECE));
 }
 
@@ -64,7 +58,6 @@ bool move_is_castling(const Position *pos, move_t m)
 
 void move_to_string(const Position *pos, move_t m, char *str)
 {
-    assert(move_ok(m));
     const int from = move_from(m), to = move_to(m), prom = move_prom(m);
 
     if (!(from | to | prom)) {
@@ -105,7 +98,6 @@ int move_see(const Position *pos, move_t m)
 {
     static const int seeValue[NB_PIECE + 1] = {N, B, R, Q, 10*Q, P, 0};
 
-    assert(move_ok(m));
     const int from = move_from(m), to = move_to(m), prom = move_prom(m);
     int us = pos->turn;
     bitboard_t occ = pos_pieces(pos);
