@@ -12,13 +12,10 @@ build_script:
   - make -f ./official no_popcnt CC="clang --target=x86_64-w64-mingw32 -fuse-ld=lld" EXE=demolito_no_popcnt.exe
   - make -f ./official popcnt CC="clang --target=x86_64-w64-mingw32 -fuse-ld=lld" EXE=demolito_popcnt.exe
   - make -f ./official pext CC="clang --target=x86_64-w64-mingw32 -fuse-ld=lld" EXE=demolito_pext.exe
-
-  - 7z a demolito_no_popcnt demolito_no_popcnt.exe src\ official license Readme.md
-  - 7z a demolito_popcnt demolito_popcnt.exe src\ official license Readme.md
-  - 7z a demolito_pext demolito_pext.exe src\ official license Readme.md
+  - 7z a demolito demolito_pext.exe demolito_popcnt.exe demolito_no_popcnt.exe src\ official license Readme.md
 
 test: off
 deploy: off
 
 artifacts:
-  - path: '*.7z'
+  - path: 'demolito.7z'

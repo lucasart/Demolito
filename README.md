@@ -1,41 +1,83 @@
 ## Demolito
 
-Demolito is a [UCI](http://www.shredderchess.com/chess-info/features/uci-universal-chess-interface.html) chess
-engine written in C. As such, it is a command line program, which is not designed to be used directly, but
-instead through an UCI capable GUI, such as [CuteChess](http://github.com/cutechess/cutechess.git) or
-[Lucas Chess](https://github.com/lukasmonk/lucaschess).
+Demolito is a [UCI](http://www.shredderchess.com/chess-info/features/uci-universal-chess-interface.html)
+chess engine written in [C](https://en.wikipedia.org/wiki/C_(programming_language)). As such, it is
+a command line program, which is not designed to be used directly, but instead through an UCI capable
+UI, such as [CuteChess](http://github.com/cutechess/cutechess.git) or [Banksia](https://banksiagui.com/).
 
 ### Versions
 
-The version number is simply the ISO date of the last commit (ie. YYYY-MM-DD). From time to time, I publish some binaries.
-[Here](https://open-chess.org/viewtopic.php?f=7&t=3069&start=20) are the latest ones. If you really want the newest
-possible one, you'll need to compile yourself (see below).
+Version numbers are automatically generated to be the ISO date of the last commit (ie. YYYY-MM-DD).
 
-### Engine Strength
-Stronger than you, even if you are a GM. But nowhere near the top engines like Stockfish, Houdini, or Komodo.
+### Windows binaries
+
+Windows binaries are automatically generated, courtesy of AppVeyor, and can be found
+[here](https://ci.appveyor.com/project/lucasart/demolito/history):
+- select the latest corresponding to the `master` branch. Be sure to choose master because other
+branches are (mostly) elo-regressive experimental garbage.
+- go to Artifacts, where you can download the (compressed) binaries.
+
+The archine contains 3 `.exe` files, and here is how you know which one to use:
+- AMD: `popcnt` if it works, otherwise `no_popcnt` (very old machine).
+- Intel: `pext` if it works, otherwise `popcnt` (old machine), and if that still fails then `no_popcnt`
+(very old machine).
+
+### Playing level
+
+Easily stronger than best humans, yet still significantly below the top engines like Stockfish,
+Houdini or Komodo. Here are some independant rating lists:
 - [FGRL](http://fastgm.de/)
 - [CEGT](http://www.cegt.net/)
 - [CCRL](http://www.computerchess.org.uk/ccrl/)
 
-### Compilation
-Using GCC on Linux, type: `make`. Otherwise, just have a look at the makefile, nothing fancy there.
-You should also be able to compile it on any platform (POSIX or Windows), using a C11 capable
-compiler (eg. GCC or Clang but not MSVC). But you'll have to figure out the exact commands for
-yourself, depending on your compiler, your libc, and your system. No spoon feeding here.
+### UCI Options
 
-To validate that you compiled it correctly, you should run the following benchmark:
+- **Contempt**: This is used to score draws by chess rules in the search. These rules are: 3-move
+repetition, 50 move rule, stalemate, and insufficient material. A positive value will avoid draws
+(best against weaker opponents), whereas a negative value will seek draws (best against a stronger opponent).
+- **Hash**: Size of the main hash table, in MB.
+- **Time Buffer**: In milliseconds. Provides for extra time to compensate the lag between the UI and
+the Engine. The default value is just enough for high performance tools like cutechess-cli, but may
+not suffice for some slow and bloated GUIs that introduce artificial lag (and even more so if
+playing over a network).
+- **Threads**: Number of threads to use for SMP search (default 1 = single threaded search). Please
+note that SMP search is, by design, non-deterministic. So it is not a bug that SMP search results
+are not reproducible.
+- **UCI_Chess960**: enable/disable Chess960 castling rules. Demolito accepts either Shredder-FEN
+(AHah) or X-FEN (KQkq) notations.
+
+## Compilation
+
+### What do you need ?
+
+You need:
+- clang, and/or gcc.
+- make
+- git
+
+### How to compile ?
+
+In a terminal:
 ```
-./demolito search 12
+git clone https://github.com/lucasart/Demolito.git
+cd Demolito/src
+make CC=clang pext  # for Intel Haswell+ only
+make CC=clang       # for AMD or older Intel
+```
+You can use gcc instead of clang, but the program will be significantly slower (hence weaker).
+
+### How to verify functional correctness ?
+
+Run the following benchmark:
+```
+./demolito bench
 ```
 and check that the nodecount corresponds to the one indicated in commit title for the last functional change.
 
-### UCI Options
-- **Contempt**: This is used to score draws by chess rules (such as repetition) in the search. A positive value will
-avoid draws, and a negative value will seek them.
-- **Hash**: Size of the main hash table, in MB.
-- **Time Buffer**: In milliseconds. Provides for extra time to compensate the lag between the UI and the Engine. The
-default value is probably too low for most GUIs, and only suitable for high performance tools like cutechess-cli.
-- **Threads**: Number of threads to use for SMP search (default 1 = single threaded search). Please note that SMP search
-is, by nature, non-deterministic (ie. it's not a bug that SMP search results are not reproducible).
-- **UCI_Chess960**: enable/disable Chess960 castling rules. Demolito accepts either Shredder-FEN (AHah) or X-FEN (KQkq)
-notations for castling.
+### How to measure speed ?
+
+For speed measurement (in nodes/second), it is best to use:
+```
+./demolito bench|tail -3
+```
+because console output is very slow, and therefore pollutes the measure quite a lot.
