@@ -491,17 +491,12 @@ static void iterate(Worker *worker)
     int volatile score = 0;
 
     for (volatile int depth = 1; depth <= lim.depth; depth++) {
-        mtx_lock(&mtxSchedule);
-
-        if (Stop) {
-            mtx_unlock(&mtxSchedule);
-            return;
-        }
-
         // If half of the threads are searching >= depth, then move to the next depth.
         // Special cases where this does not apply:
         // depth == 1: we want all threads to finish depth == 1 asap.
         // depth == lim.depth: there is no next depth.
+        mtx_lock(&mtxSchedule);
+
         if (WorkersCount >= 2 && depth >= 2 && depth < lim.depth) {
             int cnt = 0;
 
@@ -583,16 +578,16 @@ int64_t search_go()
         if (!lim.infinite && info_last_depth(&ui) > 0) {
             if ((lim.movetime && system_msec() - start >= lim.movetime - uciTimeBuffer)
                     || (lim.nodes && workers_nodes() >= lim.nodes))
-                Stop = true;
+                atomic_store_explicit(&Stop, true, memory_order_release);
             else if (lim.time || lim.inc) {
                 const double x = 1 / (1 + exp(-info_variability(&ui)));
                 const int64_t t = x * maxTime + (1 - x) * minTime;
 
                 if (system_msec() - start >= t)
-                    Stop = true;
+                    atomic_store_explicit(&Stop, true, memory_order_release);
             }
         }
-    } while (!Stop);
+    } while (!atomic_load_explicit(&Stop, memory_order_acquire));
 
     for (int i = 0; i < WorkersCount; i++)
         pthread_join(threads[i], NULL);
