@@ -140,8 +140,9 @@ int opposite(int color)
 
 int push_inc(int color)
 {
+    static const int PushInc[NB_COLOR] = {UP, DOWN};
     BOUNDS(color, NB_COLOR);
-    return color == WHITE ? UP : DOWN;
+    return PushInc[color];
 }
 
 int square_from(int rank, int file)
