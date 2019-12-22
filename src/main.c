@@ -71,8 +71,6 @@ void test(bool perft, int depth)
 
 int main(int argc, char **argv)
 {
-    bb_init();
-    pos_init();
     pst_init();
     eval_init();
     search_init();
@@ -96,7 +94,4 @@ int main(int argc, char **argv)
         hash_prepare(uciHash);
         uci_loop();
     }
-
-    free(HashTable);
-    workers_destroy();
 }

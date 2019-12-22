@@ -47,6 +47,11 @@ static int score_from_hash(int hashScore, int ply)
     return hashScore;
 }
 
+static __attribute__((destructor)) void hash_free()
+{
+    free(HashTable);
+}
+
 void hash_prepare(uint64_t hashMB)
 {
     assert(bb_count(hashMB) == 1);  // must be a power of 2

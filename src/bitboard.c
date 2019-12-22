@@ -130,54 +130,7 @@ static void init_slider_attacks(int square, bitboard_t mask[NB_SQUARE],
     } while (occ);
 }
 
-int64_t dbgCnt[2] = {0, 0};
-
-int opposite(int color)
-{
-    BOUNDS(color, NB_COLOR);
-    return color ^ BLACK;
-}
-
-int push_inc(int color)
-{
-    static const int PushInc[NB_COLOR] = {UP, DOWN};
-    BOUNDS(color, NB_COLOR);
-    return PushInc[color];
-}
-
-int square_from(int rank, int file)
-{
-    BOUNDS(rank, NB_RANK);
-    BOUNDS(file, NB_FILE);
-    return NB_FILE * rank + file;
-}
-
-int rank_of(int square)
-{
-    BOUNDS(square, NB_SQUARE);
-    return square / NB_FILE;
-}
-
-int file_of(int square)
-{
-    BOUNDS(square, NB_SQUARE);
-    return square % NB_FILE;
-}
-
-int relative_rank(int color, int rank)
-{
-    BOUNDS(color, NB_COLOR);
-    BOUNDS(rank, NB_RANK);
-    return rank ^ (7 * color);
-}
-
-int relative_rank_of(int color, int square)
-{
-    BOUNDS(square, NB_SQUARE);
-    return relative_rank(color, rank_of(square));
-}
-
-void bb_init()
+static __attribute__((constructor)) void bb_init()
 {
     static const int PawnDir[2][2] = {{1,-1}, {1,1}};
     static const int KnightDir[8][2] = {{-2,-1}, {-2,1}, {-1,-2}, {-1,2}, {1,-2}, {1,2}, {2,-1}, {2,1}};
@@ -237,6 +190,53 @@ void bb_init()
         BishopPseudoAttacks[square] = BishopAttacks[square][0];
         RookPseudoAttacks[square] = RookAttacks[square][0];
     }
+}
+
+int64_t dbgCnt[2] = {0, 0};
+
+int opposite(int color)
+{
+    BOUNDS(color, NB_COLOR);
+    return color ^ BLACK;
+}
+
+int push_inc(int color)
+{
+    static const int PushInc[NB_COLOR] = {UP, DOWN};
+    BOUNDS(color, NB_COLOR);
+    return PushInc[color];
+}
+
+int square_from(int rank, int file)
+{
+    BOUNDS(rank, NB_RANK);
+    BOUNDS(file, NB_FILE);
+    return NB_FILE * rank + file;
+}
+
+int rank_of(int square)
+{
+    BOUNDS(square, NB_SQUARE);
+    return square / NB_FILE;
+}
+
+int file_of(int square)
+{
+    BOUNDS(square, NB_SQUARE);
+    return square % NB_FILE;
+}
+
+int relative_rank(int color, int rank)
+{
+    BOUNDS(color, NB_COLOR);
+    BOUNDS(rank, NB_RANK);
+    return rank ^ (7 * color);
+}
+
+int relative_rank_of(int color, int square)
+{
+    BOUNDS(square, NB_SQUARE);
+    return relative_rank(color, rank_of(square));
 }
 
 bitboard_t bb_bishop_attacks(int square, bitboard_t occ)

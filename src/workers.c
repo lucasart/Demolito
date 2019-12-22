@@ -21,6 +21,11 @@
 Worker *Workers = NULL;
 int WorkersCount = 1;
 
+static void __attribute__((destructor)) workers_free()
+{
+    free(Workers);
+}
+
 void workers_clear()
 {
     for (int i = 0; i < WorkersCount; i++)
@@ -32,11 +37,6 @@ void workers_prepare(int count)
     Workers = realloc(Workers, count * sizeof(Worker));
     WorkersCount = count;
     workers_clear();
-}
-
-void workers_destroy()
-{
-    free(Workers);
 }
 
 void workers_new_search()

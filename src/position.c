@@ -139,6 +139,25 @@ static void finish(Position *pos)
         ? pos_attackers_to(pos, king, pos_pieces(pos)) & pos->byColor[them] : 0;
 }
 
+// Generate zobrist keys
+static __attribute__((constructor)) void pos_init()
+{
+    uint64_t state = 0;
+
+    for (int color = WHITE; color <= BLACK; color++)
+        for (int piece = KNIGHT; piece < NB_PIECE; piece++)
+            for (int square = A1; square <= H8; square++)
+                ZobristKey[color][piece][square] = prng(&state);
+
+    for (int square = A1; square <= H8; square++) {
+        ZobristCastling[square] = prng(&state);
+        ZobristEnPassant[square] = prng(&state);
+    }
+
+    ZobristEnPassant[NB_SQUARE] = prng(&state);
+    ZobristTurn = prng(&state);
+}
+
 const char *PieceLabel[NB_COLOR] = {"NBRQKP.", "nbrqkp."};
 
 void square_to_string(int square, char *str)
@@ -160,25 +179,6 @@ int string_to_square(const char *str)
     return *str != '-'
         ? square_from(str[1] - '1', str[0] - 'a')
         : NB_SQUARE;
-}
-
-// Initialize pre-calculated data used in this module
-void pos_init()
-{
-    uint64_t state = 0;
-
-    for (int color = WHITE; color <= BLACK; color++)
-        for (int piece = KNIGHT; piece < NB_PIECE; piece++)
-            for (int square = A1; square <= H8; square++)
-                ZobristKey[color][piece][square] = prng(&state);
-
-    for (int square = A1; square <= H8; square++) {
-        ZobristCastling[square] = prng(&state);
-        ZobristEnPassant[square] = prng(&state);
-    }
-
-    ZobristEnPassant[NB_SQUARE] = prng(&state);
-    ZobristTurn = prng(&state);
 }
 
 // Set position from FEN string

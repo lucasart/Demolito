@@ -32,7 +32,6 @@ extern int WorkersCount;
 
 void workers_clear();
 void workers_prepare(int count);  // realloc + clear
-void workers_destroy();
 
 void workers_new_search();
 int64_t workers_nodes();

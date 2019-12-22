@@ -28,8 +28,6 @@ extern const char *PieceLabel[NB_COLOR];
 void square_to_string(int square, char *str);
 int string_to_square(const char *str);
 
-void pos_init();
-
 void pos_set(Position *pos, const char *fen);
 void pos_get(const Position *pos, char *fen);
 

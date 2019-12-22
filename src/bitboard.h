@@ -39,8 +39,6 @@ int file_of(int square);
 int relative_rank(int color, int rank);
 int relative_rank_of(int color, int square);
 
-void bb_init();
-
 extern bitboard_t Rank[NB_RANK], File[NB_FILE];
 extern bitboard_t PawnAttacks[NB_COLOR][NB_SQUARE], KnightAttacks[NB_SQUARE], KingAttacks[NB_SQUARE];
 extern bitboard_t BishopPseudoAttacks[NB_SQUARE], RookPseudoAttacks[NB_SQUARE];
