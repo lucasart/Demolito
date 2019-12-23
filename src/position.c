@@ -20,22 +20,12 @@
 #include "bitboard.h"
 #include "move.h"
 #include "position.h"
+#include "util.h"
 
 static uint64_t ZobristKey[NB_COLOR][NB_PIECE][NB_SQUARE];
 static uint64_t ZobristCastling[NB_SQUARE];
 static uint64_t ZobristEnPassant[NB_SQUARE + 1];
 static uint64_t ZobristTurn;
-
-// SplitMix64 PRNG, by Sebastiano Vigna: http://xoroshiro.di.unimi.it/splitmix64.c
-static uint64_t prng(uint64_t *state)
-{
-    uint64_t rnd = (*state += 0x9E3779B97F4A7C15ULL);
-    rnd = (rnd ^ (rnd >> 30)) * 0xBF58476D1CE4E5B9ULL;
-    rnd = (rnd ^ (rnd >> 27)) * 0x94D049BB133111EBULL;
-    rnd ^= rnd >> 31;
-    assert(rnd);  // We cannot have a zero key for zobrist hashing. If it happens, change the seed.
-    return rnd;
-}
 
 // Combined zobrist mask of all castlable rooks
 static uint64_t zobrist_castling(bitboard_t castlableRooks)

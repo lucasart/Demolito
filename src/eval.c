@@ -18,6 +18,7 @@
 #include "bitboard.h"
 #include "eval.h"
 #include "position.h"
+#include "util.h"
 
 // Pre-calculated in eval_init()
 static bitboard_t PawnSpan[NB_COLOR][NB_SQUARE];
@@ -375,6 +376,12 @@ void eval_init()
             const int fileDist = abs(file_of(s1) - file_of(s2));
             KingDistance[s1][s2] = max(rankDist, fileDist);
         }
+
+    // Validate above calculations in debug mode
+    assert(hash(PawnSpan, sizeof PawnSpan) == 0xf37ce76e0d1d482d);
+    assert(hash(PawnPath, sizeof PawnPath) == 0x80b84ae07e7410bf);
+    assert(hash(AdjacentFiles, sizeof AdjacentFiles) == 0x911aee29d6082d4b);
+    assert(hash(KingDistance, sizeof KingDistance) == 0x1a7eaa139d03d9ca);
 
     for (int i = 0; i < 4096; i++) {
         const int x = pow((double)i, 1.062) + 0.5;
