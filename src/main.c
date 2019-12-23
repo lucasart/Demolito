@@ -13,7 +13,6 @@
  * You should have received a copy of the GNU General Public License along with this program. If
  * not, see <http://www.gnu.org/licenses/>.
 */
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "bitboard.h"
@@ -22,7 +21,6 @@
 #include "htable.h"
 #include "platform.h"
 #include "position.h"
-#include "pst.h"
 #include "search.h"
 #include "uci.h"
 #include "workers.h"
@@ -71,7 +69,6 @@ void test(bool perft, int depth)
 
 int main(int argc, char **argv)
 {
-    pst_init();
     eval_init();
     search_init();
 

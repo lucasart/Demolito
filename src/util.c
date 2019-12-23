@@ -1,13 +1,27 @@
+/*
+ * Demolito, a UCI chess engine.
+ * Copyright 2015 lucasart.
+ *
+ * Demolito is free software: you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License as published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * Demolito is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with this program. If
+ * not, see <http://www.gnu.org/licenses/>.
+*/
 #include <assert.h>
 #include "util.h"
 
-// Hash function I "invented", or rather derived from SplitMix64. Known limitations:
-// - alignment: 'buffer' can be of any 'length', but must be 8-byte aligned.
+// Simple hash function I derived from SplitMix64. Known limitations:
+// - alignment: 'buffer' must be 8-byte aligned.
 // - length: must be a multiple of 8 bytes.
-// - endianness: naively processes 8-byte blocks without caring for endianness.
-// - seedless: you can use a seed argument as initial value for seed variable if needed.
-// - not cryptographically secure.
-// All the above limitations could easily be adressed, but there is no need for now.
+// - endianness: big endian is long dead, who cares?
+// - seedless: no seed argument.
+// All these limitations could easily be lifted, but it's overkill in Demolito.
 uint64_t hash(const void *buffer, size_t length)
 {
     assert((uintptr_t)buffer % 8 == 0 && length % 8 == 0);
@@ -29,6 +43,5 @@ uint64_t prng(uint64_t *state)
     rnd = (rnd ^ (rnd >> 30)) * 0xBF58476D1CE4E5B9;
     rnd = (rnd ^ (rnd >> 27)) * 0x94D049BB133111EB;
     rnd ^= rnd >> 31;
-    assert(rnd);  // We cannot have a zero key for zobrist hashing. If it happens, change the seed.
     return rnd;
 }

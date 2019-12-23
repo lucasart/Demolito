@@ -94,7 +94,7 @@ void eval_sub(eval_t *e1, eval_t e2)
     e1->eg -= e2.eg;
 }
 
-void pst_init()
+void __attribute__((constructor)) pst_init()
 {
     for (int color = WHITE; color <= BLACK; color++)
         for (int piece = KNIGHT; piece < NB_PIECE; piece++)

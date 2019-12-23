@@ -13,7 +13,6 @@
  * You should have received a copy of the GNU General Public License along with this program. If
  * not, see <http://www.gnu.org/licenses/>.
 */
-#include <stdio.h>
 #include "bitboard.h"
 #include "util.h"
 
@@ -218,53 +217,6 @@ static __attribute__((constructor)) void bb_init()
 
     // TODO: rewrite BishopAttacks and RookAttacks as offsets instead of pointers, so they can be
     // validated as well.
-}
-
-int64_t dbgCnt[2] = {0, 0};
-
-int opposite(int color)
-{
-    BOUNDS(color, NB_COLOR);
-    return color ^ BLACK;
-}
-
-int push_inc(int color)
-{
-    static const int PushInc[NB_COLOR] = {UP, DOWN};
-    BOUNDS(color, NB_COLOR);
-    return PushInc[color];
-}
-
-int square_from(int rank, int file)
-{
-    BOUNDS(rank, NB_RANK);
-    BOUNDS(file, NB_FILE);
-    return NB_FILE * rank + file;
-}
-
-int rank_of(int square)
-{
-    BOUNDS(square, NB_SQUARE);
-    return square / NB_FILE;
-}
-
-int file_of(int square)
-{
-    BOUNDS(square, NB_SQUARE);
-    return square % NB_FILE;
-}
-
-int relative_rank(int color, int rank)
-{
-    BOUNDS(color, NB_COLOR);
-    BOUNDS(rank, NB_RANK);
-    return rank ^ (7 * color);
-}
-
-int relative_rank_of(int color, int square)
-{
-    BOUNDS(square, NB_SQUARE);
-    return relative_rank(color, rank_of(square));
 }
 
 bitboard_t bb_bishop_attacks(int square, bitboard_t occ)
