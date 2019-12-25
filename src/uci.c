@@ -48,7 +48,7 @@ static void intro()
     uci_printf("option name Contempt type spin default %d min -100 max 100\n", Contempt);
     uci_printf("option name Hash type spin default %" PRIu64 " min 1 max 1048576\n", uciHash);
     uci_puts("option name Ponder type check default false");
-    uci_printf("option name Threads type spin default %d min 1 max 63\n", WorkersCount);
+    uci_printf("option name Threads type spin default %d min 1 max 256\n", WorkersCount);
     uci_printf("option name Time Buffer type spin default %" PRId64 " min 0 max 1000\n", uciTimeBuffer);
     uci_printf("option name UCI_Chess960 type check default %s\n", uciChess960 ? "true" : "false");
     uci_puts("uciok");
