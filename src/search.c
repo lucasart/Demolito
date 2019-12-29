@@ -281,9 +281,11 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
     }
 
     // Null search
-    if (depth >= 2 && !pvNode
+    if (depth >= 2 && !pvNode && !pos->checkers
             && staticEval >= beta && pos->pieceMaterial[us].eg) {
-        assert(!pos->checkers);
+        // Note that staticEval >= beta should exclude the case where we are in check (eval() cannot be called in
+        // check and a value -MATE is assigned). But with HT races or even HT collisions in single threaded case,
+        // one cannot make any assumptions on HT data.
         const int nextDepth = depth - (3 + depth / 4) - (refinedEval >= beta + 167);
 
         pos_switch(&nextPos, pos);
