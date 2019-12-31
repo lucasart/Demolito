@@ -24,7 +24,7 @@
 static uint64_t ZobristKey[NB_COLOR][NB_PIECE][NB_SQUARE];
 static uint64_t ZobristCastling[NB_SQUARE];
 static uint64_t ZobristEnPassant[NB_SQUARE + 1];
-static uint64_t ZobristTurn;
+uint64_t ZobristTurn;
 
 // Combined zobrist mask of all castlable rooks
 static uint64_t zobrist_castling(bitboard_t castlableRooks)

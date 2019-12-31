@@ -2,6 +2,7 @@
 #include <setjmp.h>
 #include "bitboard.h"
 #include "stack.h"
+#include "search.h"
 
 enum {
     NB_PAWN_HASH = 16384,
@@ -23,6 +24,7 @@ typedef struct {
     Stack stack;
     jmp_buf jbuf;
     int64_t nodes;
+    int eval[MAX_PLY];
     int depth;
     int id;
 } Worker;

@@ -77,7 +77,7 @@ static int qsearch(Worker *worker, const Position *pos, int ply, int depth, int 
 
     // HT probe
     HashEntry he;
-    int staticEval, refinedEval;
+    int refinedEval;
 
     if (hash_read(pos->key, &he, ply)) {
         if (!pvNode && ((he.score <= alpha && he.bound >= EXACT)
@@ -86,14 +86,16 @@ static int qsearch(Worker *worker, const Position *pos, int ply, int depth, int 
             return he.score;
         }
 
-        refinedEval = staticEval = he.eval;
+        refinedEval = worker->eval[ply] = he.eval;
 
         if ((he.score > refinedEval && he.bound <= EXACT)
                 || (he.score < refinedEval && he.bound >= EXACT))
             refinedEval = he.score;
     } else {
         he.data = 0;  // invalidate hash entry
-        refinedEval = staticEval = pos->checkers ? -MATE : evaluate(worker, pos) + Tempo;
+        refinedEval = worker->eval[ply] = pos->checkers ? -MATE
+           : stack_move_key(&worker->stack, 0) == ZobristTurn ? -worker->eval[ply - 1] + 2 * Tempo
+           : evaluate(worker, pos) + Tempo;
     }
 
     worker->nodes++;
@@ -135,7 +137,7 @@ static int qsearch(Worker *worker, const Position *pos, int ply, int depth, int 
             continue;
 
         // SEE proxy tells us we're unlikely to beat alpha
-        if (!pos->checkers && staticEval + 97 <= alpha && see <= 0)
+        if (!pos->checkers && worker->eval[ply] + 97 <= alpha && see <= 0)
             continue;
 
         // Play move
@@ -147,7 +149,7 @@ static int qsearch(Worker *worker, const Position *pos, int ply, int depth, int 
 
         // Recursion (plain alpha/beta)
         if (depth <= MIN_DEPTH && !pos->checkers) {
-            score = staticEval + see;    // guard against QSearch explosion
+            score = worker->eval[ply] + see;  // guard against QSearch explosion
 
             if (pvNode)
                 childPv[0] = 0;
@@ -190,7 +192,7 @@ static int qsearch(Worker *worker, const Position *pos, int ply, int depth, int 
     // HT write
     he.bound = bestScore <= oldAlpha ? UBOUND : bestScore >= beta ? LBOUND : EXACT;
     he.score = bestScore;
-    he.eval = pos->checkers ? -MATE : staticEval;
+    he.eval = pos->checkers ? -MATE : worker->eval[ply];
     he.depth = 0;
     he.move = bestMove;
     hash_write(pos->key, &he, ply);
@@ -232,7 +234,7 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
 
     // HT probe
     HashEntry he;
-    int staticEval, refinedEval;
+    int refinedEval;
     const uint64_t key = pos->key ^ singularMove;
 
     if (hash_read(key, &he, ply)) {
@@ -240,14 +242,16 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
                 || (he.score >= beta && he.bound <= EXACT)))
             return he.score;
 
-        refinedEval = staticEval = he.eval;
+        refinedEval = worker->eval[ply] = he.eval;
 
         if ((he.score > refinedEval && he.bound <= EXACT)
                 || (he.score < refinedEval && he.bound >= EXACT))
             refinedEval = he.score;
     } else {
-        he.data = 0;
-        refinedEval = staticEval = pos->checkers ? -MATE : evaluate(worker, pos) + Tempo;
+        he.data = 0;  // invalidate hash entry
+        refinedEval = worker->eval[ply] = pos->checkers ? -MATE
+           : stack_move_key(&worker->stack, 0) == ZobristTurn ? -worker->eval[ply - 1] + 2 * Tempo
+           : evaluate(worker, pos) + Tempo;
     }
 
     // At Root, ensure that the last best move is searched first. This is not guaranteed,
@@ -282,10 +286,10 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
 
     // Null search
     if (depth >= 2 && !pvNode && !pos->checkers
-            && staticEval >= beta && pos->pieceMaterial[us].eg) {
-        // Note that staticEval >= beta should exclude the case where we are in check (eval() cannot be called in
-        // check and a value -MATE is assigned). But with HT races or even HT collisions in single threaded case,
-        // one cannot make any assumptions on HT data.
+            && worker->eval[ply] >= beta && pos->pieceMaterial[us].eg) {
+        // Normallw worker->eval[ply] >= beta excludes the in check case (eval is -MATE). But with
+        // HT collisions or races, HT data can't be trusted. Doing a null move in check crashes for
+        // obvious reasons, so it must be explicitely prevented.
         const int nextDepth = depth - (3 + depth / 4) - (refinedEval >= beta + 167);
 
         pos_switch(&nextPos, pos);
@@ -378,6 +382,10 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
                     assert(1 <= lmrCount && lmrCount <= MAX_MOVES);
                     reduction = Reduction[nextDepth][lmrCount];
 
+                    // Reduce more if eval is not improving since our last turn (grand parent node)
+                    if (ply >= 2 && worker->eval[ply] <= worker->eval[ply - 2])
+                        reduction++;
+
                     if (sort.scores[sort.idx - 1] >= 1024)
                         reduction = max(0, reduction - 1);
                 }
@@ -454,7 +462,7 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
     // HT write
     he.bound = bestScore <= oldAlpha ? UBOUND : bestScore >= beta ? LBOUND : EXACT;
     he.score = bestScore;
-    he.eval = pos->checkers ? -MATE : staticEval;
+    he.eval = pos->checkers ? -MATE : worker->eval[ply];
     he.depth = depth;
     he.move = bestMove;
     hash_write(key, &he, ply);
