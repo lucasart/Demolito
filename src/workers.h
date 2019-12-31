@@ -26,7 +26,6 @@ typedef struct {
     int64_t nodes;
     int eval[MAX_PLY];
     int depth;
-    int id;
 } Worker;
 
 extern Worker *Workers;

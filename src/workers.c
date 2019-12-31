@@ -45,7 +45,6 @@ void workers_new_search()
         Workers[i].stack = rootStack;
         Workers[i].nodes = 0;
         Workers[i].depth = 0;
-        Workers[i].id = i;
     }
 }
 
