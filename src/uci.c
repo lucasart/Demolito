@@ -247,12 +247,12 @@ void info_update(Info *info, int depth, int score, int64_t nodes, move_t pv[], b
 
         uci_puts("");
 
-        // Compensate for relative frequency of partial updates
-        const double smpRescaling[] = {1.0, pow(WorkersCount, -0.4)};
-
+        // Update variability depending on whether the bestmove has changed or is confirmed
+        // - changed: increase variability (rescale for %age of partial updates = f(threads))
+        // - confirmed: reduce variability (discard partial)
         info->variability += info->best != pv[0]
-            ? 0.6 * pow(WorkersCount, -0.08)  // best move changed: increase variability
-            : -0.24 * smpRescaling[partial];  // best move confirmed: lower variability
+            ? 0.6 * pow(WorkersCount, -0.08)
+            : -0.24 * !partial;
 
         if (!partial)
             info->lastDepth = depth;
