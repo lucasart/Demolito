@@ -70,9 +70,9 @@ You can use gcc instead of clang, but Demolito will be significantly slower (hen
 
 Run the following benchmark:
 ```
-./demolito bench|tail -3
+./demolito bench|tail -4
 ```
-The `nodes` are a functional signature of the program. It must match exactly the one indicated in
-commit title for the last functional change, otherwise the compile is broken.
+The `seal` is a functional signature of the program. It must match exactly the one indicated in the
+last commit message. Otherwise, Demolito was miscompiled.
 
-The 'NPS' is a speed measure, in nodes per seconds.
+The rest is obvious: nodes, time, nodes per seconds (speed benchmark).

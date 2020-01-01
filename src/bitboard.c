@@ -22,7 +22,7 @@
 
 bitboard_t Rank[NB_RANK], File[NB_FILE];
 bitboard_t PawnAttacks[NB_COLOR][NB_SQUARE], KnightAttacks[NB_SQUARE], KingAttacks[NB_SQUARE];
-bitboard_t BishopPseudoAttacks[NB_SQUARE], RookPseudoAttacks[NB_SQUARE];
+bitboard_t BishopRays[NB_SQUARE], RookRays[NB_SQUARE];
 bitboard_t Segment[NB_SQUARE][NB_SQUARE], Ray[NB_SQUARE][NB_SQUARE];
 
 static void safe_set_bit(bitboard_t *b, int rank, int file)
@@ -187,36 +187,33 @@ static __attribute__((constructor)) void bb_init()
         init_slider_attacks(square, BishopMask, BishopMagic, BishopShift, BishopAttacks, BishopDir);
         init_slider_attacks(square, RookMask, RookMagic, RookShift, RookAttacks, RookDir);
 
-        BishopPseudoAttacks[square] = BishopAttacks[square][0];
-        RookPseudoAttacks[square] = RookAttacks[square][0];
+        BishopRays[square] = BishopAttacks[square][0];
+        RookRays[square] = RookAttacks[square][0];
     }
 
     // Validate all the precalculated bitboards in debug mode
-    assert(hash(Rank, sizeof Rank) == 0x95f670a067ad6175);
-    assert(hash(File, sizeof File) == 0xf6e52aa37a4f5d09);
-    assert(hash(Ray, sizeof Ray) == 0x281f130e48e511a4);
-    assert(hash(Segment, sizeof Segment) == 0xeb806a23aa99e988);
-    assert(hash(KnightAttacks, sizeof KnightAttacks) == 0x10ab5841ae3a3c4e);
-    assert(hash(KingAttacks, sizeof KingAttacks) == 0xd209492892720e5b);
-    assert(hash(PawnAttacks, sizeof PawnAttacks) == 0x5570cebd9a3bbb1a);
-    assert(hash(BishopMask, sizeof BishopMask) == 0xbacf967ebeb62107);
-    assert(hash(RookMask, sizeof RookMask) == 0x962a289b1187a92d);
-    assert(hash(BishopMagic, sizeof BishopMagic) == 0xef24e1eb237246d1);
-    assert(hash(RookMagic, sizeof RookMagic) == 0x6d2a92d46ef0ecbc);
-    assert(hash(BishopShift, sizeof BishopShift) == 0x5fdd92372c411eea);
-    assert(hash(RookShift, sizeof RookShift) == 0xadceb33df45fc2cb);
+    assert(hash(Rank, sizeof Rank, 0) == 0x95f670a067ad6175);
+    assert(hash(File, sizeof File, 0) == 0xf6e52aa37a4f5d09);
+    assert(hash(Ray, sizeof Ray, 0) == 0x281f130e48e511a4);
+    assert(hash(Segment, sizeof Segment, 0) == 0xeb806a23aa99e988);
+    assert(hash(KnightAttacks, sizeof KnightAttacks, 0) == 0x10ab5841ae3a3c4e);
+    assert(hash(KingAttacks, sizeof KingAttacks, 0) == 0xd209492892720e5b);
+    assert(hash(PawnAttacks, sizeof PawnAttacks, 0) == 0x5570cebd9a3bbb1a);
+    assert(hash(BishopMask, sizeof BishopMask, 0) == 0xbacf967ebeb62107);
+    assert(hash(RookMask, sizeof RookMask, 0) == 0x962a289b1187a92d);
+    assert(hash(BishopMagic, sizeof BishopMagic, 0) == 0xef24e1eb237246d1);
+    assert(hash(RookMagic, sizeof RookMagic, 0) == 0x6d2a92d46ef0ecbc);
+    assert(hash(BishopShift, sizeof BishopShift, 0) == 0x5fdd92372c411eea);
+    assert(hash(RookShift, sizeof RookShift, 0) == 0xadceb33df45fc2cb);
 #ifdef PEXT
-    assert(hash(BishopDB, sizeof BishopDB) == 0xbbcc6c87463e22bd);
-    assert(hash(RookDB, sizeof RookDB) == 0xf35648b3c146eb7a);
+    assert(hash(BishopDB, sizeof BishopDB, 0) == 0xbbcc6c87463e22bd);
+    assert(hash(RookDB, sizeof RookDB, 0) == 0xf35648b3c146eb7a);
 #else
-    assert(hash(BishopDB, sizeof BishopDB) == 0x3ef1f0d07c261d52);
-    assert(hash(RookDB, sizeof RookDB) == 0xf3fa2f3754f1c608);
+    assert(hash(BishopDB, sizeof BishopDB, 0) == 0x3ef1f0d07c261d52);
+    assert(hash(RookDB, sizeof RookDB, 0) == 0xf3fa2f3754f1c608);
 #endif
-    assert(hash(BishopPseudoAttacks, sizeof BishopPseudoAttacks) == 0x9a095e90c4f6af4e);
-    assert(hash(RookPseudoAttacks, sizeof RookPseudoAttacks) == 0x5bff450923142ec1);
-
-    // TODO: rewrite BishopAttacks and RookAttacks as offsets instead of pointers, so they can be
-    // validated as well.
+    assert(hash(BishopRays, sizeof BishopRays, 0) == 0x9a095e90c4f6af4e);
+    assert(hash(RookRays, sizeof RookRays, 0) == 0x5bff450923142ec1);
 }
 
 bitboard_t bb_bishop_attacks(int square, bitboard_t occ)

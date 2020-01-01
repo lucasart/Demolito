@@ -21,7 +21,7 @@
 
 unsigned hashDate = 0;
 HashEntry *HashTable = NULL;
-static uint64_t HashCount = 0;
+uint64_t HashCount = 0;
 
 static int score_to_hash(int score, int ply)
 {

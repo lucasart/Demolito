@@ -203,8 +203,8 @@ static int safety(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_P
         }
 
     // X-Ray threats: sliding pieces with potential for pins or discovered checks
-    bitboard_t xrays = (BishopPseudoAttacks[king] & pos_pieces_cpp(pos, them, BISHOP, QUEEN))
-        | (RookPseudoAttacks[king] & pos_pieces_cpp(pos, them, ROOK, QUEEN));
+    bitboard_t xrays = (BishopRays[king] & pos_pieces_cpp(pos, them, BISHOP, QUEEN))
+        | (RookRays[king] & pos_pieces_cpp(pos, them, ROOK, QUEEN));
 
     while (xrays) {
         const int xray = bb_pop_lsb(&xrays);
@@ -305,7 +305,7 @@ static eval_t pawns(Worker *worker, const Position *pos, bitboard_t attacks[NB_C
 {
     static const int FreePasser[] = {16, 16, 43, 98};
 
-    const uint64_t key = pos->pawnKey;
+    const uint64_t key = pos->kingPawnKey;
     PawnEntry *pe = &worker->pawnHash[key % NB_PAWN_HASH];
     eval_t e;
 
@@ -378,10 +378,10 @@ void eval_init()
         }
 
     // Validate above calculations in debug mode
-    assert(hash(PawnSpan, sizeof PawnSpan) == 0xf37ce76e0d1d482d);
-    assert(hash(PawnPath, sizeof PawnPath) == 0x80b84ae07e7410bf);
-    assert(hash(AdjacentFiles, sizeof AdjacentFiles) == 0x911aee29d6082d4b);
-    assert(hash(KingDistance, sizeof KingDistance) == 0x1a7eaa139d03d9ca);
+    assert(hash(PawnSpan, sizeof PawnSpan, 0) == 0xf37ce76e0d1d482d);
+    assert(hash(PawnPath, sizeof PawnPath, 0) == 0x80b84ae07e7410bf);
+    assert(hash(AdjacentFiles, sizeof AdjacentFiles, 0) == 0x911aee29d6082d4b);
+    assert(hash(KingDistance, sizeof KingDistance, 0) == 0x1a7eaa139d03d9ca);
 
     for (int i = 0; i < 4096; i++) {
         const int x = pow((double)i, 1.062) + 0.5;

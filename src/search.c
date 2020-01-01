@@ -450,8 +450,7 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
 
         for (int i = 0; i < quietSearchedCnt; i++) {
             const int bonus = quietSearched[i] == bestMove ? depth * depth : -1 - depth * depth / 2;
-            const move_t m = quietSearched[i];
-            const int from = move_from(m), to = move_to(m);
+            const int from = move_from(quietSearched[i]), to = move_to(quietSearched[i]);
 
             history_update(&worker->history[us][from][to], bonus);
             history_update(&worker->refutationHistory[rhIdx][pos_piece_on(pos, from)][to], bonus);

@@ -20,14 +20,13 @@ int64_t dbgCnt[2] = {0, 0};
 int opposite(int color)
 {
     BOUNDS(color, NB_COLOR);
-    return color ^ BLACK;
+    return color ^ BLACK;  // branchless for: color == WHITE ? BLACK : WHITE
 }
 
 int push_inc(int color)
 {
-    static const int PushInc[NB_COLOR] = {UP, DOWN};
     BOUNDS(color, NB_COLOR);
-    return PushInc[color];
+    return UP - color * (UP - DOWN);  // branchless for: color == WHITE ? UP : DOWN
 }
 
 int square_from(int rank, int file)
@@ -53,7 +52,7 @@ int relative_rank(int color, int rank)
 {
     BOUNDS(color, NB_COLOR);
     BOUNDS(rank, NB_RANK);
-    return rank ^ (7 * color);
+    return rank ^ (RANK_8 * color);  // branchless for: color == WHITE ? rank : RANK_8 - rank
 }
 
 int relative_rank_of(int color, int square)

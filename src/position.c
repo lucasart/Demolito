@@ -63,7 +63,7 @@ static void clear_square(Position *pos, int color, int piece, int square)
     if (piece <= QUEEN)
         eval_sub(&pos->pieceMaterial[color], Material[piece]);
     else
-        pos->pawnKey ^= ZobristKey[color][piece][square];
+        pos->kingPawnKey ^= ZobristKey[color][piece][square];
 }
 
 // Put 'piece' of 'color' on 'square'. Square must be empty first.
@@ -82,7 +82,7 @@ static void set_square(Position *pos, int color, int piece, int square)
     if (piece <= QUEEN)
         eval_add(&pos->pieceMaterial[color], Material[piece]);
     else
-        pos->pawnKey ^= ZobristKey[color][piece][square];
+        pos->kingPawnKey ^= ZobristKey[color][piece][square];
 }
 
 // Squares attacked by pieces of 'color'
@@ -464,8 +464,8 @@ bitboard_t calc_pins(const Position *pos)
 {
     const int us = pos->turn, them = opposite(us);
     const int king = pos_king_square(pos, us);
-    bitboard_t pinners = (pos_pieces_cpp(pos, them, ROOK, QUEEN) & RookPseudoAttacks[king])
-        | (pos_pieces_cpp(pos, them, BISHOP, QUEEN) & BishopPseudoAttacks[king]);
+    bitboard_t pinners = (pos_pieces_cpp(pos, them, ROOK, QUEEN) & RookRays[king])
+        | (pos_pieces_cpp(pos, them, BISHOP, QUEEN) & BishopRays[king]);
     bitboard_t result = 0;
 
     while (pinners) {

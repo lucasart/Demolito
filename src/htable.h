@@ -5,8 +5,6 @@
 
 enum {LBOUND, EXACT, UBOUND};
 
-extern unsigned hashDate;
-
 typedef struct {
     uint64_t keyXorData;
     union {
@@ -26,4 +24,6 @@ void hash_write(uint64_t key, HashEntry *e, int ply);
 
 int hash_permille();
 
+extern unsigned hashDate;
 extern HashEntry *HashTable;
+uint64_t HashCount;

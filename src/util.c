@@ -20,13 +20,12 @@
 // - alignment: 'buffer' must be 8-byte aligned.
 // - length: must be a multiple of 8 bytes.
 // - endianness: big endian is long dead, who cares?
-// - seedless: no seed argument.
-// All these limitations could easily be lifted, but it's overkill in Demolito.
-uint64_t hash(const void *buffer, size_t length)
+// These limitations could easily be lifted, but it's overkill for Demolito.
+uint64_t hash(const void *buffer, size_t length, uint64_t seed)
 {
     assert((uintptr_t)buffer % 8 == 0 && length % 8 == 0);
     const uint64_t *blocks = (const uint64_t *)buffer;
-    uint64_t result = 0, seed = 0;
+    uint64_t result = 0;
 
     for (size_t i = 0; i < length / 8; i++) {
         seed ^= blocks[i];

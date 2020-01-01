@@ -36,6 +36,19 @@ static move_t *serialize_pawn_moves(bitboard_t pawns, int shift, move_t *mList)
     return mList;
 }
 
+static move_t *gen_all_moves(const Position *pos, move_t *mList)
+{
+    if (pos->checkers)
+        return gen_check_escapes(pos, mList, true);
+    else {
+        move_t *m = mList;
+        m = gen_pawn_moves(pos, m, ~pos->byColor[pos->turn], true);
+        m = gen_piece_moves(pos, m, ~pos->byColor[pos->turn], true);
+        m = gen_castling_moves(pos, m);
+        return m;
+    }
+}
+
 move_t *gen_pawn_moves(const Position *pos, move_t *mList, bitboard_t filter, bool subPromotions)
 {
     const int us = pos->turn, them = opposite(us);
@@ -178,19 +191,6 @@ move_t *gen_check_escapes(const Position *pos, move_t *mList, bool subPromotions
     }
 
     return mList;
-}
-
-move_t *gen_all_moves(const Position *pos, move_t *mList)
-{
-    if (pos->checkers)
-        return gen_check_escapes(pos, mList, true);
-    else {
-        move_t *m = mList;
-        m = gen_pawn_moves(pos, m, ~pos->byColor[pos->turn], true);
-        m = gen_piece_moves(pos, m, ~pos->byColor[pos->turn], true);
-        m = gen_castling_moves(pos, m);
-        return m;
-    }
 }
 
 bool gen_is_legal(const Position *pos, bitboard_t pins, move_t m)

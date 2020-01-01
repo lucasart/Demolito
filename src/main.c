@@ -17,22 +17,22 @@
 #include <string.h>
 #include "bitboard.h"
 #include "eval.h"
-#include "gen.h"
 #include "htable.h"
 #include "platform.h"
 #include "position.h"
 #include "search.h"
 #include "uci.h"
+#include "util.h"
 #include "workers.h"
 
-void test(bool perft, int depth)
+void bench(int depth)
 {
     static const char *fens[] = {
         #include "test.csv"
         NULL
     };
 
-    uint64_t totalNodes = 0, nodes;
+    uint64_t nodes = 0, seal = 0;
     uciChess960 = true;
 
     memset(&lim, 0, sizeof(lim));
@@ -45,16 +45,10 @@ void test(bool perft, int depth)
         stack_clear(&rootStack);
         stack_push(&rootStack, rootPos.key);
 
-        if (perft) {
-            nodes = gen_perft(&rootPos, depth, 1);
-            printf("%s, %" PRIu64 "\n", fens[i], nodes);
-        } else {
-            puts(fens[i]);
-            nodes = search_go();
-            puts("");
-        }
-
-        totalNodes += nodes;
+        puts(fens[i]);
+        nodes += search_go();
+        seal = hash(&nodes, sizeof nodes, seal);
+        puts("");
     }
 
     if (dbgCnt[0] || dbgCnt[1])
@@ -62,9 +56,12 @@ void test(bool perft, int depth)
 
     const int64_t elapsed = system_msec() - start;
 
-    printf("Time  : %"PRIu64"ms\n", elapsed);
-    printf("Nodes : %"PRIu64"\n", totalNodes);
-    printf("NPS   : %.0f\n", totalNodes * 1000.0 / max(elapsed, 1));  // avoid div/0
+    seal = hash(HashTable, HashCount * sizeof(HashEntry), seal);  // sign entire hash table
+
+    printf("seal  : %" PRIx64 "\n", seal);  // strong functionality signature
+    printf("time  : %" PRIu64 "ms\n", elapsed);
+    printf("nodes : %" PRIu64 "\n", nodes);  // total nodes = weak functionality signature
+    printf("n/s   : %.0f\n", nodes * 1000.0 / max(elapsed, 1));  // avoid div/0
 }
 
 int main(int argc, char **argv)
@@ -73,7 +70,7 @@ int main(int argc, char **argv)
     search_init();
 
     if (argc >= 2) {
-        if ((!strcmp(argv[1], "perft") || !strcmp(argv[1], "bench")) && argc >= 2) {
+        if (!strcmp(argv[1], "bench")) {
             const int depth = argc > 2 ? atoi(argv[2]) : 12;
 
             if (argc > 3)
@@ -84,8 +81,9 @@ int main(int argc, char **argv)
 
             workers_prepare(WorkersCount);
             hash_prepare(uciHash);
-            test(!strcmp(argv[1], "perft"), depth);
-        }
+            bench(depth);
+        } else
+            puts("Syntax: demolito [bench [depth [threads [hash]]]]");
     } else {
         workers_prepare(WorkersCount);
         hash_prepare(uciHash);

@@ -5,22 +5,25 @@
 #define min(x, y) ((x) < (y) ? (x) : (y))
 #define max(x, y) ((x) > (y) ? (x) : (y))
 
+// Max number of bytes needed to store a FEN
 enum {MAX_FEN = 64 + 8 + 2 + 5 + 3 + 4 + 4 + 1};
 
 typedef uint16_t move_t;  // from:6, to:6, prom: 3 (NB_PIECE if none)
 
 typedef struct {
-    bitboard_t byColor[NB_COLOR];
-    bitboard_t byPiece[NB_PIECE];
-    bitboard_t castleRooks;
-    bitboard_t attacked, checkers;
-    uint64_t key, pawnKey;
-    eval_t pst;
-    eval_t pieceMaterial[NB_COLOR];
-    uint8_t pieceOn[NB_SQUARE];
-    int turn;
-    int epSquare;
-    int rule50;
+    bitboard_t byColor[NB_COLOR];  // eg. byColor[WHITE] = squares occupied by white's army
+    bitboard_t byPiece[NB_PIECE];  // eg. byPiece[KNIGHT] = squares occupied by knights (any color)
+    bitboard_t castleRooks;  // rooks with castling rights (eg. A1, A8, H1, H8 in start pos)
+    bitboard_t attacked;  // squares attacked by enemy
+    bitboard_t checkers;  // if in check, enemy piece(s) giving check(s), otherwise empty
+    uint64_t key;  // hash key encoding all information of the position (except rule50)
+    uint64_t kingPawnKey;  // hash key encoding only king and pawns
+    eval_t pieceMaterial[NB_COLOR];  // total piece material value by color (excluding pawns)
+    eval_t pst;  // PST (Piece on Square Tables) total. Net sum, from white's pov
+    uint8_t pieceOn[NB_SQUARE];  // eg. pieceOn[D1] = QUEEN in start pos
+    int turn;  // turn of play (WHITE or BLACK)
+    int epSquare;  // en-passant square (NB_SQUARE if none)
+    int rule50;  // ply counter for 50-move rule, ranging from 0 to 100 = draw (unless mated)
 } Position;
 
 extern const char *PieceLabel[NB_COLOR];
