@@ -20,25 +20,7 @@
 #include "move.h"
 #include "position.h"
 #include "util.h"
-
-static uint64_t ZobristKey[NB_COLOR][NB_PIECE][NB_SQUARE];
-static uint64_t ZobristCastling[NB_SQUARE];
-static uint64_t ZobristEnPassant[NB_SQUARE + 1];
-uint64_t ZobristTurn;
-
-// Combined zobrist mask of all castlable rooks
-static uint64_t zobrist_castling(bitboard_t castlableRooks)
-{
-    assert(bb_count(Rank[RANK_1] & castlableRooks) <= 2);
-    assert(bb_count(Rank[RANK_8] & castlableRooks) <= 2);
-    assert(!(castlableRooks & ~Rank[RANK_1] & ~Rank[RANK_8]));
-    bitboard_t k = 0;
-
-    while (castlableRooks)
-        k ^= ZobristCastling[bb_pop_lsb(&castlableRooks)];
-
-    return k;
-}
+#include "zobrist.h"
 
 // Sets the position in its empty state (no pieces, white to play, rule50=0, etc.)
 static void clear(Position *pos)
@@ -126,25 +108,6 @@ static void finish(Position *pos)
     pos->attacked = attacked_by(pos, them);
     pos->checkers = bb_test(pos->attacked, king)
         ? pos_attackers_to(pos, king, pos_pieces(pos)) & pos->byColor[them] : 0;
-}
-
-// Generate zobrist keys
-static __attribute__((constructor)) void pos_init()
-{
-    uint64_t state = 0;
-
-    for (int color = WHITE; color <= BLACK; color++)
-        for (int piece = KNIGHT; piece < NB_PIECE; piece++)
-            for (int square = A1; square <= H8; square++)
-                ZobristKey[color][piece][square] = prng(&state);
-
-    for (int square = A1; square <= H8; square++) {
-        ZobristCastling[square] = prng(&state);
-        ZobristEnPassant[square] = prng(&state);
-    }
-
-    ZobristEnPassant[NB_SQUARE] = prng(&state);
-    ZobristTurn = prng(&state);
 }
 
 const char *PieceLabel[NB_COLOR] = {"NBRQKP.", "nbrqkp."};

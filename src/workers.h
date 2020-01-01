@@ -1,7 +1,7 @@
 #pragma once
 #include <setjmp.h>
 #include "bitboard.h"
-#include "stack.h"
+#include "zobrist.h"
 #include "search.h"
 
 enum {
@@ -21,7 +21,7 @@ typedef struct {
     int16_t history[NB_COLOR][NB_SQUARE][NB_SQUARE];
     int16_t refutationHistory[NB_REFUTATION][NB_PIECE][NB_SQUARE];
     int16_t followUpHistory[NB_FOLLOW_UP][NB_PIECE][NB_SQUARE];
-    Stack stack;
+    ZobristStack stack;
     jmp_buf jbuf;
     int64_t nodes;
     int eval[MAX_PLY];

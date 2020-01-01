@@ -42,8 +42,8 @@ void bench(int depth)
 
     for (int i = 0; fens[i]; i++) {
         pos_set(&rootPos, fens[i]);
-        stack_clear(&rootStack);
-        stack_push(&rootStack, rootPos.key);
+        zobrist_clear(&rootStack);
+        zobrist_push(&rootStack, rootPos.key);
 
         puts(fens[i]);
         nodes += search_go();

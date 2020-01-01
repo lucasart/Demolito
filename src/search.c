@@ -25,7 +25,7 @@
 #include "workers.h"
 
 Position rootPos;
-Stack rootStack;
+ZobristStack rootStack;
 Limits lim;
 
 // Protect thread scheduling decisions
@@ -55,7 +55,7 @@ static int qsearch(Worker *worker, const Position *pos, int ply, int depth, int 
     bool pvNode, move_t pv[])
 {
     assert(depth <= 0);
-    assert(stack_back(&worker->stack) == pos->key);
+    assert(zobrist_back(&worker->stack) == pos->key);
     assert(-MATE <= alpha && alpha < beta && beta <= MATE);
     assert(pvNode || (alpha+1 == beta));
 
@@ -72,7 +72,7 @@ static int qsearch(Worker *worker, const Position *pos, int ply, int depth, int 
     if (pvNode)
         pv[0] = 0;
 
-    if (ply > 0 && (stack_repetition(&worker->stack, pos) || pos_insufficient_material(pos)))
+    if (ply > 0 && (zobrist_repetition(&worker->stack, pos) || pos_insufficient_material(pos)))
         return draw_score(ply);
 
     // HT probe
@@ -94,7 +94,7 @@ static int qsearch(Worker *worker, const Position *pos, int ply, int depth, int 
     } else {
         he.data = 0;  // invalidate hash entry
         refinedEval = worker->eval[ply] = pos->checkers ? -MATE
-           : stack_move_key(&worker->stack, 0) == ZobristTurn ? -worker->eval[ply - 1] + 2 * Tempo
+           : zobrist_move_key(&worker->stack, 0) == ZobristTurn ? -worker->eval[ply - 1] + 2 * Tempo
            : evaluate(worker, pos) + Tempo;
     }
 
@@ -143,7 +143,7 @@ static int qsearch(Worker *worker, const Position *pos, int ply, int depth, int 
         // Play move
         pos_move(&nextPos, pos, currentMove);
 
-        stack_push(&worker->stack, nextPos.key);
+        zobrist_push(&worker->stack, nextPos.key);
 
         const int nextDepth = depth - 1;
 
@@ -157,7 +157,7 @@ static int qsearch(Worker *worker, const Position *pos, int ply, int depth, int 
             score = -qsearch(worker, &nextPos, ply + 1, nextDepth, -beta, -alpha, pvNode, childPv);
 
         // Undo move
-        stack_pop(&worker->stack);
+        zobrist_pop(&worker->stack);
 
         // New best score
         if (score > bestScore) {
@@ -211,7 +211,7 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
     };
 
     assert(depth > 0);
-    assert(stack_back(&worker->stack) == pos->key);
+    assert(zobrist_back(&worker->stack) == pos->key);
     assert(-MATE <= alpha && alpha < beta && beta <= MATE);
 
     const bool pvNode = beta > alpha + 1;
@@ -229,7 +229,7 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
     move_t childPv[MAX_PLY - ply];
     pv[0] = 0;
 
-    if (ply > 0 && (stack_repetition(&worker->stack, pos) || pos_insufficient_material(pos)))
+    if (ply > 0 && (zobrist_repetition(&worker->stack, pos) || pos_insufficient_material(pos)))
         return draw_score(ply);
 
     // HT probe
@@ -250,7 +250,7 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
     } else {
         he.data = 0;  // invalidate hash entry
         refinedEval = worker->eval[ply] = pos->checkers ? -MATE
-           : stack_move_key(&worker->stack, 0) == ZobristTurn ? -worker->eval[ply - 1] + 2 * Tempo
+           : zobrist_move_key(&worker->stack, 0) == ZobristTurn ? -worker->eval[ply - 1] + 2 * Tempo
            : evaluate(worker, pos) + Tempo;
     }
 
@@ -293,13 +293,13 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
         const int nextDepth = depth - (3 + depth / 4) - (refinedEval >= beta + 167);
 
         pos_switch(&nextPos, pos);
-        stack_push(&worker->stack, nextPos.key);
+        zobrist_push(&worker->stack, nextPos.key);
 
         score = nextDepth <= 0
             ? -qsearch(worker, &nextPos, ply + 1, nextDepth, -beta, -(beta - 1), false, childPv)
             : -search(worker, &nextPos, ply + 1, nextDepth, -beta, -(beta - 1), childPv, 0);
 
-        stack_pop(&worker->stack);
+        zobrist_pop(&worker->stack);
 
         if (score >= beta)
             return score >= mate_in(MAX_PLY) ? beta : score;
@@ -364,7 +364,7 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
 
         const int nextDepth = depth - 1 + ext;
 
-        stack_push(&worker->stack, nextPos.key);
+        zobrist_push(&worker->stack, nextPos.key);
 
         // Recursion
         if (nextDepth <= 0)
@@ -406,7 +406,7 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
         }
 
         // Undo move
-        stack_pop(&worker->stack);
+        zobrist_pop(&worker->stack);
 
         // New best score
         if (score > bestScore) {
@@ -445,8 +445,8 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
 
     // Update move sorting statistics
     if (alpha > oldAlpha && !singularMove && !move_is_capture(pos, bestMove)) {
-        const size_t rhIdx = stack_move_key(&worker->stack, 0) % NB_REFUTATION;
-        const size_t fuhIdx = stack_move_key(&worker->stack, 1) % NB_FOLLOW_UP;
+        const size_t rhIdx = zobrist_move_key(&worker->stack, 0) % NB_REFUTATION;
+        const size_t fuhIdx = zobrist_move_key(&worker->stack, 1) % NB_FOLLOW_UP;
 
         for (int i = 0; i < quietSearchedCnt; i++) {
             const int bonus = quietSearched[i] == bestMove ? depth * depth : -1 - depth * depth / 2;

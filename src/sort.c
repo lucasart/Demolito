@@ -50,8 +50,8 @@ void sort_generate(Sort *sort, const Position *pos, int depth)
 
 void sort_score(Worker *worker, Sort *sort, const Position *pos, move_t ttMove)
 {
-    const size_t rhIdx = stack_move_key(&worker->stack, 0) % NB_REFUTATION;
-    const size_t fuhIdx = stack_move_key(&worker->stack, 1) % NB_FOLLOW_UP;
+    const size_t rhIdx = zobrist_move_key(&worker->stack, 0) % NB_REFUTATION;
+    const size_t fuhIdx = zobrist_move_key(&worker->stack, 1) % NB_FOLLOW_UP;
 
     for (size_t i = 0; i < sort->cnt; i++) {
         const move_t m = sort->moves[i];

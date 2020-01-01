@@ -1,7 +1,7 @@
 #pragma once
 #include <stdatomic.h>
 #include "position.h"
-#include "stack.h"
+#include "zobrist.h"
 
 enum {
     MATE = 32000,
@@ -22,7 +22,7 @@ bool is_mate_score(int score);
 extern atomic_bool Stop;  // set this to true to stop the search
 
 extern Position rootPos;
-extern Stack rootStack;
+extern ZobristStack rootStack;
 extern Limits lim;
 extern int Contempt;
 

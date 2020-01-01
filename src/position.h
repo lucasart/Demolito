@@ -27,7 +27,6 @@ typedef struct {
 } Position;
 
 extern const char *PieceLabel[NB_COLOR];
-extern uint64_t ZobristTurn;
 
 void square_to_string(int square, char *str);
 int string_to_square(const char *str);

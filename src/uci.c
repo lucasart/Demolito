@@ -97,15 +97,15 @@ static void position(char **linePos)
         return;
 
     pos_set(&pos[idx], fen);
-    stack_clear(&rootStack);
-    stack_push(&rootStack, pos[idx].key);
+    zobrist_clear(&rootStack);
+    zobrist_push(&rootStack, pos[idx].key);
 
     // Parse moves (if any)
     while ((token = strtok_r(NULL, " \n", linePos))) {
         move_t m = string_to_move(&pos[idx], token);
         pos_move(&pos[idx^1], &pos[idx], m);
         idx ^= 1;
-        stack_push(&rootStack, pos[idx].key);
+        zobrist_push(&rootStack, pos[idx].key);
     }
 
     rootPos = pos[idx];

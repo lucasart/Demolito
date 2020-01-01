@@ -13,33 +13,70 @@
  * You should have received a copy of the GNU General Public License along with this program. If
  * not, see <http://www.gnu.org/licenses/>.
 */
-#include "stack.h"
 #include "gen.h"
+#include "util.h"
+#include "zobrist.h"
 
-void stack_clear(Stack *st)
+uint64_t ZobristKey[NB_COLOR][NB_PIECE][NB_SQUARE];
+uint64_t ZobristCastling[NB_SQUARE];
+uint64_t ZobristEnPassant[NB_SQUARE + 1];
+uint64_t ZobristTurn;
+
+static __attribute__((constructor)) void zobrist_init()
+{
+    uint64_t state = 0;
+
+    for (int color = WHITE; color <= BLACK; color++)
+        for (int piece = KNIGHT; piece < NB_PIECE; piece++)
+            for (int square = A1; square <= H8; square++)
+                ZobristKey[color][piece][square] = prng(&state);
+
+    for (int square = A1; square <= H8; square++) {
+        ZobristCastling[square] = prng(&state);
+        ZobristEnPassant[square] = prng(&state);
+    }
+
+    ZobristEnPassant[NB_SQUARE] = prng(&state);
+    ZobristTurn = prng(&state);
+}
+
+uint64_t zobrist_castling(bitboard_t castlableRooks)
+{
+    assert(bb_count(Rank[RANK_1] & castlableRooks) <= 2);
+    assert(bb_count(Rank[RANK_8] & castlableRooks) <= 2);
+    assert(!(castlableRooks & ~Rank[RANK_1] & ~Rank[RANK_8]));
+    bitboard_t k = 0;
+
+    while (castlableRooks)
+        k ^= ZobristCastling[bb_pop_lsb(&castlableRooks)];
+
+    return k;
+}
+
+void zobrist_clear(ZobristStack *st)
 {
     st->idx = 0;
 }
 
-void stack_push(Stack *st, uint64_t key)
+void zobrist_push(ZobristStack *st, uint64_t key)
 {
     assert(0 <= st->idx && st->idx < MAX_GAME_PLY);
     st->keys[st->idx++] = key;
 }
 
-void stack_pop(Stack *st)
+void zobrist_pop(ZobristStack *st)
 {
     assert(0 < st->idx && st->idx <= MAX_GAME_PLY);
     st->idx--;
 }
 
-uint64_t stack_back(const Stack *st)
+uint64_t zobrist_back(const ZobristStack *st)
 {
     assert(0 < st->idx && st->idx <= MAX_GAME_PLY);
     return st->keys[st->idx - 1];
 }
 
-uint64_t stack_move_key(const Stack *st, int back)
+uint64_t zobrist_move_key(const ZobristStack *st, int back)
 {
     assert(0 < st->idx && st->idx <= MAX_GAME_PLY);
     return st->idx - 1 - back > 0
@@ -47,7 +84,7 @@ uint64_t stack_move_key(const Stack *st, int back)
         : 0;
 }
 
-bool stack_repetition(const Stack *st, const Position *pos)
+bool zobrist_repetition(const ZobristStack *st, const Position *pos)
 {
     // 50 move rule
     if (pos->rule50 >= 100) {
