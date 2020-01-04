@@ -61,7 +61,7 @@ void bench(int depth)
     printf("seal  : %" PRIx64 "\n", seal);  // strong functionality signature
     printf("time  : %" PRIu64 "ms\n", elapsed);
     printf("nodes : %" PRIu64 "\n", nodes);  // total nodes = weak functionality signature
-    printf("n/s   : %.0f\n", nodes * 1000.0 / max(elapsed, 1));  // avoid div/0
+    printf("nps   : %.0f\n", nodes * 1000.0 / max(elapsed, 1));  // avoid div/0
 }
 
 int main(int argc, char **argv)
