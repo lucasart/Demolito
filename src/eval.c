@@ -281,8 +281,7 @@ static eval_t do_pawns(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
         const bitboard_t besides = ourPawns & AdjacentFiles[file];
         const bool exposed = !(PawnPath[us][square] & pos->byPiece[PAWN]);
 
-        const int d = KingDistance[stop][theirKing] * rank
-            - KingDistance[stop][theirKing] * (rank - 1);
+        const int d = KingDistance[stop][theirKing];
         dMax = max(dMax, d);
 
         if (besides & (Rank[rank] | Rank[us == WHITE ? rank - 1 : rank + 1]))
