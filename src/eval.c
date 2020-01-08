@@ -221,8 +221,8 @@ static int safety(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_P
 
 static eval_t passer(int us, int pawn, int ourKing, int theirKing)
 {
-    static const eval_t bonus[] = {{0, 5}, {0, 15}, {24, 25}, {53, 63}, {147, 159}, {273, 275}};
-    static const int adjust[] = {0, 0, 12, 49, 78, 99};
+    static const eval_t bonus[] = {{-3, 7}, {2, 15}, {18, 20}, {57, 61}, {150, 155}, {264, 270}};
+    static const int adjust[] = {-1, 4, 12, 50, 72, 91};
 
     const int n = relative_rank_of(us, pawn) - RANK_2;
 
@@ -251,7 +251,9 @@ static eval_t do_pawns(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
         {0, 25, 17, 12, 14, 17, 13, 0},
         {0, 25, 18, 16, 10, 7, 6, 0}
     };
-    static const eval_t Connected[] = {{6, -5}, {13, 5}, {18, 6}, {38, 22}, {32, 61}, {51, 63}};
+    static const eval_t Connected[] = {{8, -4}, {18, 2}, {20, 7}, {42, 21}, {34, 58}, {48, 68}};
+    static const int OurDistance[NB_RANK] = {0, 5, 13, 10, 9, 10, 7, 0};
+    static const int TheirDistance[NB_RANK] = {0, 9, 9, 9, 11, 9, 9, 0};
 
     const int them = opposite(us);
     const bitboard_t ourPawns = pos_pieces_cp(pos, us, PAWN);
@@ -281,7 +283,8 @@ static eval_t do_pawns(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
         const bitboard_t besides = ourPawns & AdjacentFiles[file];
         const bool exposed = !(PawnPath[us][square] & pos->byPiece[PAWN]);
 
-        const int d = KingDistance[stop][theirKing];
+        const int d = KingDistance[stop][theirKing] * TheirDistance[rank]
+            - KingDistance[stop][ourKing] * OurDistance[rank];
         dMax = max(dMax, d);
 
         if (besides & (Rank[rank] | Rank[us == WHITE ? rank - 1 : rank + 1]))
@@ -303,7 +306,7 @@ static eval_t do_pawns(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
         result.eg += KingDistance[square][theirKing] - KingDistance[square][ourKing];
     }
 
-    result.eg += 8 * dMax;
+    result.eg += dMax;
 
     return result;
 }
@@ -311,7 +314,7 @@ static eval_t do_pawns(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
 static eval_t pawns(Worker *worker, const Position *pos, bitboard_t attacks[NB_COLOR][NB_PIECE + 1])
 // Pawn evaluation is directly a diff, from white's pov. This halves the size of the table.
 {
-    static const int FreePasser[] = {16, 16, 43, 98};
+    const int FreePasser[] = {15, 17, 42, 116};
 
     const uint64_t key = pos->kingPawnKey;
     PawnEntry *pe = &worker->pawnHash[key % NB_PAWN_HASH];
