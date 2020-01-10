@@ -72,7 +72,7 @@ bool hash_read(uint64_t key, HashEntry *e, int ply)
 {
     *e = HashTable[key & (HashCount - 1)];
 
-    if ((e->keyXorData ^ e->data) == key) {
+    if (e->key == key) {
         e->score = score_from_hash(e->score, ply);
         return true;
     }
@@ -89,7 +89,7 @@ void hash_write(uint64_t key, HashEntry *e, int ply)
 
     if (e->date != slot->date || e->depth >= slot->depth) {
         e->score = score_to_hash(e->score, ply);
-        e->keyXorData = key ^ e->data;
+        e->key = key;
         *slot = *e;
     }
 }
@@ -99,7 +99,7 @@ int hash_permille()
     int result = 0;
 
     for (int i = 0; i < 1000; i++)
-        result += HashTable[i].keyXorData && HashTable[i].date == hashDate % 64;
+        result += HashTable[i].key && HashTable[i].date == hashDate % 64;
 
     return result;
 }

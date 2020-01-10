@@ -6,7 +6,7 @@
 enum {LBOUND, EXACT, UBOUND};
 
 typedef struct {
-    uint64_t keyXorData;
+    uint64_t key;
     union {
         uint64_t data;
         struct {
