@@ -314,7 +314,7 @@ static eval_t do_pawns(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
 static eval_t pawns(Worker *worker, const Position *pos, bitboard_t attacks[NB_COLOR][NB_PIECE + 1])
 // Pawn evaluation is directly a diff, from white's pov. This halves the size of the table.
 {
-    const int FreePasser[] = {15, 17, 42, 116};
+    static const int FreePasser[] = {13, 14, 35, 97};
 
     const uint64_t key = pos->kingPawnKey;
     PawnEntry *pe = &worker->pawnHash[key % NB_PAWN_HASH];
@@ -337,14 +337,11 @@ static eval_t pawns(Worker *worker, const Position *pos, bitboard_t attacks[NB_C
 
     while (b) {
         const int square = bb_pop_lsb(&b);
-        const int us = pos_color_on(pos, square), them = opposite(us);
-        const bitboard_t potentialThreats = File[file_of(square)]
-            & pos_pieces_cpp(pos, them, ROOK, QUEEN);
+        const int us = pos_color_on(pos, square);
         const int n = relative_rank_of(us, square) - RANK_4;
 
-        if (n >= 0 && !bb_test(occ, square + push_inc(us))
-                && (!potentialThreats || !(bb_rook_attacks(square, occ) & potentialThreats)))
-            e.eg += FreePasser[n] * (us == WHITE ? 1 : -1);
+        if (n >= 0 && !bb_test(occ, square + push_inc(us)))
+           e.eg += us == WHITE ? FreePasser[n] : -FreePasser[n];
     }
 
     return e;
