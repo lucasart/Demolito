@@ -26,6 +26,11 @@ enum {UP = 8, DOWN = -8, LEFT = -1, RIGHT = 1};
 enum {WHITE, BLACK, NB_COLOR};
 enum {KNIGHT, BISHOP, ROOK, QUEEN, KING, PAWN, NB_PIECE};
 
+// Evaluation in 2D (opening, endgame)
+typedef struct {
+    int op, eg;
+} eval_t;
+
 extern int64_t dbgCnt[2];
 
 int opposite(int color);

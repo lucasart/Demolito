@@ -8,11 +8,6 @@ enum {
     R = 1046, Q = 1980
 };
 
-// Evaluation in 2D (opening, endgame)
-typedef struct {
-    int op, eg;
-} eval_t;
-
 extern const eval_t Material[NB_PIECE];
 extern eval_t pst[NB_COLOR][NB_PIECE][NB_SQUARE];
 

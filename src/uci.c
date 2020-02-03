@@ -23,6 +23,7 @@
 #include "move.h"
 #include "position.h"
 #include "search.h"
+#include "tune.h"
 #include "uci.h"
 
 #define uci_printf(...) printf(__VA_ARGS__), fflush(stdout)
@@ -51,6 +52,11 @@ static void intro()
     uci_printf("option name Threads type spin default %d min 1 max 256\n", WorkersCount);
     uci_printf("option name Time Buffer type spin default %" PRId64 " min 0 max 1000\n", uciTimeBuffer);
     uci_printf("option name UCI_Chess960 type check default %s\n", uciChess960 ? "true" : "false");
+
+#ifdef TUNE
+    tune_declare_all();
+#endif
+
     uci_puts("uciok");
 }
 
@@ -62,21 +68,28 @@ static void setoption(char **linePos)
     if (strcmp(token, "name"))
         return;
 
-    while ((token = strtok_r(NULL, " \n", linePos)) && strcmp(token,"value"))
+    while ((token = strtok_r(NULL, " \n", linePos)) && strcmp(token, "value"))
         strcat(name, token);
 
+    token = strtok_r(NULL, " \n", linePos);
+
     if (!strcmp(name, "UCI_Chess960"))
-        uciChess960 = !strcmp(strtok_r(NULL, " \n", linePos), "true");
+        uciChess960 = !strcmp(token, "true");
     else if (!strcmp(name, "Hash")) {
-        uciHash = atoi(strtok_r(NULL, " \n", linePos));
+        uciHash = atoi(token);
         uciHash = 1ULL << bb_msb(uciHash);  // must be a power of two
         hash_prepare(uciHash);
     } else if (!strcmp(name, "Threads"))
-        workers_prepare(atoi(strtok_r(NULL, " \n", linePos)));
+        workers_prepare(atoi(token));
     else if (!strcmp(name, "Contempt"))
-        Contempt = atoi(strtok_r(NULL, " \n", linePos));
+        Contempt = atoi(token);
     else if (!strcmp(name, "TimeBuffer"))
-        uciTimeBuffer = atoi(strtok_r(NULL, " \n", linePos));
+        uciTimeBuffer = atoi(token);
+    else {
+#ifdef TUNE
+        tune_parse_all(name, atoi(token));
+#endif
+    }
 }
 
 static void position(char **linePos)
@@ -178,6 +191,11 @@ void uci_loop()
             memset(HashTable, 0, uciHash << 20);
             workers_clear();
             hashDate = 0;
+#ifdef TUNE
+            search_init();
+            pst_init();
+            eval_init();
+#endif
         } else if (!strcmp(token, "position"))
             position(&linePos);
         else if (!strcmp(token, "go"))
