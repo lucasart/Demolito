@@ -94,6 +94,11 @@ void hash_write(uint64_t key, HashEntry *e, int ply)
     }
 }
 
+void hash_prefetch(uint64_t key)
+{
+    __builtin_prefetch(&HashTable[key & (HashCount - 1)]);
+}
+
 int hash_permille()
 {
     int result = 0;

@@ -21,6 +21,7 @@ typedef struct {
 void hash_prepare(uint64_t hashMB);  // realloc + clear
 bool hash_read(uint64_t key, HashEntry *e, int ply);
 void hash_write(uint64_t key, HashEntry *e, int ply);
+void hash_prefetch(uint64_t key);
 
 int hash_permille();
 

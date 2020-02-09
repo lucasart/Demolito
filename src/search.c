@@ -142,7 +142,7 @@ static int qsearch(Worker *worker, const Position *pos, int ply, int depth, int 
 
         // Play move
         pos_move(&nextPos, pos, currentMove);
-
+        hash_prefetch(nextPos.key);
         zobrist_push(&worker->stack, nextPos.key);
 
         const int nextDepth = depth - 1;
@@ -347,6 +347,8 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
                 break;
         }
 
+        hash_prefetch(nextPos.key);
+
         // Search extension
         int ext = 0;
 
@@ -362,9 +364,9 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
             // Check extension
             ext = see >= 0 && nextPos.checkers;
 
-        const int nextDepth = depth - 1 + ext;
-
         zobrist_push(&worker->stack, nextPos.key);
+
+        const int nextDepth = depth - 1 + ext;
 
         // Recursion
         if (nextDepth <= 0)
