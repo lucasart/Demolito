@@ -111,107 +111,90 @@ eval_t PasserBonus[6] = {{-3, 7}, {2, 15}, {18, 20}, {57, 61}, {150, 155}, {264,
 int PasserAdjust[6] = {-1, 4, 12, 50, 72, 91};
 int FreePasser[4] = {13, 14, 35, 97};
 
-static void declare(const char *name, const void *buffer, int count)
+enum {NAME_MAX_CHAR = 64, PARSER_ENTRY_NB = 33};
+
+typedef struct {
+    char name[NAME_MAX_CHAR];
+    int *values, count;
+} ParserEntry;
+
+ParserEntry ParserEntries[PARSER_ENTRY_NB];
+
+static void declare(ParserEntry *pe, const char *name, void *buffer,int count)
 {
     const int *values = buffer;
 
+    // Declare UCI options for all array elements
     for (int i = 0; i < count; i++)
         printf("option name %s_%d type spin default %d min %d max %d\n",
             name, i, values[i], -1000000, 1000000);
-}
 
-// Example: expectedName = "fooBar", name = "fooBar", index = 12, buffer = &fooBar
-// Verifies that 0 <= 12 < count, and sets fooBar[12] = value
-static void parse(const char *expectedName, const char *name, int idx, int value, void *buffer,
-    int count)
-{
-    int *values = buffer;
-
-    if (!strcmp(name, expectedName) && 0 <= idx && idx < count)
-        values[idx] = value;
+    // Remember array information for parsing
+    strcpy(pe->name, name);
+    pe->values = buffer;
+    pe->count = count;
 }
 
 void tune_declare_all()
 {
-    declare("pstKnight", pstSeed[KNIGHT], NB_SQUARE);
-    declare("pstBishop", pstSeed[BISHOP], NB_SQUARE);
-    declare("pstRook", pstSeed[ROOK], NB_SQUARE);
-    declare("pstQueen", pstSeed[QUEEN], NB_SQUARE);
-    declare("pstKing", pstSeed[KING], NB_SQUARE);
-    declare("pstPawn", pstSeed[PAWN][RANK_2], NB_SQUARE - 16);
+    ParserEntry *pe = ParserEntries;
 
-    declare("MobilityKnight", Mobility[KNIGHT], 9 * 2);
-    declare("MobilityBishop", Mobility[BISHOP], 14 * 2);
-    declare("MobilityRook", Mobility[ROOK], 15 * 2);
-    declare("MobilityQueen", Mobility[QUEEN], (14 + 15) * 2);
+    declare(pe++, "pstKnight", pstSeed[KNIGHT], NB_SQUARE);
+    declare(pe++, "pstBishop", pstSeed[BISHOP], NB_SQUARE);
+    declare(pe++, "pstRook", pstSeed[ROOK], NB_SQUARE);
+    declare(pe++, "pstQueen", pstSeed[QUEEN], NB_SQUARE);
+    declare(pe++, "pstKing", pstSeed[KING], NB_SQUARE);
+    declare(pe++, "pstPawn", pstSeed[PAWN][RANK_2], NB_SQUARE - 16);  // discard RANK_1/8
 
-    declare("RookOpen", RookOpen, 2);
-    declare("BishopPair", &BishopPair, 2);
-    declare("Ahead", &Ahead, 1);
+    declare(pe++, "MobilityKnight", Mobility[KNIGHT], 9 * 2);
+    declare(pe++, "MobilityBishop", Mobility[BISHOP], 14 * 2);
+    declare(pe++, "MobilityRook", Mobility[ROOK], 15 * 2);
+    declare(pe++, "MobilityQueen", Mobility[QUEEN], (14 + 15) * 2);
 
-    declare("Hanging", Hanging, NB_PIECE);
+    declare(pe++, "RookOpen", RookOpen, 2);
+    declare(pe++, "BishopPair", &BishopPair, 2);
+    declare(pe++, "Ahead", &Ahead, 1);
 
-    declare("RingAttack", RingAttack, 4);
-    declare("RingDefense", RingDefense, 4);
-    declare("CheckAttack", CheckAttack, 4);
-    declare("CheckDefense", CheckDefense, 4);
-    declare("XRay", &XRay[BISHOP], 3);
-    declare("SafetyCurveParam", SafetyCurveParam, 2);
+    declare(pe++, "Hanging", Hanging, NB_PIECE);
 
-    declare("Isolated", Isolated, 2 * 2);
-    declare("Backward", Backward, 2 * 2);
-    declare("Doubled", &Doubled, 2);
-    declare("Shield", Shield, 4 * NB_RANK);
-    declare("Connected", Connected, 6 * 2);
-    declare("OurDistance", OurDistance, NB_RANK);
-    declare("TheirDistance", TheirDistance, NB_RANK);
+    declare(pe++, "RingAttack", RingAttack, 4);
+    declare(pe++, "RingDefense", RingDefense, 4);
+    declare(pe++, "CheckAttack", CheckAttack, 4);
+    declare(pe++, "CheckDefense", CheckDefense, 4);
+    declare(pe++, "XRay", &XRay[BISHOP], 3);
+    declare(pe++, "SafetyCurveParam", SafetyCurveParam, 2);
 
-    declare("PasserBonus", PasserBonus, 6 * 2);
-    declare("PasserAdjust", PasserAdjust, 6);
-    declare("FreePasser", FreePasser, 4);
+    declare(pe++, "Isolated", Isolated, 2 * 2);
+    declare(pe++, "Backward", Backward, 2 * 2);
+    declare(pe++, "Doubled", &Doubled, 2);
+
+    declare(pe++, "ShieldAH", &Shield[0][RANK_2], NB_RANK - 2);  // discard RANK_1/8
+    declare(pe++, "ShieldBG", &Shield[1][RANK_2], NB_RANK - 2);  // discard RANK_1/8
+    declare(pe++, "ShieldCF", &Shield[2][RANK_2], NB_RANK - 2);  // discard RANK_1/8
+    declare(pe++, "ShieldDE", &Shield[3][RANK_2], NB_RANK - 2);  // discard RANK_1/8
+
+    declare(pe++, "Connected", Connected, 6 * 2);
+    declare(pe++, "OurDistance", &OurDistance[RANK_2], NB_RANK - 2);  // discard RANK_1/8
+    declare(pe++, "TheirDistance", &TheirDistance[RANK_2], NB_RANK - 2);  // discard RANK_1/8
+
+    declare(pe++, "PasserBonus", PasserBonus, 6 * 2);
+    declare(pe++, "PasserAdjust", PasserAdjust, 6);
+    declare(pe++, "FreePasser", FreePasser, 4);
+
+    assert(pe == &ParserEntries[PARSER_ENTRY_NB]);
 }
 
 void tune_parse_all(const char *fullName, int value)
 {
     // split fullName = "fooBar_12", into name = "fooBar" and idx = 12
-    char name[64];
+    char name[NAME_MAX_CHAR];
     int idx;
 
     if (sscanf(fullName, "%[a-zA-Z]_%d", name, &idx) != 2)
         return;
 
-    parse("pstKnight", name, idx, value, pstSeed[KNIGHT], NB_SQUARE);
-    parse("pstBishop", name, idx, value, pstSeed[BISHOP], NB_SQUARE);
-    parse("pstRook", name, idx, value, pstSeed[ROOK], NB_SQUARE);
-    parse("pstQueen", name, idx, value, pstSeed[QUEEN], NB_SQUARE);
-    parse("pstPawn", name, idx, value, pstSeed[PAWN][RANK_2], NB_SQUARE - 16);
-
-    parse("MobilityKnight", name, idx, value, Mobility[KNIGHT], 9 * 2);
-    parse("MobilityBishop", name, idx, value, Mobility[BISHOP], 14 * 2);
-    parse("MobilityRook", name, idx, value, Mobility[ROOK], 15 * 2);
-    parse("MobilityQueen", name, idx, value, Mobility[QUEEN], (14 + 15) * 2);
-
-    parse("RookOpen", name, idx, value, RookOpen, 2);
-    parse("BishopPair", name, idx, value, &BishopPair, 2);
-    parse("Ahead", name, idx, value, &Ahead, 1);
-    parse("Hanging", name, idx, value, Hanging, NB_PIECE);
-
-    parse("RingAttack", name, idx, value, RingAttack, 4);
-    parse("RingDefense", name, idx, value, RingDefense, 4);
-    parse("CheckAttack", name, idx, value, CheckAttack, 4);
-    parse("CheckDefense", name, idx, value, CheckDefense, 4);
-    parse("XRay", name, idx, value, &XRay[BISHOP], 3);
-    parse("SafetyCurveParam", name, idx, value, SafetyCurveParam, 2);
-
-    parse("Isolated", name, idx, value, Isolated, 2 * 2);
-    parse("Backward", name, idx, value, Backward, 2 * 2);
-    parse("Doubled", name, idx, value, &Doubled, 2);
-    parse("Shield", name, idx, value, Shield, 4 * NB_RANK);
-    parse("Connected", name, idx, value, Connected, 6 * 2);
-    parse("OurDistance", name, idx, value, OurDistance, NB_RANK);
-    parse("TheirDistance", name, idx, value, TheirDistance, NB_RANK);
- 
-    parse("PasserBonus", name, idx, value, PasserBonus, 6 * 2);
-    parse("PasserAdjust", name, idx, value, PasserAdjust, 6);
-    parse("FreePasser", name, idx, value, FreePasser, 4);
+    // Test against each Parser Entry, and set array element on match
+    for (int i = 0; i < PARSER_ENTRY_NB; i++)
+        if (!strcmp(name, ParserEntries[i].name) && 0 <= idx && idx < ParserEntries[i].count)
+            ParserEntries[i].values[idx] = value;
 }
