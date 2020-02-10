@@ -336,6 +336,8 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
         // Play move
         pos_move(&nextPos, pos, currentMove);
 
+        const bool improving = ply < 2 || worker->eval[ply] > worker->eval[ply - 2];
+
         // Prune bad or late moves near the leaves
         if (depth <= 5 && !pvNode && !pos->checkers && !nextPos.checkers) {
             // SEE pruning
@@ -343,7 +345,7 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
                continue;
 
             // Late Move Pruning
-            if (!capture && depth <= 4 && moveCount >= 4 * depth)
+            if (!capture && depth <= 4 && moveCount >= 3 * depth + 2 * improving)
                 break;
         }
 
@@ -382,11 +384,7 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
                     lmrCount++;
                     assert(1 <= nextDepth && nextDepth <= MAX_DEPTH);
                     assert(1 <= lmrCount && lmrCount <= MAX_MOVES);
-                    reduction = Reduction[nextDepth][lmrCount];
-
-                    // Reduce more if eval is not improving since our last turn (grand parent node)
-                    if (ply >= 2 && worker->eval[ply] <= worker->eval[ply - 2])
-                        reduction++;
+                    reduction = Reduction[nextDepth][lmrCount] + !improving;
 
                     if (sort.scores[sort.idx - 1] >= 1024)
                         reduction = max(0, reduction - 1);
