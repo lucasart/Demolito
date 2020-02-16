@@ -392,7 +392,7 @@ int evaluate(Worker *worker, const Position *pos)
 
     if (pos->pieceMaterial[winner].eg - pos->pieceMaterial[loser].eg < R) {
         // Scale down when the winning side has <= 2 pawns
-        static const int discount[9] = {4, 2, 1};
+        static const int discount[9] = {5, 2, 1};
         stm.eg -= stm.eg * discount[bb_count(winnerPawns)] / 8;
     }
 
