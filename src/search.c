@@ -133,11 +133,11 @@ static int qsearch(Worker *worker, const Position *pos, int ply, int depth, int 
         moveCount++;
 
         // Prune losing captures in the qsearch
-        if (see < 0 && !pos->checkers)
+        if (see < 0)
             continue;
 
         // SEE proxy tells us we're unlikely to beat alpha
-        if (!pos->checkers && worker->eval[ply] + 97 <= alpha && see <= 0)
+        if (worker->eval[ply] + 97 <= alpha && see <= 0)
             continue;
 
         // Play move
@@ -339,7 +339,7 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
         const bool improving = ply < 2 || worker->eval[ply] > worker->eval[ply - 2];
 
         // Prune bad or late moves near the leaves
-        if (depth <= 5 && !pvNode && !pos->checkers && !nextPos.checkers) {
+        if (depth <= 5 && !pvNode && !nextPos.checkers) {
             // SEE pruning
             if (see < SEEMargin[capture][depth])
                continue;
