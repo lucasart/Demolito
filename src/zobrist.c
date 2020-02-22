@@ -40,15 +40,12 @@ static __attribute__((constructor)) void zobrist_init()
     ZobristTurn = prng(&state);
 }
 
-uint64_t zobrist_castling(bitboard_t castlableRooks)
+uint64_t zobrist_castling(bitboard_t castleRooks)
 {
-    assert(bb_count(Rank[RANK_1] & castlableRooks) <= 2);
-    assert(bb_count(Rank[RANK_8] & castlableRooks) <= 2);
-    assert(!(castlableRooks & ~Rank[RANK_1] & ~Rank[RANK_8]));
     bitboard_t k = 0;
 
-    while (castlableRooks)
-        k ^= ZobristCastling[bb_pop_lsb(&castlableRooks)];
+    while (castleRooks)
+        k ^= ZobristCastling[bb_pop_lsb(&castleRooks)];
 
     return k;
 }

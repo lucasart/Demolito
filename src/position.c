@@ -108,6 +108,63 @@ static void finish(Position *pos)
     pos->attacked = attacked_by(pos, them);
     pos->checkers = bb_test(pos->attacked, king)
         ? pos_attackers_to(pos, king, pos_pieces(pos)) & pos->byColor[them] : 0;
+
+#ifndef NDEBUG
+    // Verify piece counts
+    for (int color = WHITE; color <= BLACK; color++) {
+        for (int piece = KNIGHT; piece <= ROOK; piece++)
+            assert(bb_count(pos_pieces_cp(pos, color, piece)) <= 10);
+
+        assert(bb_count(pos_pieces_cp(pos, color, QUEEN)) <= 9);
+        assert(bb_count(pos_pieces_cp(pos, color, PAWN)) <= 8);
+        assert(bb_count(pos_pieces_cp(pos, color, KING)) == 1);
+        assert(bb_count(pos->byColor[color]) <= 16);
+    }
+
+    // Verify pawn ranks
+    assert(!(pos->byPiece[PAWN] & (Rank[RANK_1] | Rank[RANK_8])));
+
+    // Verify castle rooks
+    if (pos->castleRooks) {
+        // Castle rooks may only be white rooks on ranks 1, or black rooks on rank 8
+        assert(!(pos->castleRooks & ~((Rank[RANK_1] & pos_pieces_cp(pos, WHITE, ROOK))
+            | (Rank[RANK_8] & pos_pieces_cp(pos, BLACK, ROOK)))));
+
+        for (int color = WHITE; color <= BLACK; color++) {
+            const bitboard_t b = pos->castleRooks & pos->byColor[color];
+
+            if (bb_count(b) == 2)
+                // King must be between both rooks (implies king not on edge files)
+                assert(Segment[bb_lsb(b)][bb_msb(b)] & pos_pieces_cp(pos, color, KING));
+            else if (bb_count(b) == 1)
+                // King can't be on edge files
+                assert(!(pos_pieces_cp(pos, color, KING) & (File[FILE_A] | File[FILE_H])));
+            else
+                // No more than 2 castle rooks allowed
+                assert(!b);
+        }
+    }
+
+    // Verify ep square
+    if (pos->epSquare != NB_SQUARE) {
+        // ep square must be empty
+        assert(!bb_test(pos_pieces(pos), pos->epSquare));
+
+        const int rank = rank_of(pos->epSquare);
+        const int color = rank == RANK_3 ? WHITE : BLACK;
+
+        // ep square must be on rank 3 or 6
+        assert(rank == RANK_3 || rank == RANK_6);
+
+        // square in front must have a pawn of color
+        assert(bb_test(pos_pieces_cp(pos, color, PAWN), pos->epSquare + push_inc(color)));
+
+        // square behind must be empty
+        assert(!bb_test(pos_pieces(pos), pos->epSquare - push_inc(color)));
+    }
+
+    assert(pos->rule50 < 100);
+#endif
 }
 
 const char *PieceLabel[NB_COLOR] = {"NBRQKP.", "nbrqkp."};
@@ -142,49 +199,51 @@ void pos_set(Position *pos, const char *fen)
 
     // Piece placement
     char ch;
-    int square = A8;
+    int file = FILE_A, rank = RANK_8;
 
     while ((ch = *token++)) {
-        if (isdigit(ch))
-            square += ch - '0';
-        else if (ch == '/')
-            square += 2 * DOWN;
-        else {
+        if ('1' <= ch && ch <= '8') {
+            file += ch -'0';
+            assert(file <= NB_FILE);
+        } else if (ch == '/') {
+            rank--;
+            file = FILE_A;
+        } else {
+            assert(strchr("nbrqkpNBRQKP", ch));
             const bool color = islower(ch);
-            const char *label = strchr(PieceLabel[color], ch);
-
-            if (label)
-                set_square(pos, color, label - PieceLabel[color], square++);
+            set_square(pos, color, strchr(PieceLabel[color], ch) - PieceLabel[color],
+                square_from(rank, file++));
         }
     }
 
     // Turn of play
     token = strtok_r(NULL, " ", &strPos);
+    assert(strlen(token) == 1);
 
     if (token[0] == 'w')
         pos->turn = WHITE;
     else {
+        assert(token[0] == 'b');
         pos->turn = BLACK;
         pos->key ^= ZobristTurn;
     }
 
     // Castling rights
     token = strtok_r(NULL, " ", &strPos);
+    assert(strlen(token) <= 4);
 
     while ((ch = *token++)) {
-        const int rank = isupper(ch) ? RANK_1 : RANK_8;
+        rank = isupper(ch) ? RANK_1 : RANK_8;
         ch = toupper(ch);
 
         if (ch == 'K')
-            square = bb_msb(Rank[rank] & pos->byPiece[ROOK]);
+            bb_set(&pos->castleRooks, bb_msb(Rank[rank] & pos->byPiece[ROOK]));
         else if (ch == 'Q')
-            square = bb_lsb(Rank[rank] & pos->byPiece[ROOK]);
+            bb_set(&pos->castleRooks, bb_lsb(Rank[rank] & pos->byPiece[ROOK]));
         else if ('A' <= ch && ch <= 'H')
-            square = square_from(rank, ch - 'A');
+            bb_set(&pos->castleRooks, square_from(rank, ch - 'A'));
         else
-            break;
-
-        bb_set(&pos->castleRooks, square);
+            assert(ch == '-' && !pos->castleRooks && *token == '\0');
     }
 
     pos->key ^= zobrist_castling(pos->castleRooks);
@@ -233,26 +292,19 @@ void pos_get(const Position *pos, char *fen)
         *fen++ = '-';
     else {
         for (int color = WHITE; color <= BLACK; color++) {
-            const bitboard_t sqs = pos->castleRooks & pos->byColor[color];
+            const bitboard_t b = pos->castleRooks & pos->byColor[color];
 
-            if (!sqs)
-                continue;
+            if (b) {
+                const int king = pos_king_square(pos, color);
 
-            const int king = pos_king_square(pos, color);
+                // Right side castling
+                if (b & Ray[king][king + RIGHT])
+                    *fen++ = PieceLabel[color][KING];
 
-            // Because we have castlable rooks, the king has to be on the first rank and
-            // cannot be in a corner, which allows using Ray[king][king +/- 1] to search
-            // for the castle rook in Chess960.
-            assert(rank_of(king) == relative_rank(color, RANK_1));
-            assert(file_of(king) != FILE_A && file_of(king) != FILE_H);
-
-            // Right side castling
-            if (sqs & Ray[king][king + RIGHT])
-                *fen++ = PieceLabel[color][KING];
-
-            // Left side castling
-            if (sqs & Ray[king][king + LEFT])
-                *fen++ = PieceLabel[color][QUEEN];
+                // Left side castling
+                if (b & Ray[king][king + LEFT])
+                    *fen++ = PieceLabel[color][QUEEN];
+            }
         }
     }
 

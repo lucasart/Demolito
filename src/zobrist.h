@@ -13,7 +13,7 @@ extern uint64_t ZobristCastling[NB_SQUARE];
 extern uint64_t ZobristEnPassant[NB_SQUARE + 1];
 extern uint64_t ZobristTurn;
 
-uint64_t zobrist_castling(bitboard_t castlableRooks);
+uint64_t zobrist_castling(bitboard_t castleRooks);
 
 void zobrist_clear(ZobristStack *st);
 void zobrist_push(ZobristStack *st, uint64_t key);
