@@ -17,6 +17,23 @@
 
 int64_t dbgCnt[2] = {0, 0};
 
+void eval_add(eval_t *e1, eval_t e2)
+{
+    e1->op += e2.op;
+    e1->eg += e2.eg;
+}
+
+void eval_sub(eval_t *e1, eval_t e2)
+{
+    e1->op -= e2.op;
+    e1->eg -= e2.eg;
+}
+
+bool eval_eq(eval_t e1, eval_t e2)
+{
+    return e1.op == e2.op && e1.eg == e2.eg;
+}
+
 int opposite(int color)
 {
     BOUNDS(color, NB_COLOR);

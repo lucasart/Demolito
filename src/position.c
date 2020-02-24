@@ -39,7 +39,7 @@ static void clear_square(Position *pos, int color, int piece, int square)
     bb_clear(&pos->byColor[color], square);
     bb_clear(&pos->byPiece[piece], square);
     pos->pieceOn[square] = NB_PIECE;
-    eval_sub(&pos->pst, pst[color][piece][square]);
+    eval_sub(&pos->pst, PST[color][piece][square]);
     pos->key ^= ZobristKey[color][piece][square];
 
     if (piece <= QUEEN)
@@ -58,7 +58,7 @@ static void set_square(Position *pos, int color, int piece, int square)
     bb_set(&pos->byColor[color], square);
     bb_set(&pos->byPiece[piece], square);
     pos->pieceOn[square] = piece;
-    eval_add(&pos->pst, pst[color][piece][square]);
+    eval_add(&pos->pst, PST[color][piece][square]);
     pos->key ^= ZobristKey[color][piece][square];
 
     if (piece <= QUEEN)
@@ -112,10 +112,10 @@ static void finish(Position *pos)
 #ifndef NDEBUG
     // Verify piece counts
     for (int color = WHITE; color <= BLACK; color++) {
-        for (int piece = KNIGHT; piece <= ROOK; piece++)
-            assert(bb_count(pos_pieces_cp(pos, color, piece)) <= 10);
-
-        assert(bb_count(pos_pieces_cp(pos, color, QUEEN)) <= 9);
+        assert(bb_count(pos_pieces_cpp(pos, color, KNIGHT, PAWN)) <= 10);
+        assert(bb_count(pos_pieces_cpp(pos, color, BISHOP, PAWN)) <= 10);
+        assert(bb_count(pos_pieces_cpp(pos, color, ROOK, PAWN)) <= 10);
+        assert(bb_count(pos_pieces_cpp(pos, color, QUEEN, PAWN)) <= 9);
         assert(bb_count(pos_pieces_cp(pos, color, PAWN)) <= 8);
         assert(bb_count(pos_pieces_cp(pos, color, KING)) == 1);
         assert(bb_count(pos->byColor[color]) <= 16);
@@ -126,7 +126,6 @@ static void finish(Position *pos)
 
     // Verify castle rooks
     if (pos->castleRooks) {
-        // Castle rooks may only be white rooks on ranks 1, or black rooks on rank 8
         assert(!(pos->castleRooks & ~((Rank[RANK_1] & pos_pieces_cp(pos, WHITE, ROOK))
             | (Rank[RANK_8] & pos_pieces_cp(pos, BLACK, ROOK)))));
 
@@ -134,35 +133,58 @@ static void finish(Position *pos)
             const bitboard_t b = pos->castleRooks & pos->byColor[color];
 
             if (bb_count(b) == 2)
-                // King must be between both rooks (implies king not on edge files)
                 assert(Segment[bb_lsb(b)][bb_msb(b)] & pos_pieces_cp(pos, color, KING));
             else if (bb_count(b) == 1)
-                // King can't be on edge files
                 assert(!(pos_pieces_cp(pos, color, KING) & (File[FILE_A] | File[FILE_H])));
             else
-                // No more than 2 castle rooks allowed
                 assert(!b);
         }
     }
 
     // Verify ep square
     if (pos->epSquare != NB_SQUARE) {
-        // ep square must be empty
-        assert(!bb_test(pos_pieces(pos), pos->epSquare));
-
         const int rank = rank_of(pos->epSquare);
         const int color = rank == RANK_3 ? WHITE : BLACK;
 
-        // ep square must be on rank 3 or 6
+        assert(!bb_test(pos_pieces(pos), pos->epSquare));
         assert(rank == RANK_3 || rank == RANK_6);
-
-        // square in front must have a pawn of color
         assert(bb_test(pos_pieces_cp(pos, color, PAWN), pos->epSquare + push_inc(color)));
-
-        // square behind must be empty
         assert(!bb_test(pos_pieces(pos), pos->epSquare - push_inc(color)));
     }
 
+    // Verify key, kingPawnKey, pieceMaterial[], pst, pieceOn[]
+    bitboard_t key = 0, kingPawnKey = 0;
+    eval_t pieceMaterial[NB_COLOR] = {{0, 0}, {0, 0}};
+    eval_t pst = {0, 0};
+
+    for (int color = WHITE; color <= BLACK; color++)
+        for (int piece = KNIGHT; piece <= PAWN; piece++) {
+            bitboard_t b = pos_pieces_cp(pos, color, piece);
+
+            while (b) {
+                const int square = bb_pop_lsb(&b);
+                assert(pos->pieceOn[square] == piece);
+
+                key ^= ZobristKey[color][piece][square];
+                eval_add(&pst, PST[color][piece][square]);
+
+                if (piece <= QUEEN)
+                    eval_add(&pieceMaterial[color], Material[piece]);
+                else
+                    kingPawnKey ^= ZobristKey[color][piece][square];
+            }
+        }
+
+    assert(kingPawnKey == pos->kingPawnKey);
+    key ^= ZobristEnPassant[pos->epSquare] ^ (pos->turn == BLACK ? ZobristTurn : 0)
+        ^ zobrist_castling(pos->castleRooks);
+    assert(pos->key == key);
+    assert(eval_eq(pieceMaterial[WHITE], pos->pieceMaterial[WHITE]));
+    assert(eval_eq(pieceMaterial[BLACK], pos->pieceMaterial[BLACK]));
+    assert(eval_eq(pst, pos->pst));
+
+    // Verify turn and rule50
+    assert(pos->turn == WHITE || pos->turn == BLACK);
     assert(pos->rule50 < 100);
 #endif
 }

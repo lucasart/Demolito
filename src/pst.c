@@ -18,19 +18,7 @@
 
 const eval_t Material[NB_PIECE] = {{N, N}, {B, B}, {R, R}, {Q, Q}, {0, 0}, {OP, EP}};
 
-eval_t pst[NB_COLOR][NB_PIECE][NB_SQUARE];
-
-void eval_add(eval_t *e1, eval_t e2)
-{
-    e1->op += e2.op;
-    e1->eg += e2.eg;
-}
-
-void eval_sub(eval_t *e1, eval_t e2)
-{
-    e1->op -= e2.op;
-    e1->eg -= e2.eg;
-}
+eval_t PST[NB_COLOR][NB_PIECE][NB_SQUARE];
 
 void __attribute__((constructor)) pst_init()
 {
@@ -39,12 +27,13 @@ void __attribute__((constructor)) pst_init()
             for (int square = A1; square <= H8; square++) {
                 const int file = file_of(square), file4 = file > FILE_D ? FILE_H - file : file;
 
-                pst[color][piece][square] = Material[piece];
-                eval_add(&pst[color][piece][square], pstSeed[piece][relative_rank_of(color, square)][file4]);
+                PST[color][piece][square] = Material[piece];
+                eval_add(&PST[color][piece][square],
+                    pstSeed[piece][relative_rank_of(color, square)][file4]);
 
                 if (color == BLACK) {
-                    pst[color][piece][square].op *= -1;
-                    pst[color][piece][square].eg *= -1;
+                    PST[color][piece][square].op *= -1;
+                    PST[color][piece][square].eg *= -1;
                 }
             }
 }

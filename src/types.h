@@ -33,6 +33,10 @@ typedef struct {
 
 extern int64_t dbgCnt[2];
 
+void eval_add(eval_t *e1, eval_t e2);
+void eval_sub(eval_t *e1, eval_t e2);
+bool eval_eq(eval_t e1, eval_t e2);
+
 int opposite(int color);
 int push_inc(int color);
 
