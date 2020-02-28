@@ -1,6 +1,5 @@
 /*
- * Demolito, a UCI chess engine.
- * Copyright 2015 lucasart.
+ * Demolito, a UCI chess engine. Copyright 2015-2020 lucasart.
  *
  * Demolito is free software: you can redistribute it and/or modify it under the terms of the GNU
  * General Public License as published by the Free Software Foundation, either version 3 of the
@@ -110,6 +109,17 @@ static void finish(Position *pos)
         ? pos_attackers_to(pos, king, pos_pieces(pos)) & pos->byColor[them] : 0;
 
 #ifndef NDEBUG
+    // Verify that byColor[] and byPiece[] do not collide, and are consistent
+    bitboard_t all = 0;
+
+    for (int piece = KNIGHT; piece <= PAWN; piece++) {
+        assert(!(pos->byPiece[piece] & all));
+        all |= pos->byPiece[piece];
+    }
+
+    assert(!(pos->byColor[WHITE] & pos->byColor[BLACK]));
+    assert(all == (pos->byColor[WHITE] | pos->byColor[BLACK]));
+
     // Verify piece counts
     for (int color = WHITE; color <= BLACK; color++) {
         assert(bb_count(pos_pieces_cpp(pos, color, KNIGHT, PAWN)) <= 10);
@@ -377,9 +387,11 @@ void pos_move(Position *pos, const Position *before, move_t m)
             // reset rule50, and set epSquare
             const int push = push_inc(us);
             pos->rule50 = 0;
-            pos->epSquare = to == from + 2 * push
-                    && (PawnAttacks[us][from + push] & pos_pieces_cp(pos, them, PAWN))
-                ? from + push : NB_SQUARE;
+
+            // Set ep square upon double push, only if catpturably by enemy pawns
+            if (to == from + 2 * push
+                    && (PawnAttacks[us][from + push] & pos_pieces_cp(pos, them, PAWN)))
+                pos->epSquare = from + push;
 
             // handle ep-capture and promotion
             if (to == before->epSquare)
