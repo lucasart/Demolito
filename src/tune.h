@@ -9,7 +9,7 @@ eval_t BishopPair;
 int Ahead;
 int Hanging[NB_PIECE];
 
-int RingAttack[4], RingDefense[4];
+int RingAttack[6], RingDefense[6];
 int CheckAttack[4], CheckDefense[4];
 int XRay[4];
 int SafetyCurveParam[2];
@@ -17,7 +17,7 @@ int SafetyCurveParam[2];
 eval_t Isolated[2];
 eval_t Backward[2];
 eval_t Doubled;
-int Shield[4][NB_RANK];
+int Shield[4][6];
 eval_t Connected[6];
 int OurDistance[NB_RANK];
 int TheirDistance[NB_RANK];

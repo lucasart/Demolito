@@ -101,8 +101,8 @@ eval_t BishopPair = {77, 122};
 int Ahead = 20;
 int Hanging[NB_PIECE] = {119, 71, 118, 233, 0, 42};
 
-int RingAttack[4] = {38, 51, 77, 75};
-int RingDefense[4] = {21, 29, 52, 45};
+int RingAttack[NB_PIECE] = {38, 51, 77, 75, 0, 20};
+int RingDefense[NB_PIECE] = {21, 29, 52, 45, 0, 0};
 int CheckAttack[4] = {84, 102, 108, 106};
 int CheckDefense[4] = {31, 55, 40, 48};
 int XRay[4] = {0, 83, 116, 85};
@@ -111,11 +111,11 @@ int SafetyCurveParam[2] = {1062, 800};
 eval_t Isolated[2] = {{15, 25}, {41, 25}};
 eval_t Backward[2] = {{12, 18}, {37, 15}};
 eval_t Doubled = {28, 36};
-int Shield[4][NB_RANK] = {
-    {0, 21, 19, 8, 12, 17, 11, 0},
-    {0, 31, 23, 5, 7, 5, 3, 0},
-    {0, 25, 17, 12, 14, 17, 13, 0},
-    {0, 25, 18, 16, 10, 7, 6, 0}
+int Shield[4][6] = {
+    {21, 19, 8, 12, 17, 11},
+    {31, 23, 5, 7, 5, 3},
+    {25, 17, 12, 14, 17, 13},
+    {25, 18, 16, 10, 7, 6}
 };
 eval_t Connected[] = {{8, -4}, {18, 2}, {20, 7}, {42, 21}, {34, 58}, {48, 68}};
 int OurDistance[NB_RANK] = {0, 5, 13, 10, 9, 10, 7, 0};
@@ -125,7 +125,7 @@ eval_t PasserBonus[6] = {{-3, 7}, {2, 15}, {18, 20}, {57, 61}, {150, 155}, {264,
 int PasserAdjust[6] = {-1, 4, 12, 50, 72, 91};
 int FreePasser[4] = {13, 14, 35, 97};
 
-enum {NAME_MAX_CHAR = 64, PARSER_ENTRY_NB = 33};
+enum {NAME_MAX_CHAR = 64, PARSER_ENTRY_NB = 30};
 
 typedef struct {
     char name[NAME_MAX_CHAR];
@@ -171,8 +171,8 @@ void tune_declare_all()
 
     declare(pe++, "Hanging", Hanging, NB_PIECE);
 
-    declare(pe++, "RingAttack", RingAttack, 4);
-    declare(pe++, "RingDefense", RingDefense, 4);
+    declare(pe++, "RingAttack", RingAttack, NB_PIECE);
+    declare(pe++, "RingDefense", RingDefense, NB_PIECE);
     declare(pe++, "CheckAttack", CheckAttack, 4);
     declare(pe++, "CheckDefense", CheckDefense, 4);
     declare(pe++, "XRay", &XRay[BISHOP], 3);
@@ -181,11 +181,7 @@ void tune_declare_all()
     declare(pe++, "Isolated", Isolated, 2 * 2);
     declare(pe++, "Backward", Backward, 2 * 2);
     declare(pe++, "Doubled", &Doubled, 2);
-
-    declare(pe++, "ShieldAH", &Shield[0][RANK_2], NB_RANK - 2);  // discard RANK_1/8
-    declare(pe++, "ShieldBG", &Shield[1][RANK_2], NB_RANK - 2);  // discard RANK_1/8
-    declare(pe++, "ShieldCF", &Shield[2][RANK_2], NB_RANK - 2);  // discard RANK_1/8
-    declare(pe++, "ShieldDE", &Shield[3][RANK_2], NB_RANK - 2);  // discard RANK_1/8
+    declare(pe++, "Shield", Shield, 4 * 6);
 
     declare(pe++, "Connected", Connected, 6 * 2);
     declare(pe++, "OurDistance", &OurDistance[RANK_2], NB_RANK - 2);  // discard RANK_1/8

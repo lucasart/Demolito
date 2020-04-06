@@ -141,10 +141,10 @@ static int safety(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_P
     // Attacks around the King
     const bitboard_t dangerZone = attacks[us][KING] & ~attacks[us][PAWN];
 
-    for (int piece = KNIGHT; piece <= QUEEN; piece++) {
+    for (int piece = KNIGHT; piece <= PAWN; piece++) {
         const bitboard_t attacked = attacks[them][piece] & dangerZone;
 
-        if (attacked) {
+        if (attacked && piece != KING) {
             count++;
             weight += bb_count(attacked) * RingAttack[piece];
             weight -= bb_count(attacked & attacks[us][NB_PIECE]) * RingDefense[piece];
@@ -223,7 +223,7 @@ static eval_t do_pawns(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
     bitboard_t b = ourPawns & (PawnPath[us][ourKing] | PawnSpan[us][ourKing]);
 
     while (b)
-        result.op += Shield[dte][relative_rank_of(us, bb_pop_lsb(&b))];
+        result.op += Shield[dte][relative_rank_of(us, bb_pop_lsb(&b)) - RANK_2];
 
     // Pawn structure
     b = ourPawns;
