@@ -19,7 +19,6 @@
 #include "eval.h"
 #include "gen.h"
 #include "htable.h"
-#include "move.h"
 #include "position.h"
 #include "search.h"
 #include "tune.h"
@@ -51,11 +50,9 @@ static void intro()
     uci_printf("option name Threads type spin default %d min 1 max 256\n", WorkersCount);
     uci_printf("option name Time Buffer type spin default %" PRId64 " min 0 max 1000\n", uciTimeBuffer);
     uci_printf("option name UCI_Chess960 type check default %s\n", uciChess960 ? "true" : "false");
-
 #ifdef TUNE
     tune_declare();
 #endif
-
     uci_puts("uciok");
 }
 
@@ -114,7 +111,7 @@ static void position(char **linePos)
 
     // Parse moves (if any)
     while ((token = strtok_r(NULL, " \n", linePos))) {
-        move_t m = string_to_move(&pos[idx], token);
+        move_t m = pos_string_to_move(&pos[idx], token);
         pos_move(&pos[idx^1], &pos[idx], m);
         idx ^= 1;
         zobrist_push(&rootStack, pos[idx].key);
@@ -191,10 +188,7 @@ void uci_loop()
             workers_clear();
             hashDate = 0;
 #ifdef TUNE
-            search_init();
-            pst_init();
-            eval_init();
-            move_init();
+            tune_refresh();
 #endif
         } else if (!strcmp(token, "position"))
             position(&linePos);
@@ -257,7 +251,7 @@ void info_update(Info *info, int depth, int score, int64_t nodes, move_t pv[], b
         pos[idx] = rootPos;
 
         for (int i = 0; pv[i]; i++) {
-            move_to_string(&pos[idx], pv[i], str);
+            pos_move_to_string(&pos[idx], pv[i], str);
             uci_printf(" %s", str);
             pos_move(&pos[idx ^ 1], &pos[idx], pv[i]);
             idx ^= 1;
@@ -287,13 +281,13 @@ void info_print_bestmove(Info *info)
     mtx_lock(&info->mtx);
 
     char best[6];
-    move_to_string(&rootPos, info->best, best);
+    pos_move_to_string(&rootPos, info->best, best);
 
     if (info->ponder) {
         char ponder[6];
         Position nextPos;
         pos_move(&nextPos, &rootPos, info->best);
-        move_to_string(&nextPos, info->ponder, ponder);
+        pos_move_to_string(&nextPos, info->ponder, ponder);
         uci_printf("bestmove %s ponder %s\n", best, ponder);
     } else
         uci_printf("bestmove %s\n", best);

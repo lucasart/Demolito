@@ -15,7 +15,6 @@
 #include <limits.h>
 #include <stdlib.h>
 #include "bitboard.h"
-#include "move.h"
 #include "position.h"
 #include "search.h"
 #include "sort.h"
@@ -58,8 +57,8 @@ void sort_score(Worker *worker, Sort *sort, const Position *pos, move_t ttMove)
         if (m == ttMove)
             sort->scores[i] = INT_MAX;
         else {
-            if (move_is_capture(pos, m)) {
-                const int see = move_see(pos, m);
+            if (pos_move_is_capture(pos, m)) {
+                const int see = pos_see(pos, m);
                 sort->scores[i] = see >= 0 ? see + SEPARATION : see - SEPARATION;
             } else {
                 const int from = move_from(m), to = move_to(m);
@@ -114,20 +113,20 @@ move_t sort_next(Sort *sort, const Position *pos, int *see)
     const int score = sort->scores[sort->idx];
     const move_t m = sort->moves[sort->idx];
 
-    if (move_is_capture(pos, m)) {
+    if (pos_move_is_capture(pos, m)) {
         // Deduce SEE from the sort score
         if (score >= SEPARATION)
             *see = score == INT_MAX
-                ? move_see(pos, m)  // special case: HT move is scored as INT_MAX
+                ? pos_see(pos, m)  // special case: HT move is scored as INT_MAX
                 : score - SEPARATION;  // Good captures are scored as SEE + SEPARATION
         else {
             assert(score < -SEPARATION);
             *see = score + SEPARATION;  // Bad captures are scored as SEE - SEPARATION
         }
 
-        assert(*see == move_see(pos, m));
+        assert(*see == pos_see(pos, m));
     } else
-        *see = move_see(pos, m);
+        *see = pos_see(pos, m);
 
     return sort->moves[sort->idx++];
 }

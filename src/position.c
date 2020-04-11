@@ -16,9 +16,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include "bitboard.h"
-#include "move.h"
 #include "position.h"
 #include "tune.h"
+#include "uci.h"
 #include "util.h"
 #include "zobrist.h"
 
@@ -529,6 +529,133 @@ bitboard_t calc_pins(const Position *pos)
     }
 
     return result;
+}
+
+static int SeeValue[NB_PIECE + 1];
+
+void __attribute__((constructor)) pos_init()
+{
+    for (int piece = 0; piece < NB_PIECE; piece++)
+        SeeValue[piece] = PieceValue[piece];
+
+    // Special cases to save branches in SEE
+    SeeValue[KING] = MATE;
+    SeeValue[NB_PIECE] = 0;
+}
+
+bool pos_move_is_capture(const Position *pos, move_t m)
+{
+    const int from = move_from(m), to = move_to(m);
+    return bb_test(pos->byColor[opposite(pos->turn)], to)
+        || (pos_piece_on(pos, from) == PAWN && (to == pos->epSquare || move_prom(m) < NB_PIECE));
+}
+
+bool pos_move_is_castling(const Position *pos, move_t m)
+{
+    return bb_test(pos->byColor[pos->turn], move_to(m));
+}
+
+void pos_move_to_string(const Position *pos, move_t m, char *str)
+{
+    const int from = move_from(m), to = move_to(m), prom = move_prom(m);
+
+    if (!(from | to | prom)) {
+        strcpy(str, "0000");
+        return;
+    }
+
+    const int _to = !uciChess960 && pos_move_is_castling(pos, m)
+        ? (to > from ? from + 2 : from - 2)  // e1h1 -> e1g1, e1a1 -> e1c1
+        : to;
+
+    square_to_string(from, str);
+    square_to_string(_to, str + 2);
+
+    if (prom < NB_PIECE) {
+        str[4] = PieceLabel[BLACK][prom];
+        str[5] = '\0';
+    }
+}
+
+move_t pos_string_to_move(const Position *pos, const char *str)
+{
+    const int prom = str[4] ? (int)(strchr(PieceLabel[BLACK], str[4]) - PieceLabel[BLACK]) : NB_PIECE;
+    const int from = square_from(str[1] - '1', str[0] - 'a');
+    int to = square_from(str[3] - '1', str[2] - 'a');
+
+    if (!uciChess960 && pos_piece_on(pos, from) == KING) {
+        if (to == from + 2)  // e1g1 -> e1h1
+            to++;
+        else if (to == from - 2)  // e1c1 -> e1a1
+            to -= 2;
+    }
+
+    return move_build(from, to, prom);
+}
+
+// Static Exchange Evaluator
+int pos_see(const Position *pos, move_t m)
+{
+    const int from = move_from(m), to = move_to(m), prom = move_prom(m);
+    int us = pos->turn;
+    bitboard_t occ = pos_pieces(pos);
+
+    // General case
+    int gain[32];
+    int moved = pos_piece_on(pos, from);
+    gain[0] = SeeValue[pos_piece_on(pos, to)];
+    bb_clear(&occ, from);
+
+    // Special cases
+    if (moved == PAWN) {
+        if (to == pos->epSquare) {
+            bb_clear(&occ, to - push_inc(us));
+            gain[0] = SeeValue[moved];
+        } else if (prom < NB_PIECE) {
+            moved = prom;
+            gain[0] += SeeValue[moved] - SeeValue[PAWN];
+        }
+    }
+
+    // Easy case: to is not defended (~41% of the time)
+    if (!bb_test(pos->attacked, to))
+        return gain[0];
+
+    bitboard_t attackers = pos_attackers_to(pos, to, occ);
+    bitboard_t ourAttackers;
+
+    int idx = 0;
+
+    // Loop side by side and play (any) LVA recapture (~1.6 iterations on average)
+    while (us = opposite(us), ourAttackers = attackers & pos->byColor[us]) {
+        // Find least valuable attacker (LVA)
+        int lva = PAWN;
+
+        if (!(ourAttackers & pos_pieces_cp(pos, us, PAWN)))
+            for (lva = KNIGHT; lva <= KING; lva++)
+                if (ourAttackers & pos_pieces_cp(pos, us, lva))
+                    break;
+
+        // Remove the LVA
+        bb_clear(&occ, bb_lsb(ourAttackers & pos_pieces_cp(pos, us, lva)));
+
+        // Remove attackers we've already done. Purposely omit look through attacks (no elo gain).
+        attackers &= occ;
+
+        // Add the new entry to the gain[] array
+        idx++;
+        assert(idx < 32);
+        gain[idx] = SeeValue[moved] - gain[idx - 1];
+
+        moved = lva;
+    }
+
+    do {
+        if (-gain[idx] < gain[idx - 1])
+            gain[idx - 1] = -gain[idx];
+    } while (--idx);
+
+    return gain[0];
 }
 
 // Prints the position in ASCII 'art' (for debugging)

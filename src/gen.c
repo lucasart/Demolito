@@ -14,7 +14,6 @@
 */
 #include "bitboard.h"
 #include "gen.h"
-#include "move.h"
 #include "position.h"
 
 static move_t *serialize_moves(int from, bitboard_t targets, move_t *mList)
@@ -245,7 +244,7 @@ uint64_t gen_perft(const Position *pos, int depth, int ply)
 
         if (!ply) {
             char str[6];
-            move_to_string(pos, *m, str);
+            pos_move_to_string(pos, *m, str);
             printf("%s\t%" PRIu64 "\n", str, subTree);
         }
     }

@@ -31,6 +31,9 @@ typedef struct {
     int op, eg;
 } eval_t;
 
+// 16-bit move encoding: from:6, to:6, prom: 4 (NB_PIECE if none)
+typedef uint16_t move_t;
+
 extern int64_t dbgCnt[2];
 
 void eval_add(eval_t *e1, eval_t e2);
@@ -46,3 +49,9 @@ int file_of(int square);
 
 int relative_rank(int color, int rank);
 int relative_rank_of(int color, int square);
+
+int move_from(move_t m);
+int move_to(move_t m);
+int move_prom(move_t m);
+move_t move_build(int from, int to, int prom);
+

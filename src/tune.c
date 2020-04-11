@@ -13,6 +13,10 @@
  * not, see <http://www.gnu.org/licenses/>.
 */
 #include <string.h>
+#include "eval.h"
+#include "position.h"
+#include "pst.h"
+#include "search.h"
 #include "tune.h"
 
 int PieceValue[NB_PIECE] = {640, 640, 1046, 1980, 0, 179};
@@ -196,4 +200,12 @@ void tune_parse(const char *fullName, int value)
     for (size_t i = 0; i < sizeof(Entries) / sizeof(Entry); i++)
         if (!strcmp(name, Entries[i].name) && 0 <= idx && idx < Entries[i].count)
             ((int *)Entries[i].values)[idx] = value;
+}
+
+void tune_refresh()
+{
+    search_init();
+    pst_init();
+    eval_init();
+    pos_init();
 }

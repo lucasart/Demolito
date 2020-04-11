@@ -76,3 +76,28 @@ int relative_rank_of(int color, int square)
     BOUNDS(square, NB_SQUARE);
     return relative_rank(color, rank_of(square));
 }
+
+int move_from(move_t m)
+{
+    return m & 077;
+}
+
+int move_to(move_t m)
+{
+    return (m >> 6) & 077;
+}
+
+int move_prom(move_t m)
+{
+    const unsigned prom = m >> 12;
+    assert(prom <= QUEEN || prom == NB_PIECE);
+    return prom;
+}
+
+move_t move_build(int from, int to, int prom)
+{
+    BOUNDS(from, NB_SQUARE);
+    BOUNDS(to, NB_SQUARE);
+    assert((unsigned)prom <= QUEEN || prom == NB_PIECE);
+    return from | (to << 6) | (prom << 12);
+}

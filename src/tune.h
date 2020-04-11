@@ -28,3 +28,4 @@ int FreePasser[4];
 
 void tune_declare();
 void tune_parse(const char *fullName, int value);
+void tune_refresh();

@@ -16,7 +16,6 @@
 #include <stdlib.h>
 #include "eval.h"
 #include "htable.h"
-#include "move.h"
 #include "position.h"
 #include "search.h"
 #include "sort.h"
@@ -327,7 +326,7 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
         if (singularMove && moveCount >= 5)
             break;
 
-        const bool capture = move_is_capture(pos, currentMove);
+        const bool capture = pos_move_is_capture(pos, currentMove);
 
         if (!capture)
             quietSearched[quietSearchedCnt++] = currentMove;
@@ -443,7 +442,7 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
     }
 
     // Update move sorting statistics
-    if (alpha > oldAlpha && !singularMove && !move_is_capture(pos, bestMove)) {
+    if (alpha > oldAlpha && !singularMove && !pos_move_is_capture(pos, bestMove)) {
         const size_t rhIdx = zobrist_move_key(&worker->stack, 0) % NB_REFUTATION;
         const size_t fuhIdx = zobrist_move_key(&worker->stack, 1) % NB_FOLLOW_UP;
 

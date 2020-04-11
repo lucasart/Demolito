@@ -10,8 +10,6 @@ enum {MATE = 32000};
 // Max number of bytes needed to store a FEN
 enum {MAX_FEN = 64 + 8 + 2 + 5 + 3 + 4 + 4 + 1};
 
-typedef uint16_t move_t;  // from:6, to:6, prom: 3 (NB_PIECE if none)
-
 typedef struct {
     bitboard_t byColor[NB_COLOR];  // eg. byColor[WHITE] = squares occupied by white's army
     bitboard_t byPiece[NB_PIECE];  // eg. byPiece[KNIGHT] = squares occupied by knights (any color)
@@ -50,4 +48,14 @@ int pos_color_on(const Position *pos, int square);
 int pos_piece_on(const Position *pos, int square);
 bitboard_t pos_attackers_to(const Position *pos, int square, bitboard_t occ);
 bitboard_t calc_pins(const Position *pos);
+
+bool pos_move_is_capture(const Position *pos, move_t m);
+bool pos_move_is_castling(const Position *pos, move_t m);
+void pos_move_to_string(const Position *pos, move_t m, char *str);
+move_t pos_string_to_move(const Position *pos, const char *str);
+int pos_see(const Position *pos, move_t m);
+
 void pos_print(const Position *pos);
+
+void pos_init();
+
