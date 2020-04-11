@@ -304,8 +304,7 @@ static eval_t pawns(Worker *worker, const Position *pos, bitboard_t attacks[NB_C
 static int blend(const Position *pos, eval_t e)
 {
     const int pieceTotal = pos->pieceMaterial[WHITE] + pos->pieceMaterial[BLACK];
-    return e.op * pieceTotal / StartPieceTotal
-        + e.eg * (StartPieceTotal - pieceTotal) / StartPieceTotal;
+    return (e.op * pieceTotal + e.eg * (StartPieceTotal - pieceTotal)) / StartPieceTotal;
 }
 
 void eval_init()
@@ -332,7 +331,8 @@ void eval_init()
     }
 
     for (int file = FILE_A; file <= FILE_H; file++)
-        AdjacentFiles[file] = (file > FILE_A ? File[file - 1] : 0) | (file < FILE_H ? File[file + 1] : 0);
+        AdjacentFiles[file] = (file > FILE_A ? File[file - 1] : 0)
+            | (file < FILE_H ? File[file + 1] : 0);
 
     for (int s1 = A1; s1 <= H8; s1++)
         for (int s2 = A1; s2 <= H8; s2++) {
