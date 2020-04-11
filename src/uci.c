@@ -53,7 +53,7 @@ static void intro()
     uci_printf("option name UCI_Chess960 type check default %s\n", uciChess960 ? "true" : "false");
 
 #ifdef TUNE
-    tune_declare_all();
+    tune_declare();
 #endif
 
     uci_puts("uciok");
@@ -86,7 +86,7 @@ static void setoption(char **linePos)
         uciTimeBuffer = atoi(token);
     else {
 #ifdef TUNE
-        tune_parse_all(name, atoi(token));
+        tune_parse(name, atoi(token));
 #endif
     }
 }

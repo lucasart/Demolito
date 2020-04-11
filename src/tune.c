@@ -120,8 +120,7 @@ int Shield[4][6] = {
     {25, 18, 16, 10, 7, 6}
 };
 eval_t Connected[] = {{8, -4}, {18, 2}, {20, 7}, {42, 21}, {34, 58}, {48, 68}};
-int OurDistance[NB_RANK] = {0, 5, 13, 10, 9, 10, 7, 0};
-int TheirDistance[NB_RANK] = {0, 9, 9, 9, 11, 9, 9, 0};
+int Distance[2] = {9, 9};
 
 eval_t PasserBonus[6] = {{-3, 7}, {2, 15}, {18, 20}, {57, 61}, {150, 155}, {264, 270}};
 int PasserAdjust[6] = {-1, 4, 12, 50, 72, 91};
@@ -169,15 +168,14 @@ Entry Entries[] = {
     {"Shield", Shield, 4 * 6},
 
     {"Connected", Connected, 6 * 2},
-    {"OurDistance", &OurDistance[RANK_2], NB_RANK - 2},  // discard RANK_1/8
-    {"TheirDistance", &TheirDistance[RANK_2], NB_RANK - 2},  // discard RANK_1/8
+    {"Distance", Distance, 2},
 
     {"PasserBonus", PasserBonus, 6 * 2},
     {"PasserAdjust", PasserAdjust, 6},
     {"FreePasser", FreePasser, 4}
 };
 
-void tune_declare_all()
+void tune_declare()
 {
     for (size_t i = 0; i < sizeof(Entries) / sizeof(Entry); i++)
         for (int j = 0; j < Entries[i].count; j++)
@@ -185,7 +183,7 @@ void tune_declare_all()
                 Entries[i].name, j, ((int *)Entries[i].values)[j], -1000000, 1000000);
 }
 
-void tune_parse_all(const char *fullName, int value)
+void tune_parse(const char *fullName, int value)
 {
     // split fullName = "fooBar_12", into name = "fooBar" and idx = 12
     char name[NAME_MAX_CHAR];

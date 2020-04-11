@@ -229,8 +229,8 @@ static eval_t do_pawns(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
     // Pawn structure
     b = ourPawns;
 
-    // Distance bonus
-    int dMax = 0;
+    // Relative king distance bonus
+    int maxDistance = 0;
 
     while (b) {
         const int square = bb_pop_lsb(&b);
@@ -239,9 +239,9 @@ static eval_t do_pawns(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
         const bitboard_t besides = ourPawns & AdjacentFiles[file];
         const bool exposed = !(PawnPath[us][square] & pos->byPiece[PAWN]);
 
-        const int d = KingDistance[stop][theirKing] * TheirDistance[rank]
-            - KingDistance[stop][ourKing] * OurDistance[rank];
-        dMax = max(dMax, d);
+        const int d = KingDistance[stop][theirKing] * Distance[1]
+            - KingDistance[stop][ourKing] * Distance[0];
+        maxDistance = max(maxDistance, d);
 
         if (besides & (Rank[rank] | Rank[us == WHITE ? rank - 1 : rank + 1]))
             eval_add(&result, Connected[relative_rank(us, rank) - RANK_2]);
@@ -262,7 +262,7 @@ static eval_t do_pawns(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
         result.eg += KingDistance[square][theirKing] - KingDistance[square][ourKing];
     }
 
-    result.eg += dMax;
+    result.eg += maxDistance;
 
     return result;
 }

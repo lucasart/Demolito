@@ -20,12 +20,11 @@ eval_t Backward[2];
 eval_t Doubled;
 int Shield[4][6];
 eval_t Connected[6];
-int OurDistance[NB_RANK];
-int TheirDistance[NB_RANK];
+int Distance[2];
 
 eval_t PasserBonus[6];
 int PasserAdjust[6];
 int FreePasser[4];
 
-void tune_declare_all();
-void tune_parse_all(const char *fullName, int value);
+void tune_declare();
+void tune_parse(const char *fullName, int value);
