@@ -2,6 +2,8 @@
 #include "bitboard.h"
 #include "pst.h"
 
+enum {MATE = 32000};
+
 #define min(x, y) ((x) < (y) ? (x) : (y))
 #define max(x, y) ((x) > (y) ? (x) : (y))
 

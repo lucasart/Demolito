@@ -1,8 +1,6 @@
 #pragma once
 #include "position.h"
 
-enum {MATE = 32000};
-
 int move_from(move_t m);
 int move_to(move_t m);
 int move_prom(move_t m);

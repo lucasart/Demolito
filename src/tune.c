@@ -127,75 +127,62 @@ eval_t PasserBonus[6] = {{-3, 7}, {2, 15}, {18, 20}, {57, 61}, {150, 155}, {264,
 int PasserAdjust[6] = {-1, 4, 12, 50, 72, 91};
 int FreePasser[4] = {13, 14, 35, 97};
 
-enum {NAME_MAX_CHAR = 64, PARSER_ENTRY_NB = 31};
+enum {NAME_MAX_CHAR = 64};
 
 typedef struct {
     char name[NAME_MAX_CHAR];
-    int *values, count;
-} ParserEntry;
+    void *values;
+    int count;
+} Entry;
 
-ParserEntry ParserEntries[PARSER_ENTRY_NB];
+Entry Entries[] = {
+    {"PieceValue", PieceValue, NB_PIECE},
 
-static void declare(ParserEntry *pe, const char *name, void *buffer,int count)
-{
-    const int *values = buffer;
+    {"pstKnight", pstSeed[KNIGHT], NB_SQUARE},
+    {"pstBishop", pstSeed[BISHOP], NB_SQUARE},
+    {"pstRook", pstSeed[ROOK], NB_SQUARE},
+    {"pstQueen", pstSeed[QUEEN], NB_SQUARE},
+    {"pstKing", pstSeed[KING], NB_SQUARE},
+    {"pstPawn", pstSeed[PAWN][RANK_2], NB_SQUARE - 16},  // discard RANK_1/8
 
-    // Declare UCI options for all array elements
-    for (int i = 0; i < count; i++)
-        printf("option name %s_%d type spin default %d min %d max %d\n",
-            name, i, values[i], -1000000, 1000000);
+    {"MobilityKnight", Mobility[KNIGHT], 9 * 2},
+    {"MobilityBishop", Mobility[BISHOP], 14 * 2},
+    {"MobilityRook", Mobility[ROOK], 15 * 2},
+    {"MobilityQueen", Mobility[QUEEN], (14 + 15) * 2},
 
-    // Remember array information for parsing
-    strcpy(pe->name, name);
-    pe->values = buffer;
-    pe->count = count;
-}
+    {"RookOpen", RookOpen, 2},
+    {"BishopPair", &BishopPair, 2},
+    {"Ahead", &Ahead, 1},
+
+    {"Hanging", Hanging, NB_PIECE},
+
+    {"RingAttack", RingAttack, NB_PIECE},
+    {"RingDefense", RingDefense, NB_PIECE},
+    {"CheckAttack", CheckAttack, 4},
+    {"CheckDefense", CheckDefense, 4},
+    {"XRay", &XRay[BISHOP], 3},
+    {"SafetyCurveParam", SafetyCurveParam, 2},
+
+    {"Isolated", Isolated, 2 * 2},
+    {"Backward", Backward, 2 * 2},
+    {"Doubled", &Doubled, 2},
+    {"Shield", Shield, 4 * 6},
+
+    {"Connected", Connected, 6 * 2},
+    {"OurDistance", &OurDistance[RANK_2], NB_RANK - 2},  // discard RANK_1/8
+    {"TheirDistance", &TheirDistance[RANK_2], NB_RANK - 2},  // discard RANK_1/8
+
+    {"PasserBonus", PasserBonus, 6 * 2},
+    {"PasserAdjust", PasserAdjust, 6},
+    {"FreePasser", FreePasser, 4}
+};
 
 void tune_declare_all()
 {
-    ParserEntry *pe = ParserEntries;
-
-    declare(pe++, "PieceValue", PieceValue, NB_PIECE);
-
-    declare(pe++, "pstKnight", pstSeed[KNIGHT], NB_SQUARE);
-    declare(pe++, "pstBishop", pstSeed[BISHOP], NB_SQUARE);
-    declare(pe++, "pstRook", pstSeed[ROOK], NB_SQUARE);
-    declare(pe++, "pstQueen", pstSeed[QUEEN], NB_SQUARE);
-    declare(pe++, "pstKing", pstSeed[KING], NB_SQUARE);
-    declare(pe++, "pstPawn", pstSeed[PAWN][RANK_2], NB_SQUARE - 16);  // discard RANK_1/8
-
-    declare(pe++, "MobilityKnight", Mobility[KNIGHT], 9 * 2);
-    declare(pe++, "MobilityBishop", Mobility[BISHOP], 14 * 2);
-    declare(pe++, "MobilityRook", Mobility[ROOK], 15 * 2);
-    declare(pe++, "MobilityQueen", Mobility[QUEEN], (14 + 15) * 2);
-
-    declare(pe++, "RookOpen", RookOpen, 2);
-    declare(pe++, "BishopPair", &BishopPair, 2);
-    declare(pe++, "Ahead", &Ahead, 1);
-
-    declare(pe++, "Hanging", Hanging, NB_PIECE);
-
-    declare(pe++, "RingAttack", RingAttack, NB_PIECE);
-    declare(pe++, "RingDefense", RingDefense, NB_PIECE);
-    declare(pe++, "CheckAttack", CheckAttack, 4);
-    declare(pe++, "CheckDefense", CheckDefense, 4);
-    declare(pe++, "XRay", &XRay[BISHOP], 3);
-    declare(pe++, "SafetyCurveParam", SafetyCurveParam, 2);
-
-    declare(pe++, "Isolated", Isolated, 2 * 2);
-    declare(pe++, "Backward", Backward, 2 * 2);
-    declare(pe++, "Doubled", &Doubled, 2);
-    declare(pe++, "Shield", Shield, 4 * 6);
-
-    declare(pe++, "Connected", Connected, 6 * 2);
-    declare(pe++, "OurDistance", &OurDistance[RANK_2], NB_RANK - 2);  // discard RANK_1/8
-    declare(pe++, "TheirDistance", &TheirDistance[RANK_2], NB_RANK - 2);  // discard RANK_1/8
-
-    declare(pe++, "PasserBonus", PasserBonus, 6 * 2);
-    declare(pe++, "PasserAdjust", PasserAdjust, 6);
-    declare(pe++, "FreePasser", FreePasser, 4);
-
-    assert(pe == ParserEntries + PARSER_ENTRY_NB);
+    for (size_t i = 0; i < sizeof(Entries) / sizeof(Entry); i++)
+        for (int j = 0; j < Entries[i].count; j++)
+            printf("option name %s_%d type spin default %d min %d max %d\n",
+                Entries[i].name, j, ((int *)Entries[i].values)[j], -1000000, 1000000);
 }
 
 void tune_parse_all(const char *fullName, int value)
@@ -208,7 +195,7 @@ void tune_parse_all(const char *fullName, int value)
         return;
 
     // Test against each Parser Entry, and set array element on match
-    for (int i = 0; i < PARSER_ENTRY_NB; i++)
-        if (!strcmp(name, ParserEntries[i].name) && 0 <= idx && idx < ParserEntries[i].count)
-            ParserEntries[i].values[idx] = value;
+    for (size_t i = 0; i < sizeof(Entries) / sizeof(Entry); i++)
+        if (!strcmp(name, Entries[i].name) && 0 <= idx && idx < Entries[i].count)
+            ((int *)Entries[i].values)[idx] = value;
 }
