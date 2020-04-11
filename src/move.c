@@ -16,7 +16,10 @@
 #include "move.h"
 #include "bitboard.h"
 #include "position.h"
+#include "tune.h"
 #include "uci.h"
+
+static int SeeValue[NB_PIECE + 1];
 
 int move_from(move_t m)
 {
@@ -93,10 +96,18 @@ move_t string_to_move(const Position *pos, const char *str)
     return move_build(from, to, prom);
 }
 
+void __attribute__((constructor)) move_init()
+{
+    for (int piece = 0; piece < NB_PIECE; piece++)
+        SeeValue[piece] = PieceValue[piece];
+
+    // Special cases to save branches in SEE
+    SeeValue[KING] = MATE;
+    SeeValue[NB_PIECE] = 0;
+}
+
 int move_see(const Position *pos, move_t m)
 {
-    static const int seeValue[NB_PIECE + 1] = {N, B, R, Q, 10*Q, P, 0};
-
     const int from = move_from(m), to = move_to(m), prom = move_prom(m);
     int us = pos->turn;
     bitboard_t occ = pos_pieces(pos);
@@ -104,17 +115,17 @@ int move_see(const Position *pos, move_t m)
     // General case
     int gain[32];
     int moved = pos_piece_on(pos, from);
-    gain[0] = seeValue[pos_piece_on(pos, to)];
+    gain[0] = SeeValue[pos_piece_on(pos, to)];
     bb_clear(&occ, from);
 
     // Special cases
     if (moved == PAWN) {
         if (to == pos->epSquare) {
             bb_clear(&occ, to - push_inc(us));
-            gain[0] = seeValue[moved];
+            gain[0] = SeeValue[moved];
         } else if (prom < NB_PIECE) {
             moved = prom;
-            gain[0] += seeValue[moved] - seeValue[PAWN];
+            gain[0] += SeeValue[moved] - SeeValue[PAWN];
         }
     }
 
@@ -146,7 +157,7 @@ int move_see(const Position *pos, move_t m)
         // Add the new entry to the gain[] array
         idx++;
         assert(idx < 32);
-        gain[idx] = seeValue[moved] - gain[idx - 1];
+        gain[idx] = SeeValue[moved] - gain[idx - 1];
 
         moved = lva;
     }

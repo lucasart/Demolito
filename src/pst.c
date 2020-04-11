@@ -15,8 +15,6 @@
 #include "pst.h"
 #include "tune.h"
 
-const eval_t Material[NB_PIECE] = {{N, N}, {B, B}, {R, R}, {Q, Q}, {0, 0}, {OP, EP}};
-
 eval_t PST[NB_COLOR][NB_PIECE][NB_SQUARE];
 
 void __attribute__((constructor)) pst_init()
@@ -26,7 +24,10 @@ void __attribute__((constructor)) pst_init()
             for (int square = A1; square <= H8; square++) {
                 const int file = file_of(square), file4 = file > FILE_D ? FILE_H - file : file;
 
-                PST[color][piece][square] = Material[piece];
+                PST[color][piece][square] = piece == PAWN
+                    ? (eval_t){2 * PieceValue[PAWN] - 200, 200}
+                    : (eval_t){PieceValue[piece], PieceValue[piece]};
+
                 eval_add(&PST[color][piece][square],
                     pstSeed[piece][relative_rank_of(color, square)][file4]);
 

@@ -1,6 +1,7 @@
 #pragma once
 #include "types.h"
 
+int PieceValue[NB_PIECE];
 eval_t pstSeed[NB_PIECE][NB_RANK][NB_FILE / 2];
 eval_t Mobility[5][15];
 

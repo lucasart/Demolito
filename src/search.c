@@ -36,7 +36,7 @@ int Contempt = 10;
 
 int draw_score(int ply)
 {
-    return (ply & 1 ? Contempt : -Contempt) * EP / 100;
+    return (ply & 1 ? Contempt : -Contempt) * 2;
 }
 
 int Reduction[MAX_DEPTH + 1][MAX_MOVES];
@@ -205,7 +205,7 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
     static const int EvalMargin[] = {0, 130, 264, 410, 510, 672};
     static const int RazorMargin[] = {0, 229, 438, 495, 878, 1094};
     static const int SEEMargin[2][6] = {
-        {0, 0, 0, 0, -P, -2*P},  // quiet
+        {0, 0, 0, 0, -179, -358},  // quiet
         {0, -33, -132, -297, -528, -825}  // capture
     };
 
@@ -264,7 +264,7 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
         return refinedEval;
 
     // Eval pruning
-    if (depth <= 5 && !pos->checkers && !pvNode && pos->pieceMaterial[us].eg
+    if (depth <= 5 && !pos->checkers && !pvNode && pos->pieceMaterial[us]
             && refinedEval >= beta + EvalMargin[depth])
         return refinedEval;
 
@@ -285,7 +285,7 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
 
     // Null search
     if (depth >= 2 && !pvNode && !pos->checkers
-            && worker->eval[ply] >= beta && pos->pieceMaterial[us].eg) {
+            && worker->eval[ply] >= beta && pos->pieceMaterial[us]) {
         // Normallw worker->eval[ply] >= beta excludes the in check case (eval is -MATE). But with
         // HT collisions or races, HT data can't be trusted. Doing a null move in check crashes for
         // obvious reasons, so it must be explicitely prevented.

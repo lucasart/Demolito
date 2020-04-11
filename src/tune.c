@@ -15,6 +15,8 @@
 #include <string.h>
 #include "tune.h"
 
+int PieceValue[NB_PIECE] = {640, 640, 1046, 1980, 0, 179};
+
 eval_t pstSeed[NB_PIECE][NB_RANK][NB_FILE / 2] = {
     {
         {{-100,-38}, {-55,-19}, {-49,-18}, {-33,-8}},
@@ -125,7 +127,7 @@ eval_t PasserBonus[6] = {{-3, 7}, {2, 15}, {18, 20}, {57, 61}, {150, 155}, {264,
 int PasserAdjust[6] = {-1, 4, 12, 50, 72, 91};
 int FreePasser[4] = {13, 14, 35, 97};
 
-enum {NAME_MAX_CHAR = 64, PARSER_ENTRY_NB = 30};
+enum {NAME_MAX_CHAR = 64, PARSER_ENTRY_NB = 31};
 
 typedef struct {
     char name[NAME_MAX_CHAR];
@@ -152,6 +154,8 @@ static void declare(ParserEntry *pe, const char *name, void *buffer,int count)
 void tune_declare_all()
 {
     ParserEntry *pe = ParserEntries;
+
+    declare(pe++, "PieceValue", PieceValue, NB_PIECE);
 
     declare(pe++, "pstKnight", pstSeed[KNIGHT], NB_SQUARE);
     declare(pe++, "pstBishop", pstSeed[BISHOP], NB_SQUARE);
@@ -191,7 +195,7 @@ void tune_declare_all()
     declare(pe++, "PasserAdjust", PasserAdjust, 6);
     declare(pe++, "FreePasser", FreePasser, 4);
 
-    assert(pe == &ParserEntries[PARSER_ENTRY_NB]);
+    assert(pe == ParserEntries + PARSER_ENTRY_NB);
 }
 
 void tune_parse_all(const char *fullName, int value)

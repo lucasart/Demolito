@@ -4,7 +4,6 @@
 #include "zobrist.h"
 
 enum {
-    MATE = 32000,
     MAX_DEPTH = 127, MIN_DEPTH = -8,
     MAX_PLY = MAX_DEPTH - MIN_DEPTH + 2,
 };

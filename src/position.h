@@ -18,7 +18,7 @@ typedef struct {
     bitboard_t checkers;  // if in check, enemy piece(s) giving check(s), otherwise empty
     uint64_t key;  // hash key encoding all information of the position (except rule50)
     uint64_t kingPawnKey;  // hash key encoding only king and pawns
-    eval_t pieceMaterial[NB_COLOR];  // total piece material value by color (excluding pawns)
+    int pieceMaterial[NB_COLOR];  // endgame piece material value by color (excluding pawns)
     eval_t pst;  // PST (Piece on Square Tables) total. Net sum, from white's pov
     uint8_t pieceOn[NB_SQUARE];  // eg. pieceOn[D1] = QUEEN in start pos
     int turn;  // turn of play (WHITE or BLACK)

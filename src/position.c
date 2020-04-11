@@ -18,6 +18,7 @@
 #include "bitboard.h"
 #include "move.h"
 #include "position.h"
+#include "tune.h"
 #include "util.h"
 #include "zobrist.h"
 
@@ -42,7 +43,7 @@ static void clear_square(Position *pos, int color, int piece, int square)
     pos->key ^= ZobristKey[color][piece][square];
 
     if (piece <= QUEEN)
-        eval_sub(&pos->pieceMaterial[color], Material[piece]);
+        pos->pieceMaterial[color] -= PieceValue[piece];
     else
         pos->kingPawnKey ^= ZobristKey[color][piece][square];
 }
@@ -61,7 +62,7 @@ static void set_square(Position *pos, int color, int piece, int square)
     pos->key ^= ZobristKey[color][piece][square];
 
     if (piece <= QUEEN)
-        eval_add(&pos->pieceMaterial[color], Material[piece]);
+        pos->pieceMaterial[color] += PieceValue[piece];
     else
         pos->kingPawnKey ^= ZobristKey[color][piece][square];
 }
@@ -164,7 +165,7 @@ static void finish(Position *pos)
 
     // Verify key, kingPawnKey, pieceMaterial[], pst, pieceOn[]
     bitboard_t key = 0, kingPawnKey = 0;
-    eval_t pieceMaterial[NB_COLOR] = {{0, 0}, {0, 0}};
+    int pieceMaterial[NB_COLOR] = {0};
     eval_t pst = {0, 0};
 
     for (int color = WHITE; color <= BLACK; color++)
@@ -179,7 +180,7 @@ static void finish(Position *pos)
                 eval_add(&pst, PST[color][piece][square]);
 
                 if (piece <= QUEEN)
-                    eval_add(&pieceMaterial[color], Material[piece]);
+                    pieceMaterial[color] += PieceValue[piece];
                 else
                     kingPawnKey ^= ZobristKey[color][piece][square];
             }
@@ -189,8 +190,8 @@ static void finish(Position *pos)
     key ^= ZobristEnPassant[pos->epSquare] ^ (pos->turn == BLACK ? ZobristTurn : 0)
         ^ zobrist_castling(pos->castleRooks);
     assert(pos->key == key);
-    assert(eval_eq(pieceMaterial[WHITE], pos->pieceMaterial[WHITE]));
-    assert(eval_eq(pieceMaterial[BLACK], pos->pieceMaterial[BLACK]));
+    assert(pieceMaterial[WHITE] == pos->pieceMaterial[WHITE]);
+    assert(pieceMaterial[BLACK] == pos->pieceMaterial[BLACK]);
     assert(eval_eq(pst, pos->pst));
 
     // Verify turn and rule50

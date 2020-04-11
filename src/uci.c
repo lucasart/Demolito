@@ -39,7 +39,7 @@ static void uci_format_score(int score, char str[17])
     if (is_mate_score(score))
         sprintf(str, "mate %d", score > 0 ? (MATE - score + 1) / 2 : -(score + MATE + 1) / 2);
     else
-        sprintf(str, "cp %d", score * 100 / EP);
+        sprintf(str, "cp %d", score / 2);
 }
 
 static void intro()
@@ -194,6 +194,7 @@ void uci_loop()
             search_init();
             pst_init();
             eval_init();
+            move_init();
 #endif
         } else if (!strcmp(token, "position"))
             position(&linePos);

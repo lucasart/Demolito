@@ -21,6 +21,7 @@
 #include "util.h"
 
 // Pre-calculated in eval_init()
+static int StartPieceTotal;
 static bitboard_t PawnSpan[NB_COLOR][NB_SQUARE];
 static bitboard_t PawnPath[NB_COLOR][NB_SQUARE];
 static bitboard_t AdjacentFiles[NB_FILE];
@@ -302,14 +303,16 @@ static eval_t pawns(Worker *worker, const Position *pos, bitboard_t attacks[NB_C
 
 static int blend(const Position *pos, eval_t e)
 {
-    static const int full = 4 * (N + B + R) + 2 * Q;
-
-    const int total = pos->pieceMaterial[WHITE].eg + pos->pieceMaterial[BLACK].eg;
-    return e.op * total / full + e.eg * (full - total) / full;
+    const int pieceTotal = pos->pieceMaterial[WHITE] + pos->pieceMaterial[BLACK];
+    return e.op * pieceTotal / StartPieceTotal
+        + e.eg * (StartPieceTotal - pieceTotal) / StartPieceTotal;
 }
 
 void eval_init()
 {
+    StartPieceTotal = 4 * (PieceValue[KNIGHT] + PieceValue[BISHOP] + PieceValue[ROOK])
+        + 2 * PieceValue[QUEEN];
+
     for (int square = H8; square >= A1; square--) {
         if (rank_of(square) == RANK_8)
             PawnSpan[WHITE][square] = PawnPath[WHITE][square] = 0;
@@ -389,7 +392,7 @@ int evaluate(Worker *worker, const Position *pos)
     const int winner = stm.eg > 0 ? us : them, loser = opposite(winner);
     const bitboard_t winnerPawns = pos_pieces_cp(pos, winner, PAWN);
 
-    if (pos->pieceMaterial[winner].eg - pos->pieceMaterial[loser].eg < R) {
+    if (pos->pieceMaterial[winner] - pos->pieceMaterial[loser] < PieceValue[ROOK]) {
         // Scale down when the winning side has <= 2 pawns
         static const int discount[9] = {5, 2, 1};
         stm.eg -= stm.eg * discount[bb_count(winnerPawns)] / 8;
