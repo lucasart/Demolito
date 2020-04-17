@@ -157,6 +157,7 @@ static void finish(Position *pos)
         const int rank = rank_of(pos->epSquare);
         const int color = rank == RANK_3 ? WHITE : BLACK;
 
+        assert(color != pos->turn);
         assert(!bb_test(pos_pieces(pos), pos->epSquare));
         assert(rank == RANK_3 || rank == RANK_6);
         assert(bb_test(pos_pieces_cp(pos, color, PAWN), pos->epSquare + push_inc(color)));

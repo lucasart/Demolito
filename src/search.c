@@ -201,7 +201,7 @@ static int qsearch(Worker *worker, const Position *pos, int ply, int depth, int 
 static int search(Worker *worker, const Position *pos, int ply, int depth, int alpha, int beta,
     move_t pv[], move_t singularMove)
 {
-    static const int EvalMargin[] = {0, 130, 264, 410, 510, 672};
+    static const int EvalMargin[] = {0, 130, 264, 410, 510, 672, 840};
     static const int RazorMargin[] = {0, 229, 438, 495, 878, 1094};
     static const int SEEMargin[2][6] = {
         {0, 0, 0, 0, -179, -358},  // quiet
@@ -263,7 +263,7 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
         return refinedEval;
 
     // Eval pruning
-    if (depth <= 5 && !pos->checkers && !pvNode && pos->pieceMaterial[us]
+    if (depth <= 6 && !pos->checkers && !pvNode && pos->pieceMaterial[us]
             && refinedEval >= beta + EvalMargin[depth])
         return refinedEval;
 
