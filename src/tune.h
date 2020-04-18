@@ -2,7 +2,9 @@
 #include "types.h"
 
 int PieceValue[NB_PIECE];
-eval_t pstSeed[NB_PIECE][NB_RANK][NB_FILE / 2];
+
+eval_t KnightPstSeed[4+8], RookPstSeed[4+8], QueenPstSeed[4+8];
+eval_t BishopPstSeed[8][4], KingPstSeed[8][4], PawnPstSeed[6][4];
 eval_t Mobility[5][15];
 
 int RookOpen[2];
