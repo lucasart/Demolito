@@ -14,12 +14,11 @@
 */
 #include <string.h>
 #include "eval.h"
-#include "position.h"
 #include "pst.h"
 #include "search.h"
 #include "tune.h"
 
-int PieceValue[NB_PIECE] = {640, 640, 1046, 1980, 0, 179};
+int PieceValue[NB_PIECE] = {640, 640, 1046, 1980, MATE, 179};
 
 eval_t KnightPstSeed[4+8] = {
     {-56, -19}, {-32, -14}, {-15, -4}, {7, 4},
@@ -191,5 +190,4 @@ void tune_refresh()
     search_init();
     pst_init();
     eval_init();
-    pos_init();
 }

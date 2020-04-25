@@ -532,18 +532,6 @@ bitboard_t calc_pins(const Position *pos)
     return result;
 }
 
-static int SeeValue[NB_PIECE + 1];
-
-void __attribute__((constructor)) pos_init()
-{
-    for (int piece = 0; piece < NB_PIECE; piece++)
-        SeeValue[piece] = PieceValue[piece];
-
-    // Special cases to save branches in SEE
-    SeeValue[KING] = MATE;
-    SeeValue[NB_PIECE] = 0;
-}
-
 bool pos_move_is_capture(const Position *pos, move_t m)
 {
     const int from = move_from(m), to = move_to(m);
@@ -604,17 +592,17 @@ int pos_see(const Position *pos, move_t m)
     // General case
     int gain[32];
     int moved = pos_piece_on(pos, from);
-    gain[0] = SeeValue[pos_piece_on(pos, to)];
+    gain[0] = PieceValue[pos_piece_on(pos, to)];
     bb_clear(&occ, from);
 
     // Special cases
     if (moved == PAWN) {
         if (to == pos->epSquare) {
             bb_clear(&occ, to - push_inc(us));
-            gain[0] = SeeValue[moved];
+            gain[0] = PieceValue[moved];
         } else if (prom < NB_PIECE) {
             moved = prom;
-            gain[0] += SeeValue[moved] - SeeValue[PAWN];
+            gain[0] += PieceValue[moved] - PieceValue[PAWN];
         }
     }
 
@@ -646,7 +634,7 @@ int pos_see(const Position *pos, move_t m)
         // Add the new entry to the gain[] array
         idx++;
         assert(idx < 32);
-        gain[idx] = SeeValue[moved] - gain[idx - 1];
+        gain[idx] = PieceValue[moved] - gain[idx - 1];
 
         moved = lva;
     }

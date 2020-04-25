@@ -25,8 +25,8 @@ void __attribute__((constructor)) pst_init()
                 const int rr = relative_rank_of(color, square);
                 const int file = file_of(square), file4 = file > FILE_D ? FILE_H - file : file;
 
-                PST[color][piece][square] = piece == PAWN
-                    ? (eval_t){2 * PieceValue[PAWN] - 200, 200}
+                PST[color][piece][square] = piece == PAWN ? (eval_t){2 * PieceValue[PAWN] - 200, 200}
+                    : piece == KING ? (eval_t){0, 0}
                     : (eval_t){PieceValue[piece], PieceValue[piece]};
 
                 if (piece == KNIGHT) {

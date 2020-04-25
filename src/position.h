@@ -56,6 +56,3 @@ move_t pos_string_to_move(const Position *pos, const char *str);
 int pos_see(const Position *pos, move_t m);
 
 void pos_print(const Position *pos);
-
-void pos_init();
-
