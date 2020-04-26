@@ -21,7 +21,6 @@
 
 bitboard_t Rank[NB_RANK], File[NB_FILE];
 bitboard_t PawnAttacks[NB_COLOR][NB_SQUARE], KnightAttacks[NB_SQUARE], KingAttacks[NB_SQUARE];
-bitboard_t BishopRays[NB_SQUARE], RookRays[NB_SQUARE];
 bitboard_t Segment[NB_SQUARE][NB_SQUARE], Ray[NB_SQUARE][NB_SQUARE];
 
 static void safe_set_bit(bitboard_t *b, int rank, int file)
@@ -185,9 +184,6 @@ static __attribute__((constructor)) void bb_init()
     for (int square = A1; square <= H8; square++) {
         init_slider_attacks(square, BishopMask, BishopMagic, BishopShift, BishopAttacks, BishopDir);
         init_slider_attacks(square, RookMask, RookMagic, RookShift, RookAttacks, RookDir);
-
-        BishopRays[square] = BishopAttacks[square][0];
-        RookRays[square] = RookAttacks[square][0];
     }
 
     // Validate all the precalculated bitboards in debug mode
@@ -211,8 +207,6 @@ static __attribute__((constructor)) void bb_init()
     assert(hash(BishopDB, sizeof BishopDB, 0) == 0x3ef1f0d07c261d52);
     assert(hash(RookDB, sizeof RookDB, 0) == 0xf3fa2f3754f1c608);
 #endif
-    assert(hash(BishopRays, sizeof BishopRays, 0) == 0x9a095e90c4f6af4e);
-    assert(hash(RookRays, sizeof RookRays, 0) == 0x5bff450923142ec1);
 }
 
 bitboard_t bb_bishop_attacks(int square, bitboard_t occ)

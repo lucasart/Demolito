@@ -515,8 +515,8 @@ bitboard_t calc_pins(const Position *pos)
 {
     const int us = pos->turn, them = opposite(us);
     const int king = pos_king_square(pos, us);
-    bitboard_t pinners = (pos_pieces_cpp(pos, them, ROOK, QUEEN) & RookRays[king])
-        | (pos_pieces_cpp(pos, them, BISHOP, QUEEN) & BishopRays[king]);
+    bitboard_t pinners = (pos_pieces_cpp(pos, them, ROOK, QUEEN) & bb_rook_attacks(king, 0))
+        | (pos_pieces_cpp(pos, them, BISHOP, QUEEN) & bb_bishop_attacks(king, 0));
     bitboard_t result = 0;
 
     while (pinners) {

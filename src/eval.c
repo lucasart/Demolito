@@ -175,8 +175,8 @@ static int safety(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_P
         }
 
     // X-Ray threats: sliding pieces with potential for pins or discovered checks
-    bitboard_t xrays = (BishopRays[king] & pos_pieces_cpp(pos, them, BISHOP, QUEEN))
-        | (RookRays[king] & pos_pieces_cpp(pos, them, ROOK, QUEEN));
+    bitboard_t xrays = (bb_bishop_attacks(king, 0) & pos_pieces_cpp(pos, them, BISHOP, QUEEN))
+        | (bb_rook_attacks(king, 0) & pos_pieces_cpp(pos, them, ROOK, QUEEN));
 
     while (xrays) {
         const int xray = bb_pop_lsb(&xrays);
