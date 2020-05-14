@@ -1,7 +1,7 @@
 # makefile for dev and OpenBench
 
-# Compiler: gcc by default (for OpenBench), but clang produces faster code
-CC = gcc
+# Compiler: clang (fastest) gcc
+CC = clang
 
 # Compilation flags
 CF = -std=gnu11 -DNDEBUG -O3 -flto -Wfatal-errors -Wall -Wextra -Wshadow
