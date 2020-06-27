@@ -4,9 +4,6 @@
 
 enum {MATE = 32000};
 
-#define min(x, y) ((x) < (y) ? (x) : (y))
-#define max(x, y) ((x) > (y) ? (x) : (y))
-
 // Max number of bytes needed to store a FEN
 enum {MAX_FEN = 64 + 8 + 2 + 5 + 3 + 4 + 4 + 1};
 

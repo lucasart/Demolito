@@ -6,6 +6,16 @@
 
 #define BOUNDS(v, ub) assert((unsigned)(v) < (ub))
 
+#define min(x, y) ({ \
+    typeof(x) _x = (x), _y = (y); \
+    _x < _y ? _x : _y; \
+})
+
+#define max(x, y) ({ \
+    typeof(x) _x = (x), _y = (y); \
+    _x > _y ? _x : _y; \
+})
+
 enum {RANK_1, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8, NB_RANK};
 enum {FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H, NB_FILE};
 
@@ -54,4 +64,3 @@ int move_from(move_t m);
 int move_to(move_t m);
 int move_prom(move_t m);
 move_t move_build(int from, int to, int prom);
-
