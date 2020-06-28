@@ -345,6 +345,10 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
             // Late Move Pruning
             if (!capture && depth <= 4 && moveCount >= 3 * depth + 2 * improving)
                 break;
+
+            // Prune quiet moves with negative history at depth=1 (excluding 1st move)
+            if (!capture && depth == 1 && moveCount >= 2 && sort.scores[sort.idx - 1] < 0)
+                break;
         }
 
         hash_prefetch(nextPos.key);
