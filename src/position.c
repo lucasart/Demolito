@@ -25,7 +25,7 @@
 // Sets the position in its empty state (no pieces, white to play, rule50=0, etc.)
 static void clear(Position *pos)
 {
-    memset(pos, 0, sizeof(*pos));
+    *pos = (Position){0};
     memset(pos->pieceOn, NB_PIECE, sizeof(pos->pieceOn));
 }
 

@@ -26,9 +26,6 @@ Position rootPos;
 ZobristStack rootStack;
 Limits lim;
 
-// Protect thread scheduling decisions
-static mtx_t mtxSchedule;
-
 atomic_bool Stop;  // Stop signal raised by timer or master thread, and observed by workers
 
 int Contempt = 10;
@@ -346,7 +343,7 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
             if (!capture && depth <= 4 && moveCount >= 3 * depth + 2 * improving)
                 break;
 
-            // Prune quiet moves with negative history at depth=1 (excluding 1st move)
+            // Prune quiet moves with negative history (excluding 1st move)
             if (!capture && depth <= 2 && moveCount >= 2 && sort.scores[sort.idx - 1] < 0)
                 break;
         }
@@ -502,27 +499,6 @@ static void iterate(Worker *worker)
     int volatile score = 0;
 
     for (volatile int depth = 1; depth <= lim.depth; depth++) {
-        // If half of the threads are searching >= depth, then move to the next depth.
-        // Special cases where this does not apply:
-        // depth == 1: we want all threads to finish depth == 1 asap.
-        // depth == lim.depth: there is no next depth.
-        mtx_lock(&mtxSchedule);
-
-        if (WorkersCount >= 2 && depth >= 2 && depth < lim.depth) {
-            int cnt = 0;
-
-            for (int i = 0; i < WorkersCount; i++)
-                cnt += worker != &Workers[i] && Workers[i].depth >= depth;
-
-            if (cnt >= WorkersCount / 2) {
-                mtx_unlock(&mtxSchedule);
-                continue;
-            }
-        }
-
-        worker->depth = depth;
-        mtx_unlock(&mtxSchedule);
-
         if (!setjmp(worker->jbuf))
             score = aspirate(worker, depth, pv, score);
         else {
@@ -560,7 +536,6 @@ int64_t search_go()
     int64_t start = system_msec();
 
     info_create(&ui);
-    mtx_init(&mtxSchedule, mtx_plain);
     Stop = false;
 
     hashDate++;
@@ -605,7 +580,6 @@ int64_t search_go()
 
     info_print_bestmove(&ui);
     info_destroy(&ui);
-    mtx_destroy(&mtxSchedule);
 
     return workers_nodes();
 }

@@ -25,7 +25,6 @@ typedef struct {
     jmp_buf jbuf;
     int64_t nodes;
     int eval[MAX_PLY];
-    int depth;
 } Worker;
 
 extern Worker *Workers;

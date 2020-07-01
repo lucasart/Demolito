@@ -13,7 +13,6 @@
  * not, see <http://www.gnu.org/licenses/>.
 */
 #include <stdlib.h>
-#include <string.h>
 #include "workers.h"
 #include "search.h"
 
@@ -28,7 +27,7 @@ static void __attribute__((destructor)) workers_free()
 void workers_clear()
 {
     for (int i = 0; i < WorkersCount; i++)
-        memset(&Workers[i], 0, sizeof(Workers[i]));
+        Workers[i] = (Worker){0};
 }
 
 void workers_prepare(int count)
@@ -43,7 +42,6 @@ void workers_new_search()
     for (int i = 0; i < WorkersCount; i++) {
         Workers[i].stack = rootStack;
         Workers[i].nodes = 0;
-        Workers[i].depth = 0;
     }
 }
 

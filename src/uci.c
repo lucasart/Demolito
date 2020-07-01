@@ -122,7 +122,7 @@ static void position(char **linePos)
 
 static void go(char **linePos)
 {
-    memset(&lim, 0, sizeof(lim));
+    lim = (Limits){0};
     lim.depth = MAX_DEPTH;
 
     const char *token;

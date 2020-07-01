@@ -34,7 +34,7 @@ void bench(int depth)
     uint64_t nodes = 0, seal = 0;
     uciChess960 = true;
 
-    memset(&lim, 0, sizeof(lim));
+    lim = (Limits){0};
     lim.depth = depth;
 
     int64_t start = system_msec();
