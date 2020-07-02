@@ -493,8 +493,9 @@ static int aspirate(Worker *worker, int depth, move_t pv[], int score)
     }
 }
 
-static void iterate(Worker *worker)
+void *iterate(void *_worker)
 {
+    Worker *worker = _worker;
     move_t pv[MAX_PLY + 1];
     int volatile score = 0;
 
@@ -513,6 +514,8 @@ static void iterate(Worker *worker)
     // or pondering, in which case workers wait here, and the timer loop continues until stopped.
     if (!lim.infinite)
         Stop = true;
+
+    return NULL;
 }
 
 int mated_in(int ply)
