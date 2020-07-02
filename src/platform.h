@@ -19,7 +19,7 @@
     #define sleep_msec(msec) Sleep(msec)
 
     // Timer
-    static inline int64_t system_msec() {
+    static inline int64_t system_msec(void) {
         LARGE_INTEGER t, f;
         QueryPerformanceCounter(&t);
         QueryPerformanceFrequency(&f);
@@ -38,7 +38,7 @@
         .tv_nsec = (msec % 1000) * 1000000LL}, NULL)
 
     // Timer
-    static inline int64_t system_msec() {
+    static inline int64_t system_msec(void) {
         struct timespec t;
         clock_gettime(CLOCK_MONOTONIC, &t);
         return t.tv_sec * 1000LL + t.tv_nsec / 1000000;

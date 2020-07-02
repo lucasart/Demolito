@@ -534,7 +534,7 @@ bool is_mate_score(int score)
     return abs(score) >= MATE - MAX_PLY;
 }
 
-int64_t search_go()
+uint64_t search_go()
 {
     int64_t start = system_msec();
 
@@ -555,7 +555,7 @@ int64_t search_go()
         maxTime = min(2.21 * remaining / movesToGo, lim.time - uciTimeBuffer);
     }
 
-    for (int i = 0; i < WorkersCount; i++)
+    for (size_t i = 0; i < WorkersCount; i++)
         // Start searching thread
         pthread_create(&threads[i], NULL, (void*(*)(void*))iterate, &Workers[i]);
 
@@ -578,7 +578,7 @@ int64_t search_go()
         }
     } while (!atomic_load_explicit(&Stop, memory_order_acquire));
 
-    for (int i = 0; i < WorkersCount; i++)
+    for (size_t i = 0; i < WorkersCount; i++)
         pthread_join(threads[i], NULL);
 
     info_print_bestmove(&ui);

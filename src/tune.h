@@ -28,6 +28,6 @@ extern eval_t PasserBonus[6];
 extern int PasserAdjust[6];
 extern int FreePasser[4];
 
-void tune_declare();
+void tune_declare(void);
 void tune_parse(const char *fullName, int value);
-void tune_refresh();
+void tune_refresh(void);

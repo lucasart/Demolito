@@ -23,15 +23,15 @@ typedef struct {
     int16_t followUpHistory[NB_FOLLOW_UP][NB_PIECE][NB_SQUARE];
     ZobristStack stack;
     jmp_buf jbuf;
-    int64_t nodes;
+    uint64_t nodes;
     int eval[MAX_PLY];
 } Worker;
 
 extern Worker *Workers;
-extern int WorkersCount;
+extern size_t WorkersCount;
 
-void workers_clear();
-void workers_prepare(int count);  // realloc + clear
+void workers_clear(void);
+void workers_prepare(size_t count);  // realloc + clear
 
-void workers_new_search();
-int64_t workers_nodes();
+void workers_new_search(void);
+uint64_t workers_nodes(void);

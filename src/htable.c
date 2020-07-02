@@ -20,7 +20,7 @@
 
 unsigned hashDate = 0;
 HashEntry *HashTable = NULL;
-uint64_t HashCount = 0;
+size_t HashCount = 0;
 
 static int score_to_hash(int score, int ply)
 {
@@ -46,7 +46,7 @@ static int score_from_hash(int hashScore, int ply)
     return hashScore;
 }
 
-static __attribute__((destructor)) void hash_free()
+static __attribute__((destructor)) void hash_free(void)
 {
     free(HashTable);
 }

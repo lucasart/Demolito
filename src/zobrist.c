@@ -21,7 +21,7 @@ uint64_t ZobristCastling[NB_SQUARE];
 uint64_t ZobristEnPassant[NB_SQUARE + 1];
 uint64_t ZobristTurn;
 
-static __attribute__((constructor)) void zobrist_init()
+static __attribute__((constructor)) void zobrist_init(void)
 {
     uint64_t state = 0;
 

@@ -23,7 +23,7 @@ bool hash_read(uint64_t key, HashEntry *e, int ply);
 void hash_write(uint64_t key, HashEntry *e, int ply);
 void hash_prefetch(uint64_t key);
 
-int hash_permille();
+int hash_permille(void);
 
 extern unsigned hashDate;
 extern HashEntry *HashTable;

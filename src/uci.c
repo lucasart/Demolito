@@ -41,13 +41,13 @@ static void uci_format_score(int score, char str[17])
         sprintf(str, "cp %d", score / 2);
 }
 
-static void intro()
+static void intro(void)
 {
     uci_puts("id name Demolito " VERSION "\nid author lucasart");
     uci_printf("option name Contempt type spin default %d min -100 max 100\n", Contempt);
     uci_printf("option name Hash type spin default %" PRIu64 " min 1 max 1048576\n", uciHash);
     uci_puts("option name Ponder type check default false");
-    uci_printf("option name Threads type spin default %d min 1 max 256\n", WorkersCount);
+    uci_printf("option name Threads type spin default %zu min 1 max 256\n", WorkersCount);
     uci_printf("option name Time Buffer type spin default %" PRId64 " min 0 max 1000\n", uciTimeBuffer);
     uci_printf("option name UCI_Chess960 type check default %s\n", uciChess960 ? "true" : "false");
 #ifdef TUNE
@@ -72,11 +72,11 @@ static void setoption(char **linePos)
     if (!strcmp(name, "UCI_Chess960"))
         uciChess960 = !strcmp(token, "true");
     else if (!strcmp(name, "Hash")) {
-        uciHash = atoi(token);
+        uciHash = (size_t)atoll(token);
         uciHash = 1ULL << bb_msb(uciHash);  // must be a power of two
         hash_prepare(uciHash);
     } else if (!strcmp(name, "Threads"))
-        workers_prepare(atoi(token));
+        workers_prepare((size_t)atoll(token));
     else if (!strcmp(name, "Contempt"))
         Contempt = atoi(token);
     else if (!strcmp(name, "TimeBuffer"))
@@ -131,7 +131,7 @@ static void go(char **linePos)
         if (!strcmp(token, "depth"))
             lim.depth = atoi(strtok_r(NULL, " \n", linePos));
         else if (!strcmp(token, "nodes"))
-            lim.nodes = atoll(strtok_r(NULL, " \n", linePos));
+            lim.nodes = (uint64_t)atoll(strtok_r(NULL, " \n", linePos));
         else if (!strcmp(token, "movetime"))
             lim.movetime = atoll(strtok_r(NULL, " \n", linePos));
         else if (!strcmp(token, "movestogo"))
@@ -154,7 +154,7 @@ static void go(char **linePos)
     pthread_create(&Timer, NULL, (void*(*)(void*))search_go, NULL);
 }
 
-static void eval()
+static void eval(void)
 {
     char str[17];
     uci_format_score(evaluate(&Workers[0], &rootPos), str);
@@ -232,7 +232,7 @@ void info_destroy(Info *info)
     mtx_destroy(&info->mtx);
 }
 
-void info_update(Info *info, int depth, int score, int64_t nodes, move_t pv[], bool partial)
+void info_update(Info *info, int depth, int score, uint64_t nodes, move_t pv[], bool partial)
 {
     mtx_lock(&info->mtx);
 
@@ -240,7 +240,7 @@ void info_update(Info *info, int depth, int score, int64_t nodes, move_t pv[], b
         // Print info line all the way to the "pv" token
         char str[17];
         uci_format_score(score, str);
-        uci_printf("info depth %d score %s time %" PRId64 " nodes %" PRId64 " hashfull %d pv",
+        uci_printf("info depth %d score %s time %" PRId64 " nodes %" PRIu64 " hashfull %d pv",
             depth, str, system_msec() - info->start, nodes, hash_permille());
 
         // Pring the moves. Because of e1g1 notation when Chess960 = false, we need to play the PV

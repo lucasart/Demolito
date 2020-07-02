@@ -4,7 +4,7 @@
 CC = clang
 
 # Compilation flags
-CF = -std=gnu11 -DNDEBUG -O3 -flto -Wfatal-errors -Wall -Wextra -Wshadow
+CF = -std=gnu11 -DNDEBUG -O3 -flto -Wfatal-errors -Wall -Wextra -Wshadow -Wstrict-prototypes -Wsign-conversion
 
 # Linking flags
 LF = -s -lm -lpthread

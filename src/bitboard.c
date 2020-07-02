@@ -114,7 +114,7 @@ static void init_slider_attacks(int square, bitboard_t mask[NB_SQUARE],
     bitboard_t edges = ((Rank[RANK_1] | Rank[RANK_8]) & ~Rank[rank_of(square)]) |
         ((File[RANK_1] | File[RANK_8]) & ~File[file_of(square)]);
     mask[square] = slider_attacks(square, 0, dir) & ~edges;
-    shift[square] = 64 - bb_count(mask[square]);
+    shift[square] = (unsigned)(64 - bb_count(mask[square]));
 
     if (square < H8)
         attacksPtr[square + 1] = attacksPtr[square] + (1 << bb_count(mask[square]));
@@ -128,7 +128,7 @@ static void init_slider_attacks(int square, bitboard_t mask[NB_SQUARE],
     } while (occ);
 }
 
-static __attribute__((constructor)) void bb_init()
+static __attribute__((constructor)) void bb_init(void)
 {
     static const int PawnDir[2][2] = {{1,-1}, {1,1}};
     static const int KnightDir[8][2] = {{-2,-1}, {-2,1}, {-1,-2}, {-1,2}, {1,-2}, {1,2}, {2,-1}, {2,1}};
@@ -138,8 +138,8 @@ static __attribute__((constructor)) void bb_init()
 
     // Initialise Rank[] and File[]
     for (int i = 0; i < 8; i++) {
-        Rank[i] = 0xFFULL << (8 * i);
-        File[i] = 0x0101010101010101 << i;
+        Rank[i] = 0xffULL << (8 * i);
+        File[i] = 0x0101010101010101u << i;
     }
 
     // Initialise Ray[][] and Segment[][]

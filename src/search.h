@@ -9,7 +9,8 @@ enum {
 };
 
 typedef struct {
-    int64_t movetime, time, inc, nodes;
+    int64_t movetime, time, inc;
+    uint64_t nodes;
     int depth, movestogo;
     atomic_bool infinite;  // IO thread can change this while Timer thread is checking it
 } Limits;
@@ -25,5 +26,5 @@ extern ZobristStack rootStack;
 extern Limits lim;
 extern int Contempt;
 
-void search_init();
-int64_t search_go();
+void search_init(void);
+uint64_t search_go(void);

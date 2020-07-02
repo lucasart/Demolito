@@ -91,7 +91,7 @@ int move_prom(move_t m)
 {
     const unsigned prom = m >> 12;
     assert(prom <= QUEEN || prom == NB_PIECE);
-    return prom;
+    return (int)prom;
 }
 
 move_t move_build(int from, int to, int prom)

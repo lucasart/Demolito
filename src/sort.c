@@ -43,7 +43,7 @@ void sort_generate(Sort *sort, const Position *pos, int depth)
             it = gen_castling_moves(pos, it);
     }
 
-    sort->cnt = it - sort->moves;
+    sort->cnt = (size_t)(it - sort->moves);
 }
 
 void sort_score(Worker *worker, Sort *sort, const Position *pos, move_t ttMove)

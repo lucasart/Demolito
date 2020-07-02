@@ -17,20 +17,20 @@
 #include "search.h"
 
 Worker *Workers = NULL;
-int WorkersCount = 1;
+size_t WorkersCount = 1;
 
-static void __attribute__((destructor)) workers_free()
+static void __attribute__((destructor)) workers_free(void)
 {
     free(Workers);
 }
 
 void workers_clear()
 {
-    for (int i = 0; i < WorkersCount; i++)
+    for (size_t i = 0; i < WorkersCount; i++)
         Workers[i] = (Worker){0};
 }
 
-void workers_prepare(int count)
+void workers_prepare(size_t count)
 {
     Workers = realloc(Workers, count * sizeof(Worker));
     WorkersCount = count;
@@ -39,17 +39,17 @@ void workers_prepare(int count)
 
 void workers_new_search()
 {
-    for (int i = 0; i < WorkersCount; i++) {
+    for (size_t i = 0; i < WorkersCount; i++) {
         Workers[i].stack = rootStack;
         Workers[i].nodes = 0;
     }
 }
 
-int64_t workers_nodes()
+uint64_t workers_nodes()
 {
-    int64_t total = 0;
+    uint64_t total = 0;
 
-    for (int i = 0; i < WorkersCount; i++)
+    for (size_t i = 0; i < WorkersCount; i++)
         total += Workers[i].nodes;
 
     return total;
