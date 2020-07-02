@@ -27,4 +27,4 @@ int hash_permille();
 
 extern unsigned hashDate;
 extern HashEntry *HashTable;
-uint64_t HashCount;
+extern uint64_t HashCount;
