@@ -171,7 +171,7 @@ move_t *gen_check_escapes(const Position *pos, move_t *mList, bool subPromotions
     if (!bb_several(pos->checkers)) {
         // Blocking moves (single checker)
         const int checkerSquare = bb_lsb(pos->checkers);
-        const int checkerPiece = pos_piece_on(pos, checkerSquare);
+        const int checkerPiece = pos->pieceOn[checkerSquare];
 
         // sliding check: cover the checking segment, or capture the slider
         bitboard_t targets = BISHOP <= checkerPiece && checkerPiece <= QUEEN
@@ -194,13 +194,13 @@ move_t *gen_check_escapes(const Position *pos, move_t *mList, bool subPromotions
 bool gen_is_legal(const Position *pos, bitboard_t pins, move_t m)
 {
     const int from = move_from(m), to = move_to(m);
-    const int piece = pos_piece_on(pos, from);
+    const int piece = pos->pieceOn[from];
     const int king = pos_king_square(pos, pos->turn);
 
     if (piece == KING) {
         if (bb_test(pos->byColor[pos->turn], to)) {
             // Castling: king can't move through attacked square, and rook can't be pinned
-            assert(pos_piece_on(pos, to) == ROOK);
+            assert(pos->pieceOn[to] == ROOK);
             return !bb_test(pins, to);
         } else
             // Normal king move: do not land on an attacked square (already filtered at generation)

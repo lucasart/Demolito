@@ -305,7 +305,7 @@ void pos_get(const Position *pos, char *fen)
                 if (cnt)
                     *fen++ = cnt + '0';
 
-                *fen++ = PieceLabel[pos_color_on(pos, square)][pos_piece_on(pos, square)];
+                *fen++ = PieceLabel[pos_color_on(pos, square)][pos->pieceOn[square]];
                 cnt = 0;
             } else
                 cnt++;
@@ -358,8 +358,8 @@ void pos_move(Position *pos, const Position *before, move_t m)
 
     const int us = pos->turn, them = opposite(us);
     const int from = move_from(m), to = move_to(m), prom = move_prom(m);
-    const int piece = pos_piece_on(pos, from);
-    const int capture = pos_piece_on(pos, to);
+    const int piece = pos->pieceOn[from];
+    const int capture = pos->pieceOn[to];
 
     // Capture piece on to square (if any)
     if (capture != NB_PIECE) {
@@ -409,7 +409,7 @@ void pos_move(Position *pos, const Position *before, move_t m)
             // Castling
             if (bb_test(before->byColor[us], to)) {
                 // Capturing our own piece can only be a castling move, encoded KxR
-                assert(pos_piece_on(before, to) == ROOK);
+                assert(pos->pieceOn[to] == ROOK);
                 const int rank = rank_of(from);
 
                 clear_square(pos, us, KING, to);
@@ -491,13 +491,6 @@ int pos_color_on(const Position *pos, int square)
     return bb_test(pos->byColor[WHITE], square) ? WHITE : BLACK;
 }
 
-// Piece on square 'square'. NB_PIECE if empty.
-int pos_piece_on(const Position *pos, int square)
-{
-    BOUNDS(square, NB_SQUARE);
-    return pos->pieceOn[square];
-}
-
 // Attackers (or any color) to square 'square', using occupancy 'occ' for rook/bishop attacks
 bitboard_t pos_attackers_to(const Position *pos, int square, bitboard_t occ)
 {
@@ -536,7 +529,7 @@ bool pos_move_is_capture(const Position *pos, move_t m)
 {
     const int from = move_from(m), to = move_to(m);
     return bb_test(pos->byColor[opposite(pos->turn)], to)
-        || (pos_piece_on(pos, from) == PAWN && (to == pos->epSquare || move_prom(m) < NB_PIECE));
+        || (pos->pieceOn[from] == PAWN && (to == pos->epSquare || move_prom(m) < NB_PIECE));
 }
 
 bool pos_move_is_castling(const Position *pos, move_t m)
@@ -572,7 +565,7 @@ move_t pos_string_to_move(const Position *pos, const char *str)
     const int from = square_from(str[1] - '1', str[0] - 'a');
     int to = square_from(str[3] - '1', str[2] - 'a');
 
-    if (!uciChess960 && pos_piece_on(pos, from) == KING) {
+    if (!uciChess960 && pos->pieceOn[from] == KING) {
         if (to == from + 2)  // e1g1 -> e1h1
             to++;
         else if (to == from - 2)  // e1c1 -> e1a1
@@ -591,8 +584,8 @@ int pos_see(const Position *pos, move_t m)
 
     // General case
     int gain[32];
-    int moved = pos_piece_on(pos, from);
-    gain[0] = PieceValue[pos_piece_on(pos, to)];
+    int moved = pos->pieceOn[from];
+    gain[0] = PieceValue[pos->pieceOn[to]];
     bb_clear(&occ, from);
 
     // Special cases
@@ -656,7 +649,7 @@ void pos_print(const Position *pos)
         for (int file = FILE_A; file <= FILE_H; file++) {
             const int square = square_from(rank, file);
             line[2 * file] = bb_test(pos_pieces(pos), square)
-                ? PieceLabel[pos_color_on(pos, square)][pos_piece_on(pos, square)]
+                ? PieceLabel[pos_color_on(pos, square)][pos->pieceOn[square]]
                 : square == pos->epSquare ? '*' : '.';
         }
 

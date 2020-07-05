@@ -52,7 +52,7 @@ are not reproducible.
 
 ### What do you need ?
 
-- clang
+- clang or gcc
 - make
 - git
 
@@ -65,7 +65,7 @@ cd Demolito/src
 make CC=clang pext  # for Intel Haswell+ only
 make CC=clang       # for AMD or older Intel
 ```
-You can use gcc instead of clang, but Demolito will be significantly slower (hence weaker).
+You can use gcc instead of clang, but Demolito will be a bit slower (hence weaker).
 
 ### How to verify ?
 

@@ -56,7 +56,7 @@ static eval_t mobility(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
     bitboard_t occ = pos_pieces(pos) ^ rookMovers;  // RQ see through each other
 
     while (rookMovers) {
-        const int from = bb_pop_lsb(&rookMovers), piece = pos_piece_on(pos, from);
+        const int from = bb_pop_lsb(&rookMovers), piece = pos->pieceOn[from];
         const bitboard_t targets = bb_rook_attacks(from, occ);
         attacks[us][piece] |= targets;
         eval_add(&result, Mobility[2 * piece - ROOK][bb_count(targets & available)]);
@@ -67,7 +67,7 @@ static eval_t mobility(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
     occ = pos_pieces(pos) ^ bishopMovers;  // BQ see through each other
 
     while (bishopMovers) {
-        const int from = bb_pop_lsb(&bishopMovers), piece = pos_piece_on(pos, from);
+        const int from = bb_pop_lsb(&bishopMovers), piece = pos->pieceOn[from];
         const bitboard_t targets = bb_bishop_attacks(from, occ);
         attacks[us][piece] |= targets;
         eval_add(&result, Mobility[piece][bb_count(targets & available)]);
@@ -119,7 +119,7 @@ static eval_t hanging(const Position *pos, int us, bitboard_t attacks[NB_COLOR][
         & ~(attacks[us][PAWN] | attacks[us][KING] | attacks[us][NB_PIECE]);
 
     while (b) {
-        const int piece = pos_piece_on(pos, bb_pop_lsb(&b));
+        const int piece = pos->pieceOn[bb_pop_lsb(&b)];
         assert(piece == PAWN || (KNIGHT <= piece && piece <= QUEEN));
         result.op -= Hanging[piece];
     }

@@ -452,8 +452,8 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
             const int from = move_from(quietSearched[i]), to = move_to(quietSearched[i]);
 
             history_update(&worker->history[us][from][to], bonus);
-            history_update(&worker->refutationHistory[rhIdx][pos_piece_on(pos, from)][to], bonus);
-            history_update(&worker->followUpHistory[fuhIdx][pos_piece_on(pos, from)][to], bonus);
+            history_update(&worker->refutationHistory[rhIdx][pos->pieceOn[from]][to], bonus);
+            history_update(&worker->followUpHistory[fuhIdx][pos->pieceOn[from]][to], bonus);
         }
     }
 

@@ -42,7 +42,6 @@ bitboard_t pos_ep_square_bb(const Position *pos);
 bool pos_insufficient_material(const Position *pos);
 int pos_king_square(const Position *pos, int color);
 int pos_color_on(const Position *pos, int square);
-int pos_piece_on(const Position *pos, int square);
 bitboard_t pos_attackers_to(const Position *pos, int square, bitboard_t occ);
 bitboard_t calc_pins(const Position *pos);
 

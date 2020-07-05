@@ -63,8 +63,8 @@ void sort_score(Worker *worker, Sort *sort, const Position *pos, move_t ttMove)
             } else {
                 const int from = move_from(m), to = move_to(m);
                 sort->scores[i] = worker->history[pos->turn][from][to]
-                    + worker->refutationHistory[rhIdx][pos_piece_on(pos, from)][to]
-                    + worker->followUpHistory[fuhIdx][pos_piece_on(pos, from)][to];
+                    + worker->refutationHistory[rhIdx][pos->pieceOn[from]][to]
+                    + worker->followUpHistory[fuhIdx][pos->pieceOn[from]][to];
             }
         }
     }
