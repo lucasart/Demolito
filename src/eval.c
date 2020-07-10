@@ -355,6 +355,8 @@ void eval_init()
 
 int evaluate(Worker *worker, const Position *pos)
 {
+    worker->nodes++;
+
     assert(!pos->checkers);
     const int us = pos->turn, them = opposite(us);
     eval_t e[NB_COLOR] = {pos->pst, {0, 0}};

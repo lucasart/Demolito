@@ -93,8 +93,6 @@ static int qsearch(Worker *worker, const Position *pos, int ply, int depth, int 
            : evaluate(worker, pos) + Tempo;
     }
 
-    worker->nodes++;
-
     if (ply >= MAX_PLY)
         return refinedEval;
 
@@ -253,8 +251,6 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
     // as the HT entry could have got overriden by other search threads.
     if (ply == 0 && info_last_depth(&ui) > 0)
         he.move = info_best(&ui);
-
-    worker->nodes++;
 
     if (ply >= MAX_PLY)
         return refinedEval;
