@@ -340,7 +340,7 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
                 break;
 
             // Prune quiet moves with negative history (excluding 1st move)
-            if (!capture && depth <= 2 && moveCount >= 2 && sort.scores[sort.idx - 1] < 0)
+            if (!capture && depth <= 3 && moveCount >= 2 && sort.scores[sort.idx - 1] < 0)
                 break;
         }
 
