@@ -202,6 +202,7 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
         {0, 0, 0, 0, -179, -358},  // quiet
         {0, -33, -132, -297, -528, -825}  // capture
     };
+    static const int ProbcutMargin = 300;
 
     assert(depth > 0);
     assert(zobrist_back(&worker->stack) == pos->key);
@@ -296,11 +297,48 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
             return score >= mate_in(MAX_PLY) ? beta : score;
     }
 
-    // Generate and score moves
     Sort sort;
+    const bitboard_t pins = calc_pins(pos);
+
+    // Prob cut
+    if (depth >= 5 && !pvNode && !pos->checkers) {
+        const int ubound = beta + ProbcutMargin;
+
+        // Generate captures only. HACK: depth=0 && !pos->checkers fools sort_init() to think we're
+        // doing a qsearch capture generation.
+        sort_init(worker, &sort, pos, 0, he.move);
+
+        while (sort.idx != sort.cnt) {
+            int see;
+            const move_t capture = sort_next(&sort, pos, &see);
+
+            // Skip if move is illegal or singular (excluded from search at this node)
+            if (!gen_is_legal(pos, pins, capture) || capture == singularMove)
+                continue;
+
+            // If SEE <= 0, we're done, since captures are sorted by descending SEE, and we only
+            // want to search winning captures (SEE > 0).
+            if (see < ubound - worker->eval[ply])
+                break;
+
+            // Play the move
+            pos_move(&nextPos, pos, capture);
+            zobrist_push(&worker->stack, nextPos.key);
+
+            // Reduced search on [ubound-1, ubound] <=> [-ubound,-ubound+1] for opponent
+            score = -search(worker, &nextPos, ply + 1, depth - 4, -ubound, -ubound + 1, childPv, 0);
+
+            // Undo the move
+            zobrist_pop(&worker->stack);
+
+            if (score >= ubound)
+                return score;
+        }
+    }
+
+    // Generate and score moves
     sort_init(worker, &sort, pos, depth, he.move);
 
-    const bitboard_t pins = calc_pins(pos);
     int moveCount = 0, lmrCount = 0;
     move_t quietSearched[MAX_MOVES];
     int quietSearchedCnt = 0;

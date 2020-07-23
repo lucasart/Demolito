@@ -409,7 +409,7 @@ void pos_move(Position *pos, const Position *before, move_t m)
             // Castling
             if (bb_test(before->byColor[us], to)) {
                 // Capturing our own piece can only be a castling move, encoded KxR
-                assert(pos->pieceOn[to] == ROOK);
+                assert(capture == ROOK);
                 const int rank = rank_of(from);
 
                 clear_square(pos, us, KING, to);
