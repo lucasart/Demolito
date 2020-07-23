@@ -301,7 +301,7 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
     const bitboard_t pins = calc_pins(pos);
 
     // Prob cut
-    if (depth >= 5 && !pvNode && !pos->checkers) {
+    if (depth >= 5 && !pvNode && !pos->checkers && beta + ProbcutMargin <= MATE) {
         const int ubound = beta + ProbcutMargin;
 
         // Generate captures only. HACK: depth=0 && !pos->checkers fools sort_init() to think we're
