@@ -187,25 +187,26 @@ static __attribute__((constructor)) void bb_init(void)
     }
 
     // Validate all the precalculated bitboards in debug mode
-    assert(hash(Rank, sizeof Rank, 0) == 0x95f670a067ad6175);
-    assert(hash(File, sizeof File, 0) == 0xf6e52aa37a4f5d09);
-    assert(hash(Ray, sizeof Ray, 0) == 0x281f130e48e511a4);
-    assert(hash(Segment, sizeof Segment, 0) == 0xeb806a23aa99e988);
-    assert(hash(KnightAttacks, sizeof KnightAttacks, 0) == 0x10ab5841ae3a3c4e);
-    assert(hash(KingAttacks, sizeof KingAttacks, 0) == 0xd209492892720e5b);
-    assert(hash(PawnAttacks, sizeof PawnAttacks, 0) == 0x5570cebd9a3bbb1a);
-    assert(hash(BishopMask, sizeof BishopMask, 0) == 0xbacf967ebeb62107);
-    assert(hash(RookMask, sizeof RookMask, 0) == 0x962a289b1187a92d);
-    assert(hash(BishopMagic, sizeof BishopMagic, 0) == 0xef24e1eb237246d1);
-    assert(hash(RookMagic, sizeof RookMagic, 0) == 0x6d2a92d46ef0ecbc);
-    assert(hash(BishopShift, sizeof BishopShift, 0) == 0x5fdd92372c411eea);
-    assert(hash(RookShift, sizeof RookShift, 0) == 0xadceb33df45fc2cb);
+    uint64_t h = 0;
+    hash_blocks(Rank, sizeof Rank, &h);
+    hash_blocks(File, sizeof File, &h);
+    hash_blocks(Ray, sizeof Ray, &h);
+    hash_blocks(Segment, sizeof Segment, &h);
+    hash_blocks(KnightAttacks, sizeof KnightAttacks, &h);
+    hash_blocks(KingAttacks, sizeof KingAttacks, &h);
+    hash_blocks(PawnAttacks, sizeof PawnAttacks, &h);
+    hash_blocks(BishopMask, sizeof BishopMask, &h);
+    hash_blocks(RookMask, sizeof RookMask, &h);
+    hash_blocks(BishopMagic, sizeof BishopMagic, &h);
+    hash_blocks(RookMagic, sizeof RookMagic, &h);
+    hash_blocks(BishopShift, sizeof BishopShift, &h);
+    hash_blocks(RookShift, sizeof RookShift, &h);
+    hash_blocks(BishopDB, sizeof BishopDB, &h);
+    hash_blocks(RookDB, sizeof RookDB, &h);
 #ifdef PEXT
-    assert(hash(BishopDB, sizeof BishopDB, 0) == 0xbbcc6c87463e22bd);
-    assert(hash(RookDB, sizeof RookDB, 0) == 0xf35648b3c146eb7a);
+    assert(h == 0x3ed5127a23c33053);
 #else
-    assert(hash(BishopDB, sizeof BishopDB, 0) == 0x3ef1f0d07c261d52);
-    assert(hash(RookDB, sizeof RookDB, 0) == 0xf3fa2f3754f1c608);
+    assert(h == 0x18b55a1336e2c557);
 #endif
 }
 

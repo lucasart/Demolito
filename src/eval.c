@@ -342,10 +342,12 @@ void eval_init()
         }
 
     // Validate above calculations in debug mode
-    assert(hash(PawnSpan, sizeof PawnSpan, 0) == 0xf37ce76e0d1d482d);
-    assert(hash(PawnPath, sizeof PawnPath, 0) == 0x80b84ae07e7410bf);
-    assert(hash(AdjacentFiles, sizeof AdjacentFiles, 0) == 0x911aee29d6082d4b);
-    assert(hash(KingDistance, sizeof KingDistance, 0) == 0x1a7eaa139d03d9ca);
+    uint64_t h = 0;
+    hash_blocks(PawnSpan, sizeof PawnSpan, &h);
+    hash_blocks(PawnPath, sizeof PawnPath, &h);
+    hash_blocks(AdjacentFiles, sizeof AdjacentFiles, &h);
+    hash_blocks(KingDistance, sizeof KingDistance, &h);
+    assert(h == 0x9f29705ba9ca230);
 
     for (int i = 0; i < 4096; i++) {
         const int x = pow((double)i, SafetyCurveParam[0] * 0.001) + 0.5;

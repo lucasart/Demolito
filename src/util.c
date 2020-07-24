@@ -15,23 +15,11 @@
 #include <assert.h>
 #include "util.h"
 
-// Simple hash function I derived from SplitMix64. Known limitations:
-// - alignment: 'buffer' must be 8-byte aligned.
-// - length: must be a multiple of 8 bytes.
-// - endianness: big endian is long dead, who cares?
-// These limitations could easily be lifted, but it's overkill for Demolito.
-uint64_t hash(const void *buffer, size_t length, uint64_t seed)
+static uint64_t hash_mix(uint64_t block)
 {
-    assert((uintptr_t)buffer % 8 == 0 && length % 8 == 0);
-    const uint64_t *blocks = (const uint64_t *)buffer;
-    uint64_t result = 0;
-
-    for (size_t i = 0; i < length / 8; i++) {
-        seed ^= blocks[i];
-        result ^= prng(&seed);
-    }
-
-    return result;
+    block ^= block >> 23;
+    block *= 0x2127599bf4325c37ULL;
+    return block ^= block >> 47;
 }
 
 // SplitMix64 PRNG, based on http://xoroshiro.di.unimi.it/splitmix64.c
@@ -42,4 +30,21 @@ uint64_t prng(uint64_t *state)
     rnd = (rnd ^ (rnd >> 27)) * 0x94D049BB133111EB;
     rnd ^= rnd >> 31;
     return rnd;
+}
+
+void hash_block(uint64_t block, uint64_t *hash)
+{
+    *hash ^= hash_mix(block);
+    *hash *= 0x880355f21e6d1965ULL;
+}
+
+// Based on FastHash64, without length hashing, to make it capable of incremental updates. Assumes
+// length is divisible by 8, and buffer is 8-byte aligned.
+void hash_blocks(const void *buffer, size_t length, uint64_t *hash)
+{
+    assert((uintptr_t)buffer % 8 == 0 && length % 8 == 0);
+    const uint64_t *blocks = (const uint64_t *)buffer;
+
+    for (size_t i = 0; i < length / 8; i++)
+        hash_block(*blocks++, hash);
 }

@@ -46,7 +46,7 @@ void bench(int depth)
 
         puts(fens[i]);
         nodes += search_go();
-        seal = hash(&nodes, sizeof nodes, seal);
+        hash_block(nodes, &seal);
         puts("");
     }
 
@@ -55,7 +55,7 @@ void bench(int depth)
 
     const int64_t elapsed = system_msec() - start;
 
-    seal = hash(HashTable, HashCount * sizeof(HashEntry), seal);  // sign entire hash table
+    hash_blocks(HashTable, HashCount * sizeof(HashEntry), &seal);  // sign entire hash table
 
     printf("seal  : %" PRIx64 "\n", seal);  // strong functionality signature
     printf("time  : %" PRIu64 "ms\n", elapsed);
