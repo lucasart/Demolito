@@ -151,7 +151,7 @@ static void go(char **linePos)
         Timer = 0;
     }
 
-    pthread_create(&Timer, NULL, (void*(*)(void*))search_go, NULL);
+    pthread_create(&Timer, NULL, search_posix, NULL);
 }
 
 static void eval(void)

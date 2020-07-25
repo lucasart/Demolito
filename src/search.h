@@ -42,3 +42,4 @@ extern int Contempt;
 
 void search_init(void);
 uint64_t search_go(void);
+void *search_posix(void *);  // POSIX wrapper for pthread_create()

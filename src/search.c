@@ -620,3 +620,10 @@ uint64_t search_go()
 
     return workers_nodes();
 }
+
+void *search_posix(void *dummy)
+{
+    (void)dummy;  // silence compiler warning (unused variable)
+    search_go();
+    return NULL;
+}
