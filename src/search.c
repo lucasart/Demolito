@@ -277,12 +277,15 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
     }
 
     // Null search
+    int nextDepth = depth - (3 + depth / 4) - (refinedEval >= beta + 167);
+
     if (depth >= 2 && !pvNode && !pos->checkers
-            && worker->eval[ply] >= beta && pos->pieceMaterial[us]) {
+            && worker->eval[ply] >= beta && pos->pieceMaterial[us]
+            && !(he.key == pos->key && he.depth >= nextDepth && he.bound >= EXACT
+                && he.score < beta)) {
         // Normallw worker->eval[ply] >= beta excludes the in check case (eval is -MATE). But with
         // HT collisions or races, HT data can't be trusted. Doing a null move in check crashes for
         // obvious reasons, so it must be explicitely prevented.
-        const int nextDepth = depth - (3 + depth / 4) - (refinedEval >= beta + 167);
 
         pos_switch(&nextPos, pos);
         zobrist_push(&worker->stack, nextPos.key);
@@ -401,7 +404,7 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
 
         zobrist_push(&worker->stack, nextPos.key);
 
-        const int nextDepth = depth - 1 + ext;
+        nextDepth = depth - 1 + ext;
 
         // Recursion
         if (nextDepth <= 0)
