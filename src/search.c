@@ -71,10 +71,10 @@ static int qsearch(Worker *worker, const Position *pos, int ply, int depth, int 
         return draw_score(ply);
 
     // HT probe
-    HashEntry he;
+    HashEntry he = hash_read(pos->key, ply);
     int refinedEval;
 
-    if (hash_read(pos->key, &he, ply)) {
+    if (he.data) {
         if (!pvNode && ((he.score <= alpha && he.bound >= EXACT)
                 || (he.score >= beta && he.bound <= EXACT))) {
             assert(he.depth >= depth);
@@ -86,12 +86,10 @@ static int qsearch(Worker *worker, const Position *pos, int ply, int depth, int 
         if ((he.score > refinedEval && he.bound <= EXACT)
                 || (he.score < refinedEval && he.bound >= EXACT))
             refinedEval = he.score;
-    } else {
-        he.data = 0;  // invalidate hash entry
+    } else
         refinedEval = worker->eval[ply] = pos->checkers ? -MATE
            : zobrist_move_key(&worker->stack, 0) == ZobristTurn ? -worker->eval[ply - 1] + 2 * Tempo
            : evaluate(worker, pos) + Tempo;
-    }
 
     if (ply >= MAX_PLY)
         return refinedEval;
@@ -227,11 +225,11 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
         return draw_score(ply);
 
     // HT probe
-    HashEntry he;
-    int refinedEval;
     const uint64_t key = pos->key ^ singularMove;
+    HashEntry he = hash_read(key, ply);
+    int refinedEval;
 
-    if (hash_read(key, &he, ply)) {
+    if (he.data) {
         if (he.depth >= depth && !pvNode && ((he.score <= alpha && he.bound >= EXACT)
                 || (he.score >= beta && he.bound <= EXACT)))
             return he.score;
@@ -241,12 +239,10 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
         if ((he.score > refinedEval && he.bound <= EXACT)
                 || (he.score < refinedEval && he.bound >= EXACT))
             refinedEval = he.score;
-    } else {
-        he.data = 0;  // invalidate hash entry
+    } else
         refinedEval = worker->eval[ply] = pos->checkers ? -MATE
            : zobrist_move_key(&worker->stack, 0) == ZobristTurn ? -worker->eval[ply - 1] + 2 * Tempo
            : evaluate(worker, pos) + Tempo;
-    }
 
     // At Root, ensure that the last best move is searched first. This is not guaranteed,
     // as the HT entry could have got overriden by other search threads.
@@ -283,7 +279,7 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
             && worker->eval[ply] >= beta && pos->pieceMaterial[us]
             && !(he.key == pos->key && he.depth >= nextDepth && he.bound >= EXACT
                 && he.score < beta)) {
-        // Normallw worker->eval[ply] >= beta excludes the in check case (eval is -MATE). But with
+        // Normally worker->eval[ply] >= beta excludes the in check case (eval is -MATE). But with
         // HT collisions or races, HT data can't be trusted. Doing a null move in check crashes for
         // obvious reasons, so it must be explicitely prevented.
 
@@ -390,7 +386,8 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
         // Search extension
         int ext = 0;
 
-        if (currentMove == he.move && ply > 0 && depth >= 5 && he.bound <= EXACT && he.depth >= depth - 4) {
+        if (currentMove == he.move && ply > 0 && depth >= 5 && he.bound <= EXACT
+                && he.depth >= depth - 4) {
             // Singular Extension Search
             const int lbound = he.score - 2 * depth;
 
@@ -428,12 +425,15 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
 
                 // Reduced depth, zero window
                 score = nextDepth - reduction <= 0
-                    ? -qsearch(worker, &nextPos, ply + 1, nextDepth - reduction, -(alpha + 1), -alpha, false, childPv)
-                    : -search(worker, &nextPos, ply + 1, nextDepth - reduction, -(alpha + 1), -alpha, childPv, 0);
+                    ? -qsearch(worker, &nextPos, ply + 1, nextDepth - reduction, -(alpha + 1),
+                        -alpha, false, childPv)
+                    : -search(worker, &nextPos, ply + 1, nextDepth - reduction, -(alpha + 1),
+                        -alpha, childPv, 0);
 
                 // Fail high: re-search zero window at full depth
                 if (reduction && score > alpha)
-                    score = -search(worker, &nextPos, ply + 1, nextDepth, -(alpha + 1), -alpha, childPv, 0);
+                    score = -search(worker, &nextPos, ply + 1, nextDepth, -(alpha + 1), -alpha,
+                        childPv, 0);
 
                 // Fail high at full depth for pvNode: re-search full window
                 if (pvNode && alpha < score && score < beta)

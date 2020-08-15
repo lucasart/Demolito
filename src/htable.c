@@ -67,16 +67,16 @@ void hash_prepare(uint64_t hashMB)
     memset(HashTable, 0, hashMB << 20);
 }
 
-bool hash_read(uint64_t key, HashEntry *e, int ply)
+HashEntry hash_read(uint64_t key, int ply)
 {
-    *e = HashTable[key & (HashCount - 1)];
+    HashEntry e = HashTable[key & (HashCount - 1)];
 
-    if (e->key == key) {
-        e->score = score_from_hash(e->score, ply);
-        return true;
-    }
+    if (e.key == key)
+        e.score = score_from_hash(e.score, ply);
+    else
+        e.data = 0;
 
-    return false;
+    return e;
 }
 
 void hash_write(uint64_t key, HashEntry *e, int ply)
