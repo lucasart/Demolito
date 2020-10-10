@@ -268,12 +268,13 @@ void pos_set(Position *pos, const char *fen)
 
     while ((ch = *token++)) {
         rank = isupper(ch) ? RANK_1 : RANK_8;
+        const bitboard_t ourRooks = pos_pieces_cp(pos, rank / RANK_8, ROOK);
         ch = toupper(ch);
 
         if (ch == 'K')
-            bb_set(&pos->castleRooks, bb_msb(Rank[rank] & pos->byPiece[ROOK]));
+            bb_set(&pos->castleRooks, bb_msb(Rank[rank] & ourRooks));
         else if (ch == 'Q')
-            bb_set(&pos->castleRooks, bb_lsb(Rank[rank] & pos->byPiece[ROOK]));
+            bb_set(&pos->castleRooks, bb_lsb(Rank[rank] & ourRooks));
         else if ('A' <= ch && ch <= 'H')
             bb_set(&pos->castleRooks, square_from(rank, ch - 'A'));
         else
