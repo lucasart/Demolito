@@ -81,9 +81,8 @@ static bitboard_t slider_attacks(int square, bitboard_t occ, const int dir[4][2]
 
     for (int i = 0; i < 4; i++) {
         int dr = dir[i][0], df = dir[i][1];
-        int rank, file;
 
-        for (rank = rank_of(square) + dr, file = file_of(square) + df;
+        for (int rank = rank_of(square) + dr, file = file_of(square) + df;
                 0 <= rank && rank < NB_RANK && 0 <= file && file < NB_FILE;
                 rank += dr, file += df) {
             const int sq = square_from(rank, file);
@@ -146,13 +145,13 @@ static __attribute__((constructor)) void bb_init(void)
     for (int square = A1; square <= H8; square++) {
         for (int d = 0; d < 8; d++) {
             bitboard_t mask = 0;
-            int r2 = rank_of(square), f2 = file_of(square);
 
-            while (0 <= r2 && r2 < NB_RANK && 0 <= f2 && f2 < NB_FILE) {
-                const int s2 = square_from(r2, f2);
-                bb_set(&mask, s2);
-                Segment[square][s2] = mask;
-                r2 += KingDir[d][0], f2 += KingDir[d][1];
+            for (int r = rank_of(square), f = file_of(square);
+                    0 <= r && r < NB_RANK && 0 <= f && f < NB_FILE;
+                    r += KingDir[d][0], f += KingDir[d][1]) {
+                const int s = square_from(r, f);
+                bb_set(&mask, s);
+                Segment[square][s] = mask;
             }
 
             bitboard_t sqs = mask;
