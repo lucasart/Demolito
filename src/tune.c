@@ -18,7 +18,7 @@
 #include "search.h"
 #include "tune.h"
 
-int PieceValue[NB_PIECE] = {640, 640, 1046, 1980, MATE, 179};
+int PieceValue[NB_PIECE] = {640, 640, 1036, 1970, MATE, 169};
 
 eval_t KnightPstSeed[4+8] = {
     {-56, -19}, {-32, -14}, {-15, -4}, {7, 4},
