@@ -208,7 +208,21 @@ void uci_loop()
         else if (!strcmp(token, "quit")) {
             Stop = true;
             break;
-        } else
+        } else if (!strcmp(token, "load"))
+            tune_load(strtok_r(NULL, " \n", &linePos));
+        else if (!strcmp(token, "free"))
+            tune_free();
+        else if (!strcmp(token, "list"))
+            tune_param_list();
+        else if (!strcmp(token, "get"))
+            tune_param_get(strtok_r(NULL, " \n", &linePos));
+        else if (!strcmp(token, "set"))
+            tune_param_set(strtok_r(NULL, " \n", &linePos), strtok_r(NULL, " \n", &linePos));
+        else if (!strcmp(token, "linereg"))
+            tune_linereg();
+        else if (!strcmp(token, "fit"))
+            tune_param_fit(strtok_r(NULL, " \n", &linePos), atoi(strtok_r(NULL, " \n", &linePos)));
+        else
             uci_printf("unknown command: %s\n", line);
     }
 

@@ -12,11 +12,14 @@
  * You should have received a copy of the GNU General Public License along with this program. If
  * not, see <http://www.gnu.org/licenses/>.
 */
+#include <math.h>
+#include <stdlib.h>
 #include <string.h>
 #include "eval.h"
 #include "pst.h"
 #include "search.h"
 #include "tune.h"
+#include "workers.h"
 
 int PieceValue[NB_PIECE] = {640, 640, 1036, 1970, MATE, 169};
 
@@ -134,7 +137,8 @@ Entry Entries[] = {
     {"MobilityKnight", Mobility[KNIGHT], 9 * 2},
     {"MobilityBishop", Mobility[BISHOP], 14 * 2},
     {"MobilityRook", Mobility[ROOK], 15 * 2},
-    {"MobilityQueen", Mobility[QUEEN], (14 + 15) * 2},
+    {"MobilityQueenDiagonal", Mobility[QUEEN], 14 * 2},
+    {"MobilityQueenOrthogonal", Mobility[QUEEN + 1], 15 * 2},
 
     {"RookOpen", RookOpen, 2},
     {"BishopPair", &BishopPair, 2},
@@ -190,4 +194,162 @@ void tune_refresh()
     search_init();
     pst_init();
     eval_init();
+}
+
+typedef struct {
+    char fen[92];
+    int16_t eval, result;
+} Sample;
+
+static Sample *samples = NULL;
+static size_t sampleCount = 0;
+
+extern const int Tempo;  // in search.c
+
+void tune_load(const char *fileName)
+{
+    size_t allocated = 1024;
+    samples = malloc(allocated * sizeof(Sample));
+
+    FILE *in = fopen(fileName, "r");
+    char line[128] = "", *linePos = NULL;
+
+    while (fgets(line, sizeof(line), in)) {
+        // Resize as needed
+        if (sampleCount >= allocated) {
+            allocated *= 2;
+            samples = realloc(samples, sizeof(Sample) * allocated);
+        }
+
+        // Load samples[sampleCount], translate eval into internal units (Tempo included)
+        strcpy(samples[sampleCount].fen, strtok_r(line, ",\n", &linePos));
+        samples[sampleCount].eval = 2 * atoi(strtok_r(NULL, ",\n", &linePos));
+        samples[sampleCount].result = atoi(strtok_r(NULL, ",\n", &linePos));
+
+        sampleCount++;
+    }
+
+    fclose(in);
+
+    printf("loaded %zu samples from '%s'\n", sampleCount, fileName);
+}
+
+void tune_free()
+{
+    free(samples);
+    samples = NULL;
+    sampleCount = 0;
+}
+
+void tune_param_list(void)
+{
+    for (size_t i = 0; i < sizeof(Entries) / sizeof(Entry); i++)
+        puts(Entries[i].name);
+}
+
+void tune_param_get(const char *name)
+{
+    for (size_t i = 0; i < sizeof(Entries) / sizeof(Entry); i++)
+        if (!strcmp(Entries[i].name, name)) {
+            for (int j = 0; j < Entries[i].count; j++)
+                printf("%d,", ((int *)Entries[i].values)[j]);
+
+            puts("");
+        }
+}
+
+void tune_param_set(const char *name, const char *values)
+{
+    for (size_t i = 0; i < sizeof(Entries) / sizeof(Entry); i++)
+        if (!strcmp(Entries[i].name, name)) {
+            char *copy = strdup(values), *pos = NULL;
+
+            for (int j = 0; j < Entries[i].count; j++) {
+                const char *token = strtok_r(j ? NULL : copy, ",\n", &pos);
+                ((int *)Entries[i].values)[j] = atoi(token);
+            }
+
+            free(copy);
+        }
+}
+
+// Fit y = alpha + beta.x; x = samples[].eval, y = evals[]
+double tune_linereg()
+{
+    // Make sure there is no persistance
+    workers_clear();
+    tune_refresh();
+
+    int16_t evals[sampleCount];
+    int64_t sum_y = 0, sum_x = 0;
+    Position pos = {0};
+
+    for (size_t i = 0; i < sampleCount; i++) {
+        pos_set(&pos, samples[i].fen);
+        evals[i] = evaluate(&Workers[0], &pos) + Tempo;
+
+        // printf("%s,%d,%d\n", samples[i].fen, samples[i].eval, evals[i]);
+
+        sum_y += evals[i];
+        sum_x += samples[i].eval;
+    }
+
+    const double mean_x = (double)sum_x / sampleCount;
+    const double mean_y = (double)sum_y / sampleCount;
+    double cov = 0, var = 0;
+
+    for (size_t i = 0; i < sampleCount; i++) {
+        cov += (evals[i] - mean_y) * (samples[i].eval - mean_x);
+        var += (samples[i].eval - mean_x) * (samples[i].eval - mean_x);
+    }
+
+    const double beta = cov / var;
+    const double alpha = mean_y - beta * mean_x;
+
+    double sum_err = 0;
+
+    for (size_t i = 0; i < sampleCount; i++)
+        sum_err += fabs(alpha + beta * samples[i].eval - evals[i]);
+
+    const double mean_err = sum_err / sampleCount;
+    printf("evals[] + Tempo = %f + %f * samples[].eval + err;\tmean(|err|) = %f\n", alpha, beta,
+        mean_err);
+    return mean_err;
+}
+
+void tune_param_fit(const char *name, int nbIter)
+{
+    double best = tune_linereg();
+
+    for (size_t i = 0; i < sizeof(Entries) / sizeof(Entry); i++)
+        if (!strcmp(Entries[i].name, name)) {
+            // Initialise firstBump[j]
+            int firstBump[Entries[i].count];
+            for (int j = 0; j < Entries[i].count; firstBump[j++] = -1);
+
+            for (int it = 0; it < nbIter; it++) {
+                for (int j = 0; j < Entries[i].count; j++)
+                    for (int k = 0; k < 2; k++) {
+                        const int bump = k == 0 ? firstBump[j] : -firstBump[j];
+
+                        // Apply bump and update user
+                        ((int *)Entries[i].values)[j] += bump;
+
+                        // Calculate the regression mean_err
+                        const double new = tune_linereg();
+
+                        if (new >= best)
+                            // Failed: undo the bump
+                            ((int *)Entries[i].values)[j] -= bump;
+                        else {
+                            // Success: establish new best
+                            printf("new best: %s=", name);
+                            tune_param_get(name);
+                            firstBump[j] = bump;  // try the winner first in next iteration
+                            best = new;
+                            break;
+                        }
+                    }
+            }
+        }
 }

@@ -44,7 +44,7 @@ void search_init()
             Reduction[d][cnt] = 0.4 * log(min(d, 31)) + 1.057 * log(min(cnt, 31));
 }
 
-static const int Tempo = 17;
+const int Tempo = 17;
 
 static int qsearch(Worker *worker, const Position *pos, int ply, int depth, int alpha, int beta,
     bool pvNode, move_t pv[])

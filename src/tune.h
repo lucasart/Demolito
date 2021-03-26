@@ -45,3 +45,11 @@ extern int FreePasser[4];
 void tune_declare(void);
 void tune_parse(const char *fullName, int value);
 void tune_refresh(void);
+
+void tune_load(const char *fileName);
+void tune_free(void);
+void tune_param_list(void);
+void tune_param_get(const char *name);
+void tune_param_set(const char *name, const char *values);
+double tune_linereg(void);
+void tune_param_fit(const char *name, int nbIter);
