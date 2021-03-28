@@ -52,4 +52,5 @@ void tune_param_list(void);
 void tune_param_get(const char *name);
 void tune_param_set(const char *name, const char *values);
 double tune_linereg(void);
+double tune_logitreg(const char *strLambda);
 void tune_param_fit(const char *name, int nbIter);

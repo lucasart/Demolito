@@ -220,6 +220,8 @@ void uci_loop()
             tune_param_set(strtok_r(NULL, " \n", &linePos), strtok_r(NULL, " \n", &linePos));
         else if (!strcmp(token, "linereg"))
             tune_linereg();
+        else if (!strcmp(token, "logitreg"))
+            tune_logitreg(strtok_r(NULL, " \n", &linePos));
         else if (!strcmp(token, "fit"))
             tune_param_fit(strtok_r(NULL, " \n", &linePos), atoi(strtok_r(NULL, " \n", &linePos)));
         else

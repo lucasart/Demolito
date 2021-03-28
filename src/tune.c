@@ -273,23 +273,52 @@ void tune_param_set(const char *name, const char *values)
         }
 }
 
-// Fit y = alpha + beta.x; x = samples[].eval, y = evals[]
-double tune_linereg()
+// Calculate evals[] for the samples[]
+static int16_t *tune_run_evals(void)
 {
     // Make sure there is no persistance
     workers_clear();
     tune_refresh();
 
-    int16_t evals[sampleCount];
-    int64_t sum_y = 0, sum_x = 0;
-    Position pos = {0};
+    int16_t *evals = malloc(sampleCount * sizeof(int16_t));
 
     for (size_t i = 0; i < sampleCount; i++) {
+        Position pos = {0};
         pos_set(&pos, samples[i].fen);
         evals[i] = evaluate(&Workers[0], &pos) + Tempo;
+    }
 
-        // printf("%s,%d,%d\n", samples[i].fen, samples[i].eval, evals[i]);
+    return evals;
+}
 
+static double tune_logit_err(const int16_t *evals, double lambda)
+{
+    double sumErr = 0;
+
+    for (size_t i = 0; i < sampleCount; i++)
+        sumErr += fabs(0.5 * samples[i].result - 1 / (1 + exp(-lambda * evals[i])));
+
+    const double err = sumErr / sampleCount;
+    printf("sample.results[] = 1 / (1 + exp(-%f * evals[])) + err;\tmean(|err|)=%f\n", lambda, err);
+    return err;
+}
+
+double tune_logitreg(const char *strLambda)
+{
+    int16_t *evals = tune_run_evals();
+    const double lambda = strLambda ? atof(strLambda) : 0.00515;  // FIXME? tune lambda (newton raphson)
+    const double err = tune_logit_err(evals, lambda);
+    free(evals);
+    return err;
+}
+
+// Fit y = alpha + beta.x; x = samples[].eval, y = evals[]
+double tune_linereg()
+{
+    int16_t *evals = tune_run_evals();
+    int64_t sum_y = 0, sum_x = 0;
+
+    for (size_t i = 0; i < sampleCount; i++) {
         sum_y += evals[i];
         sum_x += samples[i].eval;
     }
@@ -312,14 +341,16 @@ double tune_linereg()
         sum_err += fabs(alpha + beta * samples[i].eval - evals[i]);
 
     const double mean_err = sum_err / sampleCount;
-    printf("evals[] + Tempo = %f + %f * samples[].eval + err;\tmean(|err|) = %f\n", alpha, beta,
+    printf("evals[] = %f + %f * samples[].eval + err;\tmean(|err|) = %f\n", alpha, beta,
         mean_err);
+
+    free(evals);
     return mean_err;
 }
 
 void tune_param_fit(const char *name, int nbIter)
 {
-    double best = tune_linereg();
+    double best = tune_logitreg(NULL);
 
     for (size_t i = 0; i < sizeof(Entries) / sizeof(Entry); i++)
         if (!strcmp(Entries[i].name, name)) {
@@ -336,7 +367,7 @@ void tune_param_fit(const char *name, int nbIter)
                         ((int *)Entries[i].values)[j] += bump;
 
                         // Calculate the regression mean_err
-                        const double new = tune_linereg();
+                        const double new = tune_logitreg(NULL);
 
                         if (new >= best)
                             // Failed: undo the bump
