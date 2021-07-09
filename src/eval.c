@@ -11,14 +11,14 @@
  *
  * You should have received a copy of the GNU General Public License along with this program. If
  * not, see <http://www.gnu.org/licenses/>.
-*/
-#include <math.h>
-#include <stdlib.h>
-#include "bitboard.h"
+ */
 #include "eval.h"
+#include "bitboard.h"
 #include "position.h"
 #include "tune.h"
 #include "util.h"
+#include <math.h>
+#include <stdlib.h>
 
 // Pre-calculated in eval_init()
 static int StartPieceTotal;
@@ -28,15 +28,13 @@ static bitboard_t AdjacentFiles[NB_FILE];
 static int KingDistance[NB_SQUARE][NB_SQUARE];
 static int SafetyCurve[4096];
 
-static bitboard_t pawn_attacks(const Position *pos, int color)
-{
+static bitboard_t pawn_attacks(const Position *pos, int color) {
     const bitboard_t pawns = pos_pieces_cp(pos, color, PAWN);
-    return bb_shift(pawns & ~File[FILE_A], push_inc(color) + LEFT)
-        | bb_shift(pawns & ~File[FILE_H], push_inc(color) + RIGHT);
+    return bb_shift(pawns & ~File[FILE_A], push_inc(color) + LEFT) |
+           bb_shift(pawns & ~File[FILE_H], push_inc(color) + RIGHT);
 }
 
-static eval_t mobility(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE + 1])
-{
+static eval_t mobility(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE + 1]) {
     const int them = opposite(us);
     eval_t result = {0, 0};
 
@@ -53,7 +51,7 @@ static eval_t mobility(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
 
     // Lateral mobility
     bitboard_t rookMovers = pos_pieces_cpp(pos, us, ROOK, QUEEN);
-    bitboard_t occ = pos_pieces(pos) ^ rookMovers;  // RQ see through each other
+    bitboard_t occ = pos_pieces(pos) ^ rookMovers; // RQ see through each other
 
     while (rookMovers) {
         const int from = bb_pop_lsb(&rookMovers), piece = pos->pieceOn[from];
@@ -64,7 +62,7 @@ static eval_t mobility(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
 
     // Diagonal mobility
     bitboard_t bishopMovers = pos_pieces_cpp(pos, us, BISHOP, QUEEN);
-    occ = pos_pieces(pos) ^ bishopMovers;  // BQ see through each other
+    occ = pos_pieces(pos) ^ bishopMovers; // BQ see through each other
 
     while (bishopMovers) {
         const int from = bb_pop_lsb(&bishopMovers), piece = pos->pieceOn[from];
@@ -76,16 +74,15 @@ static eval_t mobility(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
     return result;
 }
 
-static eval_t pattern(const Position *pos, int us)
-{
+static eval_t pattern(const Position *pos, int us) {
     const bitboard_t WhiteSquares = 0x55AA55AA55AA55AAULL;
     const bitboard_t ourPawns = pos_pieces_cp(pos, us, PAWN);
     const bitboard_t theirPawns = pos->byPiece[PAWN] ^ ourPawns;
     const bitboard_t ourBishops = pos_pieces_cp(pos, us, BISHOP);
 
     // Bishop pair
-    eval_t result = (ourBishops & WhiteSquares) && (ourBishops & ~WhiteSquares)
-        ? BishopPair : (eval_t){0, 0};
+    eval_t result =
+        (ourBishops & WhiteSquares) && (ourBishops & ~WhiteSquares) ? BishopPair : (eval_t){0, 0};
 
     // Rook on open file
     bitboard_t b = pos_pieces_cp(pos, us, ROOK);
@@ -106,8 +103,7 @@ static eval_t pattern(const Position *pos, int us)
     return result;
 }
 
-static eval_t hanging(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE + 1])
-{
+static eval_t hanging(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE + 1]) {
     const int them = opposite(us);
     eval_t result = {0, 0};
 
@@ -115,8 +111,8 @@ static eval_t hanging(const Position *pos, int us, bitboard_t attacks[NB_COLOR][
     bitboard_t b = attacks[them][PAWN] & (pos->byColor[us] ^ pos_pieces_cp(pos, us, PAWN));
     b |= (attacks[them][KNIGHT] | attacks[them][BISHOP]) & pos_pieces_cpp(pos, us, ROOK, QUEEN);
     b |= pos_pieces_cp(pos, us, QUEEN) & attacks[them][ROOK];
-    b |= pos_pieces_cp(pos, us, PAWN) & attacks[them][NB_PIECE]
-        & ~(attacks[us][PAWN] | attacks[us][KING] | attacks[us][NB_PIECE]);
+    b |= pos_pieces_cp(pos, us, PAWN) & attacks[them][NB_PIECE] &
+         ~(attacks[us][PAWN] | attacks[us][KING] | attacks[us][NB_PIECE]);
 
     while (b) {
         const int piece = pos->pieceOn[bb_pop_lsb(&b)];
@@ -125,8 +121,8 @@ static eval_t hanging(const Position *pos, int us, bitboard_t attacks[NB_COLOR][
     }
 
     // Penalize hanging pawns in the endgame
-    b = pos_pieces_cp(pos, us, PAWN) & attacks[them][KING]
-        & ~(attacks[us][PAWN] | attacks[us][KING]);
+    b = pos_pieces_cp(pos, us, PAWN) & attacks[them][KING] &
+        ~(attacks[us][PAWN] | attacks[us][KING]);
 
     if (b)
         result.eg -= Hanging[PAWN] * bb_count(b);
@@ -134,8 +130,7 @@ static eval_t hanging(const Position *pos, int us, bitboard_t attacks[NB_COLOR][
     return result;
 }
 
-static int safety(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE + 1])
-{
+static int safety(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE + 1]) {
     const int them = opposite(us);
     int weight = 0, count = 0;
 
@@ -155,17 +150,16 @@ static int safety(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_P
     // Check threats
     const int king = pos_king_square(pos, us);
     const bitboard_t occ = pos_pieces(pos);
-    const bitboard_t checks[] = {
-        KnightAttacks[king] & attacks[them][KNIGHT],
-        bb_bishop_attacks(king, occ) & attacks[them][BISHOP],
-        bb_rook_attacks(king, occ) & attacks[them][ROOK],
-        (bb_bishop_attacks(king, occ) | bb_rook_attacks(king, occ)) & attacks[them][QUEEN]
-    };
+    const bitboard_t checks[] = {KnightAttacks[king] & attacks[them][KNIGHT],
+                                 bb_bishop_attacks(king, occ) & attacks[them][BISHOP],
+                                 bb_rook_attacks(king, occ) & attacks[them][ROOK],
+                                 (bb_bishop_attacks(king, occ) | bb_rook_attacks(king, occ)) &
+                                     attacks[them][QUEEN]};
 
     for (int piece = KNIGHT; piece <= QUEEN; piece++)
         if (checks[piece]) {
-            const bitboard_t b = checks[piece] & ~(pos->byColor[them] | attacks[us][PAWN]
-                | attacks[us][KING]);
+            const bitboard_t b =
+                checks[piece] & ~(pos->byColor[them] | attacks[us][PAWN] | attacks[us][KING]);
 
             if (b) {
                 count++;
@@ -175,8 +169,8 @@ static int safety(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_P
         }
 
     // X-Ray threats: sliding pieces with potential for pins or discovered checks
-    bitboard_t xrays = (bb_bishop_attacks(king, 0) & pos_pieces_cpp(pos, them, BISHOP, QUEEN))
-        | (bb_rook_attacks(king, 0) & pos_pieces_cpp(pos, them, ROOK, QUEEN));
+    bitboard_t xrays = (bb_bishop_attacks(king, 0) & pos_pieces_cpp(pos, them, BISHOP, QUEEN)) |
+                       (bb_rook_attacks(king, 0) & pos_pieces_cpp(pos, them, ROOK, QUEEN));
 
     while (xrays) {
         const int xray = bb_pop_lsb(&xrays);
@@ -191,8 +185,7 @@ static int safety(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_P
     return -SafetyCurve[min(idx, 4095)];
 }
 
-static eval_t passer(int us, int pawn, int ourKing, int theirKing)
-{
+static eval_t passer(int us, int pawn, int ourKing, int theirKing) {
     const int n = relative_rank_of(us, pawn) - RANK_2;
 
     // score based on rank
@@ -209,8 +202,7 @@ static eval_t passer(int us, int pawn, int ourKing, int theirKing)
 }
 
 static eval_t do_pawns(const Position *pos, int us, bitboard_t attacks[NB_COLOR][NB_PIECE + 1],
-    bitboard_t *passed)
-{
+                       bitboard_t *passed) {
     const int them = opposite(us);
     const bitboard_t ourPawns = pos_pieces_cp(pos, us, PAWN);
     const bitboard_t theirPawns = pos_pieces_cp(pos, them, PAWN);
@@ -239,8 +231,8 @@ static eval_t do_pawns(const Position *pos, int us, bitboard_t attacks[NB_COLOR]
         const bitboard_t besides = ourPawns & AdjacentFiles[file];
         const bool exposed = !(PawnPath[us][square] & pos->byPiece[PAWN]);
 
-        const int d = KingDistance[stop][theirKing] * Distance[1]
-            - KingDistance[stop][ourKing] * Distance[0];
+        const int d =
+            KingDistance[stop][theirKing] * Distance[1] - KingDistance[stop][ourKing] * Distance[0];
         maxDistance = max(maxDistance, d);
 
         if (besides & (Rank[rank] | Rank[us == WHITE ? rank - 1 : rank + 1]))
@@ -295,22 +287,20 @@ static eval_t pawns(Worker *worker, const Position *pos, bitboard_t attacks[NB_C
         const int n = relative_rank_of(us, square) - RANK_4;
 
         if (n >= 0 && !bb_test(occ, square + push_inc(us)))
-           e.eg += us == WHITE ? FreePasser[n] : -FreePasser[n];
+            e.eg += us == WHITE ? FreePasser[n] : -FreePasser[n];
     }
 
     return e;
 }
 
-static int blend(const Position *pos, eval_t e)
-{
+static int blend(const Position *pos, eval_t e) {
     const int pieceTotal = pos->pieceMaterial[WHITE] + pos->pieceMaterial[BLACK];
     return (e.op * pieceTotal + e.eg * (StartPieceTotal - pieceTotal)) / StartPieceTotal;
 }
 
-void eval_init()
-{
-    StartPieceTotal = 4 * (PieceValue[KNIGHT] + PieceValue[BISHOP] + PieceValue[ROOK])
-        + 2 * PieceValue[QUEEN];
+void eval_init() {
+    StartPieceTotal =
+        4 * (PieceValue[KNIGHT] + PieceValue[BISHOP] + PieceValue[ROOK]) + 2 * PieceValue[QUEEN];
 
     for (int square = H8; square >= A1; square--) {
         if (rank_of(square) == RANK_8)
@@ -331,8 +321,8 @@ void eval_init()
     }
 
     for (int file = FILE_A; file <= FILE_H; file++)
-        AdjacentFiles[file] = (file > FILE_A ? File[file - 1] : 0)
-            | (file < FILE_H ? File[file + 1] : 0);
+        AdjacentFiles[file] =
+            (file > FILE_A ? File[file - 1] : 0) | (file < FILE_H ? File[file + 1] : 0);
 
     for (int s1 = A1; s1 <= H8; s1++)
         for (int s2 = A1; s2 <= H8; s2++) {
@@ -355,8 +345,7 @@ void eval_init()
     }
 }
 
-int evaluate(Worker *worker, const Position *pos)
-{
+int evaluate(Worker *worker, const Position *pos) {
     worker->nodes++;
 
     assert(!pos->checkers);
@@ -376,8 +365,8 @@ int evaluate(Worker *worker, const Position *pos)
         eval_add(&e[color], mobility(pos, color, attacks));
 
         // Aggregate attacks pieces only (NBRQ)
-        attacks[color][NB_PIECE] = attacks[color][KNIGHT] | attacks[color][BISHOP]
-            | attacks[color][ROOK] | attacks[color][QUEEN];
+        attacks[color][NB_PIECE] = attacks[color][KNIGHT] | attacks[color][BISHOP] |
+                                   attacks[color][ROOK] | attacks[color][QUEEN];
     }
 
     for (int color = WHITE; color <= BLACK; color++) {

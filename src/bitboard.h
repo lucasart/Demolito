@@ -11,14 +11,15 @@
  *
  * You should have received a copy of the GNU General Public License along with this program. If
  * not, see <http://www.gnu.org/licenses/>.
-*/
+ */
 #pragma once
 #include "types.h"
 
 typedef uint64_t bitboard_t;
 
 extern bitboard_t Rank[NB_RANK], File[NB_FILE];
-extern bitboard_t PawnAttacks[NB_COLOR][NB_SQUARE], KnightAttacks[NB_SQUARE], KingAttacks[NB_SQUARE];
+extern bitboard_t PawnAttacks[NB_COLOR][NB_SQUARE], KnightAttacks[NB_SQUARE],
+    KingAttacks[NB_SQUARE];
 extern bitboard_t Segment[NB_SQUARE][NB_SQUARE];
 extern bitboard_t Ray[NB_SQUARE][NB_SQUARE];
 

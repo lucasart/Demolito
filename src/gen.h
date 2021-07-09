@@ -11,12 +11,12 @@
  *
  * You should have received a copy of the GNU General Public License along with this program. If
  * not, see <http://www.gnu.org/licenses/>.
-*/
+ */
 #pragma once
 #include "position.h"
 
 // Max number of pseudo-legal moves allowed
-enum {MAX_MOVES = 192};
+enum { MAX_MOVES = 192 };
 
 // Generate pseudo-legal moves (ie. legal modulo self-check)
 move_t *gen_pawn_moves(const Position *pos, move_t *mList, bitboard_t filter, bool subPromotions);

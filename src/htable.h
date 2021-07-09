@@ -11,13 +11,13 @@
  *
  * You should have received a copy of the GNU General Public License along with this program. If
  * not, see <http://www.gnu.org/licenses/>.
-*/
+ */
 #pragma once
+#include "position.h"
 #include <inttypes.h>
 #include <stdbool.h>
-#include "position.h"
 
-enum {LBOUND, EXACT, UBOUND};
+enum { LBOUND, EXACT, UBOUND };
 
 typedef struct {
     uint64_t key;
@@ -27,12 +27,12 @@ typedef struct {
             int16_t score, eval;
             move_t move;
             int8_t depth;
-            uint8_t bound: 2, date: 6;
+            uint8_t bound : 2, date : 6;
         };
     };
 } HashEntry;
 
-void hash_prepare(uint64_t hashMB);  // realloc + clear
+void hash_prepare(uint64_t hashMB); // realloc + clear
 HashEntry hash_read(uint64_t key, int ply);
 void hash_write(uint64_t key, HashEntry *e, int ply);
 void hash_prefetch(uint64_t key);

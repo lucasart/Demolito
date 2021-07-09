@@ -11,9 +11,7 @@
  *
  * You should have received a copy of the GNU General Public License along with this program. If
  * not, see <http://www.gnu.org/licenses/>.
-*/
-#include <stdlib.h>
-#include <string.h>
+ */
 #include "bitboard.h"
 #include "eval.h"
 #include "htable.h"
@@ -23,13 +21,13 @@
 #include "uci.h"
 #include "util.h"
 #include "workers.h"
+#include <stdlib.h>
+#include <string.h>
 
-void bench(int depth)
-{
+void bench(int depth) {
     static const char *fens[] = {
-        #include "test.csv"
-        NULL
-    };
+#include "test.csv"
+        NULL};
 
     uint64_t nodes = 0, seal = 0;
     uciChess960 = true;
@@ -55,16 +53,15 @@ void bench(int depth)
 
     const int64_t elapsed = system_msec() - start;
 
-    hash_blocks(HashTable, HashCount * sizeof(HashEntry), &seal);  // sign entire hash table
+    hash_blocks(HashTable, HashCount * sizeof(HashEntry), &seal); // sign entire hash table
 
-    printf("seal  : %" PRIx64 "\n", seal);  // strong functionality signature
+    printf("seal  : %" PRIx64 "\n", seal); // strong functionality signature
     printf("time  : %" PRIu64 "ms\n", elapsed);
-    printf("nodes : %" PRIu64 "\n", nodes);  // total nodes = weak functionality signature
-    printf("nps   : %.0f\n", nodes * 1000.0 / max(elapsed, 1));  // avoid div/0
+    printf("nodes : %" PRIu64 "\n", nodes); // total nodes = weak functionality signature
+    printf("nps   : %.0f\n", nodes * 1000.0 / max(elapsed, 1)); // avoid div/0
 }
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
     eval_init();
     search_init();
 
@@ -76,7 +73,7 @@ int main(int argc, char **argv)
                 WorkersCount = (size_t)atoll(argv[3]);
 
             if (argc > 4)
-                uciHash = 1ULL << bb_msb((uint64_t)atoll(argv[4]));  // must be a power of 2
+                uciHash = 1ULL << bb_msb((uint64_t)atoll(argv[4])); // must be a power of 2
 
             workers_prepare(WorkersCount);
             hash_prepare(uciHash);

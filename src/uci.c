@@ -11,10 +11,8 @@
  *
  * You should have received a copy of the GNU General Public License along with this program. If
  * not, see <http://www.gnu.org/licenses/>.
-*/
-#include <math.h>
-#include <stdlib.h>
-#include <string.h>
+ */
+#include "uci.h"
 #include "bitboard.h"
 #include "eval.h"
 #include "gen.h"
@@ -22,7 +20,9 @@
 #include "position.h"
 #include "search.h"
 #include "tune.h"
-#include "uci.h"
+#include <math.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define uci_printf(...) printf(__VA_ARGS__), fflush(stdout)
 #define uci_puts(str) puts(str), fflush(stdout)
@@ -33,22 +33,21 @@ size_t uciHash = 2;
 int64_t uciTimeBuffer = 60;
 bool uciChess960 = false;
 
-static void uci_format_score(int score, char str[17])
-{
+static void uci_format_score(int score, char str[17]) {
     if (is_mate_score(score))
         sprintf(str, "mate %d", score > 0 ? (MATE - score + 1) / 2 : -(score + MATE + 1) / 2);
     else
         sprintf(str, "cp %d", score / 2);
 }
 
-static void intro(void)
-{
+static void intro(void) {
     uci_puts("id name Demolito " VERSION "\nid author lucasart");
     uci_printf("option name Contempt type spin default %d min -100 max 100\n", Contempt);
     uci_printf("option name Hash type spin default %zu min 1 max 1048576\n", uciHash);
     uci_puts("option name Ponder type check default false");
     uci_printf("option name Threads type spin default %zu min 1 max 256\n", WorkersCount);
-    uci_printf("option name Time Buffer type spin default %" PRId64 " min 0 max 1000\n", uciTimeBuffer);
+    uci_printf("option name Time Buffer type spin default %" PRId64 " min 0 max 1000\n",
+               uciTimeBuffer);
     uci_printf("option name UCI_Chess960 type check default %s\n", uciChess960 ? "true" : "false");
 #ifdef TUNE
     tune_declare();
@@ -56,8 +55,7 @@ static void intro(void)
     uci_puts("uciok");
 }
 
-static void setoption(char **linePos)
-{
+static void setoption(char **linePos) {
     const char *token = strtok_r(NULL, " \n", linePos);
     char name[32] = "";
 
@@ -73,7 +71,7 @@ static void setoption(char **linePos)
         uciChess960 = !strcmp(token, "true");
     else if (!strcmp(name, "Hash")) {
         uciHash = (size_t)atoll(token);
-        uciHash = 1ULL << bb_msb(uciHash);  // must be a power of two
+        uciHash = 1ULL << bb_msb(uciHash); // must be a power of two
         hash_prepare(uciHash);
     } else if (!strcmp(name, "Threads"))
         workers_prepare((size_t)atoll(token));
@@ -88,8 +86,7 @@ static void setoption(char **linePos)
     }
 }
 
-static void position(char **linePos)
-{
+static void position(char **linePos) {
     Position pos[NB_COLOR];
     int idx = 0;
 
@@ -98,7 +95,7 @@ static void position(char **linePos)
 
     if (!strcmp(token, "startpos")) {
         strcpy(fen, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
-        strtok_r(NULL, " \n", linePos);  // consume "moves" token (if present)
+        strtok_r(NULL, " \n", linePos); // consume "moves" token (if present)
     } else if (!strcmp(token, "fen")) {
         while ((token = strtok_r(NULL, " \n", linePos)) && strcmp(token, "moves"))
             strcat(strcat(fen, token), " ");
@@ -112,7 +109,7 @@ static void position(char **linePos)
     // Parse moves (if any)
     while ((token = strtok_r(NULL, " \n", linePos))) {
         move_t m = pos_string_to_move(&pos[idx], token);
-        pos_move(&pos[idx^1], &pos[idx], m);
+        pos_move(&pos[idx ^ 1], &pos[idx], m);
         idx ^= 1;
         zobrist_push(&rootStack, pos[idx].key);
     }
@@ -120,8 +117,7 @@ static void position(char **linePos)
     rootPos = pos[idx];
 }
 
-static void go(char **linePos)
-{
+static void go(char **linePos) {
     lim = (Limits){0};
     lim.depth = MAX_DEPTH;
 
@@ -136,11 +132,11 @@ static void go(char **linePos)
             lim.movetime = atoll(strtok_r(NULL, " \n", linePos));
         else if (!strcmp(token, "movestogo"))
             lim.movestogo = atoi(strtok_r(NULL, " \n", linePos));
-        else if ((rootPos.turn == WHITE && !strcmp(token, "wtime"))
-                || (rootPos.turn == BLACK && !strcmp(token, "btime")))
+        else if ((rootPos.turn == WHITE && !strcmp(token, "wtime")) ||
+                 (rootPos.turn == BLACK && !strcmp(token, "btime")))
             lim.time = atoll(strtok_r(NULL, " \n", linePos));
-        else if ((rootPos.turn == WHITE && !strcmp(token, "winc"))
-                || (rootPos.turn == BLACK && !strcmp(token, "binc")))
+        else if ((rootPos.turn == WHITE && !strcmp(token, "winc")) ||
+                 (rootPos.turn == BLACK && !strcmp(token, "binc")))
             lim.inc = atoll(strtok_r(NULL, " \n", linePos));
         else if (!strcmp(token, "infinite") || !strcmp(token, "ponder"))
             lim.infinite = true;
@@ -154,15 +150,13 @@ static void go(char **linePos)
     pthread_create(&Timer, NULL, search_posix, NULL);
 }
 
-static void eval(void)
-{
+static void eval(void) {
     char str[17];
     uci_format_score(evaluate(&Workers[0], &rootPos), str);
     uci_printf("score %s\n", str);
 }
 
-static void perft(char **linePos)
-{
+static void perft(char **linePos) {
     const int depth = atoi(strtok_r(NULL, " \n", linePos));
     const char *last = strtok_r(NULL, " \n", linePos);
     uci_printf("%" PRIu64 "\n", gen_perft(&rootPos, depth, !last || strcmp(last, "div")));
@@ -170,8 +164,7 @@ static void perft(char **linePos)
 
 Info ui;
 
-void uci_loop()
-{
+void uci_loop() {
     char line[8192], *linePos;
 
     while (fgets(line, 8192, stdin)) {
@@ -198,7 +191,7 @@ void uci_loop()
             lim.infinite = false;
             Stop = true;
         } else if (!strcmp(token, "ponderhit"))
-            lim.infinite = false;  // switch from pondering to normal search
+            lim.infinite = false; // switch from pondering to normal search
         else if (!strcmp(token, "d"))
             pos_print(&rootPos);
         else if (!strcmp(token, "eval"))
@@ -234,8 +227,7 @@ void uci_loop()
     }
 }
 
-void info_create(Info *info)
-{
+void info_create(Info *info) {
     info->lastDepth = 0;
     info->variability = 0.5;
     info->best = info->ponder = 0;
@@ -243,13 +235,9 @@ void info_create(Info *info)
     mtx_init(&info->mtx, mtx_plain);
 }
 
-void info_destroy(Info *info)
-{
-    mtx_destroy(&info->mtx);
-}
+void info_destroy(Info *info) { mtx_destroy(&info->mtx); }
 
-void info_update(Info *info, int depth, int score, uint64_t nodes, move_t pv[], bool partial)
-{
+void info_update(Info *info, int depth, int score, uint64_t nodes, move_t pv[], bool partial) {
     mtx_lock(&info->mtx);
 
     if (depth > info->lastDepth) {
@@ -257,7 +245,7 @@ void info_update(Info *info, int depth, int score, uint64_t nodes, move_t pv[], 
         char str[17];
         uci_format_score(score, str);
         uci_printf("info depth %d score %s time %" PRId64 " nodes %" PRIu64 " hashfull %d pv",
-            depth, str, system_msec() - info->start, nodes, hash_permille());
+                   depth, str, system_msec() - info->start, nodes, hash_permille());
 
         // Pring the moves. Because of e1g1 notation when Chess960 = false, we need to play the PV
         // to print it correctly. This is a design flaw of the UCI protocol, which should have
@@ -278,22 +266,20 @@ void info_update(Info *info, int depth, int score, uint64_t nodes, move_t pv[], 
         // Update variability depending on whether the bestmove has changed or is confirmed
         // - changed: increase variability (rescale for %age of partial updates = f(threads))
         // - confirmed: reduce variability (discard partial)
-        info->variability += info->best != pv[0]
-            ? 0.6 * pow(WorkersCount, -0.08)
-            : -0.24 * !partial;
+        info->variability +=
+            info->best != pv[0] ? 0.6 * pow(WorkersCount, -0.08) : -0.24 * !partial;
 
         if (!partial)
             info->lastDepth = depth;
 
         info->best = pv[0];
-        info->ponder = pv[1];  // May be zero (not a bug, inevitable consequence of partial updates)
+        info->ponder = pv[1]; // May be zero (not a bug, inevitable consequence of partial updates)
     }
 
     mtx_unlock(&info->mtx);
 }
 
-void info_print_bestmove(Info *info)
-{
+void info_print_bestmove(Info *info) {
     mtx_lock(&info->mtx);
 
     char best[6];
@@ -311,8 +297,7 @@ void info_print_bestmove(Info *info)
     mtx_unlock(&info->mtx);
 }
 
-move_t info_best(Info *info)
-{
+move_t info_best(Info *info) {
     mtx_lock(&info->mtx);
     const move_t best = info->best;
     mtx_unlock(&info->mtx);
@@ -320,8 +305,7 @@ move_t info_best(Info *info)
     return best;
 }
 
-int info_last_depth(Info *info)
-{
+int info_last_depth(Info *info) {
     mtx_lock(&info->mtx);
     const int lastDepth = info->lastDepth;
     mtx_unlock(&info->mtx);
@@ -329,8 +313,7 @@ int info_last_depth(Info *info)
     return lastDepth;
 }
 
-double info_variability(Info *info)
-{
+double info_variability(Info *info) {
     mtx_lock(&info->mtx);
     const double variability = info->variability;
     mtx_unlock(&info->mtx);

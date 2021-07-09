@@ -11,13 +11,13 @@
  *
  * You should have received a copy of the GNU General Public License along with this program. If
  * not, see <http://www.gnu.org/licenses/>.
-*/
+ */
 #pragma once
 #include "types.h"
 
 extern int PieceValue[NB_PIECE];
 
-extern eval_t KnightPstSeed[4+8], RookPstSeed[4+8], QueenPstSeed[4+8];
+extern eval_t KnightPstSeed[4 + 8], RookPstSeed[4 + 8], QueenPstSeed[4 + 8];
 extern eval_t BishopPstSeed[8][4], KingPstSeed[8][4], PawnPstSeed[6][4];
 extern eval_t Mobility[5][15];
 

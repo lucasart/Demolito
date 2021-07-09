@@ -11,11 +11,11 @@
  *
  * You should have received a copy of the GNU General Public License along with this program. If
  * not, see <http://www.gnu.org/licenses/>.
-*/
+ */
 #pragma once
 #include "position.h"
 
-enum {MAX_GAME_PLY = 2048};
+enum { MAX_GAME_PLY = 2048 };
 
 typedef struct {
     uint64_t keys[MAX_GAME_PLY];

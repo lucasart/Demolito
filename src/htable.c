@@ -11,19 +11,18 @@
  *
  * You should have received a copy of the GNU General Public License along with this program. If
  * not, see <http://www.gnu.org/licenses/>.
-*/
-#include <stdlib.h>
-#include <string.h>
+ */
 #include "htable.h"
 #include "platform.h"
 #include "search.h"
+#include <stdlib.h>
+#include <string.h>
 
 unsigned hashDate = 0;
 HashEntry *HashTable = NULL;
 size_t HashCount = 0;
 
-static int score_to_hash(int score, int ply)
-{
+static int score_to_hash(int score, int ply) {
     if (score >= mate_in(MAX_PLY))
         score += ply;
     else if (score <= mated_in(MAX_PLY))
@@ -34,8 +33,7 @@ static int score_to_hash(int score, int ply)
     return score;
 }
 
-static int score_from_hash(int hashScore, int ply)
-{
+static int score_from_hash(int hashScore, int ply) {
     if (hashScore >= mate_in(MAX_PLY))
         hashScore -= ply;
     else if (hashScore <= mated_in(MAX_PLY))
@@ -46,14 +44,10 @@ static int score_from_hash(int hashScore, int ply)
     return hashScore;
 }
 
-static __attribute__((destructor)) void hash_free(void)
-{
-    free(HashTable);
-}
+static __attribute__((destructor)) void hash_free(void) { free(HashTable); }
 
-void hash_prepare(uint64_t hashMB)
-{
-    assert(bb_count(hashMB) == 1);  // must be a power of 2
+void hash_prepare(uint64_t hashMB) {
+    assert(bb_count(hashMB) == 1); // must be a power of 2
 
     free(HashTable);
     HashTable = malloc(hashMB << 20);
@@ -67,8 +61,7 @@ void hash_prepare(uint64_t hashMB)
     memset(HashTable, 0, hashMB << 20);
 }
 
-HashEntry hash_read(uint64_t key, int ply)
-{
+HashEntry hash_read(uint64_t key, int ply) {
     HashEntry e = HashTable[key & (HashCount - 1)];
 
     if (e.key == key)
@@ -79,8 +72,7 @@ HashEntry hash_read(uint64_t key, int ply)
     return e;
 }
 
-void hash_write(uint64_t key, HashEntry *e, int ply)
-{
+void hash_write(uint64_t key, HashEntry *e, int ply) {
     HashEntry *slot = &HashTable[key & (HashCount - 1)];
 
     e->date = hashDate;
@@ -93,13 +85,9 @@ void hash_write(uint64_t key, HashEntry *e, int ply)
     }
 }
 
-void hash_prefetch(uint64_t key)
-{
-    __builtin_prefetch(&HashTable[key & (HashCount - 1)]);
-}
+void hash_prefetch(uint64_t key) { __builtin_prefetch(&HashTable[key & (HashCount - 1)]); }
 
-int hash_permille()
-{
+int hash_permille() {
     int result = 0;
 
     for (int i = 0; i < 1000; i++)

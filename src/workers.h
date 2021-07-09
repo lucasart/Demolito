@@ -11,18 +11,14 @@
  *
  * You should have received a copy of the GNU General Public License along with this program. If
  * not, see <http://www.gnu.org/licenses/>.
-*/
+ */
 #pragma once
-#include <setjmp.h>
 #include "bitboard.h"
-#include "zobrist.h"
 #include "search.h"
+#include "zobrist.h"
+#include <setjmp.h>
 
-enum {
-    NB_PAWN_HASH = 16384,
-    NB_REFUTATION = 1024,
-    NB_FOLLOW_UP = 1024
-};
+enum { NB_PAWN_HASH = 16384, NB_REFUTATION = 1024, NB_FOLLOW_UP = 1024 };
 
 typedef struct {
     uint64_t key;
@@ -45,7 +41,7 @@ extern Worker *Workers;
 extern size_t WorkersCount;
 
 void workers_clear(void);
-void workers_prepare(size_t count);  // realloc + clear
+void workers_prepare(size_t count); // realloc + clear
 
 void workers_new_search(void);
 uint64_t workers_nodes(void);

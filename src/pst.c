@@ -11,23 +11,23 @@
  *
  * You should have received a copy of the GNU General Public License along with this program. If
  * not, see <http://www.gnu.org/licenses/>.
-*/
+ */
 #include "pst.h"
 #include "tune.h"
 
 eval_t PST[NB_COLOR][NB_PIECE][NB_SQUARE];
 
-void __attribute__((constructor)) pst_init()
-{
+void __attribute__((constructor)) pst_init() {
     for (int color = WHITE; color <= BLACK; color++)
         for (int piece = KNIGHT; piece < NB_PIECE; piece++)
             for (int square = A1; square <= H8; square++) {
                 const int rr = relative_rank_of(color, square);
                 const int file = file_of(square), file4 = file > FILE_D ? FILE_H - file : file;
 
-                PST[color][piece][square] = piece == PAWN ? (eval_t){2 * PieceValue[PAWN] - 200, 200}
+                PST[color][piece][square] =
+                    piece == PAWN   ? (eval_t){2 * PieceValue[PAWN] - 200, 200}
                     : piece == KING ? (eval_t){0, 0}
-                    : (eval_t){PieceValue[piece], PieceValue[piece]};
+                                    : (eval_t){PieceValue[piece], PieceValue[piece]};
 
                 if (piece == KNIGHT) {
                     eval_add(&PST[color][piece][square], KnightPstSeed[file4]);

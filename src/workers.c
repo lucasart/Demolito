@@ -11,42 +11,35 @@
  *
  * You should have received a copy of the GNU General Public License along with this program. If
  * not, see <http://www.gnu.org/licenses/>.
-*/
-#include <stdlib.h>
+ */
 #include "workers.h"
 #include "search.h"
+#include <stdlib.h>
 
 Worker *Workers = NULL;
 size_t WorkersCount = 1;
 
-static void __attribute__((destructor)) workers_free(void)
-{
-    free(Workers);
-}
+static void __attribute__((destructor)) workers_free(void) { free(Workers); }
 
-void workers_clear()
-{
+void workers_clear() {
     for (size_t i = 0; i < WorkersCount; i++)
         Workers[i] = (Worker){0};
 }
 
-void workers_prepare(size_t count)
-{
+void workers_prepare(size_t count) {
     Workers = realloc(Workers, count * sizeof(Worker));
     WorkersCount = count;
     workers_clear();
 }
 
-void workers_new_search()
-{
+void workers_new_search() {
     for (size_t i = 0; i < WorkersCount; i++) {
         Workers[i].stack = rootStack;
         Workers[i].nodes = 0;
     }
 }
 
-uint64_t workers_nodes()
-{
+uint64_t workers_nodes() {
     uint64_t total = 0;
 
     for (size_t i = 0; i < WorkersCount; i++)

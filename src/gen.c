@@ -11,21 +11,19 @@
  *
  * You should have received a copy of the GNU General Public License along with this program. If
  * not, see <http://www.gnu.org/licenses/>.
-*/
-#include "bitboard.h"
+ */
 #include "gen.h"
+#include "bitboard.h"
 #include "position.h"
 
-static move_t *serialize_moves(int from, bitboard_t targets, move_t *mList)
-{
+static move_t *serialize_moves(int from, bitboard_t targets, move_t *mList) {
     while (targets)
         *mList++ = move_build(from, bb_pop_lsb(&targets), NB_PIECE);
 
     return mList;
 }
 
-static move_t *serialize_pawn_moves(bitboard_t pawns, int shift, move_t *mList)
-{
+static move_t *serialize_pawn_moves(bitboard_t pawns, int shift, move_t *mList) {
     while (pawns) {
         const int from = bb_pop_lsb(&pawns);
         *mList++ = move_build(from, from + shift, NB_PIECE);
@@ -34,8 +32,7 @@ static move_t *serialize_pawn_moves(bitboard_t pawns, int shift, move_t *mList)
     return mList;
 }
 
-static move_t *gen_all_moves(const Position *pos, move_t *mList)
-{
+static move_t *gen_all_moves(const Position *pos, move_t *mList) {
     if (pos->checkers)
         return gen_check_escapes(pos, mList, true);
     else {
@@ -47,15 +44,14 @@ static move_t *gen_all_moves(const Position *pos, move_t *mList)
     }
 }
 
-move_t *gen_pawn_moves(const Position *pos, move_t *mList, bitboard_t filter, bool subPromotions)
-{
+move_t *gen_pawn_moves(const Position *pos, move_t *mList, bitboard_t filter, bool subPromotions) {
     const int us = pos->turn, them = opposite(us);
     const int push = push_inc(us);
     const bitboard_t capturable = (pos->byColor[them] | pos_ep_square_bb(pos)) & filter;
 
     // ** Non promotions **
-    const bitboard_t nonPromotingPawns = pos_pieces_cp(pos, us, PAWN)
-        & ~Rank[relative_rank(us, RANK_7)];
+    const bitboard_t nonPromotingPawns =
+        pos_pieces_cp(pos, us, PAWN) & ~Rank[relative_rank(us, RANK_7)];
 
     // Left captures
     bitboard_t b = nonPromotingPawns & ~File[FILE_A] & bb_shift(capturable, -(push + LEFT));
@@ -70,8 +66,8 @@ move_t *gen_pawn_moves(const Position *pos, move_t *mList, bitboard_t filter, bo
     mList = serialize_pawn_moves(b, push, mList);
 
     // Double pushes
-    b = nonPromotingPawns & Rank[relative_rank(us, RANK_2)] & bb_shift(~pos_pieces(pos), -push)
-        & bb_shift(~pos_pieces(pos) & filter, -2 * push);
+    b = nonPromotingPawns & Rank[relative_rank(us, RANK_2)] & bb_shift(~pos_pieces(pos), -push) &
+        bb_shift(~pos_pieces(pos) & filter, -2 * push);
     mList = serialize_pawn_moves(b, 2 * push, mList);
 
     // ** Promotions **
@@ -101,8 +97,7 @@ move_t *gen_pawn_moves(const Position *pos, move_t *mList, bitboard_t filter, bo
     return mList;
 }
 
-move_t *gen_piece_moves(const Position *pos, move_t *mList, bitboard_t filter, bool kingMoves)
-{
+move_t *gen_piece_moves(const Position *pos, move_t *mList, bitboard_t filter, bool kingMoves) {
     const int us = pos->turn;
     int from;
 
@@ -139,8 +134,7 @@ move_t *gen_piece_moves(const Position *pos, move_t *mList, bitboard_t filter, b
     return mList;
 }
 
-move_t *gen_castling_moves(const Position *pos, move_t *mList)
-{
+move_t *gen_castling_moves(const Position *pos, move_t *mList) {
     assert(!pos->checkers);
     const int king = pos_king_square(pos, pos->turn);
 
@@ -151,16 +145,15 @@ move_t *gen_castling_moves(const Position *pos, move_t *mList)
         const int kto = square_from(rank_of(rook), rook > king ? FILE_G : FILE_C);
         const int rto = square_from(rank_of(rook), rook > king ? FILE_F : FILE_D);
 
-        if (bb_count((Segment[king][kto] | Segment[rook][rto]) & pos_pieces(pos)) == 2
-                && !(pos->attacked & Segment[king][kto]))
+        if (bb_count((Segment[king][kto] | Segment[rook][rto]) & pos_pieces(pos)) == 2 &&
+            !(pos->attacked & Segment[king][kto]))
             *mList++ = move_build(king, rook, NB_PIECE);
     }
 
     return mList;
 }
 
-move_t *gen_check_escapes(const Position *pos, move_t *mList, bool subPromotions)
-{
+move_t *gen_check_escapes(const Position *pos, move_t *mList, bool subPromotions) {
     assert(pos->checkers);
     bitboard_t ours = pos->byColor[pos->turn];
     const int king = pos_king_square(pos, pos->turn);
@@ -175,8 +168,8 @@ move_t *gen_check_escapes(const Position *pos, move_t *mList, bool subPromotions
 
         // sliding check: cover the checking segment, or capture the slider
         bitboard_t targets = BISHOP <= checkerPiece && checkerPiece <= QUEEN
-              ? Segment[king][checkerSquare]
-              : pos->checkers;
+                                 ? Segment[king][checkerSquare]
+                                 : pos->checkers;
 
         mList = gen_piece_moves(pos, mList, targets & ~ours, false);
 
@@ -191,8 +184,7 @@ move_t *gen_check_escapes(const Position *pos, move_t *mList, bool subPromotions
     return mList;
 }
 
-bool gen_is_legal(const Position *pos, bitboard_t pins, move_t m)
-{
+bool gen_is_legal(const Position *pos, bitboard_t pins, move_t m) {
     const int from = move_from(m), to = move_to(m);
     const int piece = pos->pieceOn[from];
     const int king = pos_king_square(pos, pos->turn);
@@ -217,15 +209,14 @@ bool gen_is_legal(const Position *pos, bitboard_t pins, move_t m)
             bb_clear(&occ, from);
             bb_set(&occ, to);
             bb_clear(&occ, to + push_inc(them));
-            return !(bb_rook_attacks(king, occ) & pos_pieces_cpp(pos, them, ROOK, QUEEN))
-                && !(bb_bishop_attacks(king, occ) & pos_pieces_cpp(pos, them, BISHOP, QUEEN));
+            return !(bb_rook_attacks(king, occ) & pos_pieces_cpp(pos, them, ROOK, QUEEN)) &&
+                   !(bb_bishop_attacks(king, occ) & pos_pieces_cpp(pos, them, BISHOP, QUEEN));
         } else
             return true;
     }
 }
 
-uint64_t gen_perft(const Position *pos, int depth, int ply)
-{
+uint64_t gen_perft(const Position *pos, int depth, int ply) {
     if (depth <= 0)
         return 1;
 

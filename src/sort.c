@@ -11,21 +11,17 @@
  *
  * You should have received a copy of the GNU General Public License along with this program. If
  * not, see <http://www.gnu.org/licenses/>.
-*/
-#include <limits.h>
-#include <stdlib.h>
+ */
+#include "sort.h"
 #include "bitboard.h"
 #include "position.h"
 #include "search.h"
-#include "sort.h"
+#include <limits.h>
+#include <stdlib.h>
 
-enum {
-    HISTORY_MAX = MAX_DEPTH * MAX_DEPTH,
-    SEPARATION = 3 * HISTORY_MAX + 1
-};
+enum { HISTORY_MAX = MAX_DEPTH * MAX_DEPTH, SEPARATION = 3 * HISTORY_MAX + 1 };
 
-void sort_generate(Sort *sort, const Position *pos, int depth)
-{
+void sort_generate(Sort *sort, const Position *pos, int depth) {
     move_t *it = sort->moves;
 
     if (pos->checkers)
@@ -33,8 +29,8 @@ void sort_generate(Sort *sort, const Position *pos, int depth)
     else {
         const int us = pos->turn;
         const bitboard_t pieceFilter = depth > 0 ? ~pos->byColor[us] : pos->byColor[opposite(us)];
-        const bitboard_t pawnFilter = pieceFilter | pos_ep_square_bb(pos) | Rank[relative_rank(us,
-            RANK_8)];
+        const bitboard_t pawnFilter =
+            pieceFilter | pos_ep_square_bb(pos) | Rank[relative_rank(us, RANK_8)];
 
         it = gen_piece_moves(pos, it, pieceFilter, true);
         it = gen_pawn_moves(pos, it, pawnFilter, depth > 0);
@@ -46,8 +42,7 @@ void sort_generate(Sort *sort, const Position *pos, int depth)
     sort->cnt = (size_t)(it - sort->moves);
 }
 
-void sort_score(Worker *worker, Sort *sort, const Position *pos, move_t ttMove)
-{
+void sort_score(Worker *worker, Sort *sort, const Position *pos, move_t ttMove) {
     const size_t rhIdx = zobrist_move_key(&worker->stack, 0) % NB_REFUTATION;
     const size_t fuhIdx = zobrist_move_key(&worker->stack, 1) % NB_FOLLOW_UP;
 
@@ -62,36 +57,33 @@ void sort_score(Worker *worker, Sort *sort, const Position *pos, move_t ttMove)
                 sort->scores[i] = see >= 0 ? see + SEPARATION : see - SEPARATION;
             } else {
                 const int from = move_from(m), to = move_to(m);
-                sort->scores[i] = worker->history[pos->turn][from][to]
-                    + worker->refutationHistory[rhIdx][pos->pieceOn[from]][to]
-                    + worker->followUpHistory[fuhIdx][pos->pieceOn[from]][to];
+                sort->scores[i] = worker->history[pos->turn][from][to] +
+                                  worker->refutationHistory[rhIdx][pos->pieceOn[from]][to] +
+                                  worker->followUpHistory[fuhIdx][pos->pieceOn[from]][to];
             }
         }
     }
 }
 
-void history_update(int16_t *t, int bonus)
-{
+void history_update(int16_t *t, int bonus) {
     // Do all calculations on 32-bit, and only convert back to 16-bits once we are certain that
     // there can be no overflow (signed int overflow is undefined in C).
     int v = *t;
 
     v += 32 * bonus - v * abs(bonus) / 128;
     v = min(v, HISTORY_MAX);  // cap
-    v = max(v, -HISTORY_MAX);  // floor
+    v = max(v, -HISTORY_MAX); // floor
 
     *t = v;
 }
 
-void sort_init(Worker *worker, Sort *sort, const Position *pos, int depth, move_t ttMove)
-{
+void sort_init(Worker *worker, Sort *sort, const Position *pos, int depth, move_t ttMove) {
     sort_generate(sort, pos, depth);
     sort_score(worker, sort, pos, ttMove);
     sort->idx = 0;
 }
 
-move_t sort_next(Sort *sort, const Position *pos, int *see)
-{
+move_t sort_next(Sort *sort, const Position *pos, int *see) {
     int maxScore = INT_MIN;
     size_t maxIdx = sort->idx;
 
@@ -101,14 +93,19 @@ move_t sort_next(Sort *sort, const Position *pos, int *see)
             maxIdx = i;
         }
 
-    #define swap(x, y) do { typeof(x) tmp = x; x = y; y = tmp; } while (0);
+#define swap(x, y)                                                                                 \
+    do {                                                                                           \
+        typeof(x) tmp = x;                                                                         \
+        x = y;                                                                                     \
+        y = tmp;                                                                                   \
+    } while (0);
 
     if (maxIdx != sort->idx) {
         swap(sort->moves[sort->idx], sort->moves[maxIdx]);
         swap(sort->scores[sort->idx], sort->scores[maxIdx]);
     }
 
-    #undef swap
+#undef swap
 
     const int score = sort->scores[sort->idx];
     const move_t m = sort->moves[sort->idx];
@@ -117,11 +114,11 @@ move_t sort_next(Sort *sort, const Position *pos, int *see)
         // Deduce SEE from the sort score
         if (score >= SEPARATION)
             *see = score == INT_MAX
-                ? pos_see(pos, m)  // special case: HT move is scored as INT_MAX
-                : score - SEPARATION;  // Good captures are scored as SEE + SEPARATION
+                       ? pos_see(pos, m)     // special case: HT move is scored as INT_MAX
+                       : score - SEPARATION; // Good captures are scored as SEE + SEPARATION
         else {
             assert(score < -SEPARATION);
-            *see = score + SEPARATION;  // Bad captures are scored as SEE - SEPARATION
+            *see = score + SEPARATION; // Bad captures are scored as SEE - SEPARATION
         }
 
         assert(*see == pos_see(pos, m));

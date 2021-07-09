@@ -11,34 +11,30 @@
  *
  * You should have received a copy of the GNU General Public License along with this program. If
  * not, see <http://www.gnu.org/licenses/>.
-*/
-#include <math.h>
-#include <stdlib.h>
+ */
+#include "search.h"
 #include "eval.h"
 #include "htable.h"
 #include "position.h"
-#include "search.h"
 #include "sort.h"
 #include "uci.h"
 #include "workers.h"
+#include <math.h>
+#include <stdlib.h>
 
 Position rootPos;
 ZobristStack rootStack;
 Limits lim;
 
-atomic_bool Stop;  // Stop signal raised by timer or master thread, and observed by workers
+atomic_bool Stop; // Stop signal raised by timer or master thread, and observed by workers
 
 int Contempt = 10;
 
-int draw_score(int ply)
-{
-    return (ply & 1 ? Contempt : -Contempt) * 2;
-}
+int draw_score(int ply) { return (ply & 1 ? Contempt : -Contempt) * 2; }
 
 int Reduction[MAX_DEPTH + 1][MAX_MOVES];
 
-void search_init()
-{
+void search_init() {
     for (int d = 1; d <= MAX_DEPTH; d++)
         for (int cnt = 1; cnt < MAX_MOVES; cnt++)
             Reduction[d][cnt] = 0.4 * log(min(d, 31)) + 1.057 * log(min(cnt, 31));
@@ -47,12 +43,11 @@ void search_init()
 const int Tempo = 17;
 
 static int qsearch(Worker *worker, const Position *pos, int ply, int depth, int alpha, int beta,
-    bool pvNode, move_t pv[])
-{
+                   bool pvNode, move_t pv[]) {
     assert(depth <= 0);
     assert(zobrist_back(&worker->stack) == pos->key);
     assert(-MATE <= alpha && alpha < beta && beta <= MATE);
-    assert(pvNode || (alpha+1 == beta));
+    assert(pvNode || (alpha + 1 == beta));
 
     const int oldAlpha = alpha;
     int bestScore = -MATE;
@@ -75,21 +70,22 @@ static int qsearch(Worker *worker, const Position *pos, int ply, int depth, int 
     int refinedEval;
 
     if (he.data) {
-        if (!pvNode && ((he.score <= alpha && he.bound >= EXACT)
-                || (he.score >= beta && he.bound <= EXACT))) {
+        if (!pvNode &&
+            ((he.score <= alpha && he.bound >= EXACT) || (he.score >= beta && he.bound <= EXACT))) {
             assert(he.depth >= depth);
             return he.score;
         }
 
         refinedEval = worker->eval[ply] = he.eval;
 
-        if ((he.score > refinedEval && he.bound <= EXACT)
-                || (he.score < refinedEval && he.bound >= EXACT))
+        if ((he.score > refinedEval && he.bound <= EXACT) ||
+            (he.score < refinedEval && he.bound >= EXACT))
             refinedEval = he.score;
     } else
         refinedEval = worker->eval[ply] = pos->checkers ? -MATE
-           : zobrist_move_key(&worker->stack, 0) == ZobristTurn ? -worker->eval[ply - 1] + 2 * Tempo
-           : evaluate(worker, pos) + Tempo;
+                                          : zobrist_move_key(&worker->stack, 0) == ZobristTurn
+                                              ? -worker->eval[ply - 1] + 2 * Tempo
+                                              : evaluate(worker, pos) + Tempo;
 
     if (ply >= MAX_PLY)
         return refinedEval;
@@ -140,7 +136,7 @@ static int qsearch(Worker *worker, const Position *pos, int ply, int depth, int 
 
         // Recursion (plain alpha/beta)
         if (depth <= MIN_DEPTH && !pos->checkers) {
-            score = worker->eval[ply] + see;  // guard against QSearch explosion
+            score = worker->eval[ply] + see; // guard against QSearch explosion
 
             if (pvNode)
                 childPv[0] = 0;
@@ -192,13 +188,12 @@ static int qsearch(Worker *worker, const Position *pos, int ply, int depth, int 
 }
 
 static int search(Worker *worker, const Position *pos, int ply, int depth, int alpha, int beta,
-    move_t pv[], move_t singularMove)
-{
+                  move_t pv[], move_t singularMove) {
     static const int EvalMargin[] = {0, 130, 264, 410, 510, 672, 840};
     static const int RazorMargin[] = {0, 229, 438, 495, 878, 1094};
     static const int SEEMargin[2][6] = {
-        {0, 0, 0, 0, -179, -358},  // quiet
-        {0, -33, -132, -297, -528, -825}  // capture
+        {0, 0, 0, 0, -179, -358},        // quiet
+        {0, -33, -132, -297, -528, -825} // capture
     };
     static const int ProbcutMargin = 300;
 
@@ -230,19 +225,20 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
     int refinedEval;
 
     if (he.data) {
-        if (he.depth >= depth && !pvNode && ((he.score <= alpha && he.bound >= EXACT)
-                || (he.score >= beta && he.bound <= EXACT)))
+        if (he.depth >= depth && !pvNode &&
+            ((he.score <= alpha && he.bound >= EXACT) || (he.score >= beta && he.bound <= EXACT)))
             return he.score;
 
         refinedEval = worker->eval[ply] = he.eval;
 
-        if ((he.score > refinedEval && he.bound <= EXACT)
-                || (he.score < refinedEval && he.bound >= EXACT))
+        if ((he.score > refinedEval && he.bound <= EXACT) ||
+            (he.score < refinedEval && he.bound >= EXACT))
             refinedEval = he.score;
     } else
         refinedEval = worker->eval[ply] = pos->checkers ? -MATE
-           : zobrist_move_key(&worker->stack, 0) == ZobristTurn ? -worker->eval[ply - 1] + 2 * Tempo
-           : evaluate(worker, pos) + Tempo;
+                                          : zobrist_move_key(&worker->stack, 0) == ZobristTurn
+                                              ? -worker->eval[ply - 1] + 2 * Tempo
+                                              : evaluate(worker, pos) + Tempo;
 
     // At Root, ensure that the last best move is searched first. This is not guaranteed,
     // as the HT entry could have got overriden by other search threads.
@@ -253,8 +249,8 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
         return refinedEval;
 
     // Eval pruning
-    if (depth <= 6 && !pos->checkers && !pvNode && pos->pieceMaterial[us]
-            && refinedEval >= beta + EvalMargin[depth])
+    if (depth <= 6 && !pos->checkers && !pvNode && pos->pieceMaterial[us] &&
+        refinedEval >= beta + EvalMargin[depth])
         return refinedEval;
 
     // Razoring
@@ -275,10 +271,9 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
     // Null search
     int nextDepth = depth - (3 + depth / 4) - (refinedEval >= beta + 167);
 
-    if (depth >= 2 && !pvNode && !pos->checkers
-            && worker->eval[ply] >= beta && pos->pieceMaterial[us]
-            && !(he.key == pos->key && he.depth >= nextDepth && he.bound >= EXACT
-                && he.score < beta)) {
+    if (depth >= 2 && !pvNode && !pos->checkers && worker->eval[ply] >= beta &&
+        pos->pieceMaterial[us] &&
+        !(he.key == pos->key && he.depth >= nextDepth && he.bound >= EXACT && he.score < beta)) {
         // Normally worker->eval[ply] >= beta excludes the in check case (eval is -MATE). But with
         // HT collisions or races, HT data can't be trusted. Doing a null move in check crashes for
         // obvious reasons, so it must be explicitely prevented.
@@ -286,9 +281,10 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
         pos_switch(&nextPos, pos);
         zobrist_push(&worker->stack, nextPos.key);
 
-        score = nextDepth <= 0
-            ? -qsearch(worker, &nextPos, ply + 1, nextDepth, -beta, -(beta - 1), false, childPv)
-            : -search(worker, &nextPos, ply + 1, nextDepth, -beta, -(beta - 1), childPv, 0);
+        score =
+            nextDepth <= 0
+                ? -qsearch(worker, &nextPos, ply + 1, nextDepth, -beta, -(beta - 1), false, childPv)
+                : -search(worker, &nextPos, ply + 1, nextDepth, -beta, -(beta - 1), childPv, 0);
 
         zobrist_pop(&worker->stack);
 
@@ -370,7 +366,7 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
         if (depth <= 5 && !pvNode && !nextPos.checkers) {
             // SEE pruning
             if (see < SEEMargin[capture][depth])
-               continue;
+                continue;
 
             // Late Move Pruning
             if (!capture && depth <= 4 && moveCount >= 3 * depth + 2 * improving)
@@ -386,13 +382,14 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
         // Search extension
         int ext = 0;
 
-        if (currentMove == he.move && ply > 0 && depth >= 5 && he.bound <= EXACT
-                && he.depth >= depth - 4) {
+        if (currentMove == he.move && ply > 0 && depth >= 5 && he.bound <= EXACT &&
+            he.depth >= depth - 4) {
             // Singular Extension Search
             const int lbound = he.score - 2 * depth;
 
             if (abs(lbound) < MATE) {
-                score = search(worker, pos, ply, depth - 4, lbound, lbound + 1, childPv, currentMove);
+                score =
+                    search(worker, pos, ply, depth - 4, lbound, lbound + 1, childPv, currentMove);
                 ext = score <= lbound;
             }
         } else
@@ -425,19 +422,20 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
 
                 // Reduced depth, zero window
                 score = nextDepth - reduction <= 0
-                    ? -qsearch(worker, &nextPos, ply + 1, nextDepth - reduction, -(alpha + 1),
-                        -alpha, false, childPv)
-                    : -search(worker, &nextPos, ply + 1, nextDepth - reduction, -(alpha + 1),
-                        -alpha, childPv, 0);
+                            ? -qsearch(worker, &nextPos, ply + 1, nextDepth - reduction,
+                                       -(alpha + 1), -alpha, false, childPv)
+                            : -search(worker, &nextPos, ply + 1, nextDepth - reduction,
+                                      -(alpha + 1), -alpha, childPv, 0);
 
                 // Fail high: re-search zero window at full depth
                 if (reduction && score > alpha)
                     score = -search(worker, &nextPos, ply + 1, nextDepth, -(alpha + 1), -alpha,
-                        childPv, 0);
+                                    childPv, 0);
 
                 // Fail high at full depth for pvNode: re-search full window
                 if (pvNode && alpha < score && score < beta)
-                    score = -search(worker, &nextPos, ply + 1, nextDepth, -beta, -alpha, childPv, 0);
+                    score =
+                        -search(worker, &nextPos, ply + 1, nextDepth, -beta, -alpha, childPv, 0);
             }
         }
 
@@ -460,8 +458,8 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
                         if (!(pv[i + 1] = childPv[i]))
                             break;
 
-                    // Best move has changed since last completed iteration. Update the best move and
-                    // PV immediately, because we may not have time to finish this iteration.
+                    // Best move has changed since last completed iteration. Update the best move
+                    // and PV immediately, because we may not have time to finish this iteration.
                     if (ply == 0 && moveCount > 1 && depth > 1)
                         info_update(&ui, depth, score, workers_nodes(), pv, true);
                 }
@@ -505,8 +503,7 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
     return bestScore;
 }
 
-static int aspirate(Worker *worker, int depth, move_t pv[], int score)
-{
+static int aspirate(Worker *worker, int depth, move_t pv[], int score) {
     assert(depth > 0);
 
     if (depth == 1)
@@ -516,7 +513,7 @@ static int aspirate(Worker *worker, int depth, move_t pv[], int score)
     int alpha = max(score - delta, -MATE);
     int beta = min(score + delta, MATE);
 
-    for ( ; ; delta += delta / 2) {
+    for (;; delta += delta / 2) {
         score = search(worker, &rootPos, 0, depth, alpha, beta, pv, 0);
 
         if (score <= alpha) {
@@ -530,8 +527,7 @@ static int aspirate(Worker *worker, int depth, move_t pv[], int score)
     }
 }
 
-void *iterate(void *_worker)
-{
+void *iterate(void *_worker) {
     Worker *worker = _worker;
     move_t pv[MAX_PLY + 1];
     int volatile score = 0;
@@ -540,7 +536,7 @@ void *iterate(void *_worker)
         if (!setjmp(worker->jbuf))
             score = aspirate(worker, depth, pv, score);
         else {
-            worker->stack.idx = rootStack.idx;  // Restore stack position
+            worker->stack.idx = rootStack.idx; // Restore stack position
             break;
         }
 
@@ -555,24 +551,16 @@ void *iterate(void *_worker)
     return NULL;
 }
 
-int mated_in(int ply)
-{
-    return ply - MATE;
-}
+int mated_in(int ply) { return ply - MATE; }
 
-int mate_in(int ply)
-{
-    return MATE - ply;
-}
+int mate_in(int ply) { return MATE - ply; }
 
-bool is_mate_score(int score)
-{
+bool is_mate_score(int score) {
     assert(abs(score) < MATE);
     return abs(score) >= MATE - MAX_PLY;
 }
 
-uint64_t search_go()
-{
+uint64_t search_go() {
     int64_t start = system_msec();
 
     info_create(&ui);
@@ -582,7 +570,7 @@ uint64_t search_go()
     pthread_t threads[WorkersCount];
     workers_new_search();
 
-    int minTime = 0, maxTime = 0;  // Silence bogus gcc warning (maybe uninitialized)
+    int minTime = 0, maxTime = 0; // Silence bogus gcc warning (maybe uninitialized)
 
     if (!lim.movetime && (lim.time || lim.inc)) {
         const int movesToGo = lim.movestogo ? lim.movestogo : 26;
@@ -594,7 +582,7 @@ uint64_t search_go()
 
     for (size_t i = 0; i < WorkersCount; i++)
         // Start searching thread
-        pthread_create(&threads[i], NULL, (void*(*)(void*))iterate, &Workers[i]);
+        pthread_create(&threads[i], NULL, (void *(*)(void *))iterate, &Workers[i]);
 
     do {
         sleep_msec(5);
@@ -602,8 +590,8 @@ uint64_t search_go()
         // Check for search termination conditions, but only after depth 1 has been
         // completed, to make sure we do not return an illegal move.
         if (!lim.infinite && info_last_depth(&ui) > 0) {
-            if ((lim.movetime && system_msec() - start >= lim.movetime - uciTimeBuffer)
-                    || (lim.nodes && workers_nodes() >= lim.nodes))
+            if ((lim.movetime && system_msec() - start >= lim.movetime - uciTimeBuffer) ||
+                (lim.nodes && workers_nodes() >= lim.nodes))
                 atomic_store_explicit(&Stop, true, memory_order_release);
             else if (lim.time || lim.inc) {
                 const double x = 1 / (1 + exp(-info_variability(&ui)));
@@ -624,9 +612,8 @@ uint64_t search_go()
     return workers_nodes();
 }
 
-void *search_posix(void *dummy)
-{
-    (void)dummy;  // silence compiler warning (unused variable)
+void *search_posix(void *dummy) {
+    (void)dummy; // silence compiler warning (unused variable)
     search_go();
     return NULL;
 }
