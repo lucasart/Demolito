@@ -25,11 +25,13 @@ The archive contains 3 `.exe` files, and this is how you choose:
 
 ### Playing level
 
-Demolito is easily stronger than best humans, yet still significantly below the top engines like
-Stockfish, Houdini or Komodo. Here are some independant rating lists:
+By default playing strength is at maximum. This is suitable for engine vs. engine matches, but far
+stronger than the best human players. Here are some rating lists which have tested Demolito:
 - [FGRL](http://fastgm.de/)
 - [CEGT](http://www.cegt.net/)
 - [CCRL](http://www.computerchess.org.uk/ccrl/)
+
+If you want to play against Demolito, you are advised to use the `Level` UCI option.
 
 ### UCI Options
 
@@ -38,6 +40,11 @@ repetition, 50 move rule, stalemate, and insufficient material. A positive value
 (best against weaker opponents), whereas a negative value will seek draws (best against a stronger opponent).
 - **Hash**: Size of the main hash table, in MB. Should be a power of two (if not Demolito will
 silently round it down to the nearest power of two).
+- **Level**: The default value is `0`, which means the level feature is off, and Demolito plays at
+full strength. Level `1` is the weakest, and `15` is the strongest (but still weaker than switching
+off strength limitation with `Level=0`). Note that Demolito plays quasi-instantly when using levels,
+and the quality of moves is the same regardless of the time control. Also, Demolito becomes
+non-deterministic (on purpose), so that it will play differently every time you restart the game.
 - **Time Buffer**: In milliseconds. Provides for extra time to compensate the lag between the UI and
 the Engine. The default value is just enough for high performance tools like cutechess-cli, but may
 not suffice for some slow and bloated GUIs that introduce artificial lag (and even more so if

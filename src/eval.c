@@ -16,6 +16,7 @@
 #include "bitboard.h"
 #include "position.h"
 #include "tune.h"
+#include "uci.h"
 #include "util.h"
 #include <math.h>
 #include <stdlib.h>
@@ -391,5 +392,23 @@ int evaluate(Worker *worker, const Position *pos) {
         stm.eg -= stm.eg * discount[bb_count(winnerPawns)] / 8;
     }
 
-    return blend(pos, stm);
+    int result = blend(pos, stm);
+
+    if (uciLevel) {
+        // Draw 0 < p < 1
+        double p = 0;
+        while (p <= 0 || p >= 1)
+            p = prngf(&worker->seed);
+
+        // Scale down noise towards the endgame
+        const double phaseFactor = 0.5 + (double)pos->pieceMaterial[pos->turn] / StartPieceTotal;
+
+        // scale parameter of centered logistic: CDF(x) = 1 / (1 + exp(-x/s))
+        const double s = 200 * pow(0.8, uciLevel - 1) * phaseFactor;
+
+        // Add logistic drawing as eval noise
+        result += s * log(p / (1 - p));
+    }
+
+    return result;
 }

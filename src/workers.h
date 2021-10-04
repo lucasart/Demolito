@@ -34,6 +34,7 @@ typedef struct {
     ZobristStack stack;
     jmp_buf jbuf;
     uint64_t nodes;
+    uint64_t seed;
     int eval[MAX_PLY];
 } Worker;
 
