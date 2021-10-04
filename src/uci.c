@@ -30,6 +30,7 @@
 static pthread_t Timer = 0;
 
 size_t uciHash = 2;
+int uciLevel = 0;
 int64_t uciTimeBuffer = 60;
 bool uciChess960 = false;
 
@@ -45,6 +46,7 @@ static void intro(void) {
     uci_printf("option name Contempt type spin default %d min -100 max 100\n", Contempt);
     uci_printf("option name Hash type spin default %zu min 1 max 1048576\n", uciHash);
     uci_puts("option name Ponder type check default false");
+    uci_printf("option name Level type spin default %d min 0 max 15\n", uciLevel);
     uci_printf("option name Threads type spin default %zu min 1 max 256\n", WorkersCount);
     uci_printf("option name Time Buffer type spin default %" PRId64 " min 0 max 1000\n",
                uciTimeBuffer);
@@ -77,6 +79,8 @@ static void setoption(char **linePos) {
         workers_prepare((size_t)atoll(token));
     else if (!strcmp(name, "Contempt"))
         Contempt = atoi(token);
+    else if (!strcmp(name, "Level"))
+        uciLevel = atoi(token);
     else if (!strcmp(name, "TimeBuffer"))
         uciTimeBuffer = atoi(token);
     else {
@@ -118,8 +122,12 @@ static void position(char **linePos) {
 }
 
 static void go(char **linePos) {
-    lim = (Limits){0};
-    lim.depth = MAX_DEPTH;
+    lim = (Limits){.depth = MAX_DEPTH};
+
+    if (uciLevel) {
+        lim.depth = uciLevel <= 10 ? uciLevel : 2 * uciLevel - 10;
+        lim.nodes = 32ULL << uciLevel;
+    }
 
     const char *token;
 

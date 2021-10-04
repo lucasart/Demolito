@@ -27,6 +27,7 @@ typedef struct {
 } Info;
 
 extern Info ui;
+extern int uciLevel;
 extern int64_t uciTimeBuffer;
 extern bool uciChess960;
 extern size_t uciHash;

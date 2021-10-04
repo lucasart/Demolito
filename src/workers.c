@@ -12,8 +12,9 @@
  * You should have received a copy of the GNU General Public License along with this program. If
  * not, see <http://www.gnu.org/licenses/>.
  */
-#include "workers.h"
+#include "platform.h"
 #include "search.h"
+#include "workers.h"
 #include <stdlib.h>
 
 Worker *Workers = NULL;
@@ -22,13 +23,20 @@ size_t WorkersCount = 1;
 static void __attribute__((destructor)) workers_free(void) { free(Workers); }
 
 void workers_clear() {
-    for (size_t i = 0; i < WorkersCount; i++)
-        Workers[i] = (Worker){0};
+    for (size_t i = 0; i < WorkersCount; i++) {
+        // Clear Workers[i] except .seed, which must be preserved
+        uint64_t saveSeed = Workers[i].seed;
+        Workers[i] = (Worker){.seed = saveSeed};
+    }
 }
 
 void workers_prepare(size_t count) {
     Workers = realloc(Workers, count * sizeof(Worker));
     WorkersCount = count;
+
+    for (size_t i = 0; i < count; i++)
+        Workers[i].seed = (uint64_t)system_msec() + i;
+
     workers_clear();
 }
 
