@@ -12,7 +12,13 @@ Version numbers are automatically generated to be the ISO date of the last commi
 
 ### Windows binaries
 
-Windows binaries are automatically generated, courtesy of AppVeyor, and can be found
+#### Occasional releases
+
+Here: [releases](https://github.com/lucasart/Demolito/releases).
+
+#### Automatic compiles
+
+Windows binaries are automatically generated when patches are pushed to github, and can be found
 [here](https://ci.appveyor.com/project/lucasart/demolito/history):
 - select the latest corresponding to the `master` branch. Be sure to choose master because other
 branches are (mostly) elo-regressive experimental garbage.
