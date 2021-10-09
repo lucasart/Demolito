@@ -30,9 +30,7 @@ uint64_t prng(uint64_t *state) {
     return rnd;
 }
 
-double prngf(uint64_t *state) {
-    return (prng(state) >> 11) * 0x1.0p-53;
-}
+double prngf(uint64_t *state) { return (prng(state) >> 11) * 0x1.0p-53; }
 
 void hash_block(uint64_t block, uint64_t *hash) {
     *hash ^= hash_mix(block);
