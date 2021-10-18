@@ -79,9 +79,16 @@ static void setoption(char **linePos) {
         workers_prepare((size_t)atoll(token));
     else if (!strcmp(name, "Contempt"))
         Contempt = atoi(token);
-    else if (!strcmp(name, "Level"))
+    else if (!strcmp(name, "Level")) {
         uciLevel = atoi(token);
-    else if (!strcmp(name, "TimeBuffer"))
+
+        if (uciLevel)
+            // Switch on Level feature: discard uciHash and impose level based hash size
+            hash_prepare(1ULL << max(uciLevel - 9, 0));
+        else
+            // Swithcing off Level feature: restore hash size to uciHash
+            hash_prepare(uciHash);
+    } else if (!strcmp(name, "TimeBuffer"))
         uciTimeBuffer = atoi(token);
     else {
 #ifdef TUNE
@@ -185,7 +192,7 @@ void uci_loop() {
         else if (!strcmp(token, "isready"))
             uci_puts("readyok");
         else if (!strcmp(token, "ucinewgame")) {
-            memset(HashTable, 0, uciHash << 20);
+            memset(HashTable, 0, HashCount * sizeof(HashEntry));
             workers_clear();
             hashDate = 0;
 #ifdef TUNE
