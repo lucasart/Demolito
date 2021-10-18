@@ -132,7 +132,7 @@ static void go(char **linePos) {
     lim = (Limits){.depth = MAX_DEPTH};
 
     if (uciLevel) {
-        lim.depth = uciLevel <= 10 ? uciLevel : 2 * uciLevel - 10;
+        lim.depth = uciLevel <= 8 ? uciLevel : 2 * uciLevel - 8;
         lim.nodes = 32ULL << uciLevel;
     }
 
