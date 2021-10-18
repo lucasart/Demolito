@@ -18,9 +18,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+static HashEntry *HashTable = NULL;
+static size_t HashCount = 0;
+
 unsigned hashDate = 0;
-HashEntry *HashTable = NULL;
-size_t HashCount = 0;
 
 static int score_to_hash(int score, int ply) {
     if (score >= mate_in(MAX_PLY))
@@ -49,16 +50,19 @@ static __attribute__((destructor)) void hash_free(void) { free(HashTable); }
 void hash_prepare(uint64_t hashMB) {
     assert(bb_count(hashMB) == 1); // must be a power of 2
 
-    free(HashTable);
-    HashTable = malloc(hashMB << 20);
+    HashCount = (hashMB << 20) / sizeof(HashEntry);
+    HashTable = realloc(HashTable, HashCount * sizeof(HashEntry));
 
-    // All 64-bit malloc() implementations should return 16-byte aligned memory.
-    // We want this for performance, to ensure that no HashEntry sits across two
-    // cache lines.
+    // All 64-bit malloc() implementations should return 16-byte aligned memory. We want this for
+    // performance, to ensure that no HashEntry sits across two cache lines.
     assert((uintptr_t)HashTable % sizeof(HashEntry) == 0);
 
-    HashCount = (hashMB << 20) / sizeof(HashEntry);
-    memset(HashTable, 0, hashMB << 20);
+    hash_clear();
+}
+
+void hash_clear(void) {
+    memset(HashTable, 0, HashCount * sizeof(HashEntry));
+    hashDate = 0;
 }
 
 HashEntry hash_read(uint64_t key, int ply) {

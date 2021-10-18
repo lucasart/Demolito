@@ -192,7 +192,7 @@ void uci_loop() {
         else if (!strcmp(token, "isready"))
             uci_puts("readyok");
         else if (!strcmp(token, "ucinewgame")) {
-            memset(HashTable, 0, HashCount * sizeof(HashEntry));
+            hash_clear();
             workers_clear();
             hashDate = 0;
 #ifdef TUNE

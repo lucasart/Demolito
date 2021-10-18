@@ -19,7 +19,6 @@
 #include "position.h"
 #include "search.h"
 #include "uci.h"
-#include "util.h"
 #include "workers.h"
 #include <stdlib.h>
 #include <string.h>
@@ -29,7 +28,7 @@ void bench(int depth) {
 #include "test.csv"
         NULL};
 
-    uint64_t nodes = 0, seal = 0;
+    uint64_t nodes = 0;
     uciChess960 = true;
 
     lim = (Limits){0};
@@ -44,7 +43,6 @@ void bench(int depth) {
 
         puts(fens[i]);
         nodes += search_go();
-        hash_block(nodes, &seal);
         puts("");
     }
 
@@ -53,11 +51,8 @@ void bench(int depth) {
 
     const int64_t elapsed = system_msec() - start;
 
-    hash_blocks(HashTable, HashCount * sizeof(HashEntry), &seal); // sign entire hash table
-
-    printf("seal  : %" PRIx64 "\n", seal); // strong functionality signature
     printf("time  : %" PRIu64 "ms\n", elapsed);
-    printf("nodes : %" PRIu64 "\n", nodes); // total nodes = weak functionality signature
+    printf("nodes : %" PRIu64 "\n", nodes); // total nodes = functionality signature
     printf("nps   : %.0f\n", nodes * 1000.0 / max(elapsed, 1)); // avoid div/0
 }
 
