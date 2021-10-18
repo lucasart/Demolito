@@ -29,7 +29,7 @@
 
 static pthread_t Timer = 0;
 
-size_t uciHash = 2;
+size_t uciHash = 2, uciThreads = 1;
 int uciLevel = 0;
 int64_t uciTimeBuffer = 60;
 bool uciChess960 = false;
@@ -47,7 +47,7 @@ static void intro(void) {
     uci_printf("option name Hash type spin default %zu min 1 max 1048576\n", uciHash);
     uci_puts("option name Ponder type check default false");
     uci_printf("option name Level type spin default %d min 0 max 15\n", uciLevel);
-    uci_printf("option name Threads type spin default %zu min 1 max 256\n", WorkersCount);
+    uci_printf("option name Threads type spin default %zu min 1 max 256\n", uciThreads);
     uci_printf("option name Time Buffer type spin default %" PRId64 " min 0 max 1000\n",
                uciTimeBuffer);
     uci_printf("option name UCI_Chess960 type check default %s\n", uciChess960 ? "true" : "false");
@@ -75,19 +75,23 @@ static void setoption(char **linePos) {
         uciHash = (size_t)atoll(token);
         uciHash = 1ULL << bb_msb(uciHash); // must be a power of two
         hash_prepare(uciHash);
-    } else if (!strcmp(name, "Threads"))
-        workers_prepare((size_t)atoll(token));
-    else if (!strcmp(name, "Contempt"))
+    } else if (!strcmp(name, "Threads")) {
+        uciThreads = (size_t)atoll(token); // parse uciThreads
+        workers_prepare(uciLevel ? 1 : uciThreads); // discard uciThreads when using levels
+    } else if (!strcmp(name, "Contempt"))
         Contempt = atoi(token);
     else if (!strcmp(name, "Level")) {
         uciLevel = atoi(token);
 
-        if (uciLevel)
-            // Switch on Level feature: discard uciHash and impose level based hash size
-            hash_prepare(1ULL << max(uciLevel - 9, 0));
-        else
-            // Swithcing off Level feature: restore hash size to uciHash
+        if (uciLevel) {
+            // Switch on Level feature: discard uciHash and uciThreads
+            hash_prepare(1ULL << max(uciLevel - 9, 0)); // use level based hash size
+            workers_prepare(1); // always use 1 thread
+        } else {
+            // Swithcing off Level feature: restore hash size and threads to UCI option values
             hash_prepare(uciHash);
+            workers_prepare(uciThreads);
+        }
     } else if (!strcmp(name, "TimeBuffer"))
         uciTimeBuffer = atoi(token);
     else {
