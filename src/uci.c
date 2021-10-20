@@ -76,7 +76,7 @@ static void setoption(char **linePos) {
         uciHash = 1ULL << bb_msb(uciHash); // must be a power of two
         hash_prepare(uciHash);
     } else if (!strcmp(name, "Threads")) {
-        uciThreads = (size_t)atoll(token); // parse uciThreads
+        uciThreads = (size_t)atoll(token);          // parse uciThreads
         workers_prepare(uciLevel ? 1 : uciThreads); // discard uciThreads when using levels
     } else if (!strcmp(name, "Contempt"))
         Contempt = atoi(token);
@@ -86,7 +86,7 @@ static void setoption(char **linePos) {
         if (uciLevel) {
             // Switch on Level feature: discard uciHash and uciThreads
             hash_prepare(1ULL << max(uciLevel - 9, 0)); // use level based hash size
-            workers_prepare(1); // always use 1 thread
+            workers_prepare(1);                         // always use 1 thread
         } else {
             // Swithcing off Level feature: restore hash size and threads to UCI option values
             hash_prepare(uciHash);
@@ -138,6 +138,11 @@ static void go(char **linePos) {
     if (uciLevel) {
         lim.depth = uciLevel <= 8 ? uciLevel : 2 * uciLevel - 8;
         lim.nodes = 32ULL << uciLevel;
+
+        // Fixed depth makes the engine relatively weak in the endgame, so compensate a little
+        if (rootPos.pieceMaterial[rootPos.turn] <=
+            PieceValue[ROOK] + PieceValue[KNIGHT] + PieceValue[BISHOP])
+            lim.depth++;
     }
 
     const char *token;
