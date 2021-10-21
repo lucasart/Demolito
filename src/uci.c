@@ -139,10 +139,18 @@ static void go(char **linePos) {
         lim.depth = uciLevel <= 8 ? uciLevel : 2 * uciLevel - 8;
         lim.nodes = 32ULL << uciLevel;
 
+        const int us = rootPos.turn, them = opposite(us);
+
         // Fixed depth makes the engine relatively weak in the endgame, so compensate a little
-        if (rootPos.pieceMaterial[rootPos.turn] <=
-            PieceValue[ROOK] + PieceValue[KNIGHT] + PieceValue[BISHOP])
+        if (rootPos.pieceMaterial[us] <= PieceValue[ROOK] + PieceValue[KNIGHT] + PieceValue[BISHOP])
             lim.depth++;
+
+        // Remove depth limit when the opponent is pawnless, and we have a mating material
+        // configuration. This is important, because even the simplest mates like KQK or KRK need
+        // many depths to be performed correctly, especially if the eval is polluted.
+        if (!pos_pieces_cp(&rootPos, them, PAWN) &&
+            rootPos.pieceMaterial[us] >= rootPos.pieceMaterial[them] + PieceValue[ROOK])
+            lim.depth = MAX_DEPTH;
     }
 
     const char *token;
