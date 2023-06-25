@@ -40,6 +40,7 @@ extern Position rootPos;
 extern ZobristStack rootStack;
 extern Limits lim;
 extern int Contempt;
+extern const int Tempo;
 
 void search_init(void);
 uint64_t search_go(void);

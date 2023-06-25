@@ -299,7 +299,7 @@ static int blend(const Position *pos, eval_t e) {
     return (e.op * pieceTotal + e.eg * (StartPieceTotal - pieceTotal)) / StartPieceTotal;
 }
 
-void eval_init() {
+void eval_init(void) {
     StartPieceTotal =
         4 * (PieceValue[KNIGHT] + PieceValue[BISHOP] + PieceValue[ROOK]) + 2 * PieceValue[QUEEN];
 

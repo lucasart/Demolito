@@ -196,7 +196,7 @@ static void perft(char **linePos) {
 
 Info ui;
 
-void uci_loop() {
+void uci_loop(void) {
     char line[8192], *linePos;
 
     while (fgets(line, 8192, stdin)) {

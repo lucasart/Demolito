@@ -17,7 +17,7 @@
 
 eval_t PST[NB_COLOR][NB_PIECE][NB_SQUARE];
 
-void __attribute__((constructor)) pst_init() {
+void __attribute__((constructor)) pst_init(void) {
     for (int color = WHITE; color <= BLACK; color++)
         for (int piece = KNIGHT; piece < NB_PIECE; piece++)
             for (int square = A1; square <= H8; square++) {

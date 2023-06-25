@@ -91,12 +91,12 @@ static bitboard_t slider_attacks(int square, bitboard_t occ, const int dir[4][2]
     return result;
 }
 
-static int slider_index(bitboard_t occ, bitboard_t mask, bitboard_t magic, unsigned shift) {
+static unsigned slider_index(bitboard_t occ, bitboard_t mask, bitboard_t magic, unsigned shift) {
 #ifdef PEXT
     (void)magic, (void)shift; // Silence compiler warnings (unused variables)
     return _pext_u64(occ, mask);
 #else
-    return ((occ & mask) * magic) >> shift;
+    return (unsigned)(((occ & mask) * magic) >> shift);
 #endif
 }
 

@@ -54,7 +54,7 @@ static void set_square(Position *pos, int color, int piece, int square) {
 
     bb_set(&pos->byColor[color], square);
     bb_set(&pos->byPiece[piece], square);
-    pos->pieceOn[square] = piece;
+    pos->pieceOn[square] = (uint8_t)piece;
     eval_add(&pos->pst, PST[color][piece][square]);
     pos->key ^= ZobristKey[color][piece][square];
 
@@ -205,8 +205,8 @@ void square_to_string(int square, char *str) {
     if (square == NB_SQUARE)
         *str++ = '-';
     else {
-        *str++ = file_of(square) + 'a';
-        *str++ = rank_of(square) + '1';
+        *str++ = 'a' + (char)file_of(square);
+        *str++ = '1' + (char)rank_of(square);
     }
 
     *str = '\0';
@@ -223,7 +223,7 @@ void pos_set(Position *pos, const char *fen) {
     char *token = strtok_r(str, " ", &strPos);
 
     // Piece placement
-    char ch;
+    char ch = 0;
     int file = FILE_A, rank = RANK_8;
 
     while ((ch = *token++)) {
@@ -236,7 +236,7 @@ void pos_set(Position *pos, const char *fen) {
         } else {
             assert(strchr("nbrqkpNBRQKP", ch));
             const bool color = islower(ch);
-            set_square(pos, color, strchr(PieceLabel[color], ch) - PieceLabel[color],
+            set_square(pos, color, (int)(strchr(PieceLabel[color], ch) - PieceLabel[color]),
                        square_from(rank, file++));
         }
     }
@@ -260,7 +260,7 @@ void pos_set(Position *pos, const char *fen) {
     while ((ch = *token++)) {
         rank = isupper(ch) ? RANK_1 : RANK_8;
         const bitboard_t ourRooks = pos_pieces_cp(pos, rank / RANK_8, ROOK);
-        ch = toupper(ch);
+        ch = (char)toupper(ch);
 
         if (ch == 'K')
             bb_set(&pos->castleRooks, bb_msb(Rank[rank] & ourRooks));
@@ -294,7 +294,7 @@ void pos_get(const Position *pos, char *fen) {
 
             if (bb_test(pos_pieces(pos), square)) {
                 if (cnt)
-                    *fen++ = cnt + '0';
+                    *fen++ = '0' + (char)cnt;
 
                 *fen++ = PieceLabel[pos_color_on(pos, square)][pos->pieceOn[square]];
                 cnt = 0;
@@ -303,7 +303,7 @@ void pos_get(const Position *pos, char *fen) {
         }
 
         if (cnt)
-            *fen++ = cnt + '0';
+            *fen++ = '0' + (char)cnt;
 
         *fen++ = rank == RANK_1 ? ' ' : '/';
     }

@@ -105,7 +105,7 @@ typedef struct {
     int count;
 } Entry;
 
-Entry Entries[] = {{"PieceValue", PieceValue, NB_PIECE},
+static Entry Entries[] = {{"PieceValue", PieceValue, NB_PIECE},
 
                    {"KnightPstSeed", KnightPstSeed, 12 * 2},
                    {"RookPstSeed", RookPstSeed, 12 * 2},
@@ -146,7 +146,7 @@ Entry Entries[] = {{"PieceValue", PieceValue, NB_PIECE},
                    {"PasserAdjust", PasserAdjust, 6},
                    {"FreePasser", FreePasser, 4}};
 
-void tune_declare() {
+void tune_declare(void) {
     for (size_t i = 0; i < sizeof(Entries) / sizeof(Entry); i++)
         for (int j = 0; j < Entries[i].count; j++)
             printf("option name %s_%d type spin default %d min %d max %d\n", Entries[i].name, j,
@@ -167,7 +167,7 @@ void tune_parse(const char *fullName, int value) {
             ((int *)Entries[i].values)[idx] = value;
 }
 
-void tune_refresh() {
+void tune_refresh(void) {
     search_init();
     pst_init();
     eval_init();
@@ -180,8 +180,6 @@ typedef struct {
 
 static Sample *samples = NULL;
 static size_t sampleCount = 0;
-
-extern const int Tempo; // in search.c
 
 void tune_load(const char *fileName) {
     size_t allocated = 1024;
@@ -199,8 +197,8 @@ void tune_load(const char *fileName) {
 
         // Load samples[sampleCount], translate eval into internal units (Tempo included)
         strcpy(samples[sampleCount].fen, strtok_r(line, ",\n", &linePos));
-        samples[sampleCount].eval = 2 * atoi(strtok_r(NULL, ",\n", &linePos));
-        samples[sampleCount].result = atoi(strtok_r(NULL, ",\n", &linePos));
+        samples[sampleCount].eval = (int16_t)(2 * atoi(strtok_r(NULL, ",\n", &linePos)));
+        samples[sampleCount].result = (int16_t)atoi(strtok_r(NULL, ",\n", &linePos));
 
         sampleCount++;
     }
@@ -210,7 +208,7 @@ void tune_load(const char *fileName) {
     printf("loaded %zu samples from '%s'\n", sampleCount, fileName);
 }
 
-void tune_free() {
+void tune_free(void) {
     free(samples);
     samples = NULL;
     sampleCount = 0;
@@ -256,7 +254,7 @@ static int16_t *tune_run_evals(void) {
     for (size_t i = 0; i < sampleCount; i++) {
         Position pos = {0};
         pos_set(&pos, samples[i].fen);
-        evals[i] = evaluate(&Workers[0], &pos) + Tempo;
+        evals[i] = (int16_t)(evaluate(&Workers[0], &pos) + Tempo);
     }
 
     return evals;
@@ -283,7 +281,7 @@ double tune_logitreg(const char *strLambda) {
 }
 
 // Fit y = alpha + beta.x; x = samples[].eval, y = evals[]
-double tune_linereg() {
+double tune_linereg(void) {
     int16_t *evals = tune_run_evals();
     int64_t sum_y = 0, sum_x = 0;
 

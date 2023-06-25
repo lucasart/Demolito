@@ -23,7 +23,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-void bench(int depth) {
+static void bench(int depth) {
     static const char *fens[] = {
 #include "test.csv"
         NULL};

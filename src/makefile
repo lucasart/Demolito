@@ -4,7 +4,11 @@
 CC = clang
 
 # Compilation flags
-CF = -std=gnu11 -DNDEBUG -O3 -flto -Wfatal-errors -Wall -Wextra -Wshadow -Wstrict-prototypes -Wsign-conversion
+CF = -std=gnu11 -DNDEBUG -O3 -flto -Wfatal-errors -Wall -Wextra -Wshadow -Wstrict-prototypes -Wsign-conversion -Wmissing-prototypes
+
+ifeq ($(CC), clang)
+	CF += -Wcast-align -Wmissing-variable-declarations -Wshorten-64-to-32 -Wimplicit-int-conversion
+endif
 
 # Linking flags
 LF = -s -lm -lpthread

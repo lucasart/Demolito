@@ -69,7 +69,7 @@ HashEntry hash_read(uint64_t key, int ply) {
     HashEntry e = HashTable[key & (HashCount - 1)];
 
     if (e.key == key)
-        e.score = score_from_hash(e.score, ply);
+        e.score = (int16_t)score_from_hash(e.score, ply);
     else
         e.data = 0;
 
@@ -79,11 +79,11 @@ HashEntry hash_read(uint64_t key, int ply) {
 void hash_write(uint64_t key, HashEntry *e, int ply) {
     HashEntry *slot = &HashTable[key & (HashCount - 1)];
 
-    e->date = hashDate;
+    e->date = (uint8_t)hashDate;
     assert(e->date == hashDate % 64);
 
     if (e->date != slot->date || e->depth >= slot->depth) {
-        e->score = score_to_hash(e->score, ply);
+        e->score = (int16_t)score_to_hash(e->score, ply);
         e->key = key;
         *slot = *e;
     }
@@ -91,7 +91,7 @@ void hash_write(uint64_t key, HashEntry *e, int ply) {
 
 void hash_prefetch(uint64_t key) { __builtin_prefetch(&HashTable[key & (HashCount - 1)]); }
 
-int hash_permille() {
+int hash_permille(void) {
     int result = 0;
 
     for (int i = 0; i < 1000; i++)

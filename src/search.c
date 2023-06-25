@@ -30,11 +30,11 @@ atomic_bool Stop; // Stop signal raised by timer or master thread, and observed 
 
 int Contempt = 10;
 
-int draw_score(int ply) { return (ply & 1 ? Contempt : -Contempt) * 2; }
+static int draw_score(int ply) { return (ply & 1 ? Contempt : -Contempt) * 2; }
 
-int Reduction[MAX_DEPTH + 1][MAX_MOVES];
+static int Reduction[MAX_DEPTH + 1][MAX_MOVES];
 
-void search_init() {
+void search_init(void) {
     for (int d = 1; d <= MAX_DEPTH; d++)
         for (int cnt = 1; cnt < MAX_MOVES; cnt++)
             Reduction[d][cnt] = 0.4 * log(min(d, 31)) + 1.057 * log(min(cnt, 31));
@@ -178,8 +178,8 @@ static int qsearch(Worker *worker, const Position *pos, int ply, int depth, int 
 
     // HT write
     he.bound = bestScore <= oldAlpha ? UBOUND : bestScore >= beta ? LBOUND : EXACT;
-    he.score = bestScore;
-    he.eval = pos->checkers ? -MATE : worker->eval[ply];
+    he.score = (int16_t)bestScore;
+    he.eval = (int16_t)(pos->checkers ? -MATE : worker->eval[ply]);
     he.depth = 0;
     he.move = bestMove;
     hash_write(pos->key, &he, ply);
@@ -494,9 +494,9 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
 
     // HT write
     he.bound = bestScore <= oldAlpha ? UBOUND : bestScore >= beta ? LBOUND : EXACT;
-    he.score = bestScore;
-    he.eval = pos->checkers ? -MATE : worker->eval[ply];
-    he.depth = depth;
+    he.score = (int16_t)bestScore;
+    he.eval = (int16_t)(pos->checkers ? -MATE : worker->eval[ply]);
+    he.depth = (int8_t)depth;
     he.move = bestMove;
     hash_write(key, &he, ply);
 
@@ -527,7 +527,7 @@ static int aspirate(Worker *worker, int depth, move_t pv[], int score) {
     }
 }
 
-void *iterate(void *_worker) {
+static void *iterate(void *_worker) {
     Worker *worker = _worker;
     move_t pv[MAX_PLY + 1];
     int volatile score = 0;
@@ -560,7 +560,7 @@ bool is_mate_score(int score) {
     return abs(score) >= MATE - MAX_PLY;
 }
 
-uint64_t search_go() {
+uint64_t search_go(void) {
     int64_t start = system_msec();
 
     info_create(&ui);
@@ -574,7 +574,7 @@ uint64_t search_go() {
 
     if (!lim.movetime && (lim.time || lim.inc)) {
         const int movesToGo = lim.movestogo ? lim.movestogo : 26;
-        const int remaining = (movesToGo - 1) * lim.inc + lim.time;
+        const int64_t remaining = (movesToGo - 1) * lim.inc + lim.time;
 
         minTime = min(0.57 * remaining / movesToGo, lim.time - uciTimeBuffer);
         maxTime = min(2.21 * remaining / movesToGo, lim.time - uciTimeBuffer);

@@ -79,5 +79,5 @@ move_t move_build(int from, int to, int prom) {
     BOUNDS(from, NB_SQUARE);
     BOUNDS(to, NB_SQUARE);
     assert((unsigned)prom <= QUEEN || prom == NB_PIECE);
-    return from | (to << 6) | (prom << 12);
+    return (move_t)(from | (to << 6) | (prom << 12));
 }

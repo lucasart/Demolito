@@ -21,7 +21,7 @@
 
 enum { HISTORY_MAX = MAX_DEPTH * MAX_DEPTH, SEPARATION = 3 * HISTORY_MAX + 1 };
 
-void sort_generate(Sort *sort, const Position *pos, int depth) {
+static void sort_generate(Sort *sort, const Position *pos, int depth) {
     move_t *it = sort->moves;
 
     if (pos->checkers)
@@ -42,7 +42,7 @@ void sort_generate(Sort *sort, const Position *pos, int depth) {
     sort->cnt = (size_t)(it - sort->moves);
 }
 
-void sort_score(Worker *worker, Sort *sort, const Position *pos, move_t ttMove) {
+static void sort_score(Worker *worker, Sort *sort, const Position *pos, move_t ttMove) {
     const size_t rhIdx = zobrist_move_key(&worker->stack, 0) % NB_REFUTATION;
     const size_t fuhIdx = zobrist_move_key(&worker->stack, 1) % NB_FOLLOW_UP;
 
@@ -74,7 +74,7 @@ void history_update(int16_t *t, int bonus) {
     v = min(v, HISTORY_MAX);  // cap
     v = max(v, -HISTORY_MAX); // floor
 
-    *t = v;
+    *t = (int16_t)v;
 }
 
 void sort_init(Worker *worker, Sort *sort, const Position *pos, int depth, move_t ttMove) {
