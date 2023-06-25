@@ -585,7 +585,7 @@ uint64_t search_go(void) {
         pthread_create(&threads[i], NULL, (void *(*)(void *))iterate, &Workers[i]);
 
     do {
-        sleep_msec(5);
+        sleep_msec(10);
 
         // Check for search termination conditions, but only after depth 1 has been
         // completed, to make sure we do not return an illegal move.

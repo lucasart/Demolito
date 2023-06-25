@@ -404,7 +404,7 @@ int evaluate(Worker *worker, const Position *pos) {
         const double phaseFactor = 0.5 + (double)pos->pieceMaterial[pos->turn] / StartPieceTotal;
 
         // scale parameter of centered logistic: CDF(x) = 1 / (1 + exp(-x/s))
-        const double s = 200 * pow(0.8, uciLevel - 1) * phaseFactor;
+        const double s = 200 * pow(0.78, uciLevel - 1) * phaseFactor;
 
         // Add logistic drawing as eval noise
         result += s * log(p / (1 - p));

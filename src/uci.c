@@ -46,7 +46,7 @@ static void intro(void) {
     uci_printf("option name Contempt type spin default %d min -100 max 100\n", Contempt);
     uci_printf("option name Hash type spin default %zu min 1 max 1048576\n", uciHash);
     uci_puts("option name Ponder type check default false");
-    uci_printf("option name Level type spin default %d min 0 max 15\n", uciLevel);
+    uci_printf("option name Level type spin default %d min 0 max 14\n", uciLevel);
     uci_printf("option name Threads type spin default %zu min 1 max 256\n", uciThreads);
     uci_printf("option name Time Buffer type spin default %" PRId64 " min 0 max 1000\n",
                uciTimeBuffer);
@@ -136,24 +136,26 @@ static void go(char **linePos) {
     lim = (Limits){.depth = MAX_DEPTH};
 
     if (uciLevel) {
-        lim.depth = uciLevel <= 8 ? uciLevel : 2 * uciLevel - 8;
-        lim.nodes = 32ULL << uciLevel;
-
-        const int us = rootPos.turn, them = opposite(us);
+        lim.nodes = 64ULL << uciLevel;
+        lim.depth = uciLevel <= 10 ? uciLevel : 2 * uciLevel - 10;
 
         // Fixed depth makes the engine relatively weak in the endgame, so compensate a little
-        if (rootPos.pieceMaterial[us] <= PieceValue[ROOK] + PieceValue[KNIGHT] + PieceValue[BISHOP])
-            lim.depth++;
+        const int startMaterial = 4 * (PieceValue[ROOK] + PieceValue[KNIGHT] + PieceValue[BISHOP])
+            + 2 * PieceValue[QUEEN];
+        const int material = rootPos.pieceMaterial[WHITE] + rootPos.pieceMaterial[BLACK];
 
-        // Remove depth limit when the opponent is pawnless, and we have a mating material
-        // configuration. This is important, because even the simplest mates like KQK or KRK need
-        // many depths to be performed correctly, especially if the eval is polluted.
-        if (!pos_pieces_cp(&rootPos, them, PAWN) &&
-            rootPos.pieceMaterial[us] >= rootPos.pieceMaterial[them] + PieceValue[ROOK])
+        lim.depth += (material <= startMaterial / 2) + (material <= startMaterial / 6);
+
+        // When the opponent is pawnless, and we have a mating material advantage, remove the depth
+        // limit to mate cleanly. Note that we still have the node limit.
+        const int us = rootPos.turn, them = opposite(us);
+
+        if (!pos_pieces_cp(&rootPos, them, PAWN)
+            && rootPos.pieceMaterial[us] >= rootPos.pieceMaterial[them] + PieceValue[ROOK])
             lim.depth = MAX_DEPTH;
     }
 
-    const char *token;
+    const char *token = NULL;
 
     while ((token = strtok_r(NULL, " \n", linePos))) {
         if (!strcmp(token, "depth"))
