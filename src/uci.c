@@ -144,7 +144,7 @@ static void go(char **linePos) {
             + 2 * PieceValue[QUEEN];
         const int material = rootPos.pieceMaterial[WHITE] + rootPos.pieceMaterial[BLACK];
 
-        lim.depth += (material <= startMaterial / 2) + (material <= startMaterial / 6);
+        lim.depth += material <= startMaterial / 2;
 
         // When the opponent is pawnless, and we have a mating material advantage, remove the depth
         // limit to mate cleanly. Note that we still have the node limit.
