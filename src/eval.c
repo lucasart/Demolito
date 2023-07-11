@@ -28,6 +28,7 @@ static bitboard_t PawnPath[NB_COLOR][NB_SQUARE];
 static bitboard_t AdjacentFiles[NB_FILE];
 static int KingDistance[NB_SQUARE][NB_SQUARE];
 static int SafetyCurve[4096];
+static double Noise[NB_LEVEL];
 
 static bitboard_t pawn_attacks(const Position *pos, int color) {
     const bitboard_t pawns = pos_pieces_cp(pos, color, PAWN);
@@ -344,6 +345,9 @@ void eval_init(void) {
         const int x = pow((double)i, SafetyCurveParam[0] * 0.001) + 0.5;
         SafetyCurve[i] = x > SafetyCurveParam[1] ? SafetyCurve[i - 1] + 1 : x;
     }
+
+    for (int l = 0; l < NB_LEVEL; l++)
+        Noise[l] = pow(0.78, l + (l >= 9));
 }
 
 int evaluate(Worker *worker, const Position *pos) {
@@ -404,7 +408,7 @@ int evaluate(Worker *worker, const Position *pos) {
         const double phaseFactor = 0.5 + (double)pos->pieceMaterial[pos->turn] / StartPieceTotal;
 
         // scale parameter of centered logistic: CDF(x) = 1 / (1 + exp(-x/s))
-        const double s = 200 * pow(0.78, uciLevel - 1) * phaseFactor;
+        const double s = 200 * Noise[uciLevel - 1] * phaseFactor;
 
         // Add logistic drawing as eval noise
         result += s * log(p / (1 - p));

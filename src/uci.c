@@ -46,7 +46,7 @@ static void intro(void) {
     uci_printf("option name Contempt type spin default %d min -100 max 100\n", Contempt);
     uci_printf("option name Hash type spin default %zu min 1 max 1048576\n", uciHash);
     uci_puts("option name Ponder type check default false");
-    uci_printf("option name Level type spin default %d min 0 max 14\n", uciLevel);
+    uci_printf("option name Level type spin default %d min 0 max %d\n", uciLevel, NB_LEVEL);
     uci_printf("option name Threads type spin default %zu min 1 max 256\n", uciThreads);
     uci_printf("option name Time Buffer type spin default %" PRId64 " min 0 max 1000\n",
                uciTimeBuffer);
@@ -136,8 +136,8 @@ static void go(char **linePos) {
     lim = (Limits){.depth = MAX_DEPTH};
 
     if (uciLevel) {
-        lim.nodes = 64ULL << uciLevel;
-        lim.depth = uciLevel <= 10 ? uciLevel : 2 * uciLevel - 10;
+        lim.nodes = 64ULL << max(10, uciLevel);
+        lim.depth = uciLevel <= 12 ? uciLevel : 2 * uciLevel - 12;
 
         // Fixed depth makes the engine relatively weak in the endgame, so compensate a little
         const int startMaterial = 4 * (PieceValue[ROOK] + PieceValue[KNIGHT] + PieceValue[BISHOP])

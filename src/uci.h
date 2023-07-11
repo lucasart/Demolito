@@ -16,6 +16,8 @@
 #include "platform.h"
 #include "position.h"
 
+#define NB_LEVEL 14
+
 void uci_loop(void);
 
 typedef struct {
