@@ -137,7 +137,7 @@ static void go(char **linePos) {
 
     if (uciLevel) {
         lim.nodes = 64ULL << max(10, uciLevel);
-        lim.depth = uciLevel <= 12 ? uciLevel : 2 * uciLevel - 12;
+        lim.depth = uciLevel;
 
         // Fixed depth makes the engine relatively weak in the endgame, so compensate a little
         const int startMaterial = 4 * (PieceValue[ROOK] + PieceValue[KNIGHT] + PieceValue[BISHOP])
