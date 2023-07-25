@@ -266,7 +266,7 @@ static double tune_logit_err(const int16_t *evals, double lambda) {
     for (size_t i = 0; i < sampleCount; i++)
         sumErr += fabs(0.5 * samples[i].result - 1 / (1 + exp(-lambda * evals[i])));
 
-    const double err = sumErr / sampleCount;
+    const double err = sumErr / (double)sampleCount;
     printf("sample.results[] = 1 / (1 + exp(-%f * evals[])) + err;\tmean(|err|)=%f\n", lambda, err);
     return err;
 }
@@ -290,8 +290,8 @@ double tune_linereg(void) {
         sum_x += samples[i].eval;
     }
 
-    const double mean_x = (double)sum_x / sampleCount;
-    const double mean_y = (double)sum_y / sampleCount;
+    const double mean_x = (double)sum_x / (double)sampleCount;
+    const double mean_y = (double)sum_y / (double)sampleCount;
     double cov = 0, var = 0;
 
     for (size_t i = 0; i < sampleCount; i++) {
@@ -307,7 +307,7 @@ double tune_linereg(void) {
     for (size_t i = 0; i < sampleCount; i++)
         sum_err += fabs(alpha + beta * samples[i].eval - evals[i]);
 
-    const double mean_err = sum_err / sampleCount;
+    const double mean_err = sum_err / (double)sampleCount;
     printf("evals[] = %f + %f * samples[].eval + err;\tmean(|err|) = %f\n", alpha, beta, mean_err);
 
     free(evals);

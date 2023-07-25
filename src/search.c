@@ -570,14 +570,14 @@ uint64_t search_go(void) {
     pthread_t threads[WorkersCount];
     workers_new_search();
 
-    int minTime = 0, maxTime = 0; // Silence bogus gcc warning (maybe uninitialized)
+    int64_t minTime = 0, maxTime = 0;
 
     if (!lim.movetime && (lim.time || lim.inc)) {
         const int movesToGo = lim.movestogo ? lim.movestogo : 26;
         const int64_t remaining = (movesToGo - 1) * lim.inc + lim.time;
 
-        minTime = min(0.57 * remaining / movesToGo, lim.time - uciTimeBuffer);
-        maxTime = min(2.21 * remaining / movesToGo, lim.time - uciTimeBuffer);
+        minTime = min((int64_t)(0.57 * (double)remaining) / movesToGo, lim.time - uciTimeBuffer);
+        maxTime = min((int64_t)(2.21 * (double)remaining) / movesToGo, lim.time - uciTimeBuffer);
     }
 
     for (size_t i = 0; i < WorkersCount; i++)
@@ -595,7 +595,7 @@ uint64_t search_go(void) {
                 atomic_store_explicit(&Stop, true, memory_order_release);
             else if (lim.time || lim.inc) {
                 const double x = 1 / (1 + exp(-info_variability(&ui)));
-                const int64_t t = x * maxTime + (1 - x) * minTime;
+                const int64_t t = x * (double)maxTime + (1 - x) * (double)minTime;
 
                 if (system_msec() - start >= t)
                     atomic_store_explicit(&Stop, true, memory_order_release);

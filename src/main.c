@@ -53,7 +53,7 @@ static void bench(int depth) {
 
     printf("time  : %" PRIu64 "ms\n", elapsed);
     printf("nodes : %" PRIu64 "\n", nodes); // total nodes = functionality signature
-    printf("nps   : %.0f\n", nodes * 1000.0 / max(elapsed, 1)); // avoid div/0
+    printf("nps   : %.0f\n", (double)nodes * 1000.0 / (double)max(elapsed, 1)); // avoid div/0
 }
 
 int main(int argc, char **argv) {

@@ -304,7 +304,7 @@ void info_update(Info *info, int depth, int score, uint64_t nodes, move_t pv[], 
         // - changed: increase variability (rescale for %age of partial updates = f(threads))
         // - confirmed: reduce variability (discard partial)
         info->variability +=
-            info->best != pv[0] ? 0.6 * pow(WorkersCount, -0.08) : -0.24 * !partial;
+            info->best != pv[0] ? 0.6 * pow((double)WorkersCount, -0.08) : -0.24 * !partial;
 
         if (!partial)
             info->lastDepth = depth;
