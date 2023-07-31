@@ -405,10 +405,11 @@ int evaluate(Worker *worker, const Position *pos) {
             p = prngf(&worker->seed);
 
         // Scale down noise towards the endgame
-        const double phaseFactor = 0.5 + (double)pos->pieceMaterial[pos->turn] / StartPieceTotal;
+        const double remaining = (double)(pos->pieceMaterial[WHITE] + pos->pieceMaterial[BLACK]) / StartPieceTotal;
+        assert(0.0 <= remaining && remaining <= 1.0);
 
         // scale parameter of centered logistic: CDF(x) = 1 / (1 + exp(-x/s))
-        const double s = 200 * Noise[uciLevel - 1] * phaseFactor;
+        const double s = 200 * Noise[uciLevel - 1] * (0.5 + 0.5 * remaining);
 
         // Add logistic drawing as eval noise
         result += s * log(p / (1 - p));
