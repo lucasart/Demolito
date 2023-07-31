@@ -405,7 +405,8 @@ int evaluate(Worker *worker, const Position *pos) {
             p = prngf(&worker->seed);
 
         // Scale down noise towards the endgame
-        const double remaining = (double)(pos->pieceMaterial[WHITE] + pos->pieceMaterial[BLACK]) / StartPieceTotal;
+        const double remaining =
+            (double)(pos->pieceMaterial[WHITE] + pos->pieceMaterial[BLACK]) / StartPieceTotal;
         assert(0.0 <= remaining && remaining <= 1.0);
 
         // scale parameter of centered logistic: CDF(x) = 1 / (1 + exp(-x/s))

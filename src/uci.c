@@ -32,7 +32,7 @@ static pthread_t Timer = 0;
 size_t uciHash = 2, uciThreads = 1;
 int uciLevel = 0;
 int64_t uciTimeBuffer = 60;
-bool uciChess960 =false, uciFakeTime = false;
+bool uciChess960 = false, uciFakeTime = false;
 
 static void uci_format_score(int score, char str[17]) {
     if (is_mate_score(score))
@@ -143,8 +143,8 @@ static void go(char **linePos) {
         lim.depth = uciLevel;
 
         // Fixed depth makes the engine relatively weak in the endgame, so compensate a little
-        const int startMaterial = 4 * (PieceValue[ROOK] + PieceValue[KNIGHT] + PieceValue[BISHOP])
-            + 2 * PieceValue[QUEEN];
+        const int startMaterial = 4 * (PieceValue[ROOK] + PieceValue[KNIGHT] + PieceValue[BISHOP]) +
+                                  2 * PieceValue[QUEEN];
         const int material = rootPos.pieceMaterial[WHITE] + rootPos.pieceMaterial[BLACK];
 
         lim.depth += material <= startMaterial / 2;
@@ -153,8 +153,8 @@ static void go(char **linePos) {
         // limit to mate cleanly. Note that we still have the node limit.
         const int us = rootPos.turn, them = opposite(us);
 
-        if (!pos_pieces_cp(&rootPos, them, PAWN)
-            && rootPos.pieceMaterial[us] >= rootPos.pieceMaterial[them] + PieceValue[ROOK])
+        if (!pos_pieces_cp(&rootPos, them, PAWN) &&
+            rootPos.pieceMaterial[us] >= rootPos.pieceMaterial[them] + PieceValue[ROOK])
             lim.depth = MAX_DEPTH;
     }
 

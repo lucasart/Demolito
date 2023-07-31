@@ -107,44 +107,44 @@ typedef struct {
 
 static Entry Entries[] = {{"PieceValue", PieceValue, NB_PIECE},
 
-                   {"KnightPstSeed", KnightPstSeed, 12 * 2},
-                   {"RookPstSeed", RookPstSeed, 12 * 2},
-                   {"QueenPstSeed", QueenPstSeed, 12 * 2},
+                          {"KnightPstSeed", KnightPstSeed, 12 * 2},
+                          {"RookPstSeed", RookPstSeed, 12 * 2},
+                          {"QueenPstSeed", QueenPstSeed, 12 * 2},
 
-                   {"BishopPstSeed", BishopPstSeed, 8 * 4 * 2},
-                   {"KingPstSeed", KingPstSeed, 8 * 4 * 2},
-                   {"PawnPstSeed", PawnPstSeed, 6 * 4 * 2},
+                          {"BishopPstSeed", BishopPstSeed, 8 * 4 * 2},
+                          {"KingPstSeed", KingPstSeed, 8 * 4 * 2},
+                          {"PawnPstSeed", PawnPstSeed, 6 * 4 * 2},
 
-                   {"MobilityKnight", Mobility[KNIGHT], 9 * 2},
-                   {"MobilityBishop", Mobility[BISHOP], 14 * 2},
-                   {"MobilityRook", Mobility[ROOK], 15 * 2},
-                   {"MobilityQueenDiagonal", Mobility[QUEEN], 14 * 2},
-                   {"MobilityQueenOrthogonal", Mobility[QUEEN + 1], 15 * 2},
+                          {"MobilityKnight", Mobility[KNIGHT], 9 * 2},
+                          {"MobilityBishop", Mobility[BISHOP], 14 * 2},
+                          {"MobilityRook", Mobility[ROOK], 15 * 2},
+                          {"MobilityQueenDiagonal", Mobility[QUEEN], 14 * 2},
+                          {"MobilityQueenOrthogonal", Mobility[QUEEN + 1], 15 * 2},
 
-                   {"RookOpen", RookOpen, 2},
-                   {"BishopPair", &BishopPair, 2},
-                   {"Ahead", &Ahead, 1},
+                          {"RookOpen", RookOpen, 2},
+                          {"BishopPair", &BishopPair, 2},
+                          {"Ahead", &Ahead, 1},
 
-                   {"Hanging", Hanging, NB_PIECE},
+                          {"Hanging", Hanging, NB_PIECE},
 
-                   {"RingAttack", RingAttack, NB_PIECE},
-                   {"RingDefense", RingDefense, NB_PIECE},
-                   {"CheckAttack", CheckAttack, 4},
-                   {"CheckDefense", CheckDefense, 4},
-                   {"XRay", &XRay[BISHOP], 3},
-                   {"SafetyCurveParam", SafetyCurveParam, 2},
+                          {"RingAttack", RingAttack, NB_PIECE},
+                          {"RingDefense", RingDefense, NB_PIECE},
+                          {"CheckAttack", CheckAttack, 4},
+                          {"CheckDefense", CheckDefense, 4},
+                          {"XRay", &XRay[BISHOP], 3},
+                          {"SafetyCurveParam", SafetyCurveParam, 2},
 
-                   {"Isolated", Isolated, 2 * 2},
-                   {"Backward", Backward, 2 * 2},
-                   {"Doubled", &Doubled, 2},
-                   {"Shield", Shield, 4 * 6},
+                          {"Isolated", Isolated, 2 * 2},
+                          {"Backward", Backward, 2 * 2},
+                          {"Doubled", &Doubled, 2},
+                          {"Shield", Shield, 4 * 6},
 
-                   {"Connected", Connected, 6 * 2},
-                   {"Distance", Distance, 2},
+                          {"Connected", Connected, 6 * 2},
+                          {"Distance", Distance, 2},
 
-                   {"PasserBonus", PasserBonus, 6 * 2},
-                   {"PasserAdjust", PasserAdjust, 6},
-                   {"FreePasser", FreePasser, 4}};
+                          {"PasserBonus", PasserBonus, 6 * 2},
+                          {"PasserAdjust", PasserAdjust, 6},
+                          {"FreePasser", FreePasser, 4}};
 
 void tune_declare(void) {
     for (size_t i = 0; i < sizeof(Entries) / sizeof(Entry); i++)
