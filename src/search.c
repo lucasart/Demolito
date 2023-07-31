@@ -545,7 +545,7 @@ static void *iterate(void *_worker) {
 
     // Max depth completed by current thread. All threads should stop. Unless we are in infinite
     // or pondering, in which case workers wait here, and the timer loop continues until stopped.
-    if (!lim.infinite)
+    if (!lim.infinite && !uciFakeTime)
         Stop = true;
 
     return NULL;
@@ -574,10 +574,15 @@ uint64_t search_go(void) {
 
     if (!lim.movetime && (lim.time || lim.inc)) {
         const int movesToGo = lim.movestogo ? lim.movestogo : 26;
-        const int64_t remaining = (movesToGo - 1) * lim.inc + lim.time;
+        const int64_t remaining = max((int64_t)0, lim.time + (movesToGo - 1) * lim.inc - movesToGo * uciTimeBuffer);
 
         minTime = min((int64_t)(0.57 * (double)remaining) / movesToGo, lim.time - uciTimeBuffer);
         maxTime = min((int64_t)(2.21 * (double)remaining) / movesToGo, lim.time - uciTimeBuffer);
+
+		if (uciLevel)
+			// ui.variability will be messed-up here by the constant bestmove change from eval
+			// pollution. We simply by-pass the whole logic and opt for stable time usage strategy.
+			minTime = maxTime = min(remaining / movesToGo, lim.time - uciTimeBuffer);
     }
 
     for (size_t i = 0; i < WorkersCount; i++)

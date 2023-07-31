@@ -31,7 +31,7 @@ typedef struct {
 extern Info ui;
 extern int uciLevel;
 extern int64_t uciTimeBuffer;
-extern bool uciChess960;
+extern bool uciChess960, uciFakeTime;
 extern size_t uciHash, uciThreads;
 
 void info_create(Info *info);

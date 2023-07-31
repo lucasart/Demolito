@@ -32,7 +32,7 @@ static pthread_t Timer = 0;
 size_t uciHash = 2, uciThreads = 1;
 int uciLevel = 0;
 int64_t uciTimeBuffer = 60;
-bool uciChess960 = false;
+bool uciChess960 =false, uciFakeTime = false;
 
 static void uci_format_score(int score, char str[17]) {
     if (is_mate_score(score))
@@ -51,6 +51,7 @@ static void intro(void) {
     uci_printf("option name Time Buffer type spin default %" PRId64 " min 0 max 1000\n",
                uciTimeBuffer);
     uci_printf("option name UCI_Chess960 type check default %s\n", uciChess960 ? "true" : "false");
+    uci_printf("option name Fake Time type check default %s\n", uciFakeTime ? "true" : "false");
 #ifdef TUNE
     tune_declare();
 #endif
@@ -71,6 +72,8 @@ static void setoption(char **linePos) {
 
     if (!strcmp(name, "UCI_Chess960"))
         uciChess960 = !strcmp(token, "true");
+    else if (!strcmp(name, "FakeTime"))
+        uciFakeTime = !strcmp(token, "true");
     else if (!strcmp(name, "Hash")) {
         uciHash = (size_t)atoll(token);
         uciHash = 1ULL << bb_msb(uciHash); // must be a power of two

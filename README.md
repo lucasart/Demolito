@@ -51,6 +51,9 @@ full strength. Level `1` is the weakest, and `15` is the strongest (but still we
 off strength limitation with `Level=0`). Note that Demolito plays quasi-instantly when using levels,
 and the quality of moves is the same regardless of the time control. Also, Demolito becomes
 non-deterministic (on purpose), so that it will play differently every time you restart the game.
+- **Fake Time**: Use this in combination with `Level` feature, if you want Demolito to pretend to
+use time, instead of moving instantly. Does not affect playing strength of any level, but makes game
+play more human friendly (ie. you can think on your opponent's turn, as you would against a human).
 - **Time Buffer**: In milliseconds. Provides for extra time to compensate the lag between the UI and
 the Engine. The default value is just enough for high performance tools like cutechess-cli, but may
 not suffice for some slow and bloated GUIs that introduce artificial lag (and even more so if
