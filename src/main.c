@@ -65,18 +65,18 @@ int main(int argc, char **argv) {
             const int depth = argc > 2 ? atoi(argv[2]) : 12;
 
             if (argc > 3)
-                WorkersCount = (size_t)atoll(argv[3]);
+                uciThreads = (size_t)atoll(argv[3]);
 
             if (argc > 4)
                 uciHash = 1ULL << bb_msb((uint64_t)atoll(argv[4])); // must be a power of 2
 
-            workers_prepare(WorkersCount);
+            workers_prepare(uciThreads);
             hash_prepare(uciHash);
             bench(depth);
         } else
             puts("Syntax: demolito [bench [depth [threads [hash]]]]");
     } else {
-        workers_prepare(WorkersCount);
+        workers_prepare(uciThreads);
         hash_prepare(uciHash);
         uci_loop();
     }

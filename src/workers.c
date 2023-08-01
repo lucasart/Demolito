@@ -18,7 +18,7 @@
 #include <stdlib.h>
 
 Worker *Workers = NULL;
-size_t WorkersCount = 1;
+size_t WorkersCount = 0;
 
 static void __attribute__((destructor)) workers_free(void) { free(Workers); }
 
@@ -31,6 +31,9 @@ void workers_clear(void) {
 }
 
 void workers_prepare(size_t count) {
+    if (count == WorkersCount)
+        return;
+
     Workers = realloc(Workers, count * sizeof(Worker));
     WorkersCount = count;
 
