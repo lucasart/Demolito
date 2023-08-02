@@ -143,11 +143,9 @@ static void go(char **linePos) {
         lim.depth = uciLevel;
 
         // Fixed depth makes the engine relatively weak in the endgame, so compensate a little
-        const int startMaterial = 4 * (PieceValue[ROOK] + PieceValue[KNIGHT] + PieceValue[BISHOP]) +
-                                  2 * PieceValue[QUEEN];
         const int material = rootPos.pieceMaterial[WHITE] + rootPos.pieceMaterial[BLACK];
 
-        lim.depth += material <= startMaterial / 2;
+        lim.depth += material < 2 * PieceValue[QUEEN];
 
         // When the opponent is pawnless, and we have a mating material advantage, remove the depth
         // limit to mate cleanly. Note that we still have the node limit.
