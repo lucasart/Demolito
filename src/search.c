@@ -573,20 +573,18 @@ uint64_t search_go(void) {
     int64_t minTime = 0, maxTime = 0;
 
     if (!lim.movetime && (lim.time || lim.inc)) {
+        static const double ratio[2][2] = {
+            {0.57, 2.23}, // tuned values when uciLevel == 0
+            {0.0, 1.0}    // compensate for noise induced variability, when playing, uciLevel != 0
+        };
+
         const int movesToGo = lim.movestogo ? lim.movestogo : 26;
         const int64_t remaining =
             lim.time + (movesToGo - 1) * lim.inc - movesToGo * uciTimeBuffer / 2;
-
-        if (uciLevel)
-            // ui.variability will be messed-up here by the constant bestmove change from eval
-            // pollution. We simply by-pass the whole logic and opt for stable time usage strategy.
-            minTime = maxTime = min(remaining / movesToGo, lim.time - uciTimeBuffer);
-        else {
-            minTime =
-                min((int64_t)(0.57 * (double)remaining) / movesToGo, lim.time - uciTimeBuffer);
-            maxTime =
-                min((int64_t)(2.21 * (double)remaining) / movesToGo, lim.time - uciTimeBuffer);
-        }
+        minTime = min((int64_t)(ratio[uciLevel != 0][0] * (double)remaining) / movesToGo,
+                      lim.time - uciTimeBuffer);
+        maxTime = min((int64_t)(ratio[uciLevel != 0][1] * (double)remaining) / movesToGo,
+                      lim.time - uciTimeBuffer);
     }
 
     for (size_t i = 0; i < WorkersCount; i++)
