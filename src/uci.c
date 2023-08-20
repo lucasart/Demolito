@@ -142,11 +142,6 @@ static void go(char **linePos) {
         lim.nodes = 64ULL << max(10, uciLevel);
         lim.depth = uciLevel;
 
-        // Fixed depth makes the engine relatively weak in the endgame, so compensate a little
-        const int material = rootPos.pieceMaterial[WHITE] + rootPos.pieceMaterial[BLACK];
-
-        lim.depth += material <= 2 * PieceValue[ROOK];
-
         // When the opponent is pawnless, and we have a mating material advantage, remove the depth
         // limit to mate cleanly. Note that we still have the node limit.
         const int us = rootPos.turn, them = opposite(us);

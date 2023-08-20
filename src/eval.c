@@ -347,7 +347,7 @@ void eval_init(void) {
     }
 
     for (int l = 0; l < NB_LEVEL; l++)
-        Noise[l] = pow(0.736, l);
+        Noise[l] = pow(0.75, l);
 }
 
 int evaluate(Worker *worker, const Position *pos) {
