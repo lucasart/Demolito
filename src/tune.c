@@ -21,7 +21,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-int PieceValue[NB_PIECE] = {640, 640, 1036, 1970, MATE, 169};
+int PieceValue[NB_PIECE + 1] = {640, 640, 1036, 1970, MATE, 169, 0};
 
 eval_t KnightPstSeed[4 + 8] = {{-56, -19}, {-32, -14}, {-15, -4}, {7, 4},  {-31, -12}, {-11, -2},
                                {15, 1},    {33, 10},   {28, 9},   {13, 3}, {-9, -1},   {-37, -7}};

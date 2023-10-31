@@ -15,7 +15,7 @@
 #pragma once
 #include "types.h"
 
-extern int PieceValue[NB_PIECE];
+extern int PieceValue[NB_PIECE + 1];
 
 extern eval_t KnightPstSeed[4 + 8], RookPstSeed[4 + 8], QueenPstSeed[4 + 8];
 extern eval_t BishopPstSeed[8][4], KingPstSeed[8][4], PawnPstSeed[6][4];
