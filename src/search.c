@@ -363,7 +363,7 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
         const bool improving = ply < 2 || worker->eval[ply] > worker->eval[ply - 2];
 
         // Prune bad or late moves near the leaves
-        if (depth <= 5 && !pvNode && !nextPos.checkers) {
+        if (depth <= 5 && !pvNode && !nextPos.checkers && moveCount >= 2) {
             // SEE pruning
             if (see < SEEMargin[capture][depth])
                 continue;
@@ -372,8 +372,8 @@ static int search(Worker *worker, const Position *pos, int ply, int depth, int a
             if (!capture && depth <= 4 && moveCount >= 3 * depth + 2 * improving)
                 break;
 
-            // Prune quiet moves with negative history (excluding 1st move)
-            if (!capture && depth <= 3 && moveCount >= 2 && sort.scores[sort.idx - 1] < 0)
+            // Prune quiet moves with negative history
+            if (!capture && depth <= 3 && sort.scores[sort.idx - 1] < 0)
                 break;
         }
 
