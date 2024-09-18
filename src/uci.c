@@ -142,13 +142,18 @@ static void go(char **linePos) {
         lim.nodes = 64ULL << max(10, uciLevel);
         lim.depth = uciLevel;
 
-        // When the opponent is pawnless, and we have a mating material advantage, remove the depth
-        // limit to mate cleanly. Note that we still have the node limit.
         const int us = rootPos.turn, them = opposite(us);
 
-        if (!pos_pieces_cp(&rootPos, them, PAWN) &&
-            rootPos.pieceMaterial[us] >= rootPos.pieceMaterial[them] + PieceValue[ROOK])
-            lim.depth = MAX_DEPTH;
+        if (rootPos.pieceMaterial[them] <= PieceValue[QUEEN]) {
+            // One more depth when the opponent has very little piece material left
+            lim.depth++;
+
+            // When the opponent is pawnless, and we have a mating material advantage, remove the depth
+            // limit to mate cleanly. Note that we still have the node limit.
+            if (!pos_pieces_cp(&rootPos, them, PAWN) &&
+                rootPos.pieceMaterial[us] >= rootPos.pieceMaterial[them] + PieceValue[ROOK])
+                lim.depth = MAX_DEPTH;
+        }
     }
 
     const char *token = NULL;
