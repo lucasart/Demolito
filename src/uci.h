@@ -17,6 +17,7 @@
 #include "position.h"
 
 #define NB_LEVEL 14
+#define NB_LEVEL_BONUS 3
 
 void uci_loop(void);
 

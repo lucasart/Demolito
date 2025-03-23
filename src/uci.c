@@ -142,18 +142,20 @@ static void go(char **linePos) {
         lim.nodes = 64ULL << max(10, uciLevel);
         lim.depth = uciLevel;
 
-        const int us = rootPos.turn, them = opposite(us);
+        const int totalMaterial = 4 * (PieceValue[KNIGHT] + PieceValue[BISHOP] + PieceValue[ROOK]) + 2 * PieceValue[QUEEN];
+		const double ratio = (double)(rootPos.pieceMaterial[WHITE] + rootPos.pieceMaterial[BLACK]) / totalMaterial;
 
-        if (rootPos.pieceMaterial[them] <= PieceValue[QUEEN]) {
-            // One more depth when the opponent has very little piece material left
-            lim.depth++;
-
-            // When the opponent is pawnless, and we have a mating material advantage, remove the depth
-            // limit to mate cleanly. Note that we still have the node limit.
-            if (!pos_pieces_cp(&rootPos, them, PAWN) &&
-                rootPos.pieceMaterial[us] >= rootPos.pieceMaterial[them] + PieceValue[ROOK])
-                lim.depth = MAX_DEPTH;
+        // Increase max depth as material goes down (node limit remains in force)
+        for (int n = 1; n <= NB_LEVEL_BONUS; n++) {
+            if (ratio < 1.0 / (1 << n))
+                lim.depth++;
         }
+
+        NoiseLevel = lim.depth;
+
+		// Double depth when TB count excl. Kings <= uciLevel
+        if (bb_count(rootPos.byColor[WHITE] | rootPos.byColor[BLACK]) - 2 <= uciLevel)
+            lim.depth *= 2;
     }
 
     const char *token = NULL;

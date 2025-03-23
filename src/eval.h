@@ -16,5 +16,7 @@
 #include "position.h"
 #include "workers.h"
 
+extern int NoiseLevel;
+
 void eval_init(void);
 int evaluate(Worker *worker, const Position *pos);
