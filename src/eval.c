@@ -28,7 +28,7 @@ static bitboard_t PawnPath[NB_COLOR][NB_SQUARE];
 static bitboard_t AdjacentFiles[NB_FILE];
 static int KingDistance[NB_SQUARE][NB_SQUARE];
 static int SafetyCurve[4096];
-static double Noise[NB_LEVEL + NB_LEVEL_BONUS];
+static double Noise[NB_LEVEL_TOTAL];
 
 int NoiseLevel = 0;
 
@@ -348,8 +348,9 @@ void eval_init(void) {
         SafetyCurve[i] = x > SafetyCurveParam[1] ? SafetyCurve[i - 1] + 1 : x;
     }
 
-    for (int l = 0; l < NB_LEVEL + NB_LEVEL_BONUS; l++)
-        Noise[l] = pow(0.75, l);
+	Noise[0] = 1.0;
+    for (int l = 1; l < NB_LEVEL_TOTAL; l++)
+        Noise[l] = Noise[l - 1] * 0.75;
 }
 
 int evaluate(Worker *worker, const Position *pos) {

@@ -16,8 +16,12 @@
 #include "platform.h"
 #include "position.h"
 
-#define NB_LEVEL 14
-#define NB_LEVEL_BONUS 3
+enum {
+    NB_LEVEL = 12,
+    NB_LEVEL_EG = 3,
+    NB_LEVEL_TB = 4,
+    NB_LEVEL_TOTAL = NB_LEVEL + NB_LEVEL_EG + NB_LEVEL_TB
+};
 
 void uci_loop(void);
 

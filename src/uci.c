@@ -145,17 +145,17 @@ static void go(char **linePos) {
         const int totalMaterial = 4 * (PieceValue[KNIGHT] + PieceValue[BISHOP] + PieceValue[ROOK]) + 2 * PieceValue[QUEEN];
 		const double ratio = (double)(rootPos.pieceMaterial[WHITE] + rootPos.pieceMaterial[BLACK]) / totalMaterial;
 
-        // Increase max depth as material goes down (node limit remains in force)
-        for (int n = 1; n <= NB_LEVEL_BONUS; n++) {
+        // Increase effective level for each halving of material (node limit remains in force)
+        for (int n = 1; n <= NB_LEVEL_EG; n++) {
             if (ratio < 1.0 / (1 << n))
                 lim.depth++;
         }
 
-        NoiseLevel = lim.depth;
-
-		// Double depth when TB count excl. Kings <= uciLevel
+		// Increase effective level when TB count excl. Kings <= uciLevel
         if (bb_count(rootPos.byColor[WHITE] | rootPos.byColor[BLACK]) - 2 <= uciLevel)
-            lim.depth *= 2;
+            lim.depth += NB_LEVEL_TB;
+
+        NoiseLevel = lim.depth;
     }
 
     const char *token = NULL;
