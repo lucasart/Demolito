@@ -348,7 +348,7 @@ void eval_init(void) {
         SafetyCurve[i] = x > SafetyCurveParam[1] ? SafetyCurve[i - 1] + 1 : x;
     }
 
-	Noise[0] = 1.0;
+    Noise[0] = 1.0;
     for (int l = 1; l < NB_LEVEL_TOTAL; l++)
         Noise[l] = Noise[l - 1] * 0.75;
 }

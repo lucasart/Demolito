@@ -142,8 +142,10 @@ static void go(char **linePos) {
         lim.nodes = 64ULL << max(10, uciLevel);
         lim.depth = uciLevel;
 
-        const int totalMaterial = 4 * (PieceValue[KNIGHT] + PieceValue[BISHOP] + PieceValue[ROOK]) + 2 * PieceValue[QUEEN];
-		const double ratio = (double)(rootPos.pieceMaterial[WHITE] + rootPos.pieceMaterial[BLACK]) / totalMaterial;
+        const int totalMaterial = 4 * (PieceValue[KNIGHT] + PieceValue[BISHOP] + PieceValue[ROOK]) +
+                                  2 * PieceValue[QUEEN];
+        const double ratio =
+            (double)(rootPos.pieceMaterial[WHITE] + rootPos.pieceMaterial[BLACK]) / totalMaterial;
 
         // Increase effective level for each halving of material (node limit remains in force)
         for (int n = 1; n <= NB_LEVEL_EG; n++) {
@@ -151,7 +153,7 @@ static void go(char **linePos) {
                 lim.depth++;
         }
 
-		// Increase effective level when TB count excl. Kings <= uciLevel
+        // Increase effective level when TB count excl. Kings <= uciLevel
         if (bb_count(rootPos.byColor[WHITE] | rootPos.byColor[BLACK]) - 2 <= uciLevel)
             lim.depth += NB_LEVEL_TB;
 
