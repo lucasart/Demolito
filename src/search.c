@@ -545,7 +545,7 @@ static void *iterate(void *_worker) {
          info_update(&ui, depth, score, nodes, pv, false);
 
         if (lim.nodes && nodes >= lim.nodes)
-            Stop = true;
+            break;
     }
 
     // Max depth completed by current thread. All threads should stop. Unless we are in infinite

@@ -139,25 +139,25 @@ static void go(char **linePos) {
     lim = (Limits){.depth = MAX_DEPTH};
 
     if (uciLevel) {
-        lim.nodes = 64ULL << max(10, uciLevel);
-        lim.depth = uciLevel;
+        lim.nodes = 64ULL << uciLevel;
+        NoiseLevel = uciLevel;
 
         const int totalMaterial = 4 * (PieceValue[KNIGHT] + PieceValue[BISHOP] + PieceValue[ROOK]) +
                                   2 * PieceValue[QUEEN];
         const double ratio =
             (double)(rootPos.pieceMaterial[WHITE] + rootPos.pieceMaterial[BLACK]) / totalMaterial;
 
-        // Increase effective level for each halving of material (node limit remains in force)
+        // Increase eval accuracy for each halving of material
         for (int n = 1; n <= NB_LEVEL_EG; n++) {
             if (ratio < 1.0 / (1 << n))
-                lim.depth++;
+                NoiseLevel++;
         }
 
-        // Increase effective level when TB count excl. Kings <= uciLevel
-        if (bb_count(rootPos.byColor[WHITE] | rootPos.byColor[BLACK]) - 2 <= uciLevel)
-            lim.depth += NB_LEVEL_TB;
-
-        NoiseLevel = lim.depth;
+        // Increase eval accurary and double nodes when TB count excl. Kings <= uciLevel
+        if (bb_count(rootPos.byColor[WHITE] | rootPos.byColor[BLACK]) - 2 <= uciLevel) {
+            NoiseLevel += NB_LEVEL_TB;
+            lim.nodes *= 2;
+        }
     }
 
     const char *token = NULL;
