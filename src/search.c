@@ -540,7 +540,12 @@ static void *iterate(void *_worker) {
             break;
         }
 
-        info_update(&ui, depth, score, workers_nodes(), pv, false);
+        const uint64_t nodes = workers_nodes();
+
+         info_update(&ui, depth, score, nodes, pv, false);
+
+        if (lim.nodes && nodes >= lim.nodes)
+            Stop = true;
     }
 
     // Max depth completed by current thread. All threads should stop. Unless we are in infinite
