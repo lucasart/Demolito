@@ -603,7 +603,7 @@ uint64_t search_go(void) {
         // completed, to make sure we do not return an illegal move.
         if (!lim.infinite && info_last_depth(&ui) > 0) {
             if ((lim.movetime && system_msec() - start >= lim.movetime - uciTimeBuffer) ||
-                (lim.nodes && workers_nodes() >= lim.nodes))
+                (!uciFakeTime && lim.nodes && workers_nodes() >= lim.nodes))
                 atomic_store_explicit(&Stop, true, memory_order_release);
             else if (lim.time || lim.inc) {
                 const double x = 1 / (1 + exp(-info_variability(&ui)));
