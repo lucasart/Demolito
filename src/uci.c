@@ -139,21 +139,16 @@ static void go(char **linePos) {
     lim = (Limits){.depth = MAX_DEPTH};
 
     if (uciLevel) {
-        lim.nodes = 64ULL << uciLevel;
-        NoiseLevel = uciLevel;
+        lim.nodes = 32ULL << uciLevel;
+        Noise = 200 * pow(0.75, uciLevel - 1);
 
         const int totalMaterial = 4 * (PieceValue[KNIGHT] + PieceValue[BISHOP] + PieceValue[ROOK]) +
                                   2 * PieceValue[QUEEN];
         const double ratio =
             (double)(rootPos.pieceMaterial[WHITE] + rootPos.pieceMaterial[BLACK]) / totalMaterial;
 
-        // Increase search and eval accuracy for each halving of material
-        for (int n = 1; n <= NB_LEVEL_EG; n++) {
-            if (ratio < 1.0 / (1 << n)) {
-                NoiseLevel++;
-                lim.nodes *= 2;
-            }
-        }
+        lim.nodes /= max(ratio, 0.125);
+        Noise *= pow(0.75, -log2(ratio));  // reduce noise by 25% for every halving of material
     }
 
     const char *token = NULL;
