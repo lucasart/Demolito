@@ -542,7 +542,7 @@ static void *iterate(void *_worker) {
 
         const uint64_t nodes = workers_nodes();
 
-         info_update(&ui, depth, score, nodes, pv, false);
+        info_update(&ui, depth, score, nodes, pv, false);
 
         if (lim.nodes && nodes >= lim.nodes)
             break;

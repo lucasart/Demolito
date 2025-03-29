@@ -147,16 +147,12 @@ static void go(char **linePos) {
         const double ratio =
             (double)(rootPos.pieceMaterial[WHITE] + rootPos.pieceMaterial[BLACK]) / totalMaterial;
 
-        // Increase eval accuracy for each halving of material
+        // Increase search and eval accuracy for each halving of material
         for (int n = 1; n <= NB_LEVEL_EG; n++) {
-            if (ratio < 1.0 / (1 << n))
+            if (ratio < 1.0 / (1 << n)) {
                 NoiseLevel++;
-        }
-
-        // Increase eval accurary and double nodes when TB count excl. Kings <= uciLevel
-        if (bb_count(rootPos.byColor[WHITE] | rootPos.byColor[BLACK]) - 2 <= uciLevel) {
-            NoiseLevel += NB_LEVEL_TB;
-            lim.nodes *= 2;
+                lim.nodes *= 2;
+            }
         }
     }
 
