@@ -16,7 +16,8 @@
 #include "platform.h"
 #include "position.h"
 
-enum {NB_LEVEL = 12};
+enum { NB_LEVEL = 12 };
+enum { MOVESTOGO = 26 };
 
 void uci_loop(void);
 

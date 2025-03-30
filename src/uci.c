@@ -138,19 +138,6 @@ static void position(char **linePos) {
 static void go(char **linePos) {
     lim = (Limits){.depth = MAX_DEPTH};
 
-    if (uciLevel) {
-        lim.nodes = 32ULL << uciLevel;
-        Noise = 200 * pow(0.75, uciLevel - 1);
-
-        const int totalMaterial = 4 * (PieceValue[KNIGHT] + PieceValue[BISHOP] + PieceValue[ROOK]) +
-                                  2 * PieceValue[QUEEN];
-        const double ratio =
-            (double)(rootPos.pieceMaterial[WHITE] + rootPos.pieceMaterial[BLACK]) / totalMaterial;
-
-        lim.nodes /= max(ratio, 0.125);
-        Noise *= pow(0.75, -log2(ratio));  // reduce noise by 25% for every halving of material
-    }
-
     const char *token = NULL;
 
     while ((token = strtok_r(NULL, " \n", linePos))) {
@@ -170,6 +157,26 @@ static void go(char **linePos) {
             lim.inc = atoll(strtok_r(NULL, " \n", linePos));
         else if (!strcmp(token, "infinite") || !strcmp(token, "ponder"))
             lim.infinite = true;
+    }
+
+    if (uciLevel) {
+        lim.nodes = 32ULL << uciLevel;
+        Noise = 200 * pow(0.75, uciLevel - 1);
+
+        const int totalMaterial = 4 * (PieceValue[KNIGHT] + PieceValue[BISHOP] + PieceValue[ROOK]) +
+                                  2 * PieceValue[QUEEN];
+        const double ratio =
+            (double)(rootPos.pieceMaterial[WHITE] + rootPos.pieceMaterial[BLACK]) / totalMaterial;
+
+        lim.nodes /= max(ratio, 0.25);    // double nodes for every halving of material, up to 4x
+        Noise *= pow(0.75, -log2(ratio)); // reduce noise by 25% for every halving of material
+
+        // Scale nodes to 10"/move for time-based limits
+        if (lim.time || lim.movetime) {
+            const int64_t t =
+                lim.time ? lim.time + (MOVESTOGO - 1) * lim.inc : MOVESTOGO * lim.movetime;
+            lim.nodes *= (double)t / (10000 * MOVESTOGO);
+        }
     }
 
     if (Timer) {

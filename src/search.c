@@ -583,7 +583,7 @@ uint64_t search_go(void) {
             {0.0, 1.0}    // compensate for noise induced variability, when playing, uciLevel != 0
         };
 
-        const int movesToGo = lim.movestogo ? lim.movestogo : 26;
+        const int movesToGo = lim.movestogo ? lim.movestogo : MOVESTOGO;
         const int64_t remaining =
             lim.time + (movesToGo - 1) * lim.inc - movesToGo * uciTimeBuffer / 2;
         minTime = min((int64_t)(ratio[uciLevel != 0][0] * (double)remaining) / movesToGo,

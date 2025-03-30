@@ -43,16 +43,16 @@ If you want to play against Demolito, you are advised to use the `Level` UCI opt
 
 - **Contempt**: This is used to score draws by chess rules in the search. These rules are: 3-move
 repetition, 50 move rule, stalemate, and insufficient material. A positive value will avoid draws
-(best against weaker opponents), whereas a negative value will seek draws (best against a stronger opponent).
+(best against weaker opponents), whereas a negative value will seek draws (best against a stronger
+opponent).
 - **Hash**: Size of the main hash table, in MB. Should be a power of two (if not Demolito will
 silently round it down to the nearest power of two).
 - **Level**: The default value is `0`, which means the level feature is off, and Demolito plays at
-full strength. Level `1` is the weakest, and `15` is the strongest (but still weaker than switching
-off strength limitation with `Level=0`). Note that Demolito plays quasi-instantly when using levels,
-and the quality of moves is the same regardless of the time control. Also, Demolito becomes
-non-deterministic (on purpose), so that it will play differently every time you restart the game.
-- **Fake Time**: Use this in combination with `Level` feature, if you want Demolito to pretend to
-use time, instead of moving instantly. Does not affect playing strength of any level, but makes game
+full strength. Level `1` is the weakest, and `12` is the strongest (but still weaker than switching
+off strength limitation with `Level=0`). Note that Demolito becomes non-deterministic (on purpose),
+so that it will play differently every game, even if it reaches the same position.
+- **Fake Time**: Use this in combination with `Level` feature, if you want Demolito to (pretend to)
+think, instead of moving instantly. Does not affect playing strength of any level, but makes game
 play more human friendly (ie. you can think on your opponent's turn, as you would against a human).
 - **Time Buffer**: In milliseconds. Provides for extra time to compensate the lag between the UI and
 the Engine. The default value is just enough for high performance tools like cutechess-cli, but may
