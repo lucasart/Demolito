@@ -160,7 +160,7 @@ static void go(char **linePos) {
     }
 
     if (uciLevel) {
-        lim.nodes = 32ULL << uciLevel;
+        lim.nodes = (1ULL << uciLevel) * 40;
         Noise = 200 * pow(0.75, uciLevel - 1);
 
         const int totalMaterial = 4 * (PieceValue[KNIGHT] + PieceValue[BISHOP] + PieceValue[ROOK]) +
@@ -169,7 +169,6 @@ static void go(char **linePos) {
             (double)(rootPos.pieceMaterial[WHITE] + rootPos.pieceMaterial[BLACK]) / totalMaterial;
 
         lim.nodes /= max(ratio, 0.25);    // double nodes for every halving of material, up to 4x
-        Noise *= pow(0.75, -log2(ratio)); // reduce noise by 25% for every halving of material
 
         // Scale nodes to 10"/move for time-based limits
         if (lim.time || lim.movetime) {

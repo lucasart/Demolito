@@ -397,13 +397,21 @@ int evaluate(Worker *worker, const Position *pos) {
     int result = blend(pos, stm);
 
     if (Noise) {
+        const int totalMaterial = 4 * (PieceValue[KNIGHT] + PieceValue[BISHOP] + PieceValue[ROOK]) +
+                                  2 * PieceValue[QUEEN];
+        const double ratio =
+            (double)(pos->pieceMaterial[WHITE] + pos->pieceMaterial[BLACK]) / totalMaterial;
+
+        // reduce noise by 25% for every halving of material, max twice
+        const double adjusted_noise = Noise * pow(0.75, -log2(max(ratio, 0.25)));
+
         // Draw 0 < p < 1
         double p = 0;
         while (p <= 0 || p >= 1)
             p = prngf(&worker->seed);
 
         // logistic drawing with scale = Noise
-        result += Noise * log(p / (1 - p));
+        result += adjusted_noise * log(p / (1 - p));
     }
 
     return result;
