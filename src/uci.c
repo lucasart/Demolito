@@ -160,21 +160,14 @@ static void go(char **linePos) {
     }
 
     if (uciLevel) {
-        lim.nodes = (1ULL << uciLevel) * 40;
+        lim.nodes = 4ULL << uciLevel;
         Noise = 200 * pow(0.75, uciLevel - 1);
 
-        const int totalMaterial = 4 * (PieceValue[KNIGHT] + PieceValue[BISHOP] + PieceValue[ROOK]) +
-                                  2 * PieceValue[QUEEN];
-        const double ratio =
-            (double)(rootPos.pieceMaterial[WHITE] + rootPos.pieceMaterial[BLACK]) / totalMaterial;
-
-        lim.nodes /= max(ratio, 0.25);    // double nodes for every halving of material, up to 4x
-
-        // Scale nodes to 10"/move for time-based limits
+        // Scale nodes to 1"/move for time-based limits
         if (lim.time || lim.movetime) {
             const int64_t t =
                 lim.time ? lim.time + (MOVESTOGO - 1) * lim.inc : MOVESTOGO * lim.movetime;
-            lim.nodes *= (double)t / (10000 * MOVESTOGO);
+            lim.nodes *= (double)t / (1000 * MOVESTOGO);
         }
     }
 

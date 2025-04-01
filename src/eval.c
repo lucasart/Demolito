@@ -401,16 +401,14 @@ int evaluate(Worker *worker, const Position *pos) {
                                   2 * PieceValue[QUEEN];
         const double ratio =
             (double)(pos->pieceMaterial[WHITE] + pos->pieceMaterial[BLACK]) / totalMaterial;
-
-        // reduce noise by 25% for every halving of material, max twice
-        const double adjusted_noise = Noise * pow(0.75, -log2(max(ratio, 0.25)));
+        const double adjusted_noise = max(ratio, 0.25) * Noise;
 
         // Draw 0 < p < 1
         double p = 0;
         while (p <= 0 || p >= 1)
             p = prngf(&worker->seed);
 
-        // logistic drawing with scale = Noise
+        // logistic drawing with scale = adjusted_noise
         result += adjusted_noise * log(p / (1 - p));
     }
 
