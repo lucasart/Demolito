@@ -160,7 +160,7 @@ static void go(char **linePos) {
     }
 
     if (uciLevel) {
-        lim.nodes = 4ULL << uciLevel;
+        lim.nodes = 16ULL << uciLevel;
         Noise = 200 * pow(0.75, uciLevel - 1);
 
         // Scale nodes to 1"/move for time-based limits
