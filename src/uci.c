@@ -161,13 +161,13 @@ static void go(char **linePos) {
 
     if (uciLevel) {
         lim.nodes = 16ULL << uciLevel;
-        Noise = 200 * pow(0.75, uciLevel - 1);
+        Noise = 110.266 * pow(0.75, uciLevel - 1);  // 200*sqrt(3)/pi to get stdev=200 at level 1
 
-        // Scale nodes to 1"/move for time-based limits
+        // Scale nodes to 2"/move for time-based limits
         if (lim.time || lim.movetime) {
             const int64_t t =
                 lim.time ? lim.time + (MOVESTOGO - 1) * lim.inc : MOVESTOGO * lim.movetime;
-            lim.nodes *= (double)t / (1000 * MOVESTOGO);
+            lim.nodes *= (double)t / (2000 * MOVESTOGO);
         }
     }
 
