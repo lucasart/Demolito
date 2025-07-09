@@ -401,7 +401,7 @@ int evaluate(Worker *worker, const Position *pos) {
                                   2 * PieceValue[QUEEN];
         const double ratio =
             (double)(pos->pieceMaterial[WHITE] + pos->pieceMaterial[BLACK]) / totalMaterial;
-        const double adjusted_noise = (0.25 + 0.75 * ratio) * Noise;
+        const double adjusted_noise = (0.5 + 0.5 * ratio) * Noise;
 
         // Draw 0 < p < 1
         double p = 0;
