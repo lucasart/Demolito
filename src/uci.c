@@ -160,8 +160,11 @@ static void go(char **linePos) {
     }
 
     if (uciLevel) {
-        lim.nodes = 16ULL << uciLevel;
-        Noise = 110.266 * pow(0.75, uciLevel - 1);  // 200*sqrt(3)/pi to get stdev=200 at level 1
+		const int totalCount = bb_count(rootPos.byColor[WHITE] | rootPos.byColor[BLACK]);
+		const int level = uciLevel + (totalCount < 6 ? 6 - totalCount : 0);
+
+        lim.nodes = 16ULL << level;
+        Noise = 110.266 * pow(0.75, level - 1);  // 200*sqrt(3)/pi to get stdev=200 at level 1
 
         // Scale nodes to 2"/move for time-based limits
         if (lim.time || lim.movetime) {
